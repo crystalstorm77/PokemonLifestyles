@@ -267,4 +267,4 @@ namespace LifestyleCore.Data
             return (nowLocal.TimeOfDay < new TimeSpan(3, 0, 0)) ? today.AddDays(-1) : today;
         }
     }
-}
+} //test
