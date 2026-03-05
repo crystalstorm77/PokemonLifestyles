@@ -49,25 +49,59 @@
                     <TextBlock x:Name="GameDayNowText" Foreground="Gray" Margin="0,2,0,0"/>
                     <TextBlock x:Name="RewardsSummaryText" Margin="0,6,0,0"/>
 
+                    <Separator Margin="0,10,0,10"/>
+
+                    <TextBlock Text="Step item drops (from steps)" FontWeight="Bold"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <TextBlock Text="Steps/roll:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox x:Name="StepsPerRollBox" Width="80" Margin="0,0,12,0"/>
+
+                        <TextBlock Text="Odds (1 in):" Width="80" VerticalAlignment="Center"/>
+                        <TextBox x:Name="OddsOneInBox" Width="60" Margin="0,0,12,0"/>
+
+                        <Button Content="Save" Width="80" Click="SaveItemDropSettings_Click"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="ItemDropsProgressText" Foreground="Gray" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="ItemDropsStatsText" Foreground="Gray" Margin="0,2,0,0"/>
+
+                    <TextBlock x:Name="InventoryCountText" Margin="0,8,0,4"/>
+
+                    <DataGrid x:Name="InventoryGrid"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              Height="140">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Item" Binding="{Binding ItemKey}" Width="*"/>
+                            <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                         <Button Content="View rewards..."
                     Width="140"
                     Click="ViewRewardsForSelectedDay_Click"/>
                     </StackPanel>
+
                 </StackPanel>
+
             </GroupBox>
 
             <!-- Focus Session -->
             <GroupBox Header="Focus Session" Margin="0,0,0,12">
                 <StackPanel Margin="10">
+
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Focus Type:" Width="90" VerticalAlignment="Center"/>
                         <ComboBox x:Name="FocusTypeCombo"
-          Width="200"
-          SelectedIndex="0"
-          IsEditable="True"
-          IsTextSearchEnabled="True"
-          StaysOpenOnEdit="True">
+                    Width="200"
+                    SelectedIndex="0"
+                    IsEditable="True"
+                    IsTextSearchEnabled="True"
+                    StaysOpenOnEdit="True">
                             <ComboBoxItem Content="Draw"/>
                             <ComboBoxItem Content="Music"/>
                         </ComboBox>
@@ -75,76 +109,80 @@
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Minutes:" Width="90" VerticalAlignment="Center"/>
-                        <TextBox x:Name="MinutesBox" Width="200"/>
+                        <TextBox x:Name="MinutesBox" Width="120" Margin="0,0,10,0"/>
+                        <CheckBox x:Name="CompletedCheck" Content="Completed" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <TextBlock Text="Completed:" Width="90" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="CompletedCheck" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <Button x:Name="AddFocusButton"
-                Content="Add Focus Session"
-                Width="200"
-                Click="AddFocusButton_Click"/>
+                    <Button x:Name="AddFocusButton" Content="Add Focus Session" Width="200" Click="AddFocusButton_Click"/>
                 </StackPanel>
             </GroupBox>
 
             <!-- Food -->
             <GroupBox Header="Food" Margin="0,0,0,12">
                 <StackPanel Margin="10">
-                    <TextBlock Text="Log Food Entry" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                    <TextBlock Text="Add food entry for selected date:" FontWeight="Bold" Margin="0,0,0,6"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Food:" Width="90" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="FoodCombo" Width="300" DisplayMemberPath="Name"/>
+                        <ComboBox x:Name="FoodCombo" Width="220" DisplayMemberPath="Name"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Servings:" Width="90" VerticalAlignment="Center"/>
-                        <TextBox x:Name="FoodServingsBox" Width="90" Margin="0,0,10,0"/>
-                        <TextBlock Text="Grams:" Width="60" VerticalAlignment="Center"/>
-                        <TextBox x:Name="FoodGramsBox" Width="90"/>
-                    </StackPanel>
-
-                    <Button x:Name="AddFoodEntryButton"
-                Content="Add Food Entry"
-                Width="200"
-                Margin="0,0,0,12"
-                Click="AddFoodEntryButton_Click"/>
-
-                    <Separator Margin="0,6,0,10"/>
-
-                    <TextBlock Text="Add New Food to Menu" FontWeight="Bold" Margin="0,0,0,6"/>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="Name:" Width="90" VerticalAlignment="Center"/>
-                        <TextBox x:Name="NewFoodNameBox" Width="300"/>
+                        <TextBox x:Name="FoodServingsBox" Width="120" Margin="0,0,10,0"/>
+                        <TextBlock Text="(optional)" Foreground="Gray" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="kJ/serving:" Width="90" VerticalAlignment="Center"/>
-                        <TextBox x:Name="NewFoodKjPerServingBox" Width="90" Margin="0,0,10,0"/>
-                        <TextBlock Text="Label:" Width="60" VerticalAlignment="Center"/>
-                        <TextBox x:Name="NewFoodServingLabelBox" Width="140"/>
+                        <TextBlock Text="Grams:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="FoodGramsBox" Width="120" Margin="0,0,10,0"/>
+                        <TextBlock Text="(optional)" Foreground="Gray" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="kJ/100g:" Width="90" VerticalAlignment="Center"/>
-                        <TextBox x:Name="NewFoodKjPer100gBox" Width="90"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                        <Button x:Name="AddFoodToMenuButton"
-                    Content="Add Food To Menu"
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Button x:Name="AddFoodEntryButton"
+                    Content="Add Food Entry"
                     Width="200"
                     Margin="0,0,10,0"
-                    Click="AddFoodToMenuButton_Click"/>
+                    Click="AddFoodEntryButton_Click"/>
+
                         <Button x:Name="ViewFoodMenuButton"
                     Content="View / Edit Menu..."
                     Width="200"
                     Click="ViewFoodMenuButton_Click"/>
                     </StackPanel>
+
+                    <Separator Margin="0,10,0,10"/>
+
+                    <TextBlock Text="Add food item to menu:" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Name:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodNameBox" Width="260"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Serving label:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodServingLabelBox" Width="260" ToolTip="e.g. 1 slice, 1 bowl, 1 cup"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="kJ/serving:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodKjPerServingBox" Width="120" Margin="0,0,10,0"/>
+                        <TextBlock Text="Required" Foreground="Gray" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="kJ/100g:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodKjPer100gBox" Width="120" Margin="0,0,10,0"/>
+                        <TextBlock Text="Optional" Foreground="Gray" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Button x:Name="AddFoodToMenuButton"
+                Content="Add to Food Menu"
+                Width="200"
+                Click="AddFoodToMenuButton_Click"/>
                 </StackPanel>
             </GroupBox>
 
@@ -152,31 +190,37 @@
             <GroupBox Header="Sleep" Margin="0,0,0,12">
                 <StackPanel Margin="10">
                     <TextBlock x:Name="PendingSleepText" Foreground="Gray" Margin="0,0,0,8"/>
+
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="StartSleepNowButton"
                     Content="Start Sleep (now)"
                     Width="200"
                     Margin="0,0,10,0"
                     Click="StartSleepNow_Click"/>
+
                         <Button x:Name="EndSleepNowButton"
                     Content="End Sleep (now)"
                     Width="200"
                     Click="EndSleepNow_Click"/>
                     </StackPanel>
+
                     <TextBlock Text="Sleep is credited to the wake-up day."
-                   FontStyle="Italic"
-                   Foreground="Gray"
-                   Margin="0,8,0,0"/>
+                FontStyle="Italic"
+                Foreground="Gray"
+                Margin="0,8,0,0"/>
                 </StackPanel>
+
             </GroupBox>
 
             <!-- Steps (testing-only on desktop) -->
             <GroupBox Header="Steps (Testing)" Margin="0,0,0,12">
+
                 <StackPanel Margin="10">
                     <TextBlock x:Name="StepsDayText" FontWeight="Bold" Margin="0,0,0,8"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Add steps:" Width="90" VerticalAlignment="Center"/>
+
                         <TextBox x:Name="StepsAddBox" Width="120" Margin="0,0,10,0"/>
 
                         <Button x:Name="AddStepsButton"
@@ -193,26 +237,31 @@
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
                         <TextBlock Text="At (optional):" Width="90" VerticalAlignment="Center"/>
+
                         <TextBox x:Name="StepsAtBox" Width="240"
-                     ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss"/>
+                    ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss"/>
                     </StackPanel>
 
                     <TextBlock Text="Steps are stored in 15-minute buckets."
-                   Foreground="Gray"
-                   FontStyle="Italic"
-                   Margin="0,8,0,0"/>
+                Foreground="Gray"
+                FontStyle="Italic"
+                Margin="0,8,0,0"/>
                 </StackPanel>
+
             </GroupBox>
 
             <!-- Data -->
             <GroupBox Header="Data" Margin="0,0,0,12">
+
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+
                         <Button x:Name="BackupEverythingButton"
                     Content="Backup Everything..."
                     Width="200"
                     Margin="0,0,10,0"
                     Click="BackupEverythingButton_Click"/>
+
                         <Button x:Name="RestoreDbButton"
                     Content="Restore (DB snapshot)..."
                     Width="200"
@@ -220,11 +269,13 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+
                         <Button x:Name="ImportArchiveMergeButton"
                     Content="Import Archive (Merge)..."
                     Width="200"
                     Margin="0,0,10,0"
                     Click="ImportArchiveMergeButton_Click"/>
+
                         <Button x:Name="ImportArchiveRangeButton"
                     Content="Import Archive (Replace Range)..."
                     Width="200"
@@ -232,11 +283,11 @@
                     </StackPanel>
 
                     <TextBlock Text="Backup Everything creates a dated folder containing a DB snapshot + JSON archive."
-                   Foreground="Gray"
-                   FontStyle="Italic"/>
+                Foreground="Gray"
+                FontStyle="Italic"/>
                 </StackPanel>
-            </GroupBox>
 
+            </GroupBox>
             <!-- ============================================================
                  SECTION C — Sessions Header
                  ============================================================ -->

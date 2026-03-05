@@ -28,7 +28,6 @@ namespace LifestylesDesktop
 {
     public partial class MainWindow : Window
     {
-        // ============================================================
         // SECTION C — Steps handlers
         // ============================================================
 
@@ -60,6 +59,17 @@ namespace LifestylesDesktop
 
                 await _stepsRepo.AddStepsAsync(localWhen, steps, source: "ManualDesktop");
 
+                // Steps → Item drops (global; separate from tickets)
+                var (rolls, itemsFound) = await _stepItemDrops.ProcessStepsAddedAsync(steps);
+                if (itemsFound.Count > 0)
+                {
+                    MessageBox.Show(
+                        $"Item drop!\n\nRolls: {rolls}\nFound: {string.Join(", ", itemsFound)}",
+                        "Item drop",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+
                 StepsAddBox.Text = "";
                 StepsAtBox.Text = "";
 
@@ -68,6 +78,35 @@ namespace LifestylesDesktop
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Could not add steps");
+            }
+        }
+
+
+        private async void SaveItemDropSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!int.TryParse((StepsPerRollBox.Text ?? "").Trim(), out int stepsPerRoll) || stepsPerRoll <= 0)
+                {
+                    MessageBox.Show("Steps/roll must be a whole number greater than 0.");
+                    return;
+                }
+
+                if (!int.TryParse((OddsOneInBox.Text ?? "").Trim(), out int oneInN) || oneInN <= 0)
+                {
+                    MessageBox.Show("Odds (1 in) must be a whole number greater than 0.");
+                    return;
+                }
+
+                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN);
+
+                await RefreshItemDropsDebugAsync();
+
+                MessageBox.Show("Saved item drop settings.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save item drop settings");
             }
         }
 
@@ -130,8 +169,8 @@ namespace LifestylesDesktop
                     Margin = new Thickness(0, 10, 0, 0),
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right
                 };
-                close.Click += (_, __) => win.Close();
 
+                close.Click += (_, __) => win.Close();
                 root.Children.Add(close);
 
                 win.Content = root;

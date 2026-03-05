@@ -32,7 +32,6 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 
 
-// ============================================================
 // SECTION B — Main Window Class
 // ============================================================
 namespace LifestylesDesktop
@@ -47,6 +46,15 @@ namespace LifestylesDesktop
         private readonly StepsRepository _stepsRepo = new();
         private readonly HabitRepository _habitRepo = new();
         private readonly RewardsLedgerRepository _rewardsRepo = new();
+
+
+        // Steps → Item Drops (global; separate from tickets)
+        private readonly GamificationSettingsRepository _gamiSettingsRepo = new();
+        private readonly StepItemRollStateRepository _rollStateRepo = new();
+        private readonly InventoryRepository _inventoryRepo = new();
+        private readonly StepItemDropsService _stepItemDrops = new();
+
+        private ObservableCollection<InventoryItem> _inventoryItems = new();
 
         private ObservableCollection<FocusSession> _focusSessions = new();
         private ObservableCollection<FoodEntry> _foodEntries = new();
@@ -85,6 +93,8 @@ namespace LifestylesDesktop
             await RefreshFoodMenuAsync();
             await RefreshForSelectedDateAsync();
         }
+
+        // ============================================================
 
         // ============================================================
         // SECTION C — Log Date Helpers
@@ -202,7 +212,6 @@ namespace LifestylesDesktop
             }
         }
 
-        // ============================================================
         // SECTION E — Refresh UI
         // ============================================================
         private async Task RefreshForSelectedDateAsync()
@@ -246,7 +255,7 @@ namespace LifestylesDesktop
             // NEW
             await RefreshStepsAndHabitsAsync();
 
-            // Gamification debug UI
+            // Gamification debug UI (includes step item drops + inventory)
             await RefreshGamificationDebugAsync();
         }
 
@@ -268,27 +277,28 @@ namespace LifestylesDesktop
             if (GameDayNowText != null)
                 GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
 
-            // Show a compact summary of rewards for the *selected* day (since that’s what we’re browsing/editing)
+            // Rewards summary for the selected day (time-travel)
             try
             {
                 var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
 
-                if (RewardsSummaryText == null)
-                    return;
-
-                if (entries.Count == 0)
+                if (RewardsSummaryText != null)
                 {
-                    RewardsSummaryText.Text = "Selected day rewards: (none)";
-                    return;
+                    if (entries.Count == 0)
+                    {
+                        RewardsSummaryText.Text = "Selected day rewards: (none)";
+                    }
+                    else
+                    {
+                        var parts = entries
+                            .GroupBy(e => e.RewardType.ToString())
+                            .OrderBy(g => g.Key)
+                            .Select(g => $"{g.Key} {g.Sum(x => x.Amount)}")
+                            .ToList();
+
+                        RewardsSummaryText.Text = "Selected day rewards: " + string.Join(" | ", parts);
+                    }
                 }
-
-                var parts = entries
-                    .GroupBy(e => e.RewardType.ToString())
-                    .OrderBy(g => g.Key)
-                    .Select(g => $"{g.Key} {g.Sum(x => x.Amount)}")
-                    .ToList();
-
-                RewardsSummaryText.Text = "Selected day rewards: " + string.Join(" | ", parts);
             }
             catch
             {
@@ -296,7 +306,71 @@ namespace LifestylesDesktop
                 if (RewardsSummaryText != null)
                     RewardsSummaryText.Text = "Selected day rewards: (error loading)";
             }
+
+            // Step item drops (global state; separate from tickets)
+            await RefreshItemDropsDebugAsync();
         }
+
+        private async Task RefreshItemDropsDebugAsync()
+        {
+            try
+            {
+                var settings = await _gamiSettingsRepo.GetAsync();
+                var state = await _rollStateRepo.GetAsync();
+                var items = await _inventoryRepo.GetAllAsync();
+
+                int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
+                int oneInN = Math.Max(1, settings.ItemRollOneInN);
+
+                int remainder = state.StepsRemainder;
+                if (remainder < 0) remainder = 0;
+                if (remainder >= stepsPerRoll) remainder = remainder % stepsPerRoll;
+
+                int toNext = stepsPerRoll - remainder;
+
+                // Only overwrite textboxes if the user isn't actively editing them
+                if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
+                    StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString();
+
+                if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
+                    OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
+
+                if (ItemDropsProgressText != null)
+                {
+                    ItemDropsProgressText.Text =
+                        $"Item roll progress: {remainder:#,0}/{stepsPerRoll:#,0} steps (next roll in {toNext:#,0})";
+                }
+
+                if (ItemDropsStatsText != null)
+                {
+                    ItemDropsStatsText.Text =
+                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN}";
+                }
+
+                if (InventoryCountText != null)
+                {
+                    InventoryCountText.Text =
+                        items.Count == 0 ? "Inventory: (empty)" : $"Inventory: {items.Count} item types";
+                }
+
+                _inventoryItems = new ObservableCollection<InventoryItem>(items);
+                if (InventoryGrid != null)
+                    InventoryGrid.ItemsSource = _inventoryItems;
+            }
+            catch
+            {
+                if (ItemDropsProgressText != null)
+                    ItemDropsProgressText.Text = "Item roll progress: (error loading)";
+
+                if (ItemDropsStatsText != null)
+                    ItemDropsStatsText.Text = "";
+
+                if (InventoryCountText != null)
+                    InventoryCountText.Text = "Inventory: (error loading)";
+            }
+        }
+
+        // ============================================================
 
         // ============================================================
         // SECTION F — Food Actions
