@@ -69,7 +69,7 @@ namespace LifestylesDesktop {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/LifestylesDesktop;component/stepsbucketswindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/LifestylesDesktop;V1.0.0.0;component/stepsbucketswindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\StepsBucketsWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

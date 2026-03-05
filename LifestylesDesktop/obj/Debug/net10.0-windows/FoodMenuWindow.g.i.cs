@@ -61,7 +61,7 @@ namespace LifestylesDesktop {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/LifestylesDesktop;component/foodmenuwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/LifestylesDesktop;V1.0.0.0;component/foodmenuwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\FoodMenuWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
