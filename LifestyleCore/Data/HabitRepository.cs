@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using Dapper;
 using LifestyleCore.Models;
@@ -12,6 +13,10 @@ namespace LifestyleCore.Data
 {
     public sealed class HabitRepository
     {
+        private readonly RewardsLedgerRepository _rewards = new();
+
+        public sealed record SetDailyValueResult(bool RewardGranted);
+
         // ============================================================
         // SECTION B — Habits
         // ============================================================
@@ -170,7 +175,14 @@ namespace LifestyleCore.Data
                 });
         }
 
+        // Back-compat: older callers that don't care about rewards can keep using 3 args.
         public async Task SetDailyValueAsync(long habitId, DateOnly date, int value)
+        {
+            await SetDailyValueAsync(habitId, date, value, tryAward: false);
+        }
+
+        // New API used by the desktop debug UI (returns whether a NEW ticket was granted).
+        public async Task<SetDailyValueResult> SetDailyValueAsync(long habitId, DateOnly date, int value, bool tryAward)
         {
             HabitsSchema.EnsureCreated();
 
@@ -179,13 +191,22 @@ namespace LifestyleCore.Data
 
             using var conn = Db.OpenConnection();
 
+            // Determine whether this day was already "done" for this habit (prevents duplicate ticket grants).
+            var priorVal = await conn.ExecuteScalarAsync<int?>(
+                "SELECT Value FROM HabitEntries WHERE HabitId = @HabitId AND Date = @Date LIMIT 1;",
+                new { HabitId = habitId, Date = d });
+
+            bool wasDone = priorVal.HasValue && priorVal.Value > 0;
+
             if (value <= 0)
             {
                 // Treat 0/unchecked as “no entry”
                 await conn.ExecuteAsync(
                     "DELETE FROM HabitEntries WHERE HabitId = @HabitId AND Date = @Date;",
                     new { HabitId = habitId, Date = d });
-                return;
+
+                // Honour-system v1: no refunds on uncheck
+                return new SetDailyValueResult(false);
             }
 
             await conn.ExecuteAsync(@"
@@ -201,6 +222,49 @@ namespace LifestyleCore.Data
                     Value = value,
                     UpdatedAtUtc = now
                 });
+
+            bool rewardGranted = false;
+
+            // Reward: checkbox habits grant +1 ticket the first time they become done for a given date,
+            // but only if we're still within that date's reward window.
+            if (tryAward && !wasDone && value > 0 && IsWithinRewardWindow(date))
+            {
+                var kind = await TryGetHabitKindAsync(conn, habitId);
+                if (kind.HasValue && kind.Value == HabitKind.CheckboxDaily)
+                {
+                    rewardGranted = await _rewards.TryGrantHabitCheckboxTicketAsync(habitId, date);
+                }
+            }
+
+            return new SetDailyValueResult(rewardGranted);
+        }
+
+        private static async Task<HabitKind?> TryGetHabitKindAsync(IDbConnection conn, long habitId)
+        {
+            var kindInt = await conn.ExecuteScalarAsync<int?>(
+                "SELECT Kind FROM Habits WHERE Id = @Id LIMIT 1;",
+                new { Id = habitId });
+
+            if (!kindInt.HasValue)
+                return null;
+
+            return (HabitKind)kindInt.Value;
+        }
+
+        private static bool IsWithinRewardWindow(DateOnly habitDate)
+        {
+            // We only grant tickets for the CURRENT "game day" (03:00 local cutoff),
+            // so you can't farm tickets by editing past days.
+            var nowLocal = DateTimeOffset.Now;
+            var currentGameDay = GetCurrentGameDayLocal(nowLocal);
+            return habitDate == currentGameDay;
+        }
+
+        private static DateOnly GetCurrentGameDayLocal(DateTimeOffset nowLocal)
+        {
+            // 03:00 local cutoff: before 03:00 counts as “yesterday” game day.
+            var today = DateOnly.FromDateTime(nowLocal.DateTime);
+            return (nowLocal.TimeOfDay < new TimeSpan(3, 0, 0)) ? today.AddDays(-1) : today;
         }
     }
 }

@@ -414,6 +414,17 @@ namespace LifestylesDesktop
         // SECTION F — Small helpers (local to this file)
         // ============================================================
 
+        private static int PreviewFocusCoins(int minutes, bool completed)
+        {
+            if (minutes <= 0) return 0;
+
+            // Completed sessions: 1 coin per minute
+            if (completed) return minutes;
+
+            // Incomplete sessions: 0.25x, floored (e.g. 77 -> 19)
+            return (int)Math.Floor(minutes * 0.25);
+        }
+
         private sealed class RewardDisplayRow
         {
             public string AwardedLocal { get; set; } = "";
@@ -425,12 +436,7 @@ namespace LifestylesDesktop
         private static bool TryParseLocalDateTimeFallback(string text, out DateTime localDateTime)
         {
             string input = (text ?? "").Trim();
-
-            string[] formats =
-            {
-        "yyyy-MM-dd HH:mm",
-        "yyyy-MM-dd HH:mm:ss"
-    };
+            string[] formats = { "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm:ss" };
 
             return DateTime.TryParseExact(
                 input,
@@ -466,23 +472,15 @@ namespace LifestylesDesktop
 
             using var conn = Db.OpenConnection();
             await conn.ExecuteAsync(
-                @"UPDATE Habits
-          SET ArchivedAtUtc = @ArchivedAtUtc
-          WHERE Id = @Id;",
-                new
-                {
-                    Id = habitId,
-                    ArchivedAtUtc = archiveUtc.ToString("O")
-                });
+                @"UPDATE Habits SET ArchivedAtUtc = @ArchivedAtUtc WHERE Id = @Id;",
+                new { Id = habitId, ArchivedAtUtc = archiveUtc.ToString("O") });
         }
 
         private async Task ClearHabitArchivedAtUtcAsync(long habitId)
         {
             using var conn = Db.OpenConnection();
             await conn.ExecuteAsync(
-                @"UPDATE Habits
-          SET ArchivedAtUtc = NULL
-          WHERE Id = @Id;",
+                @"UPDATE Habits SET ArchivedAtUtc = NULL WHERE Id = @Id;",
                 new { Id = habitId });
         }
     }
