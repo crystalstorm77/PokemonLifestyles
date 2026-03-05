@@ -1,0 +1,537 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\mainwindow.missinghandlers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:mainwindow.missinghandlers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\habitrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\rewardsledgerrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\rewardtype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\rewardsschema.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\rewardsledgerentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\focussessionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\lifestylecore.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\backupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\sleepsessionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\db.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\dbmigrations.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\stepsbucketswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:stepsbucketswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\stepsrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\stepsbucketswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:stepsbucketswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\lifestylesdesktop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:lifestylesdesktop.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\habitentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\habit.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\habitsschema.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\stepsschema.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\sleepschema.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\foodschema.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\sleepsession.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\foodmenuwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:foodmenuwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\fooditemrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\foodentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\focussessions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylesdesktop\\foodmenuwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{22D7F7B4-69B2-5679-6067-89427948DBF4}|LifestylesDesktop.csproj|solutionrelative:foodmenuwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\data\\foodentryrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C7DDD05-E839-2800-462A-10389E9DBFCF}|..\\LifestyleCore\\LifestyleCore.csproj|a:\\desktop\\crap to sort\\automation projects\\pokemon lifestyles\\lifestylecore\\models\\fooditem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MainWindow.MissingHandlers.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\MainWindow.MissingHandlers.cs",
+              "RelativeDocumentMoniker": "MainWindow.MissingHandlers.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\MainWindow.MissingHandlers.cs",
+              "RelativeToolTip": "MainWindow.MissingHandlers.cs",
+              "ViewState": "AgIAANUBAAAAAAAAAAAAAOgBAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-05T06:10:03.721Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "RewardsLedgerRepository.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\RewardsLedgerRepository.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\RewardsLedgerRepository.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\RewardsLedgerRepository.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\RewardsLedgerRepository.cs",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAiwGkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-05T02:54:31.559Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "MainWindow.xaml.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\MainWindow.xaml.cs",
+              "RelativeToolTip": "MainWindow.xaml.cs",
+              "ViewState": "AgIAAA0GAAAAAAAAAAAgwC4GAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T03:19:22.349Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "HabitRepository.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\HabitRepository.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\HabitRepository.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\HabitRepository.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\HabitRepository.cs",
+              "ViewState": "AgIAALgAAAAAAAAAAAAowM0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T10:10:07.693Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "MainWindow.xaml",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\MainWindow.xaml",
+              "RelativeToolTip": "MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-03-04T03:19:26.099Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "RewardType.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\RewardType.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\RewardType.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\RewardType.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\RewardType.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-05T02:54:45.768Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "RewardsLedgerEntry.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\RewardsLedgerEntry.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\RewardsLedgerEntry.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\RewardsLedgerEntry.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\RewardsLedgerEntry.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAAwBoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-05T02:55:03.453Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "RewardsSchema.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\RewardsSchema.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\RewardsSchema.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\RewardsSchema.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\RewardsSchema.cs",
+              "ViewState": "AgIAAEUAAAAAAAAAAAAQwGUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-05T02:54:09.098Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "FocusSessionRepository.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FocusSessionRepository.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\FocusSessionRepository.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FocusSessionRepository.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\FocusSessionRepository.cs",
+              "ViewState": "AgIAAGgAAAAAAAAAAAAgwIkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T03:32:56.241Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "LifestyleCore.csproj",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\LifestyleCore.csproj",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\LifestyleCore.csproj",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\LifestyleCore.csproj",
+              "RelativeToolTip": "..\\LifestyleCore\\LifestyleCore.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-03-04T03:30:09.867Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "BackupService.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\BackupService.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\BackupService.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\BackupService.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\BackupService.cs",
+              "ViewState": "AgIAAA4EAAAAAAAAAAAkwBwEAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T06:53:03.876Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "SleepSessionRepository.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\SleepSessionRepository.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\SleepSessionRepository.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\SleepSessionRepository.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\SleepSessionRepository.cs",
+              "ViewState": "AgIAAFoAAAAAAAAAAAAQwGYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T05:30:49.038Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "StepsRepository.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\StepsRepository.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\StepsRepository.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\StepsRepository.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\StepsRepository.cs",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAiwIcAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T10:09:32.745Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "DbMigrations.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\DbMigrations.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\DbMigrations.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\DbMigrations.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\DbMigrations.cs",
+              "ViewState": "AgIAABUAAAAAAAAAAAAUwDYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T06:52:46.016Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Db.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\Db.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\Db.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\Db.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\Db.cs",
+              "ViewState": "AgIAABcAAAAAAAAAAAAUwDgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T03:30:44.532Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "StepsBucketsWindow.xaml.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\StepsBucketsWindow.xaml.cs",
+              "RelativeDocumentMoniker": "StepsBucketsWindow.xaml.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\StepsBucketsWindow.xaml.cs",
+              "RelativeToolTip": "StepsBucketsWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T13:27:18.04Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "StepsBucketsWindow.xaml",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\StepsBucketsWindow.xaml",
+              "RelativeDocumentMoniker": "StepsBucketsWindow.xaml",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\StepsBucketsWindow.xaml",
+              "RelativeToolTip": "StepsBucketsWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-03-04T13:26:53.528Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "LifestylesDesktop.csproj",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\LifestylesDesktop.csproj",
+              "RelativeDocumentMoniker": "LifestylesDesktop.csproj",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\LifestylesDesktop.csproj",
+              "RelativeToolTip": "LifestylesDesktop.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-03-04T07:43:01.282Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "Habit.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\Habit.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\Habit.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\Habit.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\Habit.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAQwBoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T10:10:32.692Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "HabitEntry.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\HabitEntry.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\HabitEntry.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\HabitEntry.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\HabitEntry.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T10:10:48.545Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "HabitsSchema.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\HabitsSchema.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\HabitsSchema.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\HabitsSchema.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\HabitsSchema.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAiwDwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T10:09:53.281Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "StepsSchema.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\StepsSchema.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\StepsSchema.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\StepsSchema.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\StepsSchema.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAiwEMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T10:09:14.126Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "FoodSchema.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FoodSchema.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\FoodSchema.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FoodSchema.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\FoodSchema.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAiwEIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T04:15:10.84Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "SleepSchema.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\SleepSchema.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\SleepSchema.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\SleepSchema.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\SleepSchema.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAAiwDAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T05:30:31.255Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "SleepSession.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\SleepSession.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\SleepSession.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\SleepSession.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\SleepSession.cs",
+              "ViewState": "AgIAABcAAAAAAAAAAADwvycAAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T05:30:15.56Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\App.xaml.cs",
+              "RelativeDocumentMoniker": "App.xaml.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\App.xaml.cs",
+              "RelativeToolTip": "App.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T03:33:17.201Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "FoodMenuWindow.xaml.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\FoodMenuWindow.xaml.cs",
+              "RelativeDocumentMoniker": "FoodMenuWindow.xaml.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\FoodMenuWindow.xaml.cs",
+              "RelativeToolTip": "FoodMenuWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T04:41:40.829Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "FoodItemRepository.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FoodItemRepository.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\FoodItemRepository.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FoodItemRepository.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\FoodItemRepository.cs",
+              "ViewState": "AgIAAJYAAAAAAAAAAAAYwL0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T04:15:22.267Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "FoodEntry.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\FoodEntry.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\FoodEntry.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\FoodEntry.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\FoodEntry.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAiwDQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T04:14:53.17Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "FocusSessions.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\FocusSessions.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\FocusSessions.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\FocusSessions.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\FocusSessions.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAiwCcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T03:32:22.162Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "FoodMenuWindow.xaml",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\FoodMenuWindow.xaml",
+              "RelativeDocumentMoniker": "FoodMenuWindow.xaml",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestylesDesktop\\FoodMenuWindow.xaml",
+              "RelativeToolTip": "FoodMenuWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-03-04T04:36:34.626Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "FoodEntryRepository.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FoodEntryRepository.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Data\\FoodEntryRepository.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Data\\FoodEntryRepository.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Data\\FoodEntryRepository.cs",
+              "ViewState": "AgIAAGoAAAAAAAAAAAAcwJIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T04:15:29.936Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "FoodItem.cs",
+              "DocumentMoniker": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\FoodItem.cs",
+              "RelativeDocumentMoniker": "..\\LifestyleCore\\Models\\FoodItem.cs",
+              "ToolTip": "A:\\Desktop\\Crap to Sort\\Automation Projects\\Pokemon Lifestyles\\LifestyleCore\\Models\\FoodItem.cs",
+              "RelativeToolTip": "..\\LifestyleCore\\Models\\FoodItem.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T04:14:41.912Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

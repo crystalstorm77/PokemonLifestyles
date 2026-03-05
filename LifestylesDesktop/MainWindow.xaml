@@ -1,0 +1,563 @@
+﻿<!-- ============================================================
+     SECTION A — Window + Layout
+     ============================================================ -->
+<Window x:Class="LifestylesDesktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lifestyles Tracker"
+        Height="850"
+        Width="520"
+        MinHeight="700"
+        MinWidth="520">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16">
+
+            <!-- ============================================================
+     SECTION B — Input Panel
+     ============================================================ -->
+            <TextBlock Text="Lifestyles Tracker" FontWeight="Bold" FontSize="18" Margin="0,0,0,6"/>
+            <TextBlock x:Name="TimeZoneText" FontSize="12" Foreground="Gray" Margin="0,0,0,12"/>
+
+            <!-- Log Date selector -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="Log date:" Width="70" VerticalAlignment="Center"/>
+
+                <Button x:Name="LogTodayButton"
+            Content="Today"
+            Width="60"
+            Click="LogTodayButton_Click"/>
+
+                <Button x:Name="LogYesterdayButton"
+            Content="Yesterday"
+            Width="80"
+            Margin="6,0,0,0"
+            Click="LogYesterdayButton_Click"/>
+
+                <DatePicker x:Name="LogDatePicker"
+                Width="140"
+                Margin="12,0,0,0"
+                SelectedDateChanged="LogDatePicker_SelectedDateChanged"/>
+
+                <TextBlock x:Name="LogDateDisplay" Margin="12,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Gamification (Debug) -->
+            <GroupBox Header="Gamification (Debug)" Margin="0,0,0,12">
+                <StackPanel Margin="10">
+                    <TextBlock x:Name="NowLocalText" Foreground="Gray"/>
+                    <TextBlock x:Name="GameDayNowText" Foreground="Gray" Margin="0,2,0,0"/>
+                    <TextBlock x:Name="RewardsSummaryText" Margin="0,6,0,0"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <Button Content="View rewards..."
+                    Width="140"
+                    Click="ViewRewardsForSelectedDay_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Focus Session -->
+            <GroupBox Header="Focus Session" Margin="0,0,0,12">
+                <StackPanel Margin="10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Focus Type:" Width="90" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="FocusTypeCombo"
+          Width="200"
+          SelectedIndex="0"
+          IsEditable="True"
+          IsTextSearchEnabled="True"
+          StaysOpenOnEdit="True">
+                            <ComboBoxItem Content="Draw"/>
+                            <ComboBoxItem Content="Music"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Minutes:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="MinutesBox" Width="200"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Completed:" Width="90" VerticalAlignment="Center"/>
+                        <CheckBox x:Name="CompletedCheck" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Button x:Name="AddFocusButton"
+                Content="Add Focus Session"
+                Width="200"
+                Click="AddFocusButton_Click"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Food -->
+            <GroupBox Header="Food" Margin="0,0,0,12">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Log Food Entry" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Food:" Width="90" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="FoodCombo" Width="300" DisplayMemberPath="Name"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Servings:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="FoodServingsBox" Width="90" Margin="0,0,10,0"/>
+                        <TextBlock Text="Grams:" Width="60" VerticalAlignment="Center"/>
+                        <TextBox x:Name="FoodGramsBox" Width="90"/>
+                    </StackPanel>
+
+                    <Button x:Name="AddFoodEntryButton"
+                Content="Add Food Entry"
+                Width="200"
+                Margin="0,0,0,12"
+                Click="AddFoodEntryButton_Click"/>
+
+                    <Separator Margin="0,6,0,10"/>
+
+                    <TextBlock Text="Add New Food to Menu" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Name:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodNameBox" Width="300"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="kJ/serving:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodKjPerServingBox" Width="90" Margin="0,0,10,0"/>
+                        <TextBlock Text="Label:" Width="60" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodServingLabelBox" Width="140"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="kJ/100g:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NewFoodKjPer100gBox" Width="90"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                        <Button x:Name="AddFoodToMenuButton"
+                    Content="Add Food To Menu"
+                    Width="200"
+                    Margin="0,0,10,0"
+                    Click="AddFoodToMenuButton_Click"/>
+                        <Button x:Name="ViewFoodMenuButton"
+                    Content="View / Edit Menu..."
+                    Width="200"
+                    Click="ViewFoodMenuButton_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Sleep -->
+            <GroupBox Header="Sleep" Margin="0,0,0,12">
+                <StackPanel Margin="10">
+                    <TextBlock x:Name="PendingSleepText" Foreground="Gray" Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="StartSleepNowButton"
+                    Content="Start Sleep (now)"
+                    Width="200"
+                    Margin="0,0,10,0"
+                    Click="StartSleepNow_Click"/>
+                        <Button x:Name="EndSleepNowButton"
+                    Content="End Sleep (now)"
+                    Width="200"
+                    Click="EndSleepNow_Click"/>
+                    </StackPanel>
+                    <TextBlock Text="Sleep is credited to the wake-up day."
+                   FontStyle="Italic"
+                   Foreground="Gray"
+                   Margin="0,8,0,0"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Steps (testing-only on desktop) -->
+            <GroupBox Header="Steps (Testing)" Margin="0,0,0,12">
+                <StackPanel Margin="10">
+                    <TextBlock x:Name="StepsDayText" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Add steps:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="StepsAddBox" Width="120" Margin="0,0,10,0"/>
+
+                        <Button x:Name="AddStepsButton"
+                    Content="Add Steps"
+                    Width="110"
+                    Click="AddStepsButton_Click"/>
+
+                        <Button x:Name="ViewStepsBucketsButton"
+                    Content="View buckets..."
+                    Width="120"
+                    Margin="10,0,0,0"
+                    Click="ViewStepsBucketsButton_Click"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                        <TextBlock Text="At (optional):" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="StepsAtBox" Width="240"
+                     ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Steps are stored in 15-minute buckets."
+                   Foreground="Gray"
+                   FontStyle="Italic"
+                   Margin="0,8,0,0"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Data -->
+            <GroupBox Header="Data" Margin="0,0,0,12">
+                <StackPanel Margin="10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="BackupEverythingButton"
+                    Content="Backup Everything..."
+                    Width="200"
+                    Margin="0,0,10,0"
+                    Click="BackupEverythingButton_Click"/>
+                        <Button x:Name="RestoreDbButton"
+                    Content="Restore (DB snapshot)..."
+                    Width="200"
+                    Click="RestoreDbButton_Click"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="ImportArchiveMergeButton"
+                    Content="Import Archive (Merge)..."
+                    Width="200"
+                    Margin="0,0,10,0"
+                    Click="ImportArchiveMergeButton_Click"/>
+                        <Button x:Name="ImportArchiveRangeButton"
+                    Content="Import Archive (Replace Range)..."
+                    Width="200"
+                    Click="ImportArchiveRangeButton_Click"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Backup Everything creates a dated folder containing a DB snapshot + JSON archive."
+                   Foreground="Gray"
+                   FontStyle="Italic"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- ============================================================
+                 SECTION C — Sessions Header
+                 ============================================================ -->
+            <TextBlock x:Name="SessionsHeaderText"
+                       Text="Sessions"
+                       FontWeight="Bold"
+                       Margin="0,0,0,8"/>
+
+            <!-- ============================================================
+SECTION D — Sessions List
+============================================================ -->
+            <TabControl x:Name="SessionsTabControl"
+SelectionChanged="SessionsTabControl_SelectionChanged"
+Margin="0,0,0,0"
+Height="520">
+
+                <TabItem Header="Focus Sessions">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <DataGrid x:Name="FocusSessionsGrid"
+          Grid.Row="0"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          SelectionMode="Single"
+          SelectionUnit="FullRow">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Logged"
+                            Binding="{Binding LoggedAtLocalEdit, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridTemplateColumn Header="Type">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding FocusType}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <ComboBox IsEditable="True"
+                      IsTextSearchEnabled="True"
+                      StaysOpenOnEdit="True"
+                      Text="{Binding FocusType, UpdateSourceTrigger=PropertyChanged}">
+                                                <ComboBoxItem Content="Draw"/>
+                                                <ComboBoxItem Content="Music"/>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Minutes"
+                            Binding="{Binding Minutes, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <DataGridCheckBoxColumn Header="Completed"
+                                Binding="{Binding Completed, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                            <Button Content="Save changes" Width="120" Margin="0,0,10,0" Click="SaveFocusSessionsChanges_Click"/>
+                            <Button Content="Delete selected" Width="120" Click="DeleteSelectedFocusSession_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Food Entries">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock x:Name="FoodTotalText" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                        <DataGrid x:Name="FoodEntriesGrid"
+          Grid.Row="1"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          SelectionMode="Single"
+          SelectionUnit="FullRow">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Logged"
+                            Binding="{Binding LoggedAtLocalEdit, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DataGridTextColumn Header="Food"
+                            Binding="{Binding FoodName, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DataGridTextColumn Header="Servings"
+                            Binding="{Binding Servings, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DataGridTextColumn Header="Grams"
+                            Binding="{Binding Grams, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DataGridTextColumn Header="Kilojoules"
+                            Binding="{Binding KjComputed, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                            <Button Content="Save changes" Width="120" Margin="0,0,10,0" Click="SaveFoodEntriesChanges_Click"/>
+                            <Button Content="Delete selected" Width="120" Click="DeleteSelectedFoodEntry_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Sleep Sessions">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock x:Name="SleepTotalText" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                        <DataGrid x:Name="SleepSessionsGrid"
+          Grid.Row="1"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          SelectionMode="Single"
+          SelectionUnit="FullRow">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Start"
+                            Binding="{Binding StartLocalEdit, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DataGridTextColumn Header="End"
+                            Binding="{Binding EndLocalEdit, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DataGridTextColumn Header="Hours"
+                            Binding="{Binding DurationHours, StringFormat=F2}"
+                            IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Wake day"
+                            Binding="{Binding WakeLogDateEdit}"
+                            IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                            <Button Content="Save changes" Width="120" Margin="0,0,10,0" Click="SaveSleepSessionsChanges_Click"/>
+                            <Button Content="Delete selected" Width="120" Click="DeleteSelectedSleepSession_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <!-- Habits -->
+                <TabItem Header="Habits">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Create habit -->
+                        <GroupBox Header="Create Habit" Grid.Row="0" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Title:" Width="70" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="HabitTitleBox" Width="300"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Type:" Width="70" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="HabitKindCombo" Width="160" SelectedIndex="0" Margin="0,0,10,0">
+                                        <ComboBoxItem Content="Checkbox (daily)"/>
+                                        <ComboBoxItem Content="Numeric (daily)"/>
+                                    </ComboBox>
+
+                                    <TextBlock Text="Target/wk:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="HabitTargetBox" Width="80"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="AddHabitButton"
+                    Content="Add Habit"
+                    Width="140"
+                    Click="AddHabitButton_Click"/>
+                                </StackPanel>
+
+                                <TextBlock Text="Checkbox habits count days completed. Numeric habits sum totals across the week."
+                   Foreground="Gray" FontStyle="Italic" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Log numeric progress (additive) -->
+                        <GroupBox Header="Log Progress (Numeric habits)" Grid.Row="1" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Habit:" Width="70" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="HabitLogCombo" Width="240" DisplayMemberPath="Title" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Add:" Width="40" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="HabitAddAmountBox" Width="70" Margin="0,0,10,0"/>
+                                    <Button x:Name="AddHabitAmountButton" Content="Add" Width="70" Click="AddHabitAmountButton_Click"/>
+                                </StackPanel>
+
+                                <TextBlock Text="This adds to the selected day’s total (safer than overwriting). You can still manually edit past days in the table below if needed."
+                   Foreground="Gray"
+                   FontStyle="Italic"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <TextBlock x:Name="HabitsWeekText"
+           Grid.Row="2"
+           FontWeight="Bold"
+           Margin="0,0,0,8"/>
+
+                        <DataGrid x:Name="HabitsGrid"
+          Grid.Row="3"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          SelectionMode="Single"
+          SelectionUnit="FullRow">
+
+                            <!-- Right-click should select the row you clicked -->
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <EventSetter Event="PreviewMouseRightButtonDown"
+                         Handler="HabitsGridRow_PreviewMouseRightButtonDown"/>
+                                </Style>
+                            </DataGrid.RowStyle>
+
+                            <!-- Context menu operates on selection -->
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Archive"
+                      Click="ArchiveSelectedHabit_Click"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Habit"
+                            IsReadOnly="True"
+                            Binding="{Binding Title}"/>
+
+                                <DataGridTextColumn Header="Type"
+                            IsReadOnly="True"
+                            Binding="{Binding KindLabel}"/>
+
+                                <DataGridTextColumn Header="Target/wk"
+                            IsReadOnly="True"
+                            Binding="{Binding TargetPerWeek}"/>
+
+                                <!-- Archived today (CLICK only; avoids refresh storms) -->
+                                <DataGridTemplateColumn Header="Archived today">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding ArchivedOnSelectedDate, Mode=OneWay}"
+                              Click="HabitArchivedToday_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Checkbox-only -->
+                                <DataGridTemplateColumn Header="Done today">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding TodayChecked, UpdateSourceTrigger=PropertyChanged}">
+                                                <CheckBox.Style>
+                                                    <Style TargetType="CheckBox">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsCheckbox}" Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </CheckBox.Style>
+                                            </CheckBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Numeric-only -->
+                                <DataGridTemplateColumn Header="Today total">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding TodayValue, UpdateSourceTrigger=PropertyChanged}" Width="90">
+                                                <TextBox.Style>
+                                                    <Style TargetType="TextBox">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsNumeric}" Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBox.Style>
+                                            </TextBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="This week"
+                            IsReadOnly="True"
+                            Binding="{Binding WeekTotal}"/>
+
+                                <DataGridCheckBoxColumn Header="Met?"
+                                IsReadOnly="True"
+                                Binding="{Binding WeekMet}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Bottom-right actions -->
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                            <Button Content="Save changes"
+            Width="120"
+            Margin="0,0,10,0"
+            Click="SaveHabitsChanges_Click"/>
+                            <Button Content="Archive selected"
+            Width="120"
+            Click="ArchiveSelectedHabit_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+            </TabControl>
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../LifestyleCore/LifestyleCore.csproj" />
+  <Project Path="LifestylesDesktop.csproj" />
+</Solution>

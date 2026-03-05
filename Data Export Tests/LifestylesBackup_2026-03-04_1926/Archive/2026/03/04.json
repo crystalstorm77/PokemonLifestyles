@@ -1,0 +1,264 @@
+{
+  "Date": "2026-03-04",
+  "FocusSessions": [
+    {
+      "ExternalId": "44353e05e013bdaa285d1bbbac94bb7a",
+      "LoggedAtUtc": "2026-03-04T08:24:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FocusType": "Draw",
+      "Minutes": 111,
+      "Completed": true,
+      "CompletedInt": 0
+    },
+    {
+      "ExternalId": "3d9d44858148991720cee099e415c51b",
+      "LoggedAtUtc": "2026-03-04T08:24:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FocusType": "Music",
+      "Minutes": 22,
+      "Completed": false,
+      "CompletedInt": 0
+    }
+  ],
+  "FoodEntries": [
+    {
+      "ExternalId": "a274097fe615b28617aa5ac20e22c3c7",
+      "LoggedAtUtc": "2026-03-04T04:23:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "ac8d4445ccabeda9d3d4922390841474",
+      "FoodName": "Sumin Noodle",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 1460,
+      "KjPer100gSnapshot": null,
+      "Servings": 1,
+      "Grams": null,
+      "KjComputed": 1460
+    },
+    {
+      "ExternalId": "ceb27feb0c3398280c7915980fb1b597",
+      "LoggedAtUtc": "2026-03-04T04:23:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "9b7f4515e6b135708b8c42eda61b44b6",
+      "FoodName": "Peanut Butter Sandwich",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 1286,
+      "KjPer100gSnapshot": null,
+      "Servings": 3,
+      "Grams": null,
+      "KjComputed": 3858
+    },
+    {
+      "ExternalId": "2469da0febb27f1947c3dcc8d82ddc9e",
+      "LoggedAtUtc": "2026-03-04T04:24:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "1be0d1c434e489486b6f1e72030942ed",
+      "FoodName": "test",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 1000,
+      "KjPer100gSnapshot": 500,
+      "Servings": null,
+      "Grams": 50,
+      "KjComputed": 250
+    },
+    {
+      "ExternalId": "8c15fe01051f869a4f24c3cadc6941d4",
+      "LoggedAtUtc": "2026-03-04T04:24:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "1be0d1c434e489486b6f1e72030942ed",
+      "FoodName": "test",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 1000,
+      "KjPer100gSnapshot": 500,
+      "Servings": 2,
+      "Grams": null,
+      "KjComputed": 2000
+    },
+    {
+      "ExternalId": "2cfdb4596ed289dd32fe72aa12737ef5",
+      "LoggedAtUtc": "2026-03-04T04:24:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "1be0d1c434e489486b6f1e72030942ed",
+      "FoodName": "test",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 1000,
+      "KjPer100gSnapshot": 500,
+      "Servings": null,
+      "Grams": 30,
+      "KjComputed": 150
+    },
+    {
+      "ExternalId": "3a3b1f34ee48e733b4db7afccc323b3e",
+      "LoggedAtUtc": "2026-03-04T04:42:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "56b2c0dc9ed34aab9bb00f6816bfac85",
+      "FoodName": "newitemlol",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 100,
+      "KjPer100gSnapshot": 1000,
+      "Servings": 2,
+      "Grams": null,
+      "KjComputed": 200
+    },
+    {
+      "ExternalId": "ea648cc425d4df81d181ab675862b2e3",
+      "LoggedAtUtc": "2026-03-04T04:42:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "56b2c0dc9ed34aab9bb00f6816bfac85",
+      "FoodName": "newitemlol",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 100,
+      "KjPer100gSnapshot": 1000,
+      "Servings": null,
+      "Grams": 30,
+      "KjComputed": 300
+    },
+    {
+      "ExternalId": "afff8b90feea1cc0ac73de4eb4d326e4",
+      "LoggedAtUtc": "2026-03-04T04:44:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "9b7f4515e6b135708b8c42eda61b44b6",
+      "FoodName": "Peanut Butter Sandwich",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 1285,
+      "KjPer100gSnapshot": null,
+      "Servings": 1,
+      "Grams": null,
+      "KjComputed": 1285
+    },
+    {
+      "ExternalId": "1c76917f52cf48549c340ceaf69f56be",
+      "LoggedAtUtc": "2026-03-04T04:44:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "9b7f4515e6b135708b8c42eda61b44b6",
+      "FoodName": "Peanut Butter Sandwich",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 1286,
+      "KjPer100gSnapshot": null,
+      "Servings": 1,
+      "Grams": null,
+      "KjComputed": 1286
+    },
+    {
+      "ExternalId": "9f2d6b8235c3f468ded1aefac99fa2c9",
+      "LoggedAtUtc": "2026-03-04T05:19:00.0000000\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "d86ab5f3cd0719a185219684506b8525",
+      "FoodName": "321",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 123,
+      "KjPer100gSnapshot": 12,
+      "Servings": 5,
+      "Grams": null,
+      "KjComputed": 615
+    },
+    {
+      "ExternalId": "9f318f48fc7d73bff9386e51e64927c0",
+      "LoggedAtUtc": "2026-03-04T07:18:20.2383059\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "832af983143f6ac8a4f080708cd1f90b",
+      "FoodName": "test apple",
+      "ServingLabel": "1 apple",
+      "KjPerServingSnapshot": 100,
+      "KjPer100gSnapshot": 50,
+      "Servings": null,
+      "Grams": 150,
+      "KjComputed": 75
+    },
+    {
+      "ExternalId": "e0ded45f3249c862aba8d16c22b45bac",
+      "LoggedAtUtc": "2026-03-04T07:53:51.9408864\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "ece6dcc2d924f63fdf5e9d5cf74a54c8",
+      "FoodName": "zztestfood123",
+      "ServingLabel": "1 serve",
+      "KjPerServingSnapshot": 123,
+      "KjPer100gSnapshot": null,
+      "Servings": 2,
+      "Grams": null,
+      "KjComputed": 246
+    },
+    {
+      "ExternalId": "4d4e00ae8ce5bcb19dd5993a24d7012f",
+      "LoggedAtUtc": "2026-03-04T07:56:10.6949312\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "ece6dcc2d924f63fdf5e9d5cf74a54c8",
+      "FoodName": "zztestfood123",
+      "ServingLabel": "1 serve",
+      "KjPerServingSnapshot": 123,
+      "KjPer100gSnapshot": null,
+      "Servings": 99,
+      "Grams": null,
+      "KjComputed": 12177
+    },
+    {
+      "ExternalId": "348c2c8ecb36bfaec36528f78cd3f565",
+      "LoggedAtUtc": "2026-03-04T07:58:04.6243914\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "832af983143f6ac8a4f080708cd1f90b",
+      "FoodName": "test apple",
+      "ServingLabel": "1 apple",
+      "KjPerServingSnapshot": 100,
+      "KjPer100gSnapshot": 50,
+      "Servings": 33,
+      "Grams": null,
+      "KjComputed": 3300
+    },
+    {
+      "ExternalId": "7038e715da07fbe8f2ee7f5f46c4bc0e",
+      "LoggedAtUtc": "2026-03-04T08:25:16.8434053\u002B00:00",
+      "LogDate": "2026-03-04",
+      "FoodItemExternalId": "d84f7eab736427182b3dea6656e56586",
+      "FoodName": "test food a",
+      "ServingLabel": "1 serving",
+      "KjPerServingSnapshot": 100,
+      "KjPer100gSnapshot": null,
+      "Servings": 1,
+      "Grams": null,
+      "KjComputed": 100
+    }
+  ],
+  "SleepSessions": [
+    {
+      "ExternalId": "05a3d3b66eace1bfe5139a39adf41982",
+      "StartUtc": "2026-03-04T06:33:50.7921166\u002B00:00",
+      "EndUtc": "2026-03-04T06:33:53.6143094\u002B00:00",
+      "WakeLogDate": "2026-03-04",
+      "DurationMinutes": 0
+    },
+    {
+      "ExternalId": "156733f65146740681d0c6b7fe518f7c",
+      "StartUtc": "2026-03-04T06:33:59.0011568\u002B00:00",
+      "EndUtc": "2026-03-04T06:33:59.9911952\u002B00:00",
+      "WakeLogDate": "2026-03-04",
+      "DurationMinutes": 0
+    },
+    {
+      "ExternalId": "391845aa8415377b0084f49e93938286",
+      "StartUtc": "2026-03-04T07:18:24.0000000\u002B00:00",
+      "EndUtc": "2026-03-04T07:18:31.0000000\u002B00:00",
+      "WakeLogDate": "2026-03-04",
+      "DurationMinutes": 0
+    },
+    {
+      "ExternalId": "cf7a6fd133c9c84b341585e534ffe470",
+      "StartUtc": "2026-03-04T07:31:00.0000000\u002B00:00",
+      "EndUtc": "2026-03-04T07:54:00.0000000\u002B00:00",
+      "WakeLogDate": "2026-03-04",
+      "DurationMinutes": 23
+    },
+    {
+      "ExternalId": "ffecb7d4acae9371af4c50e2e41139f9",
+      "StartUtc": "2026-03-04T07:54:22.0000000\u002B00:00",
+      "EndUtc": "2026-03-04T07:54:33.0000000\u002B00:00",
+      "WakeLogDate": "2026-03-04",
+      "DurationMinutes": 0
+    },
+    {
+      "ExternalId": "0db2e2405c94e48bb910962458a535be",
+      "StartUtc": "2026-03-04T08:25:19.0000000\u002B00:00",
+      "EndUtc": "2026-03-04T09:25:26.0000000\u002B00:00",
+      "WakeLogDate": "2026-03-04",
+      "DurationMinutes": 60
+    }
+  ]
+}

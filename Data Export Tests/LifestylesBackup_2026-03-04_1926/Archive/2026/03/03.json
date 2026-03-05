@@ -1,0 +1,24 @@
+{
+  "Date": "2026-03-03",
+  "FocusSessions": [
+    {
+      "ExternalId": "eab5035fd00022c188f19264d036857d",
+      "LoggedAtUtc": "2026-03-04T07:28:43.5200885\u002B00:00",
+      "LogDate": "2026-03-03",
+      "FocusType": "Draw",
+      "Minutes": 3,
+      "Completed": true,
+      "CompletedInt": 0
+    }
+  ],
+  "FoodEntries": [],
+  "SleepSessions": [
+    {
+      "ExternalId": "d709ecf4b8d346e7caefa9d0d6b1d878",
+      "StartUtc": "2026-03-03T02:14:00.0000000\u002B00:00",
+      "EndUtc": "2026-03-03T05:14:00.0000000\u002B00:00",
+      "WakeLogDate": "2026-03-03",
+      "DurationMinutes": 180
+    }
+  ]
+}
