@@ -405,7 +405,7 @@ Height="520">
                                     <TextBlock Text="Type:" Width="70" VerticalAlignment="Center"/>
                                     <ComboBox x:Name="HabitKindCombo" Width="160" SelectedIndex="0" Margin="0,0,10,0">
                                         <ComboBoxItem Content="Checkbox (daily)"/>
-                                        <ComboBoxItem Content="Numeric (daily)"/>
+                                        <ComboBoxItem Content="Counter (daily)"/>
                                     </ComboBox>
 
                                     <TextBlock Text="Target/wk:" Width="80" VerticalAlignment="Center"/>
@@ -419,13 +419,13 @@ Height="520">
                     Click="AddHabitButton_Click"/>
                                 </StackPanel>
 
-                                <TextBlock Text="Checkbox habits count days completed. Numeric habits sum totals across the week."
+                                <TextBlock Text="Checkbox habits count days completed. Counter habits sum totals across the week."
                    Foreground="Gray" FontStyle="Italic" Margin="0,8,0,0"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <!-- Log numeric progress (additive) -->
-                        <GroupBox Header="Log Progress (Numeric habits)" Grid.Row="1" Margin="0,0,0,10">
+                        <!-- Log counter progress (additive) -->
+                        <GroupBox Header="Log Progress (Counter habits)" Grid.Row="1" Margin="0,0,0,10">
                             <StackPanel Margin="10">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="Habit:" Width="70" VerticalAlignment="Center"/>
@@ -493,42 +493,66 @@ Height="520">
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <!-- Checkbox-only -->
-                                <DataGridTemplateColumn Header="Done today">
+                                <!-- Checkbox-only / Counter display -->
+                                <DataGridTemplateColumn Header="Done / Show">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <CheckBox IsChecked="{Binding TodayChecked, UpdateSourceTrigger=PropertyChanged}">
-                                                <CheckBox.Style>
-                                                    <Style TargetType="CheckBox">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsCheckbox}" Value="False">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </CheckBox.Style>
-                                            </CheckBox>
+                                            <Grid>
+                                                <!-- Checkbox habits: editable Done checkbox -->
+                                                <CheckBox IsChecked="{Binding TodayChecked, UpdateSourceTrigger=PropertyChanged}"
+                                                          VerticalAlignment="Center">
+                                                    <CheckBox.Style>
+                                                        <Style TargetType="CheckBox">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsCheckbox}" Value="False">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </CheckBox.Style>
+                                                </CheckBox>
+
+                                                <!-- Counter habits: show label so the column isn't blank -->
+                                                <TextBlock Text="Show"
+                                                           VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsCounter}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <!-- Numeric-only -->
+                                <!-- Counter-only -->
                                 <DataGridTemplateColumn Header="Today total">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding TodayValue, UpdateSourceTrigger=PropertyChanged}" Width="90">
-                                                <TextBox.Style>
-                                                    <Style TargetType="TextBox">
+                                            <StackPanel Orientation="Horizontal">
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsNumeric}" Value="False">
+                                                            <DataTrigger Binding="{Binding IsCounter}" Value="False">
                                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </TextBox.Style>
-                                            </TextBox>
+                                                </StackPanel.Style>
+
+                                                <Button Content="-" Width="22" Margin="0,0,4,0" Click="CounterMinus_Click"/>
+                                                <TextBox Text="{Binding TodayValue, UpdateSourceTrigger=PropertyChanged}" Width="60"
+                                                         HorizontalContentAlignment="Center"/>
+                                                <Button Content="+" Width="22" Margin="4,0,0,0" Click="CounterPlus_Click"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

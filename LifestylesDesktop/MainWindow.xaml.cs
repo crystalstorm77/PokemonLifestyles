@@ -1198,44 +1198,6 @@ namespace LifestylesDesktop
             return date.AddDays(-diff);
         }
 
-        // ------------------------------------------------------------
-        // Rewards display helpers (best-effort source linking)
-        // ------------------------------------------------------------
-        private static int PreviewFocusCoins(int minutes, bool completed)
-        {
-            if (minutes <= 0) return 0;
-
-            if (completed)
-                return minutes;
-
-            // Incomplete focus sessions grant a reduced rate (currently 0.25x, floored)
-            return (int)Math.Floor(minutes * 0.25);
-        }
-
-        // ------------------------------------------------------------
-        // Rewards eligibility window (03:00 cutoff)
-        //
-        // A log date D is eligible for rewards until (D + 1 day) at 03:00 local time.
-        // This intentionally allows BOTH:
-        //  - yesterday (until 03:00 today)
-        //  - today (until 03:00 tomorrow)
-        // during the midnight→03:00 overlap.
-        // ------------------------------------------------------------
-        private static bool IsRewardsWindowOpenForDate(DateOnly logDate, DateTimeOffset nowLocal)
-        {
-            var todayLocal = DateOnly.FromDateTime(nowLocal.DateTime);
-
-            // Never award rewards for future dates.
-            if (logDate > todayLocal)
-                return false;
-
-            var closeDate = logDate.AddDays(1);
-            var closeLocalWall = new DateTime(closeDate.Year, closeDate.Month, closeDate.Day, 3, 0, 0);
-
-            // Close exactly at 03:00; before that is still eligible.
-            return nowLocal.LocalDateTime < closeLocalWall;
-        }
-
         // ============================================================
         // Habit archive timeline support (CreatedAtUtc + ArchivedAtUtc)
         // ============================================================
@@ -1385,7 +1347,7 @@ namespace LifestylesDesktop
                     weekTotals.TryGetValue(h.Id, out int weekTotal);
 
                     bool isCheckbox = h.Kind == HabitKind.CheckboxDaily;
-                    bool isNumeric = h.Kind == HabitKind.NumericDaily;
+                    bool isCounter = h.Kind == HabitKind.NumericDaily;
 
                     DateOnly? archivedLocalDate = null;
                     bool archivedToday = false;
@@ -1401,10 +1363,10 @@ namespace LifestylesDesktop
                         HabitId = h.Id,
                         Title = h.Title,
                         Kind = h.Kind,
-                        KindLabel = isCheckbox ? "Checkbox" : "Numeric",
+                        KindLabel = isCheckbox ? "Checkbox" : "Counter",
                         TargetPerWeek = h.TargetPerWeek,
                         TodayChecked = isCheckbox && todayVal > 0,
-                        TodayValue = isNumeric ? todayVal : (todayVal > 0 ? 1 : 0),
+                        TodayValue = isCounter ? todayVal : (todayVal > 0 ? 1 : 0),
                         WeekTotal = weekTotal,
                         WeekMet = weekTotal >= h.TargetPerWeek,
 
@@ -1417,14 +1379,14 @@ namespace LifestylesDesktop
 
                 HabitsGrid.ItemsSource = _habitRows;
 
-                var numericHabits = new List<HabitDbRow>();
+                var counterHabits = new List<HabitDbRow>();
                 foreach (var h in habitsVisibleOnThisDate)
                     if (h.Kind == HabitKind.NumericDaily)
-                        numericHabits.Add(h);
+                        counterHabits.Add(h);
 
-                HabitLogCombo.ItemsSource = numericHabits;
+                HabitLogCombo.ItemsSource = counterHabits;
 
-                if (HabitLogCombo.SelectedItem is not HabitDbRow && numericHabits.Count > 0)
+                if (HabitLogCombo.SelectedItem is not HabitDbRow && counterHabits.Count > 0)
                     HabitLogCombo.SelectedIndex = 0;
             }
             finally
@@ -1433,9 +1395,26 @@ namespace LifestylesDesktop
             }
         }
 
-        // ============================================================
-        // Habits UI
-        // ============================================================
+        private void CounterMinus_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.Button b || b.DataContext is not HabitRow row)
+                return;
+
+            row.TodayValue = Math.Max(0, row.TodayValue - 1);
+
+            // HabitRow doesn't implement INotifyPropertyChanged (debug UI), so force a refresh.
+            HabitsGrid.Items.Refresh();
+        }
+
+        private void CounterPlus_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.Button b || b.DataContext is not HabitRow row)
+                return;
+
+            row.TodayValue = row.TodayValue + 1;
+
+            HabitsGrid.Items.Refresh();
+        }
 
         private async void AddHabitButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1458,7 +1437,7 @@ namespace LifestylesDesktop
                     ? HabitKind.NumericDaily
                     : HabitKind.CheckboxDaily;
 
-                // DEBUG MODE: create the habit "on" the selected log date (so it shows up when time-travelling)
+                // Anchor creation to the selected log date (so time-travel works)
                 await _habitRepo.AddHabitAsync(title, kind, target, SelectedLogDate);
 
                 HabitTitleBox.Text = "";
@@ -1482,12 +1461,16 @@ namespace LifestylesDesktop
                 HabitsGrid.CommitEdit();
                 HabitsGrid.CommitEdit();
 
-                var nowLocal = DateTimeOffset.Now;
-                bool canAwardRewards = IsRewardsWindowOpenForDate(SelectedLogDate, nowLocal);
+                // Use selected log date as the reward game day.
+                DateOnly rewardDay = SelectedLogDate;
+
+                // Reward window: allow granting tickets for "today" or "yesterday" (for late-night catch-up),
+                // but don't allow backfilling older days.
+                DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+                bool canAwardRewards = (rewardDay == today || rewardDay == today.AddDays(-1));
 
                 var newlyGranted = new List<string>();
                 var alreadyGranted = new List<string>();
-                var blockedByCutoff = new List<string>();
 
                 foreach (var row in _habitRows)
                 {
@@ -1495,60 +1478,49 @@ namespace LifestylesDesktop
                     {
                         int value = row.TodayChecked ? 1 : 0;
 
-                        // Always update history…
-                        await _habitRepo.SetDailyValueAsync(row.HabitId, SelectedLogDate, value);
+                        // Only attempt reward grant if we are within the window and the user marked it done.
+                        bool tryAward = canAwardRewards && value > 0;
 
-                        // …but only award tickets if still within the reward window.
-                        if (value == 1)
+                        var result = await _habitRepo.SetDailyValueAsync(row.HabitId, SelectedLogDate, value, tryAward);
+                        if (tryAward)
                         {
-                            if (canAwardRewards)
-                            {
-                                bool granted = await _rewardsRepo.TryGrantHabitCheckboxTicketAsync(row.HabitId, SelectedLogDate);
-                                string label = $"{row.Title} (HabitId {row.HabitId})";
-
-                                if (granted)
-                                    newlyGranted.Add(label);
-                                else
-                                    alreadyGranted.Add(label);
-                            }
-                            else
-                            {
-                                blockedByCutoff.Add($"{row.Title} (HabitId {row.HabitId})");
-                            }
+                            if (result.RewardGranted)
+                                newlyGranted.Add($"{row.Title} (HabitId {row.HabitId})");
+                            else if (value > 0)
+                                alreadyGranted.Add($"{row.Title} (HabitId {row.HabitId})");
                         }
                     }
                     else
                     {
                         int value = row.TodayValue;
-                        if (value < 0)
-                            throw new InvalidOperationException("Numeric habit values can’t be negative.");
+
+                        // Clamp instead of throwing (debug UI convenience)
+                        if (value < 0) value = 0;
+                        if (row.TodayValue != value) row.TodayValue = value;
 
                         await _habitRepo.SetDailyValueAsync(row.HabitId, SelectedLogDate, value);
                     }
                 }
 
                 await RefreshStepsAndHabitsAsync();
-                await RefreshGamificationDebugAsync();
 
-                // Always show a clear summary so it’s obvious what happened.
-                var msg = "Saved habit changes.";
-
-                msg += $"\n\nTickets newly granted: {newlyGranted.Count}";
-                if (newlyGranted.Count > 0)
-                    msg += "\n" + string.Join("\n", newlyGranted);
-
-                msg += $"\n\nTickets already granted (unchanged): {alreadyGranted.Count}";
-                if (alreadyGranted.Count > 0)
-                    msg += "\n" + string.Join("\n", alreadyGranted);
-
-                if (blockedByCutoff.Count > 0)
+                // Popup summary (debug UI)
+                if (canAwardRewards)
                 {
-                    msg += $"\n\nTickets blocked by 03:00 cutoff: {blockedByCutoff.Count}";
-                    msg += "\n(History saved, but rewards for this day are already final.)";
-                    msg += "\n" + string.Join("\n", blockedByCutoff);
-                }
+                    string msg =
+                        "Saved habit changes.\n\n" +
+                        $"Tickets newly granted: {newlyGranted.Count}\n" +
+                        (newlyGranted.Count == 0 ? "" : string.Join("\n", newlyGranted)) +
+                        "\n\n" +
+                        $"Tickets already granted (unchanged): {alreadyGranted.Count}\n" +
+                        (alreadyGranted.Count == 0 ? "" : string.Join("\n", alreadyGranted));
 
-                MessageBox.Show(msg);
+                    MessageBox.Show(msg);
+                }
+                else
+                {
+                    MessageBox.Show("Saved habit changes.");
+                }
             }
             catch (Exception ex)
             {
@@ -1577,7 +1549,10 @@ namespace LifestylesDesktop
             public DateOnly? ArchivedLocalDate { get; set; }
 
             public bool IsCheckbox => Kind == HabitKind.CheckboxDaily;
-            public bool IsNumeric => Kind == HabitKind.NumericDaily;
+
+            // Counter habits are still stored as NumericDaily in the enum (display name only changes)
+            public bool IsCounter => Kind == HabitKind.NumericDaily;
+            public bool IsNumeric => IsCounter;
         }
     }
 }
