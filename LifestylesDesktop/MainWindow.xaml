@@ -104,7 +104,7 @@ SECTION B — Input Panel
          VerticalScrollBarVisibility="Auto"
          Height="60"/>
 
-                    <TextBlock Text="Tip: duplicates weight within a tier. Capitalization & spacing are normalized (Potion == potion)."
+                    <TextBlock Text="Tip: duplicates weight within a tier. Capitalization &amp; spacing are normalized (Potion == potion)."
            Foreground="Gray"
            FontStyle="Italic"
            FontSize="11"
