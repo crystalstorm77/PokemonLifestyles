@@ -1,4 +1,5 @@
-﻿// ============================================================
+﻿
+// ============================================================
 // SECTION A — Usings
 // ============================================================
 using System;
@@ -22,6 +23,7 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 using Button = System.Windows.Controls.Button;
 using DataGrid = System.Windows.Controls.DataGrid;
+using ListBox = System.Windows.Controls.ListBox;
 using MenuItem = System.Windows.Controls.MenuItem;
 using Orientation = System.Windows.Controls.Orientation;
 using StackPanel = System.Windows.Controls.StackPanel;
@@ -29,8 +31,6 @@ using TextBlock = System.Windows.Controls.TextBlock;
 using TextBox = System.Windows.Controls.TextBox;
 
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
-
-
 
 
 // ============================================================
