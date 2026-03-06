@@ -382,7 +382,7 @@ namespace LifestylesDesktop
 
                 // Food entries
                 var food = await _foodEntryRepo.GetForDateAsync(SelectedLogDate);
-                _foodEntries = new ObservableCollection<FoodEntryRow>(food);
+                _foodEntries = new ObservableCollection<FoodEntry>(food);
                 FoodEntriesGrid.ItemsSource = _foodEntries;
 
                 // Sleep sessions
@@ -390,10 +390,8 @@ namespace LifestylesDesktop
                 _sleepSessions = new ObservableCollection<SleepSession>(sleeps);
                 SleepSessionsGrid.ItemsSource = _sleepSessions;
 
-                // Habits (time-travel aware)
-                var habits = await _habitRepo.GetForLocalDateAsync(SelectedLogDate);
-                _habitRows = new ObservableCollection<HabitRow>(habits);
-                HabitsGrid.ItemsSource = _habitRows;
+                // Steps + Habits (time-travel aware)
+                await RefreshStepsAndHabitsAsync();
 
                 // Gamification debug (includes item-drops + inventory + item defs)
                 await RefreshGamificationDebugAsync();
@@ -462,7 +460,6 @@ namespace LifestylesDesktop
                 if (RewardsSummaryText != null)
                 {
                     var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
-
                     int coins = 0;
                     int tickets = 0;
 
@@ -477,41 +474,32 @@ namespace LifestylesDesktop
                         $"{coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
                 }
 
-                // Sleep multiplier (applies to the day you woke up — i.e. this SelectedLogDate)
+                // Sleep multiplier (applies to the day you woke up — i.e. the selected log date)
                 if (SleepMultiplierText != null)
                 {
-                    int sleepMinutes = 0;
+                    var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
 
-                    if (_sleepSessions != null)
-                    {
-                        foreach (var s in _sleepSessions)
-                            sleepMinutes += Math.Max(0, s.DurationMinutes);
-                    }
+                    int totalMinutes = 0;
+                    foreach (var s in sleeps)
+                        totalMinutes += Math.Max(0, s.DurationMinutes);
 
-                    if (sleepMinutes <= 0)
+                    if (totalMinutes <= 0)
                     {
-                        SleepMultiplierText.Text = "Sleep multiplier (wake day): x1.00 (no sleep logged)";
+                        SleepMultiplierText.Text = "Sleep multiplier: x1.00 (no sleep logged)";
                     }
                     else
                     {
-                        double mult = ComputeSleepMultiplier(sleepMinutes);
-                        SleepMultiplierText.Text =
-                            $"Sleep multiplier (wake day): x{mult:0.00} (sleep {FormatMinutes(sleepMinutes)})";
+                        double mult = ComputeSleepMultiplier(totalMinutes);
+                        SleepMultiplierText.Text = $"Sleep multiplier: x{mult:F2} (sleep: {FormatMinutes(totalMinutes)})";
                     }
                 }
 
+                // Item drops debug (includes settings + progress + inventory)
                 await RefreshItemDropsDebugAsync();
             }
             catch
             {
-                if (NowLocalText != null) NowLocalText.Text = "Now (local): (error)";
-                if (GameDayNowText != null) GameDayNowText.Text = "Game day (03:00 cutoff): (error)";
-                if (RewardsSummaryText != null) RewardsSummaryText.Text = "Selected day rewards: (error)";
-
-                if (SleepMultiplierText != null) SleepMultiplierText.Text = "Sleep multiplier: (error)";
-
-                // Still try to load item drops UI where possible
-                await RefreshItemDropsDebugAsync();
+                // Keep debug UI resilient
             }
         }
 
@@ -561,9 +549,10 @@ namespace LifestylesDesktop
                 // Last drop
                 if (ItemDropsLastText != null)
                 {
-                    if (state.LastDropUtc != null && state.LastDropUtc.Value != DateTimeOffset.MinValue)
+                    if (!string.IsNullOrWhiteSpace(state.LastDropUtc) &&
+                        DateTimeOffset.TryParse(state.LastDropUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto) &&
+                        dto != DateTimeOffset.MinValue)
                     {
-                        var dto = state.LastDropUtc.Value;
                         ItemDropsLastText.Text =
                             $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
                     }
@@ -593,9 +582,7 @@ namespace LifestylesDesktop
             }
         }
 
-        // ============================================================
-        // ============================================================
-
+    
 
         // ============================================================
         // ============================================================
