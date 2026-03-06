@@ -132,7 +132,7 @@ namespace LifestylesDesktop
                     Content = "Close",
                     Width = 100,
                     Margin = new Thickness(0, 10, 0, 0),
-                    HorizontalAlignment = HorizontalAlignment.Right
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Right
                 };
 
                 close.Click += (_, __) => win.Close();
