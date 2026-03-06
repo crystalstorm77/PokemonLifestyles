@@ -18,17 +18,31 @@ namespace LifestyleCore.Data
 
         private static readonly string[] _defaultItemPool = new[]
         {
-            "Potion",
-            "Super Potion",
-            "Poke Ball",
-            "Great Ball",
-            "Revive",
-            "Antidote",
-            "Paralyze Heal",
-            "Escape Rope",
-            "Rare Candy",
-            "Nugget"
-        };
+    "Potion",
+    "Super Potion",
+    "Poke Ball",
+    "Great Ball",
+    "Revive",
+    "Antidote",
+    "Paralyze Heal",
+    "Escape Rope",
+    "Rare Candy",
+    "Nugget"
+};
+
+        private static string[] BuildItemPool(string? poolText)
+        {
+            if (string.IsNullOrWhiteSpace(poolText))
+                return _defaultItemPool;
+
+            var items = poolText
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => (s ?? "").Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToArray();
+
+            return items.Length == 0 ? _defaultItemPool : items;
+        }
 
         // ============================================================
         // SECTION C — Processing
@@ -46,6 +60,9 @@ namespace LifestyleCore.Data
 
             int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
             int oneInN = Math.Max(1, settings.ItemRollOneInN);
+
+            // NEW: use configurable pool (fallback to defaults if blank)
+            var itemPool = BuildItemPool(settings.ItemPoolText);
 
             using var conn = Db.OpenConnection();
 
@@ -84,7 +101,7 @@ WHERE Id = 1;",
                 int r = Random.Shared.Next(oneInN); // 0..N-1
                 if (r == 0)
                 {
-                    string item = _defaultItemPool[Random.Shared.Next(_defaultItemPool.Length)];
+                    string item = itemPool[Random.Shared.Next(itemPool.Length)];
                     found.Add(item);
                     successes++;
 

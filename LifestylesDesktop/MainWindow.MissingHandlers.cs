@@ -216,8 +216,9 @@ namespace LifestylesDesktop
                     return;
                 }
 
-                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN);
+                string poolText = ItemPoolBox?.Text ?? "";
 
+                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, poolText);
                 await RefreshItemDropsDebugAsync();
 
                 MessageBox.Show("Saved item drop settings.");

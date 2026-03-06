@@ -13,7 +13,6 @@ namespace LifestyleCore.Data
         // ============================================================
         // SECTION B — Ensure Created
         // ============================================================
-
         public static void EnsureCreated()
         {
             if (_created) return;
@@ -25,6 +24,7 @@ CREATE TABLE IF NOT EXISTS GamificationSettings (
   Id INTEGER PRIMARY KEY CHECK (Id = 1),
   StepsPerItemRoll INTEGER NOT NULL,
   ItemRollOneInN INTEGER NOT NULL,
+  ItemPoolText TEXT NULL,
   UpdatedAtUtc TEXT NOT NULL
 );
 
@@ -49,17 +49,41 @@ CREATE TABLE IF NOT EXISTS InventoryItems (
                 try { conn.Execute(sql); } catch { /* ignore */ }
             }
 
+            // Existing migrations
             TryAddColumn(@"ALTER TABLE StepItemRollState ADD COLUMN LastDropUtc TEXT NULL;");
             TryAddColumn(@"ALTER TABLE StepItemRollState ADD COLUMN LastDropSummary TEXT NULL;");
 
+            // NEW migration: configurable item pool
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN ItemPoolText TEXT NULL;");
+
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+
+            string defaultPool =
+                "Potion\n" +
+                "Super Potion\n" +
+                "Poke Ball\n" +
+                "Great Ball\n" +
+                "Revive\n" +
+                "Antidote\n" +
+                "Paralyze Heal\n" +
+                "Escape Rope\n" +
+                "Rare Candy\n" +
+                "Nugget";
 
             conn.Execute(@"
 INSERT OR IGNORE INTO GamificationSettings
-(Id, StepsPerItemRoll, ItemRollOneInN, UpdatedAtUtc)
+(Id, StepsPerItemRoll, ItemRollOneInN, ItemPoolText, UpdatedAtUtc)
 VALUES
-(1, 1000, 4, @NowUtc);",
-                new { NowUtc = nowUtc });
+(1, 1000, 4, @DefaultPool, @NowUtc);",
+                new { DefaultPool = defaultPool, NowUtc = nowUtc });
+
+            // If the row already exists but ItemPoolText is empty/null, seed it.
+            conn.Execute(@"
+UPDATE GamificationSettings
+SET ItemPoolText = @DefaultPool
+WHERE Id = 1
+  AND (ItemPoolText IS NULL OR TRIM(ItemPoolText) = '');",
+                new { DefaultPool = defaultPool });
 
             conn.Execute(@"
 INSERT OR IGNORE INTO StepItemRollState

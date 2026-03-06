@@ -14,8 +14,9 @@
         <StackPanel Margin="16">
 
             <!-- ============================================================
-     SECTION B — Input Panel
-     ============================================================ -->
+SECTION B — Input Panel
+============================================================ -->
+
             <TextBlock Text="Lifestyles Tracker" FontWeight="Bold" FontSize="18" Margin="0,0,0,6"/>
             <TextBlock x:Name="TimeZoneText" FontSize="12" Foreground="Gray" Margin="0,0,0,12"/>
 
@@ -66,8 +67,22 @@
                     <TextBlock x:Name="ItemDropsStatsText" Foreground="Gray" Margin="0,2,0,0"/>
                     <TextBlock x:Name="ItemDropsLastText" Foreground="Gray" Margin="0,2,0,0"/>
 
+                    <!-- NEW: configurable item pool -->
+                    <TextBlock Text="Item pool (one per line):" Margin="0,10,0,2"/>
+                    <TextBox x:Name="ItemPoolBox"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 Height="90"/>
+                    <TextBlock Text="Tip: duplicates weight drops (e.g. writing “Potion” twice makes it twice as likely)."
+                   Foreground="Gray"
+                   FontStyle="Italic"
+                   FontSize="11"
+                   Margin="0,2,0,0"/>
+
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
                         <TextBlock x:Name="InventoryCountText" VerticalAlignment="Center"/>
+
                         <Button Content="Clear inventory"
                     Width="110"
                     Margin="10,0,0,0"
@@ -83,7 +98,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding ItemKey}" Width="*"/>
 
-                            <!-- “-  x  +” layout per row -->
+                            <!-- “- x +” layout per row -->
                             <DataGridTemplateColumn Header="Count" Width="160">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -113,15 +128,14 @@
             <!-- Focus Session -->
             <GroupBox Header="Focus Session" Margin="0,0,0,12">
                 <StackPanel Margin="10">
-
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Focus Type:" Width="90" VerticalAlignment="Center"/>
                         <ComboBox x:Name="FocusTypeCombo"
-                    Width="200"
-                    SelectedIndex="0"
-                    IsEditable="True"
-                    IsTextSearchEnabled="True"
-                    StaysOpenOnEdit="True">
+                      Width="200"
+                      SelectedIndex="0"
+                      IsEditable="True"
+                      IsTextSearchEnabled="True"
+                      StaysOpenOnEdit="True">
                             <ComboBoxItem Content="Draw"/>
                             <ComboBoxItem Content="Music"/>
                         </ComboBox>
@@ -140,7 +154,6 @@
             <!-- Food -->
             <GroupBox Header="Food" Margin="0,0,0,12">
                 <StackPanel Margin="10">
-
                     <TextBlock Text="Add food entry for selected date:" FontWeight="Bold" Margin="0,0,0,6"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -225,22 +238,19 @@
                     </StackPanel>
 
                     <TextBlock Text="Sleep is credited to the wake-up day."
-                FontStyle="Italic"
-                Foreground="Gray"
-                Margin="0,8,0,0"/>
+                   FontStyle="Italic"
+                   Foreground="Gray"
+                   Margin="0,8,0,0"/>
                 </StackPanel>
-
             </GroupBox>
 
             <!-- Steps (testing-only on desktop) -->
             <GroupBox Header="Steps (Testing)" Margin="0,0,0,12">
-
                 <StackPanel Margin="10">
                     <TextBlock x:Name="StepsDayText" FontWeight="Bold" Margin="0,0,0,8"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Add steps:" Width="90" VerticalAlignment="Center"/>
-
                         <TextBox x:Name="StepsAddBox" Width="120" Margin="0,0,10,0"/>
 
                         <Button x:Name="AddStepsButton"
@@ -257,25 +267,21 @@
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
                         <TextBlock Text="At (optional):" Width="90" VerticalAlignment="Center"/>
-
                         <TextBox x:Name="StepsAtBox" Width="240"
-                    ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss"/>
+                     ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss"/>
                     </StackPanel>
 
                     <TextBlock Text="Steps are stored in 15-minute buckets."
-                Foreground="Gray"
-                FontStyle="Italic"
-                Margin="0,8,0,0"/>
+                   Foreground="Gray"
+                   FontStyle="Italic"
+                   Margin="0,8,0,0"/>
                 </StackPanel>
-
             </GroupBox>
 
             <!-- Data -->
             <GroupBox Header="Data" Margin="0,0,0,12">
-
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-
                         <Button x:Name="BackupEverythingButton"
                     Content="Backup Everything..."
                     Width="200"
@@ -289,7 +295,6 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-
                         <Button x:Name="ImportArchiveMergeButton"
                     Content="Import Archive (Merge)..."
                     Width="200"
@@ -303,11 +308,12 @@
                     </StackPanel>
 
                     <TextBlock Text="Backup Everything creates a dated folder containing a DB snapshot + JSON archive."
-                Foreground="Gray"
-                FontStyle="Italic"/>
+                   Foreground="Gray"
+                   FontStyle="Italic"/>
                 </StackPanel>
-
             </GroupBox>
+            
+            
             <!-- ============================================================
                  SECTION C — Sessions Header
                  ============================================================ -->

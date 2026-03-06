@@ -288,7 +288,7 @@ namespace LifestylesDesktop
 
                     RewardsSummaryText.Text =
                         $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): " +
-                        $"{coins} coins, {tickets} tickets  |  Ledger entries: {entries.Count}";
+                        $"{coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
                 }
 
                 await RefreshItemDropsDebugAsync();
@@ -297,7 +297,9 @@ namespace LifestylesDesktop
             {
                 if (NowLocalText != null) NowLocalText.Text = "Now (local): (error)";
                 if (GameDayNowText != null) GameDayNowText.Text = "Game day (03:00 cutoff): (error)";
+
                 if (RewardsSummaryText != null) RewardsSummaryText.Text = "Selected day rewards: (error)";
+
                 // Still try to load item drops UI where possible
                 await RefreshItemDropsDebugAsync();
             }
@@ -327,6 +329,15 @@ namespace LifestylesDesktop
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
                     OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
 
+                if (ItemPoolBox != null && !ItemPoolBox.IsKeyboardFocusWithin)
+                    ItemPoolBox.Text = settings.ItemPoolText ?? "";
+
+                int poolCount =
+                    (settings.ItemPoolText ?? "")
+                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => (s ?? "").Trim())
+                    .Count(s => !string.IsNullOrWhiteSpace(s));
+
                 if (ItemDropsProgressText != null)
                 {
                     ItemDropsProgressText.Text =
@@ -336,7 +347,7 @@ namespace LifestylesDesktop
                 if (ItemDropsStatsText != null)
                 {
                     ItemDropsStatsText.Text =
-                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN}";
+                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN} | Pool: {poolCount}";
                 }
 
                 if (ItemDropsLastText != null)
@@ -362,7 +373,6 @@ namespace LifestylesDesktop
                     InventoryCountText.Text = items.Count == 0 ? "Inventory: (empty)" : $"Inventory: {items.Count} item types";
 
                 _inventoryItems = new ObservableCollection<InventoryItem>(items);
-
                 if (InventoryGrid != null)
                     InventoryGrid.ItemsSource = _inventoryItems;
             }
