@@ -75,6 +75,78 @@ namespace LifestylesDesktop
             }
         }
 
+        private async void ViewStepsBucketsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var rows = await _stepsRepo.GetBucketsForLocalDateAsync(SelectedLogDate);
+
+                var win = new Window
+                {
+                    Title = $"Step buckets ({SelectedLogDate:yyyy-MM-dd})",
+                    Width = 360,
+                    Height = 520,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this
+                };
+
+                var root = new StackPanel { Margin = new Thickness(12) };
+
+                if (rows.Count == 0)
+                {
+                    root.Children.Add(new TextBlock
+                    {
+                        Text = "No buckets for this day.",
+                        Foreground = System.Windows.Media.Brushes.Gray
+                    });
+                }
+                else
+                {
+                    var grid = new DataGrid
+                    {
+                        AutoGenerateColumns = false,
+                        CanUserAddRows = false,
+                        CanUserDeleteRows = false,
+                        IsReadOnly = true,
+                        Height = 420,
+                        ItemsSource = rows
+                    };
+
+                    grid.Columns.Add(new DataGridTextColumn
+                    {
+                        Header = "Time",
+                        Binding = new System.Windows.Data.Binding("LocalTime")
+                    });
+
+                    grid.Columns.Add(new DataGridTextColumn
+                    {
+                        Header = "Steps",
+                        Binding = new System.Windows.Data.Binding("Steps")
+                    });
+
+                    root.Children.Add(grid);
+                }
+
+                var close = new Button
+                {
+                    Content = "Close",
+                    Width = 100,
+                    Margin = new Thickness(0, 10, 0, 0),
+                    HorizontalAlignment = HorizontalAlignment.Right
+                };
+
+                close.Click += (_, __) => win.Close();
+                root.Children.Add(close);
+
+                win.Content = root;
+                win.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not load step buckets");
+            }
+        }
+
         private async void InventoryMinus_Click(object sender, RoutedEventArgs e)
         {
             try
