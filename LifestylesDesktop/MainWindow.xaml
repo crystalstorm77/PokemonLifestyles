@@ -16,6 +16,7 @@
             <!-- ============================================================
 SECTION B — Input Panel
 ============================================================ -->
+
             <TextBlock Text="Lifestyles Tracker" FontWeight="Bold" FontSize="18" Margin="0,0,0,6"/>
 
             <TextBlock x:Name="TimeZoneText" FontSize="12" Foreground="Gray" Margin="0,0,0,12"/>
@@ -91,48 +92,69 @@ SECTION B — Input Panel
                     <!-- Item list editor -->
                     <TextBlock Text="Drop items list:" FontWeight="Bold" Margin="0,10,0,4"/>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <TextBox x:Name="NewItemNameBox" Width="160" Margin="0,0,6,0" ToolTip="New item name"/>
-                        <TextBox x:Name="NewItemCategoryBox" Width="120" Margin="0,0,6,0" ToolTip="Optional category (e.g. Healing, Ball, Status)"/>
-                        <ComboBox x:Name="NewItemTierCombo"
-                Width="100"
-                Margin="0,0,6,0"
-                ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ItemTierChoices}"
-                SelectedIndex="0"/>
-                        <TextBox x:Name="NewItemWeightBox" Width="55" Margin="0,0,6,0" Text="1" ToolTip="Weight within the selected tier"/>
-                        <Button Content="Add" Width="60" Click="AddItemDefinition_Click"/>
+                    <!-- Clearer labeled inputs -->
+                    <StackPanel Margin="0,0,0,6">
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Item:" Width="65" VerticalAlignment="Center"/>
+                            <TextBox x:Name="NewItemNameBox" Width="150" Margin="0,0,10,0" ToolTip="New item name"/>
+
+                            <TextBlock Text="Category:" Width="75" VerticalAlignment="Center"/>
+                            <TextBox x:Name="NewItemCategoryBox" Width="170" ToolTip="Optional category (e.g. Healing, Ball, Status)"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Tier:" Width="65" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="NewItemTierCombo"
+                  Width="150"
+                  Margin="0,0,10,0"
+                  ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ItemTierChoices}"
+                  SelectedIndex="0"/>
+
+                            <TextBlock Text="Weight:" Width="60" VerticalAlignment="Center"/>
+                            <TextBox x:Name="NewItemWeightBox" Width="70" Margin="0,0,10,0" Text="1" ToolTip="Weight within the selected tier"/>
+
+                            <Button Content="Add" Width="80" Click="AddItemDefinition_Click"/>
+                        </StackPanel>
+
                     </StackPanel>
 
+                    <!-- Auto-size columns based on BOTH header + cell contents -->
                     <DataGrid x:Name="ItemDefinitionsGrid"
               AutoGenerateColumns="False"
               CanUserAddRows="False"
               CanUserDeleteRows="False"
               Height="160"
-              Margin="0,0,0,2">
+              Margin="0,0,0,2"
+              ColumnWidth="Auto"
+              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+
                         <DataGrid.Columns>
 
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto" IsReadOnly="True"/>
 
-                            <DataGridTextColumn Header="Category" Width="140" Binding="{Binding Category, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category, UpdateSourceTrigger=PropertyChanged}" Width="Auto"/>
 
                             <!-- Template column so Tier always displays (even when not editing) -->
-                            <DataGridTemplateColumn Header="Tier" Width="90">
+                            <DataGridTemplateColumn Header="Tier" Width="Auto">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Tier}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
+
                                 <DataGridTemplateColumn.CellEditingTemplate>
                                     <DataTemplate>
-                                        <ComboBox Width="85"
+                                        <ComboBox Width="120"
                         ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ItemTierChoices}"
                         SelectedItem="{Binding Tier, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="Weight" Width="70" Binding="{Binding Weight, UpdateSourceTrigger=PropertyChanged}"/>
-                            <DataGridCheckBoxColumn Header="Active" Width="60" Binding="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"/>
+                            <DataGridTextColumn Header="Weight" Binding="{Binding Weight, UpdateSourceTrigger=PropertyChanged}" Width="Auto"/>
+
+                            <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}" Width="Auto"/>
 
                         </DataGrid.Columns>
                     </DataGrid>
@@ -165,6 +187,7 @@ SECTION B — Input Panel
               CanUserDeleteRows="False"
               IsReadOnly="True"
               Height="140">
+
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding ItemKey}" Width="*"/>
 
@@ -184,6 +207,7 @@ SECTION B — Input Panel
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
+
                     </DataGrid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
@@ -196,7 +220,7 @@ SECTION B — Input Panel
             </GroupBox>
 
             <!-- ============================================================
-SECTION B1 — Focus Session Input
+SECTION C — Focus Session Input
 ============================================================ -->
 
             <!-- Focus Session -->
