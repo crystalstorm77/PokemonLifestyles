@@ -551,18 +551,33 @@ namespace LifestylesDesktop
             }
         }
 
-        // ============================================================
 
+
+        // ============================================================
         // ============================================================
         // SECTION F — Food Actions
         // ============================================================
+
         private async Task RefreshFoodMenuAsync()
         {
             var items = await _foodItemRepo.GetAllAsync();
+
             FoodCombo.ItemsSource = items;
 
             if (FoodCombo.SelectedIndex < 0 && items.Count > 0)
                 FoodCombo.SelectedIndex = 0;
+        }
+
+        private async void RefreshFoodMenuButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await RefreshFoodMenuAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not refresh menu");
+            }
         }
 
         private async void AddFoodToMenuButton_Click(object sender, RoutedEventArgs e)
@@ -579,6 +594,7 @@ namespace LifestylesDesktop
                 }
 
                 double? kjPer100g = null;
+
                 string kj100Text = (NewFoodKjPer100gBox.Text ?? "").Trim();
                 if (!string.IsNullOrWhiteSpace(kj100Text))
                 {
@@ -587,6 +603,7 @@ namespace LifestylesDesktop
                         MessageBox.Show("kJ per 100g must be blank or a number greater than 0.");
                         return;
                     }
+
                     kjPer100g = kj100Parsed;
                 }
 
@@ -606,6 +623,7 @@ namespace LifestylesDesktop
                 NewFoodKjPer100gBox.Text = "";
 
                 await RefreshFoodMenuAsync();
+
                 MessageBox.Show("Food added to menu.");
             }
             catch (Exception ex)
@@ -635,6 +653,7 @@ namespace LifestylesDesktop
                         MessageBox.Show("Servings must be blank or a number greater than 0.");
                         return;
                     }
+
                     servings = s;
                 }
 
@@ -646,6 +665,7 @@ namespace LifestylesDesktop
                         MessageBox.Show("Grams must be blank or a whole number greater than 0.");
                         return;
                     }
+
                     grams = g;
                 }
 
@@ -668,6 +688,7 @@ namespace LifestylesDesktop
             {
                 var win = new FoodMenuWindow { Owner = this };
                 win.ShowDialog();
+
                 await RefreshFoodMenuAsync();
             }
             catch (Exception ex)
