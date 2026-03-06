@@ -57,13 +57,13 @@ SECTION B — Input Panel
                     <TextBlock Text="Step item drops (from steps)" FontWeight="Bold"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+
                         <TextBlock Text="Steps/roll:" Width="80" VerticalAlignment="Center"/>
                         <TextBox x:Name="StepsPerRollBox" Width="80" Margin="0,0,12,0"/>
 
                         <TextBlock Text="Odds (1 in):" Width="80" VerticalAlignment="Center"/>
                         <TextBox x:Name="OddsOneInBox" Width="60" Margin="0,0,12,0"/>
 
-                        <Button Content="Save drop settings" Width="130" Click="SaveItemDropSettings_Click"/>
                     </StackPanel>
 
                     <TextBlock x:Name="ItemDropsProgressText" Foreground="Gray" Margin="0,6,0,0"/>
@@ -74,6 +74,7 @@ SECTION B — Input Panel
                     <TextBlock Text="Tier weights (used only when a roll succeeds):" Margin="0,10,0,2"/>
 
                     <StackPanel Orientation="Horizontal">
+
                         <TextBlock Text="Common:" Width="70" VerticalAlignment="Center"/>
                         <TextBox x:Name="CommonWeightBox" Width="60" Margin="0,0,12,0"/>
 
@@ -83,21 +84,31 @@ SECTION B — Input Panel
                         <TextBlock Text="Rare:" Width="45" VerticalAlignment="Center"/>
                         <TextBox x:Name="RareWeightBox" Width="60" Margin="0,0,12,0"/>
 
-                        <Button Content="Reset tier weights" Width="130" Click="ResetTierWeights_Click"/>
+                    </StackPanel>
+
+                    <!-- Moved here for clarity: Save + Reset are directly under the tier weights -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                        <Button Content="Save drop settings" Width="130" Click="SaveItemDropSettings_Click"/>
+                        <Button Content="Reset tier weights" Width="130" Margin="6,0,0,0" Click="ResetTierWeights_Click"/>
                     </StackPanel>
 
                     <!-- Item list editor -->
                     <TextBlock Text="Drop items list:" FontWeight="Bold" Margin="0,10,0,4"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+
                         <TextBox x:Name="NewItemNameBox" Width="170" Margin="0,0,6,0" ToolTip="New item name"/>
+
                         <ComboBox x:Name="NewItemTierCombo"
                 Width="100"
                 Margin="0,0,6,0"
                 ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ItemTierChoices}"
                 SelectedIndex="0"/>
+
                         <TextBox x:Name="NewItemWeightBox" Width="55" Margin="0,0,6,0" Text="1" ToolTip="Weight within the selected tier"/>
+
                         <Button Content="Add" Width="60" Click="AddItemDefinition_Click"/>
+
                     </StackPanel>
 
                     <DataGrid x:Name="ItemDefinitionsGrid"
@@ -106,6 +117,7 @@ SECTION B — Input Panel
               CanUserDeleteRows="False"
               Height="160"
               Margin="0,0,0,2">
+
                         <DataGrid.Columns>
 
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
@@ -146,12 +158,14 @@ SECTION B — Input Panel
 
                     <!-- Inventory -->
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
+
                         <TextBlock x:Name="InventoryCountText" VerticalAlignment="Center"/>
 
                         <Button Content="Clear inventory"
               Width="110"
               Margin="10,0,0,0"
               Click="ClearInventory_Click"/>
+
                     </StackPanel>
 
                     <DataGrid x:Name="InventoryGrid"
@@ -160,7 +174,9 @@ SECTION B — Input Panel
               CanUserDeleteRows="False"
               IsReadOnly="True"
               Height="140">
+
                         <DataGrid.Columns>
+
                             <DataGridTextColumn Header="Item" Binding="{Binding ItemKey}" Width="*"/>
 
                             <DataGridTemplateColumn Header="Count" Width="160">
@@ -180,6 +196,7 @@ SECTION B — Input Panel
                             </DataGridTemplateColumn>
 
                         </DataGrid.Columns>
+
                     </DataGrid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
