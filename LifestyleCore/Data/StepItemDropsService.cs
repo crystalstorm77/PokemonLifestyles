@@ -13,26 +13,8 @@ namespace LifestyleCore.Data
     public sealed class StepItemDropsService
     {
         // ============================================================
-        // SECTION B — Item Pools (v2)
+        // SECTION B — Item Pools (v3: ItemDefinitions table)
         // ============================================================
-
-        private static List<string> ParsePool(string? poolText)
-        {
-            if (string.IsNullOrWhiteSpace(poolText))
-                return new List<string>();
-
-            var lines = poolText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            var items = new List<string>(lines.Length);
-
-            foreach (var raw in lines)
-            {
-                var norm = NormalizeItemName(raw);
-                if (!string.IsNullOrWhiteSpace(norm))
-                    items.Add(norm);
-            }
-
-            return items;
-        }
 
         private static string NormalizeItemName(string? s)
         {
@@ -48,6 +30,7 @@ namespace LifestyleCore.Data
             {
                 char c = chars[i];
                 bool isSpace = char.IsWhiteSpace(c);
+
                 if (isSpace)
                 {
                     if (!prevSpace)
@@ -93,9 +76,30 @@ namespace LifestyleCore.Data
             return 2;
         }
 
+        private static ItemDefinition? PickWeighted(IReadOnlyList<ItemDefinition> defs)
+        {
+            if (defs == null || defs.Count == 0) return null;
+
+            int total = 0;
+            for (int i = 0; i < defs.Count; i++)
+                total += Math.Max(0, defs[i].Weight);
+
+            if (total <= 0) return null;
+
+            int r = Random.Shared.Next(total);
+            for (int i = 0; i < defs.Count; i++)
+            {
+                r -= Math.Max(0, defs[i].Weight);
+                if (r < 0) return defs[i];
+            }
+
+            return defs[0];
+        }
+
         // ============================================================
         // SECTION C — Processing
         // ============================================================
+
         public async Task<(int Rolls, List<string> ItemsFound)> ProcessStepsAddedAsync(int stepsAdded)
         {
             ItemDropsSchema.EnsureCreated();
@@ -109,21 +113,51 @@ namespace LifestyleCore.Data
             int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
             int oneInN = Math.Max(1, settings.ItemRollOneInN);
 
-            // Rarity pools
-            var commonPool = ParsePool(settings.CommonPoolText);
-            var uncommonPool = ParsePool(settings.UncommonPoolText);
-            var rarePool = ParsePool(settings.RarePoolText);
-
-            // Safety: if all pools are somehow empty, fall back to a tiny safe default
-            if (commonPool.Count == 0 && uncommonPool.Count == 0 && rarePool.Count == 0)
-            {
-                commonPool.AddRange(new[] { "Potion", "Poke Ball", "Antidote" });
-                uncommonPool.AddRange(new[] { "Super Potion", "Great Ball" });
-                rarePool.AddRange(new[] { "Rare Candy", "Nugget" });
-            }
-
             using var conn = Db.OpenConnection();
             using var tx = conn.BeginTransaction();
+
+            // Load structured item definitions (active + weight > 0)
+            async Task<List<ItemDefinition>> LoadDefsAsync(ItemTier tier)
+            {
+                var rows = await conn.QueryAsync<ItemDefinition>(@"
+SELECT Name, Tier, Weight, IsActive
+FROM ItemDefinitions
+WHERE IsActive = 1
+  AND Tier = @Tier
+  AND Weight > 0
+ORDER BY Name ASC;",
+                    new { Tier = (int)tier },
+                    transaction: tx);
+
+                return rows.ToList();
+            }
+
+            var commonDefs = await LoadDefsAsync(ItemTier.Common);
+            var uncommonDefs = await LoadDefsAsync(ItemTier.Uncommon);
+            var rareDefs = await LoadDefsAsync(ItemTier.Rare);
+
+            // Safety: if all defs are empty, fall back to a tiny safe default (in-memory)
+            if (commonDefs.Count == 0 && uncommonDefs.Count == 0 && rareDefs.Count == 0)
+            {
+                commonDefs = new List<ItemDefinition>
+        {
+            new() { Name = "Potion", Tier = ItemTier.Common, Weight = 1, IsActive = true },
+            new() { Name = "Poke Ball", Tier = ItemTier.Common, Weight = 1, IsActive = true },
+            new() { Name = "Antidote", Tier = ItemTier.Common, Weight = 1, IsActive = true },
+        };
+
+                uncommonDefs = new List<ItemDefinition>
+        {
+            new() { Name = "Super Potion", Tier = ItemTier.Uncommon, Weight = 1, IsActive = true },
+            new() { Name = "Great Ball", Tier = ItemTier.Uncommon, Weight = 1, IsActive = true },
+        };
+
+                rareDefs = new List<ItemDefinition>
+        {
+            new() { Name = "Rare Candy", Tier = ItemTier.Rare, Weight = 1, IsActive = true },
+            new() { Name = "Nugget", Tier = ItemTier.Rare, Weight = 1, IsActive = true },
+        };
+            }
 
             var state = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(
                 @"SELECT StepsRemainder, TotalRolls, TotalSuccesses
@@ -164,25 +198,21 @@ WHERE Id = 1;",
 
                 successes++;
 
-                int tier = PickTierIndex(settings.CommonTierWeight, settings.UncommonTierWeight, settings.RareTierWeight);
+                int tierIdx = PickTierIndex(settings.CommonTierWeight, settings.UncommonTierWeight, settings.RareTierWeight);
 
-                List<string> pool = tier switch
+                IReadOnlyList<ItemDefinition> pool = tierIdx switch
                 {
-                    1 => uncommonPool,
-                    2 => rarePool,
-                    _ => commonPool
+                    2 => rareDefs,
+                    1 => uncommonDefs,
+                    _ => commonDefs
                 };
 
-                // If chosen tier is empty, fall back to the first non-empty tier.
+                // Tier fallback if chosen tier has no active items
                 if (pool.Count == 0)
-                {
-                    if (commonPool.Count > 0) pool = commonPool;
-                    else if (uncommonPool.Count > 0) pool = uncommonPool;
-                    else pool = rarePool;
-                }
+                    pool = commonDefs.Count > 0 ? commonDefs : (uncommonDefs.Count > 0 ? uncommonDefs : rareDefs);
 
-                string item = pool[Random.Shared.Next(pool.Count)];
-                item = NormalizeItemName(item);
+                var picked = PickWeighted(pool);
+                string item = NormalizeItemName(picked?.Name ?? "Potion");
 
                 found.Add(item);
 

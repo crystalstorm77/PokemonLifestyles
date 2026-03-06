@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS GamificationSettings (
   -- Legacy (v1): kept for backwards-compat / migration
   ItemPoolText TEXT NULL,
 
-  -- v2: rarity buckets
+  -- v2: rarity buckets (legacy UI pools)
   CommonPoolText TEXT NULL,
   UncommonPoolText TEXT NULL,
   RarePoolText TEXT NULL,
@@ -53,7 +53,24 @@ CREATE TABLE IF NOT EXISTS InventoryItems (
   ItemKey TEXT PRIMARY KEY,
   Count INTEGER NOT NULL
 );
+
+-- v3: Structured item definitions (the “real game” table)
+CREATE TABLE IF NOT EXISTS ItemDefinitions (
+  Name TEXT NOT NULL PRIMARY KEY COLLATE NOCASE,
+  Tier INTEGER NOT NULL,
+  Weight INTEGER NOT NULL,
+  IsActive INTEGER NOT NULL,
+  CreatedAtUtc TEXT NOT NULL,
+  DeletedAtUtc TEXT NULL,
+  ExternalId TEXT NULL
+);
+
+CREATE INDEX IF NOT EXISTS IX_ItemDefinitions_TierActive
+ON ItemDefinitions (Tier, IsActive);
 ");
+
+            // ExternalId support (for archive merge patterns)
+            DbMigrations.EnsureExternalIdSupport(conn, "ItemDefinitions");
 
             // Lightweight "migration": add new optional columns if missing.
             // (SQLite: ALTER TABLE ADD COLUMN is safe to try; it throws if it already exists.)
@@ -158,6 +175,112 @@ INSERT OR IGNORE INTO StepItemRollState
 VALUES
 (1, 0, 0, 0, @NowUtc);",
                 new { NowUtc = nowUtc });
+
+            // ------------------------------------------------------------
+            // Seed ItemDefinitions (v3) once (if empty)
+            // - Migrates from the legacy pools so your current setup carries over
+            // - Duplicates in pools become Weight
+            // ------------------------------------------------------------
+            long defCount = conn.ExecuteScalar<long>(@"SELECT COUNT(*) FROM ItemDefinitions;");
+            if (defCount == 0)
+            {
+                var pools = conn.QuerySingle<(string? CommonPoolText, string? UncommonPoolText, string? RarePoolText)>(@"
+SELECT
+  CommonPoolText,
+  UncommonPoolText,
+  RarePoolText
+FROM GamificationSettings
+WHERE Id = 1;
+");
+
+                static string Norm(string? s)
+                {
+                    s = (s ?? "").Trim();
+                    if (string.IsNullOrWhiteSpace(s)) return "";
+
+                    // collapse whitespace
+                    var parts = s.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+                    s = string.Join(" ", parts);
+
+                    // title-case words (Potion == potion)
+                    var words = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = 0; i < words.Length; i++)
+                    {
+                        var w = words[i];
+                        if (w.Length == 0) continue;
+                        if (w.Length == 1) words[i] = char.ToUpperInvariant(w[0]).ToString();
+                        else words[i] = char.ToUpperInvariant(w[0]) + w.Substring(1).ToLowerInvariant();
+                    }
+                    return string.Join(' ', words);
+                }
+
+                static System.Collections.Generic.Dictionary<string, int> CountPool(string? text)
+                {
+                    var dict = new System.Collections.Generic.Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    if (string.IsNullOrWhiteSpace(text)) return dict;
+
+                    var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var raw in lines)
+                    {
+                        var n = Norm(raw);
+                        if (string.IsNullOrWhiteSpace(n)) continue;
+
+                        if (!dict.TryGetValue(n, out int c)) c = 0;
+                        dict[n] = c + 1; // duplicates => weight
+                    }
+                    return dict;
+                }
+
+                var rareDict = CountPool(pools.RarePoolText);
+                var uncommonDict = CountPool(pools.UncommonPoolText);
+                var commonDict = CountPool(pools.CommonPoolText);
+
+                // Rarest wins if an item appears in multiple tiers during migration
+                void InsertAll(System.Collections.Generic.Dictionary<string, int> dict, int tier)
+                {
+                    foreach (var kv in dict)
+                    {
+                        conn.Execute(@"
+INSERT OR IGNORE INTO ItemDefinitions (Name, Tier, Weight, IsActive, CreatedAtUtc, DeletedAtUtc)
+VALUES (@Name, @Tier, @Weight, 1, @NowUtc, NULL);",
+                            new
+                            {
+                                Name = kv.Key,
+                                Tier = tier,
+                                Weight = Math.Max(1, kv.Value),
+                                NowUtc = nowUtc
+                            });
+                    }
+                }
+
+                InsertAll(rareDict, 2);      // Rare
+                InsertAll(uncommonDict, 1);  // Uncommon
+                InsertAll(commonDict, 0);    // Common
+
+                // If STILL empty (edge case), seed hard defaults
+                defCount = conn.ExecuteScalar<long>(@"SELECT COUNT(*) FROM ItemDefinitions;");
+                if (defCount == 0)
+                {
+                    void InsertDefaults(string text, int tier)
+                    {
+                        var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var raw in lines)
+                        {
+                            var n = Norm(raw);
+                            if (string.IsNullOrWhiteSpace(n)) continue;
+
+                            conn.Execute(@"
+INSERT OR IGNORE INTO ItemDefinitions (Name, Tier, Weight, IsActive, CreatedAtUtc, DeletedAtUtc)
+VALUES (@Name, @Tier, 1, 1, @NowUtc, NULL);",
+                                new { Name = n, Tier = tier, NowUtc = nowUtc });
+                        }
+                    }
+
+                    InsertDefaults(defaultRare, 2);
+                    InsertDefaults(defaultUncommon, 1);
+                    InsertDefaults(defaultCommon, 0);
+                }
+            }
 
             _created = true;
         }

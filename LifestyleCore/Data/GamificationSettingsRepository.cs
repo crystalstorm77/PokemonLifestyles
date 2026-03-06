@@ -112,6 +112,8 @@ WHERE Id = 1;");
         // Backwards-compatible overloads
         public Task UpdateAsync(int stepsPerRoll, int oneInN)
             => UpdateAsync(stepsPerRoll, oneInN, DefaultCommonWeight, DefaultUncommonWeight, DefaultRareWeight, null, null, null);
+        public Task UpdateAsync(int stepsPerRoll, int oneInN, int commonWeight, int uncommonWeight, int rareWeight)
+    => UpdateAsync(stepsPerRoll, oneInN, commonWeight, uncommonWeight, rareWeight, null, null, null);
 
         public Task UpdateAsync(int stepsPerRoll, int oneInN, string? legacyCommonPoolText)
             => UpdateAsync(stepsPerRoll, oneInN, DefaultCommonWeight, DefaultUncommonWeight, DefaultRareWeight, legacyCommonPoolText, null, null);

@@ -59,6 +59,14 @@ namespace LifestylesDesktop
         private readonly InventoryRepository _inventoryRepo = new();
         private readonly StepItemDropsService _stepItemDrops = new();
 
+        // Item definitions (structured; “real game” items)
+        private readonly ItemDefinitionsRepository _itemDefsRepo = new();
+
+        public ObservableCollection<ItemTier> ItemTierChoices { get; } =
+            new ObservableCollection<ItemTier> { ItemTier.Common, ItemTier.Uncommon, ItemTier.Rare };
+
+        private ObservableCollection<ItemDefinition> _itemDefinitions = new();
+
         private ObservableCollection<InventoryItem> _inventoryItems = new();
         private ObservableCollection<FocusSession> _focusSessions = new();
         private ObservableCollection<FoodEntry> _foodEntries = new();
@@ -101,6 +109,9 @@ namespace LifestylesDesktop
 
             await RefreshForSelectedDateAsync();
         }
+
+        // ============================================================
+        // ============================================================
 
         // ============================================================
         // ============================================================
@@ -383,7 +394,7 @@ namespace LifestylesDesktop
                 _sleepSessions = new ObservableCollection<SleepSession>(sleeps);
                 SleepSessionsGrid.ItemsSource = _sleepSessions;
 
-                // Gamification debug (includes item-drops + inventory)
+                // Gamification debug (includes item-drops + inventory + item defs)
                 await RefreshGamificationDebugAsync();
             }
             catch (Exception ex)
@@ -441,7 +452,6 @@ namespace LifestylesDesktop
             {
                 if (NowLocalText != null) NowLocalText.Text = "Now (local): (error)";
                 if (GameDayNowText != null) GameDayNowText.Text = "Game day (03:00 cutoff): (error)";
-
                 if (RewardsSummaryText != null) RewardsSummaryText.Text = "Selected day rewards: (error)";
 
                 // Still try to load item drops UI where possible
@@ -482,24 +492,17 @@ namespace LifestylesDesktop
                 if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
                     RareWeightBox.Text = settings.RareTierWeight.ToString();
 
-                if (CommonPoolBox != null && !CommonPoolBox.IsKeyboardFocusWithin)
-                    CommonPoolBox.Text = settings.CommonPoolText ?? "";
+                // Item definitions (don’t stomp while user is editing the grid)
+                var defs = await _itemDefsRepo.GetAllAsync();
+                if (ItemDefinitionsGrid != null && !ItemDefinitionsGrid.IsKeyboardFocusWithin)
+                {
+                    _itemDefinitions = new ObservableCollection<ItemDefinition>(defs);
+                    ItemDefinitionsGrid.ItemsSource = _itemDefinitions;
+                }
 
-                if (UncommonPoolBox != null && !UncommonPoolBox.IsKeyboardFocusWithin)
-                    UncommonPoolBox.Text = settings.UncommonPoolText ?? "";
-
-                if (RarePoolBox != null && !RarePoolBox.IsKeyboardFocusWithin)
-                    RarePoolBox.Text = settings.RarePoolText ?? "";
-
-                static int CountLines(string? s) =>
-                    (s ?? "")
-                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(x => (x ?? "").Trim())
-                    .Count(x => !string.IsNullOrWhiteSpace(x));
-
-                int cCount = CountLines(settings.CommonPoolText);
-                int uCount = CountLines(settings.UncommonPoolText);
-                int rCount = CountLines(settings.RarePoolText);
+                int cDefs = defs.Count(d => d.IsActive && d.Tier == ItemTier.Common && d.Weight > 0);
+                int uDefs = defs.Count(d => d.IsActive && d.Tier == ItemTier.Uncommon && d.Weight > 0);
+                int rDefs = defs.Count(d => d.IsActive && d.Tier == ItemTier.Rare && d.Weight > 0);
 
                 if (ItemDropsProgressText != null)
                 {
@@ -510,7 +513,7 @@ namespace LifestylesDesktop
                 if (ItemDropsStatsText != null)
                 {
                     ItemDropsStatsText.Text =
-                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN} | Pools C/U/R: {cCount}/{uCount}/{rCount} | Tier weights: {settings.CommonTierWeight}/{settings.UncommonTierWeight}/{settings.RareTierWeight}";
+                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN} | Active defs C/U/R: {cDefs}/{uDefs}/{rDefs} | Tier weights: {settings.CommonTierWeight}/{settings.UncommonTierWeight}/{settings.RareTierWeight}";
                 }
 
                 if (ItemDropsLastText != null)

@@ -230,20 +230,7 @@ namespace LifestylesDesktop
                     return;
                 }
 
-                string commonText = CommonPoolBox?.Text ?? "";
-                string uncommonText = UncommonPoolBox?.Text ?? "";
-                string rareText = RarePoolBox?.Text ?? "";
-
-                await _gamiSettingsRepo.UpdateAsync(
-                    stepsPerRoll,
-                    oneInN,
-                    commonW,
-                    uncommonW,
-                    rareW,
-                    commonText,
-                    uncommonText,
-                    rareText);
-
+                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, commonW, uncommonW, rareW);
                 await RefreshItemDropsDebugAsync();
 
                 MessageBox.Show("Saved item drop settings.");
@@ -254,27 +241,123 @@ namespace LifestylesDesktop
             }
         }
 
-        private async void ResetDropPools_Click(object sender, RoutedEventArgs e)
+        private async void ResetItemDefinitions_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Clearing pool textboxes makes the repo fall back to defaults.
-                if (CommonPoolBox != null) CommonPoolBox.Text = "";
-                if (UncommonPoolBox != null) UncommonPoolBox.Text = "";
-                if (RarePoolBox != null) RarePoolBox.Text = "";
+                var result = MessageBox.Show(
+                    "Reset item definitions to defaults?\n\n(This does NOT change your inventory counts.)",
+                    "Confirm",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                await _itemDefsRepo.ResetToDefaultsAsync();
+
+                // Reset tier weights to default values (keep steps/odds as-is)
+                int stepsPerRoll = 1000;
+                int oneInN = 4;
+
+                int.TryParse((StepsPerRollBox.Text ?? "").Trim(), out stepsPerRoll);
+                int.TryParse((OddsOneInBox.Text ?? "").Trim(), out oneInN);
+
+                stepsPerRoll = Math.Max(1, stepsPerRoll);
+                oneInN = Math.Max(1, oneInN);
 
                 if (CommonWeightBox != null) CommonWeightBox.Text = "80";
                 if (UncommonWeightBox != null) UncommonWeightBox.Text = "18";
                 if (RareWeightBox != null) RareWeightBox.Text = "2";
 
-                // Reuse the save logic
-                SaveItemDropSettings_Click(sender, e);
+                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, 80, 18, 2);
+                await RefreshItemDropsDebugAsync();
+
+                MessageBox.Show("Reset items to defaults.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not reset pools");
+                MessageBox.Show(ex.Message, "Could not reset items");
             }
         }
+
+        private async void AddItemDefinition_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string name = (NewItemNameBox?.Text ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    MessageBox.Show("Type an item name first.");
+                    return;
+                }
+
+                var tierObj = NewItemTierCombo?.SelectedItem;
+                if (tierObj is not ItemTier tier)
+                {
+                    tier = ItemTier.Common;
+                }
+
+                int weight = 1;
+                int.TryParse((NewItemWeightBox?.Text ?? "").Trim(), out weight);
+                weight = Math.Max(1, weight);
+
+                await _itemDefsRepo.UpsertActiveAsync(name, tier, weight);
+
+                if (NewItemNameBox != null) NewItemNameBox.Text = "";
+                if (NewItemWeightBox != null) NewItemWeightBox.Text = "1";
+
+                await RefreshItemDropsDebugAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not add item definition");
+            }
+        }
+
+        private async void SaveItemDefinitions_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Save current grid contents (tier/weight/active)
+                await _itemDefsRepo.UpsertManyAsync(_itemDefinitions);
+                await RefreshItemDropsDebugAsync();
+
+                MessageBox.Show("Saved item definitions.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save item definitions");
+            }
+        }
+
+        private async void DeleteSelectedItemDefinition_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (ItemDefinitionsGrid?.SelectedItem is not ItemDefinition sel)
+                {
+                    MessageBox.Show("Select an item first.");
+                    return;
+                }
+
+                var result = MessageBox.Show(
+                    $"Deactivate '{sel.Name}'?\n\n(This stops it dropping, but does not affect your inventory.)",
+                    "Confirm",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                await _itemDefsRepo.SetActiveAsync(sel.Name, isActive: false);
+                await RefreshItemDropsDebugAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not delete item definition");
+            }
+        }
+
+
 
         // ============================================================
         // SECTION D — Habits handlers
