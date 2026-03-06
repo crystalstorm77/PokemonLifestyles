@@ -33,6 +33,7 @@ namespace LifestyleCore.Data
         // ============================================================
         // SECTION C — Processing
         // ============================================================
+
         public async Task<(int Rolls, List<string> ItemsFound)> ProcessStepsAddedAsync(int stepsAdded)
         {
             ItemDropsSchema.EnsureCreated();
@@ -40,22 +41,18 @@ namespace LifestyleCore.Data
             if (stepsAdded <= 0)
                 return (0, new List<string>());
 
-            using var conn = Db.OpenConnection();
-
-            // Settings
-            var settings = await conn.QuerySingleAsync<(int StepsPerItemRoll, int ItemRollOneInN)>(
-                @"SELECT StepsPerItemRoll, ItemRollOneInN
-          FROM GamificationSettings
-          WHERE Id = 1;");
+            var settingsRepo = new GamificationSettingsRepository();
+            var settings = await settingsRepo.GetAsync();
 
             int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
             int oneInN = Math.Max(1, settings.ItemRollOneInN);
 
-            // State
-            var state = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(
-                @"SELECT StepsRemainder, TotalRolls, TotalSuccesses
-          FROM StepItemRollState
-          WHERE Id = 1;");
+            using var conn = Db.OpenConnection();
+
+            var state = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(@"
+SELECT StepsRemainder, TotalRolls, TotalSuccesses
+FROM StepItemRollState
+WHERE Id = 1;");
 
             int total = state.StepsRemainder + stepsAdded;
             int rolls = total / stepsPerRoll;
@@ -63,6 +60,7 @@ namespace LifestyleCore.Data
 
             if (rolls <= 0)
             {
+                // Just persist remainder
                 await conn.ExecuteAsync(@"
 UPDATE StepItemRollState
 SET StepsRemainder = @StepsRemainder,
@@ -133,3 +131,6 @@ WHERE Id = 1;",
 
             return (rolls, found);
         }
+
+    }
+}

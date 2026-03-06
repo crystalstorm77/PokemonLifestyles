@@ -212,8 +212,97 @@ namespace LifestylesDesktop
             }
         }
 
+        // ============================================================
         // SECTION E — Refresh UI
         // ============================================================
+
+        private async Task RefreshForSelectedDateAsync()
+        {
+            try
+            {
+                // Focus sessions
+                var focus = await _repo.GetForDateAsync(SelectedLogDate);
+                _focusSessions = new ObservableCollection<FocusSession>(focus);
+                FocusSessionsGrid.ItemsSource = _focusSessions;
+
+                // Food entries
+                var foods = await _foodEntryRepo.GetForDateAsync(SelectedLogDate);
+                _foodEntries = new ObservableCollection<FoodEntry>(foods);
+                FoodEntriesGrid.ItemsSource = _foodEntries;
+
+                _foodEntryOriginalKj.Clear();
+                foreach (var e in foods)
+                    _foodEntryOriginalKj[e.Id] = e.KjComputed;
+
+                // Sleep sessions
+                var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
+                _sleepSessions = new ObservableCollection<SleepSession>(sleeps);
+                SleepSessionsGrid.ItemsSource = _sleepSessions;
+
+                // Gamification debug (includes item-drops + inventory)
+                await RefreshGamificationDebugAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Refresh failed");
+            }
+        }
+
+        private static DateOnly GetCurrentGameDayLocal(DateTimeOffset nowLocal)
+        {
+            // 03:00 cutoff: before 3am counts as previous “game day”
+            var localTime = nowLocal.LocalDateTime;
+            var day = DateOnly.FromDateTime(localTime);
+            if (localTime.TimeOfDay < new TimeSpan(3, 0, 0))
+                day = day.AddDays(-1);
+
+            return day;
+        }
+
+        private async Task RefreshGamificationDebugAsync()
+        {
+            try
+            {
+                var nowLocal = DateTimeOffset.Now;
+                var gameDayNow = GetCurrentGameDayLocal(nowLocal);
+
+                if (NowLocalText != null)
+                    NowLocalText.Text = $"Now (local): {nowLocal:yyyy-MM-dd HH:mm:ss}";
+
+                if (GameDayNowText != null)
+                    GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
+
+                // Selected-day rewards summary
+                if (RewardsSummaryText != null)
+                {
+                    var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
+
+                    int coins = 0;
+                    int tickets = 0;
+
+                    foreach (var e in entries)
+                    {
+                        if (e.RewardType == RewardType.FocusCoins) coins += e.Amount;
+                        else if (e.RewardType == RewardType.HabitTicketCheckbox) tickets += e.Amount;
+                    }
+
+                    RewardsSummaryText.Text =
+                        $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): " +
+                        $"{coins} coins, {tickets} tickets  |  Ledger entries: {entries.Count}";
+                }
+
+                await RefreshItemDropsDebugAsync();
+            }
+            catch
+            {
+                if (NowLocalText != null) NowLocalText.Text = "Now (local): (error)";
+                if (GameDayNowText != null) GameDayNowText.Text = "Game day (03:00 cutoff): (error)";
+                if (RewardsSummaryText != null) RewardsSummaryText.Text = "Selected day rewards: (error)";
+                // Still try to load item drops UI where possible
+                await RefreshItemDropsDebugAsync();
+            }
+        }
+
         private async Task RefreshItemDropsDebugAsync()
         {
             try
@@ -252,8 +341,9 @@ namespace LifestylesDesktop
 
                 if (ItemDropsLastText != null)
                 {
-                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary) && !string.IsNullOrWhiteSpace(state.LastDropUtc)
-                        && DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
+                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary) &&
+                        !string.IsNullOrWhiteSpace(state.LastDropUtc) &&
+                        DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
                     {
                         ItemDropsLastText.Text =
                             $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
@@ -272,22 +362,16 @@ namespace LifestylesDesktop
                     InventoryCountText.Text = items.Count == 0 ? "Inventory: (empty)" : $"Inventory: {items.Count} item types";
 
                 _inventoryItems = new ObservableCollection<InventoryItem>(items);
+
                 if (InventoryGrid != null)
                     InventoryGrid.ItemsSource = _inventoryItems;
             }
             catch
             {
-                if (ItemDropsProgressText != null)
-                    ItemDropsProgressText.Text = "Item roll progress: (error loading)";
-
-                if (ItemDropsStatsText != null)
-                    ItemDropsStatsText.Text = "";
-
-                if (ItemDropsLastText != null)
-                    ItemDropsLastText.Text = "";
-
-                if (InventoryCountText != null)
-                    InventoryCountText.Text = "Inventory: (error loading)";
+                if (ItemDropsProgressText != null) ItemDropsProgressText.Text = "Item roll progress: (error loading)";
+                if (ItemDropsStatsText != null) ItemDropsStatsText.Text = "";
+                if (ItemDropsLastText != null) ItemDropsLastText.Text = "";
+                if (InventoryCountText != null) InventoryCountText.Text = "Inventory: (error loading)";
             }
         }
 

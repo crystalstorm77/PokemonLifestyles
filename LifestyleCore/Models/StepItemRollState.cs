@@ -9,6 +9,7 @@ namespace LifestyleCore.Models
         // ============================================================
         // SECTION B — Columns
         // ============================================================
+
         public int StepsRemainder { get; set; }
 
         public long TotalRolls { get; set; }
@@ -19,3 +20,7 @@ namespace LifestyleCore.Models
         public string? LastDropUtc { get; set; }
 
         public string? LastDropSummary { get; set; }
+
+    }
+} 
+

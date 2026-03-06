@@ -13,6 +13,7 @@ namespace LifestyleCore.Data
         // ============================================================
         // SECTION B — Ensure Created
         // ============================================================
+
         public static void EnsureCreated()
         {
             if (_created) return;
@@ -21,23 +22,23 @@ namespace LifestyleCore.Data
 
             conn.Execute(@"
 CREATE TABLE IF NOT EXISTS GamificationSettings (
-    Id INTEGER PRIMARY KEY CHECK (Id = 1),
-    StepsPerItemRoll INTEGER NOT NULL,
-    ItemRollOneInN INTEGER NOT NULL,
-    UpdatedAtUtc TEXT NOT NULL
+  Id INTEGER PRIMARY KEY CHECK (Id = 1),
+  StepsPerItemRoll INTEGER NOT NULL,
+  ItemRollOneInN INTEGER NOT NULL,
+  UpdatedAtUtc TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS StepItemRollState (
-    Id INTEGER PRIMARY KEY CHECK (Id = 1),
-    StepsRemainder INTEGER NOT NULL,
-    TotalRolls INTEGER NOT NULL,
-    TotalSuccesses INTEGER NOT NULL,
-    UpdatedAtUtc TEXT NOT NULL
+  Id INTEGER PRIMARY KEY CHECK (Id = 1),
+  StepsRemainder INTEGER NOT NULL,
+  TotalRolls INTEGER NOT NULL,
+  TotalSuccesses INTEGER NOT NULL,
+  UpdatedAtUtc TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS InventoryItems (
-    ItemKey TEXT PRIMARY KEY,
-    Count INTEGER NOT NULL
+  ItemKey TEXT PRIMARY KEY,
+  Count INTEGER NOT NULL
 );
 ");
 
@@ -69,3 +70,7 @@ VALUES
 
             _created = true;
         }
+
+    }
+}
+
