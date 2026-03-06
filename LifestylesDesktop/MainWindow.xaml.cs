@@ -381,21 +381,25 @@ namespace LifestylesDesktop
                 FocusSessionsGrid.ItemsSource = _focusSessions;
 
                 // Food entries
-                var foods = await _foodEntryRepo.GetForDateAsync(SelectedLogDate);
-                _foodEntries = new ObservableCollection<FoodEntry>(foods);
+                var food = await _foodEntryRepo.GetForDateAsync(SelectedLogDate);
+                _foodEntries = new ObservableCollection<FoodEntryRow>(food);
                 FoodEntriesGrid.ItemsSource = _foodEntries;
-
-                _foodEntryOriginalKj.Clear();
-                foreach (var e in foods)
-                    _foodEntryOriginalKj[e.Id] = e.KjComputed;
 
                 // Sleep sessions
                 var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
                 _sleepSessions = new ObservableCollection<SleepSession>(sleeps);
                 SleepSessionsGrid.ItemsSource = _sleepSessions;
 
+                // Habits (time-travel aware)
+                var habits = await _habitRepo.GetForLocalDateAsync(SelectedLogDate);
+                _habitRows = new ObservableCollection<HabitRow>(habits);
+                HabitsGrid.ItemsSource = _habitRows;
+
                 // Gamification debug (includes item-drops + inventory + item defs)
                 await RefreshGamificationDebugAsync();
+
+                // Auto-fit (once)
+                FitSelectedTabColumnsOnce();
             }
             catch (Exception ex)
             {
@@ -408,10 +412,37 @@ namespace LifestylesDesktop
             // 03:00 cutoff: before 3am counts as previous “game day”
             var localTime = nowLocal.LocalDateTime;
             var day = DateOnly.FromDateTime(localTime);
+
             if (localTime.TimeOfDay < new TimeSpan(3, 0, 0))
                 day = day.AddDays(-1);
 
             return day;
+        }
+
+        private static double ComputeSleepMultiplier(int totalMinutes)
+        {
+            // Simple, tweakable starting point:
+            // - 8h sleep => ~x1.10
+            // - 0h sleep => x0.80 (but if no sleep is logged we display x1.00 as "unknown")
+            double hours = totalMinutes / 60.0;
+            double mult = 0.80 + (hours * 0.0375); // 8h => 1.10
+
+            if (mult < 0.80) mult = 0.80;
+            if (mult > 1.15) mult = 1.15;
+
+            return mult;
+        }
+
+        private static string FormatMinutes(int totalMinutes)
+        {
+            if (totalMinutes <= 0) return "0m";
+
+            int h = totalMinutes / 60;
+            int m = totalMinutes % 60;
+
+            if (h <= 0) return $"{m}m";
+            if (m == 0) return $"{h}h";
+            return $"{h}h {m}m";
         }
 
         private async Task RefreshGamificationDebugAsync()
@@ -446,6 +477,29 @@ namespace LifestylesDesktop
                         $"{coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
                 }
 
+                // Sleep multiplier (applies to the day you woke up — i.e. this SelectedLogDate)
+                if (SleepMultiplierText != null)
+                {
+                    int sleepMinutes = 0;
+
+                    if (_sleepSessions != null)
+                    {
+                        foreach (var s in _sleepSessions)
+                            sleepMinutes += Math.Max(0, s.DurationMinutes);
+                    }
+
+                    if (sleepMinutes <= 0)
+                    {
+                        SleepMultiplierText.Text = "Sleep multiplier (wake day): x1.00 (no sleep logged)";
+                    }
+                    else
+                    {
+                        double mult = ComputeSleepMultiplier(sleepMinutes);
+                        SleepMultiplierText.Text =
+                            $"Sleep multiplier (wake day): x{mult:0.00} (sleep {FormatMinutes(sleepMinutes)})";
+                    }
+                }
+
                 await RefreshItemDropsDebugAsync();
             }
             catch
@@ -453,6 +507,8 @@ namespace LifestylesDesktop
                 if (NowLocalText != null) NowLocalText.Text = "Now (local): (error)";
                 if (GameDayNowText != null) GameDayNowText.Text = "Game day (03:00 cutoff): (error)";
                 if (RewardsSummaryText != null) RewardsSummaryText.Text = "Selected day rewards: (error)";
+
+                if (SleepMultiplierText != null) SleepMultiplierText.Text = "Sleep multiplier: (error)";
 
                 // Still try to load item drops UI where possible
                 await RefreshItemDropsDebugAsync();
@@ -492,36 +548,22 @@ namespace LifestylesDesktop
                 if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
                     RareWeightBox.Text = settings.RareTierWeight.ToString();
 
-                // Item definitions (don’t stomp while user is editing the grid)
-                var defs = await _itemDefsRepo.GetAllAsync();
-                if (ItemDefinitionsGrid != null && !ItemDefinitionsGrid.IsKeyboardFocusWithin)
-                {
-                    _itemDefinitions = new ObservableCollection<ItemDefinition>(defs);
-                    ItemDefinitionsGrid.ItemsSource = _itemDefinitions;
-                }
-
-                int cDefs = defs.Count(d => d.IsActive && d.Tier == ItemTier.Common && d.Weight > 0);
-                int uDefs = defs.Count(d => d.IsActive && d.Tier == ItemTier.Uncommon && d.Weight > 0);
-                int rDefs = defs.Count(d => d.IsActive && d.Tier == ItemTier.Rare && d.Weight > 0);
-
+                // Progress text
                 if (ItemDropsProgressText != null)
-                {
                     ItemDropsProgressText.Text =
-                        $"Item roll progress: {remainder:#,0}/{stepsPerRoll:#,0} steps (next roll in {toNext:#,0})";
-                }
+                        $"Item roll progress: {remainder} of {stepsPerRoll} steps, next roll in {toNext}";
 
+                // Stats
                 if (ItemDropsStatsText != null)
-                {
                     ItemDropsStatsText.Text =
-                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN} | Active defs C/U/R: {cDefs}/{uDefs}/{rDefs} | Tier weights: {settings.CommonTierWeight}/{settings.UncommonTierWeight}/{settings.RareTierWeight}";
-                }
+                        $"Total rolls: {state.TotalRolls} | Total drops: {state.TotalSuccesses} | Odds: 1 in {oneInN}";
 
+                // Last drop
                 if (ItemDropsLastText != null)
                 {
-                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary) &&
-                        !string.IsNullOrWhiteSpace(state.LastDropUtc) &&
-                        DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
+                    if (state.LastDropUtc != null && state.LastDropUtc.Value != DateTimeOffset.MinValue)
                     {
+                        var dto = state.LastDropUtc.Value;
                         ItemDropsLastText.Text =
                             $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
                     }
@@ -551,6 +593,8 @@ namespace LifestylesDesktop
             }
         }
 
+        // ============================================================
+        // ============================================================
 
 
         // ============================================================
