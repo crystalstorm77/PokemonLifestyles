@@ -214,103 +214,6 @@ namespace LifestylesDesktop
 
         // SECTION E — Refresh UI
         // ============================================================
-        private async Task RefreshForSelectedDateAsync()
-        {
-            var sessions = await _repo.GetForDateAsync(SelectedLogDate);
-            _focusSessions = new ObservableCollection<FocusSession>(sessions);
-            FocusSessionsGrid.ItemsSource = _focusSessions;
-
-            var foodEntries = await _foodEntryRepo.GetForDateAsync(SelectedLogDate);
-            _foodEntries = new ObservableCollection<FoodEntry>(foodEntries);
-            FoodEntriesGrid.ItemsSource = _foodEntries;
-
-            _foodEntryOriginalKj.Clear();
-            foreach (var e in foodEntries)
-                _foodEntryOriginalKj[e.Id] = e.KjComputed;
-
-            var totalKj = await _foodEntryRepo.GetTotalKjForDateAsync(SelectedLogDate);
-            FoodTotalText.Text = $"Total food: {totalKj:0} kJ";
-
-            var sleepSessions = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
-            _sleepSessions = new ObservableCollection<SleepSession>(sleepSessions);
-            SleepSessionsGrid.ItemsSource = _sleepSessions;
-
-            double totalSleepHours = 0;
-            foreach (var s in sleepSessions)
-                totalSleepHours += s.DurationMinutes / 60.0;
-
-            SleepTotalText.Text = $"Total sleep (wake day): {totalSleepHours:0.00} h";
-
-            var pendingStartUtc = await _sleepRepo.GetPendingStartUtcAsync();
-            if (pendingStartUtc.HasValue)
-            {
-                var local = pendingStartUtc.Value.ToLocalTime();
-                PendingSleepText.Text = $"Pending sleep start: {local:yyyy-MM-dd HH:mm}";
-            }
-            else
-            {
-                PendingSleepText.Text = "No pending sleep start.";
-            }
-
-            // NEW
-            await RefreshStepsAndHabitsAsync();
-
-            // Gamification debug UI (includes step item drops + inventory)
-            await RefreshGamificationDebugAsync();
-        }
-
-        private static DateOnly GetCurrentGameDayLocal(DateTimeOffset nowLocal)
-        {
-            // 03:00 local cutoff: before 03:00 counts as “yesterday” game day.
-            var today = DateOnly.FromDateTime(nowLocal.DateTime);
-            return (nowLocal.TimeOfDay < new TimeSpan(3, 0, 0)) ? today.AddDays(-1) : today;
-        }
-
-        private async Task RefreshGamificationDebugAsync()
-        {
-            var nowLocal = DateTimeOffset.Now;
-
-            if (NowLocalText != null)
-                NowLocalText.Text = $"Now (local): {nowLocal:yyyy-MM-dd HH:mm:ss}";
-
-            var gameDayNow = GetCurrentGameDayLocal(nowLocal);
-            if (GameDayNowText != null)
-                GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
-
-            // Rewards summary for the selected day (time-travel)
-            try
-            {
-                var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
-
-                if (RewardsSummaryText != null)
-                {
-                    if (entries.Count == 0)
-                    {
-                        RewardsSummaryText.Text = "Selected day rewards: (none)";
-                    }
-                    else
-                    {
-                        var parts = entries
-                            .GroupBy(e => e.RewardType.ToString())
-                            .OrderBy(g => g.Key)
-                            .Select(g => $"{g.Key} {g.Sum(x => x.Amount)}")
-                            .ToList();
-
-                        RewardsSummaryText.Text = "Selected day rewards: " + string.Join(" | ", parts);
-                    }
-                }
-            }
-            catch
-            {
-                // Don’t let debug UI break the app if something transient happens.
-                if (RewardsSummaryText != null)
-                    RewardsSummaryText.Text = "Selected day rewards: (error loading)";
-            }
-
-            // Step item drops (global state; separate from tickets)
-            await RefreshItemDropsDebugAsync();
-        }
-
         private async Task RefreshItemDropsDebugAsync()
         {
             try
@@ -347,11 +250,26 @@ namespace LifestylesDesktop
                         $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN}";
                 }
 
-                if (InventoryCountText != null)
+                if (ItemDropsLastText != null)
                 {
-                    InventoryCountText.Text =
-                        items.Count == 0 ? "Inventory: (empty)" : $"Inventory: {items.Count} item types";
+                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary) && !string.IsNullOrWhiteSpace(state.LastDropUtc)
+                        && DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
+                    {
+                        ItemDropsLastText.Text =
+                            $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(state.LastDropSummary))
+                    {
+                        ItemDropsLastText.Text = $"Last drop: {state.LastDropSummary}";
+                    }
+                    else
+                    {
+                        ItemDropsLastText.Text = "Last drop: (none yet)";
+                    }
                 }
+
+                if (InventoryCountText != null)
+                    InventoryCountText.Text = items.Count == 0 ? "Inventory: (empty)" : $"Inventory: {items.Count} item types";
 
                 _inventoryItems = new ObservableCollection<InventoryItem>(items);
                 if (InventoryGrid != null)
@@ -364,6 +282,9 @@ namespace LifestylesDesktop
 
                 if (ItemDropsStatsText != null)
                     ItemDropsStatsText.Text = "";
+
+                if (ItemDropsLastText != null)
+                    ItemDropsLastText.Text = "";
 
                 if (InventoryCountText != null)
                     InventoryCountText.Text = "Inventory: (error loading)";

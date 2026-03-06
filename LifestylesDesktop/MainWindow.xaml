@@ -42,7 +42,6 @@
                 <TextBlock x:Name="LogDateDisplay" Margin="12,0,0,0" VerticalAlignment="Center"/>
             </StackPanel>
 
-            <!-- Gamification (Debug) -->
             <GroupBox Header="Gamification (Debug)" Margin="0,0,0,12">
                 <StackPanel Margin="10">
                     <TextBlock x:Name="NowLocalText" Foreground="Gray"/>
@@ -65,18 +64,41 @@
 
                     <TextBlock x:Name="ItemDropsProgressText" Foreground="Gray" Margin="0,6,0,0"/>
                     <TextBlock x:Name="ItemDropsStatsText" Foreground="Gray" Margin="0,2,0,0"/>
+                    <TextBlock x:Name="ItemDropsLastText" Foreground="Gray" Margin="0,2,0,0"/>
 
-                    <TextBlock x:Name="InventoryCountText" Margin="0,8,0,4"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
+                        <TextBlock x:Name="InventoryCountText" VerticalAlignment="Center"/>
+                        <Button Content="Clear inventory"
+                    Width="110"
+                    Margin="10,0,0,0"
+                    Click="ClearInventory_Click"/>
+                    </StackPanel>
 
                     <DataGrid x:Name="InventoryGrid"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              IsReadOnly="True"
-                              Height="140">
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True"
+                  Height="140">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding ItemKey}" Width="*"/>
-                            <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="80"/>
+
+                            <!-- “-  x  +” layout per row -->
+                            <DataGridTemplateColumn Header="Count" Width="160">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Content="-" Width="28" Padding="0"
+                                        Tag="{Binding ItemKey}"
+                                        Click="InventoryMinus_Click"/>
+                                            <TextBlock Text="{Binding Count}" Width="60" TextAlignment="Center" VerticalAlignment="Center"/>
+                                            <Button Content="+" Width="28" Padding="0"
+                                        Tag="{Binding ItemKey}"
+                                        Click="InventoryPlus_Click"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -85,9 +107,7 @@
                     Width="140"
                     Click="ViewRewardsForSelectedDay_Click"/>
                     </StackPanel>
-
                 </StackPanel>
-
             </GroupBox>
 
             <!-- Focus Session -->

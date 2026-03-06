@@ -33,7 +33,6 @@ namespace LifestyleCore.Data
         // ============================================================
         // SECTION C — Processing
         // ============================================================
-
         public async Task<(int Rolls, List<string> ItemsFound)> ProcessStepsAddedAsync(int stepsAdded)
         {
             ItemDropsSchema.EnsureCreated();
@@ -44,19 +43,19 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             // Settings
-            var settings = await conn.QuerySingleAsync<(int StepsPerItemRoll, int ItemRollOneInN)>(@"
-                SELECT StepsPerItemRoll, ItemRollOneInN
-                FROM GamificationSettings
-                WHERE Id = 1;");
+            var settings = await conn.QuerySingleAsync<(int StepsPerItemRoll, int ItemRollOneInN)>(
+                @"SELECT StepsPerItemRoll, ItemRollOneInN
+          FROM GamificationSettings
+          WHERE Id = 1;");
 
             int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
             int oneInN = Math.Max(1, settings.ItemRollOneInN);
 
             // State
-            var state = await conn.QuerySingleAsync<StepItemRollState>(@"
-                SELECT StepsRemainder, TotalRolls, TotalSuccesses
-                FROM StepItemRollState
-                WHERE Id = 1;");
+            var state = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(
+                @"SELECT StepsRemainder, TotalRolls, TotalSuccesses
+          FROM StepItemRollState
+          WHERE Id = 1;");
 
             int total = state.StepsRemainder + stepsAdded;
             int rolls = total / stepsPerRoll;
@@ -64,12 +63,11 @@ namespace LifestyleCore.Data
 
             if (rolls <= 0)
             {
-                // Just update remainder
                 await conn.ExecuteAsync(@"
-                    UPDATE StepItemRollState
-                    SET StepsRemainder = @StepsRemainder,
-                        UpdatedAtUtc = @UpdatedAtUtc
-                    WHERE Id = 1;",
+UPDATE StepItemRollState
+SET StepsRemainder = @StepsRemainder,
+    UpdatedAtUtc = @UpdatedAtUtc
+WHERE Id = 1;",
                     new
                     {
                         StepsRemainder = remainder,
@@ -93,32 +91,45 @@ namespace LifestyleCore.Data
                     successes++;
 
                     await conn.ExecuteAsync(@"
-                        INSERT INTO InventoryItems (ItemKey, Count)
-                        VALUES (@ItemKey, 1)
-                        ON CONFLICT(ItemKey) DO UPDATE SET
-                            Count = Count + 1;",
+INSERT INTO InventoryItems (ItemKey, Count)
+VALUES (@ItemKey, 1)
+ON CONFLICT(ItemKey) DO UPDATE SET Count = Count + 1;",
                         new { ItemKey = item });
                 }
             }
 
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
+            // Build a compact “Potion x2, Nugget x1” style summary.
+            string? dropSummary = null;
+            if (found.Count > 0)
+            {
+                var parts = found
+                    .GroupBy(x => x)
+                    .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(g => g.Count() == 1 ? g.Key : $"{g.Key} x{g.Count()}");
+
+                dropSummary = string.Join(", ", parts);
+            }
+
             await conn.ExecuteAsync(@"
-                UPDATE StepItemRollState
-                SET StepsRemainder = @StepsRemainder,
-                    TotalRolls = TotalRolls + @AddRolls,
-                    TotalSuccesses = TotalSuccesses + @AddSuccesses,
-                    UpdatedAtUtc = @UpdatedAtUtc
-                WHERE Id = 1;",
+UPDATE StepItemRollState
+SET StepsRemainder = @StepsRemainder,
+    TotalRolls = TotalRolls + @AddRolls,
+    TotalSuccesses = TotalSuccesses + @AddSuccesses,
+    UpdatedAtUtc = @UpdatedAtUtc,
+    LastDropUtc = CASE WHEN @LastDropUtc IS NULL THEN LastDropUtc ELSE @LastDropUtc END,
+    LastDropSummary = CASE WHEN @LastDropSummary IS NULL THEN LastDropSummary ELSE @LastDropSummary END
+WHERE Id = 1;",
                 new
                 {
                     StepsRemainder = remainder,
                     AddRolls = rolls,
                     AddSuccesses = successes,
-                    UpdatedAtUtc = nowUtc
+                    UpdatedAtUtc = nowUtc,
+                    LastDropUtc = found.Count > 0 ? nowUtc : null,
+                    LastDropSummary = dropSummary
                 });
 
             return (rolls, found);
         }
-    }
-}

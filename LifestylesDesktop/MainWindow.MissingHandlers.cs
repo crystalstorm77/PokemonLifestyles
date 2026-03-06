@@ -28,6 +28,7 @@ namespace LifestylesDesktop
 {
     public partial class MainWindow : Window
     {
+        // ============================================================
         // SECTION C — Steps handlers
         // ============================================================
 
@@ -60,19 +61,12 @@ namespace LifestylesDesktop
                 await _stepsRepo.AddStepsAsync(localWhen, steps, source: "ManualDesktop");
 
                 // Steps → Item drops (global; separate from tickets)
-                var (rolls, itemsFound) = await _stepItemDrops.ProcessStepsAddedAsync(steps);
-                if (itemsFound.Count > 0)
-                {
-                    MessageBox.Show(
-                        $"Item drop!\n\nRolls: {rolls}\nFound: {string.Join(", ", itemsFound)}",
-                        "Item drop",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                }
+                await _stepItemDrops.ProcessStepsAddedAsync(steps);
 
                 StepsAddBox.Text = "";
                 StepsAtBox.Text = "";
 
+                // Refresh UI (this will update progress + last drop + inventory)
                 await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
@@ -81,6 +75,58 @@ namespace LifestylesDesktop
             }
         }
 
+        private async void InventoryMinus_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var key = (sender as Button)?.Tag as string;
+                if (string.IsNullOrWhiteSpace(key)) return;
+
+                await _inventoryRepo.AdjustItemAsync(key, -1);
+                await RefreshItemDropsDebugAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not update inventory");
+            }
+        }
+
+        private async void InventoryPlus_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var key = (sender as Button)?.Tag as string;
+                if (string.IsNullOrWhiteSpace(key)) return;
+
+                await _inventoryRepo.AdjustItemAsync(key, +1);
+                await RefreshItemDropsDebugAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not update inventory");
+            }
+        }
+
+        private async void ClearInventory_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Clear ALL inventory items?\n\n(This does not affect steps, rolls, or tickets.)",
+                    "Confirm",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                await _inventoryRepo.ClearAsync();
+                await RefreshItemDropsDebugAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not clear inventory");
+            }
+        }
 
         private async void SaveItemDropSettings_Click(object sender, RoutedEventArgs e)
         {
@@ -107,78 +153,6 @@ namespace LifestylesDesktop
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Could not save item drop settings");
-            }
-        }
-
-        private async void ViewStepsBucketsButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var rows = await _stepsRepo.GetBucketsForLocalDateAsync(SelectedLogDate);
-
-                var win = new Window
-                {
-                    Title = $"Step buckets ({SelectedLogDate:yyyy-MM-dd})",
-                    Width = 360,
-                    Height = 520,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this
-                };
-
-                var root = new StackPanel { Margin = new Thickness(12) };
-
-                if (rows.Count == 0)
-                {
-                    root.Children.Add(new TextBlock
-                    {
-                        Text = "No buckets for this day.",
-                        Foreground = System.Windows.Media.Brushes.Gray
-                    });
-                }
-                else
-                {
-                    var grid = new DataGrid
-                    {
-                        AutoGenerateColumns = false,
-                        CanUserAddRows = false,
-                        CanUserDeleteRows = false,
-                        IsReadOnly = true,
-                        Height = 420,
-                        ItemsSource = rows
-                    };
-
-                    grid.Columns.Add(new DataGridTextColumn
-                    {
-                        Header = "Time",
-                        Binding = new System.Windows.Data.Binding("LocalTime")
-                    });
-
-                    grid.Columns.Add(new DataGridTextColumn
-                    {
-                        Header = "Steps",
-                        Binding = new System.Windows.Data.Binding("Steps")
-                    });
-
-                    root.Children.Add(grid);
-                }
-
-                var close = new Button
-                {
-                    Content = "Close",
-                    Width = 100,
-                    Margin = new Thickness(0, 10, 0, 0),
-                    HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-                };
-
-                close.Click += (_, __) => win.Close();
-                root.Children.Add(close);
-
-                win.Content = root;
-                win.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Could not load step buckets");
             }
         }
 

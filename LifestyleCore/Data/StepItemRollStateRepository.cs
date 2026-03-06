@@ -18,17 +18,23 @@ namespace LifestyleCore.Data
 
             using var conn = Db.OpenConnection();
 
-            var row = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(
-                @"SELECT StepsRemainder, TotalRolls, TotalSuccesses
-                  FROM StepItemRollState
-                  WHERE Id = 1;");
+            var row = await conn.QuerySingleAsync<(
+                int StepsRemainder,
+                long TotalRolls,
+                long TotalSuccesses,
+                string? LastDropUtc,
+                string? LastDropSummary
+            )>(
+                @"SELECT StepsRemainder, TotalRolls, TotalSuccesses, LastDropUtc, LastDropSummary
+          FROM StepItemRollState
+          WHERE Id = 1;");
 
             return new StepItemRollState
             {
                 StepsRemainder = row.StepsRemainder,
                 TotalRolls = row.TotalRolls,
-                TotalSuccesses = row.TotalSuccesses
+                TotalSuccesses = row.TotalSuccesses,
+                LastDropUtc = row.LastDropUtc,
+                LastDropSummary = row.LastDropSummary
             };
         }
-    }
-}
