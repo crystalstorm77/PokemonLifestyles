@@ -57,12 +57,10 @@ namespace LifestyleCore.Data
             var row = await conn.QuerySingleAsync<(
                 int StepsPerItemRoll,
                 int ItemRollOneInN,
-
-                string? ItemPoolText,        // legacy
+                string? ItemPoolText, // legacy
                 string? CommonPoolText,
                 string? UncommonPoolText,
                 string? RarePoolText,
-
                 int CommonTierWeight,
                 int UncommonTierWeight,
                 int RareTierWeight
@@ -90,7 +88,9 @@ WHERE Id = 1;");
             string uncommon = string.IsNullOrWhiteSpace(row.UncommonPoolText) ? DefaultUncommonPoolText : row.UncommonPoolText!;
             string rare = string.IsNullOrWhiteSpace(row.RarePoolText) ? DefaultRarePoolText : row.RarePoolText!;
 
-            int cw = row.CommonTierWeight <= 0 ? DefaultCommonWeight : row.CommonTierWeight;
+            // IMPORTANT: allow 0 to mean “disabled” (only negative is invalid)
+            int cw = row.CommonTierWeight < 0 ? DefaultCommonWeight : row.CommonTierWeight;
+
             int uw = row.UncommonTierWeight < 0 ? 0 : row.UncommonTierWeight;
             int rw = row.RareTierWeight < 0 ? 0 : row.RareTierWeight;
 
@@ -98,11 +98,9 @@ WHERE Id = 1;");
             {
                 StepsPerItemRoll = row.StepsPerItemRoll,
                 ItemRollOneInN = row.ItemRollOneInN,
-
                 CommonPoolText = common,
                 UncommonPoolText = uncommon,
                 RarePoolText = rare,
-
                 CommonTierWeight = cw,
                 UncommonTierWeight = uw,
                 RareTierWeight = rw
@@ -112,8 +110,9 @@ WHERE Id = 1;");
         // Backwards-compatible overloads
         public Task UpdateAsync(int stepsPerRoll, int oneInN)
             => UpdateAsync(stepsPerRoll, oneInN, DefaultCommonWeight, DefaultUncommonWeight, DefaultRareWeight, null, null, null);
+
         public Task UpdateAsync(int stepsPerRoll, int oneInN, int commonWeight, int uncommonWeight, int rareWeight)
-    => UpdateAsync(stepsPerRoll, oneInN, commonWeight, uncommonWeight, rareWeight, null, null, null);
+            => UpdateAsync(stepsPerRoll, oneInN, commonWeight, uncommonWeight, rareWeight, null, null, null);
 
         public Task UpdateAsync(int stepsPerRoll, int oneInN, string? legacyCommonPoolText)
             => UpdateAsync(stepsPerRoll, oneInN, DefaultCommonWeight, DefaultUncommonWeight, DefaultRareWeight, legacyCommonPoolText, null, null);
@@ -132,8 +131,12 @@ WHERE Id = 1;");
 
             if (stepsPerRoll <= 0) throw new InvalidOperationException("StepsPerItemRoll must be > 0.");
             if (oneInN <= 0) throw new InvalidOperationException("ItemRollOneInN must be > 0.");
-            if (commonWeight < 0 || uncommonWeight < 0 || rareWeight < 0) throw new InvalidOperationException("Tier weights must be >= 0.");
-            if (commonWeight + uncommonWeight + rareWeight <= 0) throw new InvalidOperationException("At least one tier weight must be > 0.");
+
+            if (commonWeight < 0 || uncommonWeight < 0 || rareWeight < 0)
+                throw new InvalidOperationException("Tier weights must be >= 0.");
+
+            if (commonWeight + uncommonWeight + rareWeight <= 0)
+                throw new InvalidOperationException("At least one tier weight must be > 0.");
 
             // If user clears a tier textbox, treat that as "use defaults for that tier"
             string? commonToStore = string.IsNullOrWhiteSpace(commonPoolText) ? null : commonPoolText.Trim();
@@ -141,6 +144,7 @@ WHERE Id = 1;");
             string? rareToStore = string.IsNullOrWhiteSpace(rarePoolText) ? null : rarePoolText.Trim();
 
             using var conn = Db.OpenConnection();
+
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
             await conn.ExecuteAsync(@"
@@ -148,30 +152,24 @@ UPDATE GamificationSettings
 SET
   StepsPerItemRoll = @StepsPerItemRoll,
   ItemRollOneInN = @ItemRollOneInN,
-
   CommonPoolText = @CommonPoolText,
   UncommonPoolText = @UncommonPoolText,
   RarePoolText = @RarePoolText,
-
   CommonTierWeight = @CommonTierWeight,
   UncommonTierWeight = @UncommonTierWeight,
   RareTierWeight = @RareTierWeight,
-
   UpdatedAtUtc = @UpdatedAtUtc
 WHERE Id = 1;",
                 new
                 {
                     StepsPerItemRoll = stepsPerRoll,
                     ItemRollOneInN = oneInN,
-
                     CommonPoolText = commonToStore,
                     UncommonPoolText = uncommonToStore,
                     RarePoolText = rareToStore,
-
                     CommonTierWeight = commonWeight,
                     UncommonTierWeight = uncommonWeight,
                     RareTierWeight = rareWeight,
-
                     UpdatedAtUtc = nowUtc
                 });
         }

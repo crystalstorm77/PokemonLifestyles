@@ -147,6 +147,10 @@ namespace LifestylesDesktop
             }
         }
 
+        // ============================================================
+        // SECTION D — Inventory + Item Drops handlers
+        // ============================================================
+
         private async void InventoryMinus_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -241,21 +245,11 @@ namespace LifestylesDesktop
             }
         }
 
-        private async void ResetItemDefinitions_Click(object sender, RoutedEventArgs e)
+        private async void ResetTierWeights_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var result = MessageBox.Show(
-                    "Reset item definitions to defaults?\n\n(This does NOT change your inventory counts.)",
-                    "Confirm",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result != MessageBoxResult.Yes) return;
-
-                await _itemDefsRepo.ResetToDefaultsAsync();
-
-                // Reset tier weights to default values (keep steps/odds as-is)
+                // Keep steps/odds as-is, reset only tier weights to defaults.
                 int stepsPerRoll = 1000;
                 int oneInN = 4;
 
@@ -272,11 +266,34 @@ namespace LifestylesDesktop
                 await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, 80, 18, 2);
                 await RefreshItemDropsDebugAsync();
 
-                MessageBox.Show("Reset items to defaults.");
+                MessageBox.Show("Reset tier weights.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not reset items");
+                MessageBox.Show(ex.Message, "Could not reset tier weights");
+            }
+        }
+
+        private async void ResetItemList_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Reset the DROP ITEM LIST back to defaults?\n\nThis can remove custom items you added.\n(It does NOT change your inventory counts.)",
+                    "Confirm",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                await _itemDefsRepo.ResetToDefaultsAsync();
+                await RefreshItemDropsDebugAsync();
+
+                MessageBox.Show("Reset item list to defaults.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset item list");
             }
         }
 
@@ -292,10 +309,7 @@ namespace LifestylesDesktop
                 }
 
                 var tierObj = NewItemTierCombo?.SelectedItem;
-                if (tierObj is not ItemTier tier)
-                {
-                    tier = ItemTier.Common;
-                }
+                if (tierObj is not ItemTier tier) tier = ItemTier.Common;
 
                 int weight = 1;
                 int.TryParse((NewItemWeightBox?.Text ?? "").Trim(), out weight);
@@ -310,7 +324,7 @@ namespace LifestylesDesktop
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not add item definition");
+                MessageBox.Show(ex.Message, "Could not add item");
             }
         }
 
@@ -322,11 +336,11 @@ namespace LifestylesDesktop
                 await _itemDefsRepo.UpsertManyAsync(_itemDefinitions);
                 await RefreshItemDropsDebugAsync();
 
-                MessageBox.Show("Saved item definitions.");
+                MessageBox.Show("Saved item list changes.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not save item definitions");
+                MessageBox.Show(ex.Message, "Could not save item list changes");
             }
         }
 
@@ -353,14 +367,13 @@ namespace LifestylesDesktop
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not delete item definition");
+                MessageBox.Show(ex.Message, "Could not deactivate item");
             }
         }
 
 
-
         // ============================================================
-        // SECTION D — Habits handlers
+        // SECTION E — Habits handlers
         // ============================================================
 
         private async void AddHabitAmountButton_Click(object sender, RoutedEventArgs e)
@@ -490,7 +503,7 @@ namespace LifestylesDesktop
         }
 
         // ============================================================
-        // SECTION E — Rewards viewer handler
+        // SECTION F — Rewards viewer handler
         // ============================================================
 
         private async void ViewRewardsForSelectedDay_Click(object sender, RoutedEventArgs e)
@@ -627,7 +640,7 @@ namespace LifestylesDesktop
         }
 
         // ============================================================
-        // SECTION F — Small helpers (local to this file)
+        // SECTION G — Small helpers (local to this file)
         // ============================================================
 
         private static int PreviewFocusCoins(int minutes, bool completed)

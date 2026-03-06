@@ -63,7 +63,7 @@ SECTION B — Input Panel
                         <TextBlock Text="Odds (1 in):" Width="80" VerticalAlignment="Center"/>
                         <TextBox x:Name="OddsOneInBox" Width="60" Margin="0,0,12,0"/>
 
-                        <Button Content="Save" Width="80" Click="SaveItemDropSettings_Click"/>
+                        <Button Content="Save drop settings" Width="130" Click="SaveItemDropSettings_Click"/>
                     </StackPanel>
 
                     <TextBlock x:Name="ItemDropsProgressText" Foreground="Gray" Margin="0,6,0,0"/>
@@ -71,7 +71,7 @@ SECTION B — Input Panel
                     <TextBlock x:Name="ItemDropsLastText" Foreground="Gray" Margin="0,2,0,0"/>
 
                     <!-- Tier weights -->
-                    <TextBlock Text="Tier weights (only used when a roll succeeds):" Margin="0,10,0,2"/>
+                    <TextBlock Text="Tier weights (used only when a roll succeeds):" Margin="0,10,0,2"/>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Common:" Width="70" VerticalAlignment="Center"/>
@@ -83,11 +83,11 @@ SECTION B — Input Panel
                         <TextBlock Text="Rare:" Width="45" VerticalAlignment="Center"/>
                         <TextBox x:Name="RareWeightBox" Width="60" Margin="0,0,12,0"/>
 
-                        <Button Content="Reset items" Width="100" Click="ResetItemDefinitions_Click"/>
+                        <Button Content="Reset tier weights" Width="130" Click="ResetTierWeights_Click"/>
                     </StackPanel>
 
-                    <!-- Item definitions editor -->
-                    <TextBlock Text="Item definitions:" FontWeight="Bold" Margin="0,10,0,4"/>
+                    <!-- Item list editor -->
+                    <TextBlock Text="Drop items list:" FontWeight="Bold" Margin="0,10,0,4"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBox x:Name="NewItemNameBox" Width="170" Margin="0,0,6,0" ToolTip="New item name"/>
@@ -107,25 +107,38 @@ SECTION B — Input Panel
               Height="160"
               Margin="0,0,0,2">
                         <DataGrid.Columns>
+
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
 
-                            <DataGridComboBoxColumn Header="Tier"
-                                Width="90"
-                                ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ItemTierChoices}"
-                                SelectedItemBinding="{Binding Tier, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- Template column so Tier always displays (even when not editing) -->
+                            <DataGridTemplateColumn Header="Tier" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Tier}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Width="85"
+                        ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ItemTierChoices}"
+                        SelectedItem="{Binding Tier, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
                             <DataGridTextColumn Header="Weight" Width="70" Binding="{Binding Weight, UpdateSourceTrigger=PropertyChanged}"/>
-
                             <DataGridCheckBoxColumn Header="Active" Width="60" Binding="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"/>
+
                         </DataGrid.Columns>
                     </DataGrid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
-                        <Button Content="Save items" Width="90" Click="SaveItemDefinitions_Click"/>
-                        <Button Content="Delete selected" Width="110" Margin="6,0,0,0" Click="DeleteSelectedItemDefinition_Click"/>
+                        <Button Content="Save grid edits" Width="110" Click="SaveItemDefinitions_Click"/>
+                        <Button Content="Deactivate selected" Width="140" Margin="6,0,0,0" Click="DeleteSelectedItemDefinition_Click"/>
+                        <Button Content="Reset item list..." Width="120" Margin="6,0,0,0" Click="ResetItemList_Click"/>
                     </StackPanel>
 
-                    <TextBlock Text="Tip: Tier chooses the bucket; Weight biases within the bucket; Active toggles safely. Names are fixed to avoid accidental typos/renames."
+                    <TextBlock Text="Tip: Add saves immediately. “Save grid edits” is only for changes you make inside the grid (Tier/Weight/Active)."
                Foreground="Gray"
                FontStyle="Italic"
                FontSize="11"
@@ -150,7 +163,6 @@ SECTION B — Input Panel
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding ItemKey}" Width="*"/>
 
-                            <!-- “- x +” layout per row -->
                             <DataGridTemplateColumn Header="Count" Width="160">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -158,9 +170,7 @@ SECTION B — Input Panel
                                             <Button Content="-" Width="28" Padding="0"
                         Tag="{Binding ItemKey}"
                         Click="InventoryMinus_Click"/>
-
                                             <TextBlock Text="{Binding Count}" Width="60" TextAlignment="Center" VerticalAlignment="Center"/>
-
                                             <Button Content="+" Width="28" Padding="0"
                         Tag="{Binding ItemKey}"
                         Click="InventoryPlus_Click"/>
@@ -168,6 +178,7 @@ SECTION B — Input Panel
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -223,8 +234,17 @@ SECTION B1 — Focus Session Input
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Food:" Width="90" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="FoodCombo" Width="240" IsEditable="True" IsTextSearchEnabled="True" Margin="0,0,10,0"/>
-                        <Button x:Name="RefreshFoodMenuButton" Content="Refresh Menu" Width="120" Click="RefreshFoodMenuButton_Click"/>
+
+                        <ComboBox x:Name="FoodCombo"
+                Width="240"
+                DisplayMemberPath="Name"
+                IsTextSearchEnabled="True"
+                Margin="0,0,10,0"/>
+
+                        <Button x:Name="ViewFoodMenuButton"
+              Content="View / Edit Menu..."
+              Width="140"
+              Click="ViewFoodMenuButton_Click"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -374,9 +394,8 @@ SECTION B1 — Focus Session Input
                FontStyle="Italic"/>
                 </StackPanel>
             </GroupBox>
-
             <!-- ============================================================
-                 SECTION C — Sessions Header
+                 SECTION D — Sessions Header
                  ============================================================ -->
             <TextBlock x:Name="SessionsHeaderText"
                        Text="Sessions"
@@ -384,7 +403,7 @@ SECTION B1 — Focus Session Input
                        Margin="0,0,0,8"/>
 
             <!-- ============================================================
-SECTION D — Sessions List
+SECTION E — Sessions List
 ============================================================ -->
             <TabControl x:Name="SessionsTabControl"
 SelectionChanged="SessionsTabControl_SelectionChanged"
@@ -392,7 +411,7 @@ Margin="0,0,0,0"
 Height="520">
 
                 <!-- ============================================================
-SECTION D1 — Focus Sessions Tab
+SECTION F — Focus Sessions Tab
 ============================================================ -->
 
                 <TabItem Header="Focus Sessions">
