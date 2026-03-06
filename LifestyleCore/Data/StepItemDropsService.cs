@@ -96,7 +96,6 @@ namespace LifestyleCore.Data
         // ============================================================
         // SECTION C — Processing
         // ============================================================
-
         public async Task<(int Rolls, List<string> ItemsFound)> ProcessStepsAddedAsync(int stepsAdded)
         {
             ItemDropsSchema.EnsureCreated();
@@ -124,11 +123,13 @@ namespace LifestyleCore.Data
             }
 
             using var conn = Db.OpenConnection();
+            using var tx = conn.BeginTransaction();
 
-            var state = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(@"
-SELECT StepsRemainder, TotalRolls, TotalSuccesses
-FROM StepItemRollState
-WHERE Id = 1;");
+            var state = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(
+                @"SELECT StepsRemainder, TotalRolls, TotalSuccesses
+          FROM StepItemRollState
+          WHERE Id = 1;",
+                transaction: tx);
 
             int total = state.StepsRemainder + stepsAdded;
             int rolls = total / stepsPerRoll;
@@ -145,12 +146,15 @@ WHERE Id = 1;",
                     {
                         StepsRemainder = remainder,
                         UpdatedAtUtc = DateTimeOffset.UtcNow.ToString("O")
-                    });
+                    },
+                    transaction: tx);
 
+                tx.Commit();
                 return (0, new List<string>());
             }
 
             var found = new List<string>();
+            var foundCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             long successes = 0;
 
             for (int i = 0; i < rolls; i++)
@@ -160,7 +164,6 @@ WHERE Id = 1;",
 
                 successes++;
 
-                // Choose tier by weights, then choose an item from that tier.
                 int tier = PickTierIndex(settings.CommonTierWeight, settings.UncommonTierWeight, settings.RareTierWeight);
 
                 List<string> pool = tier switch
@@ -183,22 +186,32 @@ WHERE Id = 1;",
 
                 found.Add(item);
 
+                if (foundCounts.TryGetValue(item, out int c))
+                    foundCounts[item] = c + 1;
+                else
+                    foundCounts[item] = 1;
+            }
+
+            // Batch inventory updates: one upsert per item type
+            foreach (var kvp in foundCounts)
+            {
                 await conn.ExecuteAsync(@"
 INSERT INTO InventoryItems (ItemKey, Count)
-VALUES (@ItemKey, 1)
-ON CONFLICT(ItemKey) DO UPDATE SET Count = Count + 1;",
-                    new { ItemKey = item });
+VALUES (@ItemKey, @Count)
+ON CONFLICT(ItemKey) DO UPDATE SET Count = Count + excluded.Count;",
+                    new { ItemKey = kvp.Key, Count = kvp.Value },
+                    transaction: tx);
             }
 
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
+            // Build a compact “Potion x2, Nugget x1” style summary.
             string? dropSummary = null;
-            if (found.Count > 0)
+            if (foundCounts.Count > 0)
             {
-                var parts = found
-                    .GroupBy(x => x)
-                    .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
-                    .Select(g => g.Count() == 1 ? g.Key : $"{g.Key} x{g.Count()}");
+                var parts = foundCounts
+                    .OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(k => k.Value == 1 ? k.Key : $"{k.Key} x{k.Value}");
 
                 dropSummary = string.Join(", ", parts);
             }
@@ -218,10 +231,12 @@ WHERE Id = 1;",
                     AddRolls = rolls,
                     AddSuccesses = successes,
                     UpdatedAtUtc = nowUtc,
-                    LastDropUtc = found.Count > 0 ? nowUtc : null,
+                    LastDropUtc = foundCounts.Count > 0 ? nowUtc : null,
                     LastDropSummary = dropSummary
-                });
+                },
+                transaction: tx);
 
+            tx.Commit();
             return (rolls, found);
         }
 
