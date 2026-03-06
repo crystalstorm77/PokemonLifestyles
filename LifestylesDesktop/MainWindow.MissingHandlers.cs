@@ -216,9 +216,34 @@ namespace LifestylesDesktop
                     return;
                 }
 
-                string poolText = ItemPoolBox?.Text ?? "";
+                if (!int.TryParse((CommonWeightBox.Text ?? "").Trim(), out int commonW) || commonW < 0 ||
+                    !int.TryParse((UncommonWeightBox.Text ?? "").Trim(), out int uncommonW) || uncommonW < 0 ||
+                    !int.TryParse((RareWeightBox.Text ?? "").Trim(), out int rareW) || rareW < 0)
+                {
+                    MessageBox.Show("Tier weights must be whole numbers >= 0.");
+                    return;
+                }
 
-                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, poolText);
+                if (commonW + uncommonW + rareW <= 0)
+                {
+                    MessageBox.Show("At least one tier weight must be > 0.");
+                    return;
+                }
+
+                string commonText = CommonPoolBox?.Text ?? "";
+                string uncommonText = UncommonPoolBox?.Text ?? "";
+                string rareText = RarePoolBox?.Text ?? "";
+
+                await _gamiSettingsRepo.UpdateAsync(
+                    stepsPerRoll,
+                    oneInN,
+                    commonW,
+                    uncommonW,
+                    rareW,
+                    commonText,
+                    uncommonText,
+                    rareText);
+
                 await RefreshItemDropsDebugAsync();
 
                 MessageBox.Show("Saved item drop settings.");
@@ -226,6 +251,28 @@ namespace LifestylesDesktop
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Could not save item drop settings");
+            }
+        }
+
+        private async void ResetDropPools_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Clearing pool textboxes makes the repo fall back to defaults.
+                if (CommonPoolBox != null) CommonPoolBox.Text = "";
+                if (UncommonPoolBox != null) UncommonPoolBox.Text = "";
+                if (RarePoolBox != null) RarePoolBox.Text = "";
+
+                if (CommonWeightBox != null) CommonWeightBox.Text = "80";
+                if (UncommonWeightBox != null) UncommonWeightBox.Text = "18";
+                if (RareWeightBox != null) RareWeightBox.Text = "2";
+
+                // Reuse the save logic
+                SaveItemDropSettings_Click(sender, e);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset pools");
             }
         }
 

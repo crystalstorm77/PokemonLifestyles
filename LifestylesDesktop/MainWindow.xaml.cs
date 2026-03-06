@@ -329,14 +329,33 @@ namespace LifestylesDesktop
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
                     OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
 
-                if (ItemPoolBox != null && !ItemPoolBox.IsKeyboardFocusWithin)
-                    ItemPoolBox.Text = settings.ItemPoolText ?? "";
+                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
+                    CommonWeightBox.Text = settings.CommonTierWeight.ToString();
 
-                int poolCount =
-                    (settings.ItemPoolText ?? "")
+                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
+                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString();
+
+                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
+                    RareWeightBox.Text = settings.RareTierWeight.ToString();
+
+                if (CommonPoolBox != null && !CommonPoolBox.IsKeyboardFocusWithin)
+                    CommonPoolBox.Text = settings.CommonPoolText ?? "";
+
+                if (UncommonPoolBox != null && !UncommonPoolBox.IsKeyboardFocusWithin)
+                    UncommonPoolBox.Text = settings.UncommonPoolText ?? "";
+
+                if (RarePoolBox != null && !RarePoolBox.IsKeyboardFocusWithin)
+                    RarePoolBox.Text = settings.RarePoolText ?? "";
+
+                static int CountLines(string? s) =>
+                    (s ?? "")
                     .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => (s ?? "").Trim())
-                    .Count(s => !string.IsNullOrWhiteSpace(s));
+                    .Select(x => (x ?? "").Trim())
+                    .Count(x => !string.IsNullOrWhiteSpace(x));
+
+                int cCount = CountLines(settings.CommonPoolText);
+                int uCount = CountLines(settings.UncommonPoolText);
+                int rCount = CountLines(settings.RarePoolText);
 
                 if (ItemDropsProgressText != null)
                 {
@@ -347,7 +366,7 @@ namespace LifestylesDesktop
                 if (ItemDropsStatsText != null)
                 {
                     ItemDropsStatsText.Text =
-                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN} | Pool: {poolCount}";
+                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN} | Pools C/U/R: {cCount}/{uCount}/{rCount} | Tier weights: {settings.CommonTierWeight}/{settings.UncommonTierWeight}/{settings.RareTierWeight}";
                 }
 
                 if (ItemDropsLastText != null)

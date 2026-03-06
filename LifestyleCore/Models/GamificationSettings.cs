@@ -14,17 +14,18 @@ namespace LifestyleCore.Models
 
         public int ItemRollOneInN { get; set; } = 4;
 
-        // One item per line. If blank/null, the app will fall back to the built-in default pool.
-        public string ItemPoolText { get; set; } =
-            "Potion\n" +
-            "Super Potion\n" +
-            "Poke Ball\n" +
-            "Great Ball\n" +
-            "Revive\n" +
-            "Antidote\n" +
-            "Paralyze Heal\n" +
-            "Escape Rope\n" +
-            "Rare Candy\n" +
-            "Nugget";
+        // Tier weights (used only when a roll succeeds)
+        public int CommonTierWeight { get; set; } = 80;
+        public int UncommonTierWeight { get; set; } = 18;
+        public int RareTierWeight { get; set; } = 2;
+
+        // One item per line.
+        // Notes:
+        // - Duplicates weight within that tier.
+        // - Capitalization/spacing is normalized (Potion == potion).
+        // - If a tier textbox is blank/null, we fall back to defaults.
+        public string CommonPoolText { get; set; } = "";
+        public string UncommonPoolText { get; set; } = "";
+        public string RarePoolText { get; set; } = "";
     }
 }

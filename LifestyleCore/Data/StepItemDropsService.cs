@@ -13,35 +13,84 @@ namespace LifestyleCore.Data
     public sealed class StepItemDropsService
     {
         // ============================================================
-        // SECTION B — Item Pool (v1)
+        // SECTION B — Item Pools (v2)
         // ============================================================
 
-        private static readonly string[] _defaultItemPool = new[]
-        {
-    "Potion",
-    "Super Potion",
-    "Poke Ball",
-    "Great Ball",
-    "Revive",
-    "Antidote",
-    "Paralyze Heal",
-    "Escape Rope",
-    "Rare Candy",
-    "Nugget"
-};
-
-        private static string[] BuildItemPool(string? poolText)
+        private static List<string> ParsePool(string? poolText)
         {
             if (string.IsNullOrWhiteSpace(poolText))
-                return _defaultItemPool;
+                return new List<string>();
 
-            var items = poolText
-                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => (s ?? "").Trim())
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .ToArray();
+            var lines = poolText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var items = new List<string>(lines.Length);
 
-            return items.Length == 0 ? _defaultItemPool : items;
+            foreach (var raw in lines)
+            {
+                var norm = NormalizeItemName(raw);
+                if (!string.IsNullOrWhiteSpace(norm))
+                    items.Add(norm);
+            }
+
+            return items;
+        }
+
+        private static string NormalizeItemName(string? s)
+        {
+            s = (s ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(s)) return "";
+
+            // Collapse internal whitespace
+            var chars = s.ToCharArray();
+            var outChars = new List<char>(chars.Length);
+
+            bool prevSpace = false;
+            for (int i = 0; i < chars.Length; i++)
+            {
+                char c = chars[i];
+                bool isSpace = char.IsWhiteSpace(c);
+                if (isSpace)
+                {
+                    if (!prevSpace)
+                    {
+                        outChars.Add(' ');
+                        prevSpace = true;
+                    }
+                    continue;
+                }
+
+                outChars.Add(c);
+                prevSpace = false;
+            }
+
+            var collapsed = new string(outChars.ToArray()).Trim();
+
+            // Title Words (Potion == potion)
+            var words = collapsed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < words.Length; i++)
+            {
+                var w = words[i];
+                if (w.Length == 0) continue;
+                if (w.Length == 1) words[i] = char.ToUpperInvariant(w[0]).ToString();
+                else words[i] = char.ToUpperInvariant(w[0]) + w.Substring(1).ToLowerInvariant();
+            }
+
+            return string.Join(' ', words);
+        }
+
+        private static int PickTierIndex(int commonW, int uncommonW, int rareW)
+        {
+            int cw = Math.Max(0, commonW);
+            int uw = Math.Max(0, uncommonW);
+            int rw = Math.Max(0, rareW);
+
+            int total = cw + uw + rw;
+            if (total <= 0) return 0;
+
+            int r = Random.Shared.Next(total); // 0..total-1
+            if (r < cw) return 0;
+            r -= cw;
+            if (r < uw) return 1;
+            return 2;
         }
 
         // ============================================================
@@ -61,8 +110,18 @@ namespace LifestyleCore.Data
             int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
             int oneInN = Math.Max(1, settings.ItemRollOneInN);
 
-            // NEW: use configurable pool (fallback to defaults if blank)
-            var itemPool = BuildItemPool(settings.ItemPoolText);
+            // Rarity pools
+            var commonPool = ParsePool(settings.CommonPoolText);
+            var uncommonPool = ParsePool(settings.UncommonPoolText);
+            var rarePool = ParsePool(settings.RarePoolText);
+
+            // Safety: if all pools are somehow empty, fall back to a tiny safe default
+            if (commonPool.Count == 0 && uncommonPool.Count == 0 && rarePool.Count == 0)
+            {
+                commonPool.AddRange(new[] { "Potion", "Poke Ball", "Antidote" });
+                uncommonPool.AddRange(new[] { "Super Potion", "Great Ball" });
+                rarePool.AddRange(new[] { "Rare Candy", "Nugget" });
+            }
 
             using var conn = Db.OpenConnection();
 
@@ -77,7 +136,6 @@ WHERE Id = 1;");
 
             if (rolls <= 0)
             {
-                // Just persist remainder
                 await conn.ExecuteAsync(@"
 UPDATE StepItemRollState
 SET StepsRemainder = @StepsRemainder,
@@ -97,25 +155,43 @@ WHERE Id = 1;",
 
             for (int i = 0; i < rolls; i++)
             {
-                // 1 in N chance
-                int r = Random.Shared.Next(oneInN); // 0..N-1
-                if (r == 0)
-                {
-                    string item = itemPool[Random.Shared.Next(itemPool.Length)];
-                    found.Add(item);
-                    successes++;
+                int r = Random.Shared.Next(oneInN);
+                if (r != 0) continue;
 
-                    await conn.ExecuteAsync(@"
+                successes++;
+
+                // Choose tier by weights, then choose an item from that tier.
+                int tier = PickTierIndex(settings.CommonTierWeight, settings.UncommonTierWeight, settings.RareTierWeight);
+
+                List<string> pool = tier switch
+                {
+                    1 => uncommonPool,
+                    2 => rarePool,
+                    _ => commonPool
+                };
+
+                // If chosen tier is empty, fall back to the first non-empty tier.
+                if (pool.Count == 0)
+                {
+                    if (commonPool.Count > 0) pool = commonPool;
+                    else if (uncommonPool.Count > 0) pool = uncommonPool;
+                    else pool = rarePool;
+                }
+
+                string item = pool[Random.Shared.Next(pool.Count)];
+                item = NormalizeItemName(item);
+
+                found.Add(item);
+
+                await conn.ExecuteAsync(@"
 INSERT INTO InventoryItems (ItemKey, Count)
 VALUES (@ItemKey, 1)
 ON CONFLICT(ItemKey) DO UPDATE SET Count = Count + 1;",
-                        new { ItemKey = item });
-                }
+                    new { ItemKey = item });
             }
 
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
-            // Build a compact “Potion x2, Nugget x1” style summary.
             string? dropSummary = null;
             if (found.Count > 0)
             {
