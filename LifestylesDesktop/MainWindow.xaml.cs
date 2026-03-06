@@ -32,8 +32,11 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 
 
+
+// ============================================================
 // SECTION B — Main Window Class
 // ============================================================
+
 namespace LifestylesDesktop
 {
     public partial class MainWindow : Window
@@ -42,11 +45,13 @@ namespace LifestylesDesktop
         private readonly FoodItemRepository _foodItemRepo = new();
         private readonly FoodEntryRepository _foodEntryRepo = new();
         private readonly SleepSessionRepository _sleepRepo = new();
-
         private readonly StepsRepository _stepsRepo = new();
         private readonly HabitRepository _habitRepo = new();
         private readonly RewardsLedgerRepository _rewardsRepo = new();
 
+        // Focus labels (tracking only; no gamification impact)
+        private readonly FocusLabelRepository _focusLabelRepo = new();
+        public ObservableCollection<string> FocusLabelChoices { get; } = new();
 
         // Steps → Item Drops (global; separate from tickets)
         private readonly GamificationSettingsRepository _gamiSettingsRepo = new();
@@ -55,12 +60,10 @@ namespace LifestylesDesktop
         private readonly StepItemDropsService _stepItemDrops = new();
 
         private ObservableCollection<InventoryItem> _inventoryItems = new();
-
         private ObservableCollection<FocusSession> _focusSessions = new();
         private ObservableCollection<FoodEntry> _foodEntries = new();
         private ObservableCollection<SleepSession> _sleepSessions = new();
         private readonly Dictionary<long, double> _foodEntryOriginalKj = new();
-
         private ObservableCollection<HabitRow> _habitRows = new();
 
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
@@ -76,6 +79,7 @@ namespace LifestylesDesktop
             InitializeComponent();
 
             Loaded += (_, __) => FitSelectedTabColumnsOnce();
+
             TimeZoneText.Text = $"Timezone: {TimeZoneInfo.Local.DisplayName}";
 
             // Default log date = today
@@ -91,9 +95,14 @@ namespace LifestylesDesktop
         private async Task InitializeAndRefreshAsync()
         {
             await RefreshFoodMenuAsync();
+
+            // Load focus labels early so both the input ComboBox and grid editor have choices.
+            await RefreshFocusLabelsAsync();
+
             await RefreshForSelectedDateAsync();
         }
 
+        // ============================================================
         // ============================================================
 
         // ============================================================
@@ -175,6 +184,7 @@ namespace LifestylesDesktop
         // ============================================================
         // SECTION D — Focus Session Actions
         // ============================================================
+
         private async void AddFocusButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -188,8 +198,14 @@ namespace LifestylesDesktop
                 // Allow typed label (editable ComboBox)
                 string focusType = NormalizeFocusLabel(FocusTypeCombo.Text);
 
-                var nowLocal = DateTimeOffset.Now;
+                // Save label for future selection (but don't store "(None)")
+                if (focusType != "(None)")
+                {
+                    await _focusLabelRepo.UpsertActiveAsync(focusType);
+                    await RefreshFocusLabelsAsync(keepText: focusType);
+                }
 
+                var nowLocal = DateTimeOffset.Now;
                 var session = new FocusSession
                 {
                     LoggedAtUtc = nowLocal.ToUniversalTime(),
@@ -209,6 +225,134 @@ namespace LifestylesDesktop
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString(), "Error saving focus session");
+            }
+        }
+
+        private async Task RefreshFocusLabelsAsync(string? keepText = null)
+        {
+            var currentText = keepText ?? (FocusTypeCombo?.Text ?? "");
+
+            var labels = await _focusLabelRepo.GetActiveAsync();
+
+            FocusLabelChoices.Clear();
+            foreach (var s in labels)
+                FocusLabelChoices.Add(s);
+
+            // Set a reasonable default if empty
+            if (FocusLabelChoices.Count == 0)
+            {
+                FocusLabelChoices.Add("Draw");
+                FocusLabelChoices.Add("Music");
+            }
+
+            // Restore typed/current selection (even if not in list)
+            if (FocusTypeCombo != null)
+            {
+                if (!string.IsNullOrWhiteSpace(currentText) && currentText != "(None)")
+                {
+                    FocusTypeCombo.Text = currentText;
+                }
+                else
+                {
+                    // Prefer Draw if present
+                    var draw = FocusLabelChoices.FirstOrDefault(x => string.Equals(x, "Draw", StringComparison.OrdinalIgnoreCase));
+                    FocusTypeCombo.Text = draw ?? FocusLabelChoices[0];
+                }
+            }
+        }
+
+        private async void ManageFocusLabels_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var win = new Window
+                {
+                    Title = "Focus labels",
+                    Width = 380,
+                    Height = 460,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this
+                };
+
+                var root = new StackPanel { Margin = new Thickness(12) };
+
+                var labels = new ObservableCollection<string>();
+                var list = new ListBox
+                {
+                    Height = 250,
+                    ItemsSource = labels
+                };
+
+                async Task ReloadAsync()
+                {
+                    var active = await _focusLabelRepo.GetActiveAsync();
+                    labels.Clear();
+                    foreach (var s in active.Where(x => !string.Equals(x, "(None)", StringComparison.OrdinalIgnoreCase)))
+                        labels.Add(s);
+                }
+
+                await ReloadAsync();
+
+                root.Children.Add(new TextBlock { Text = "Active labels (used for dropdown choices):", Margin = new Thickness(0, 0, 0, 6) });
+                root.Children.Add(list);
+
+                var addRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
+                var addBox = new TextBox { Width = 220 };
+                var addBtn = new Button { Content = "Add", Width = 100, Margin = new Thickness(10, 0, 0, 0) };
+
+                addBtn.Click += async (_, __) =>
+                {
+                    string name = NormalizeFocusLabel(addBox.Text);
+                    if (name == "(None)")
+                    {
+                        MessageBox.Show("Type a label name first.");
+                        return;
+                    }
+
+                    await _focusLabelRepo.UpsertActiveAsync(name);
+                    addBox.Text = "";
+                    await ReloadAsync();
+                };
+
+                addRow.Children.Add(addBox);
+                addRow.Children.Add(addBtn);
+                root.Children.Add(addRow);
+
+                var delRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
+
+                var delBtn = new Button { Content = "Delete selected", Width = 140 };
+                delBtn.Click += async (_, __) =>
+                {
+                    if (list.SelectedItem is not string selected || string.IsNullOrWhiteSpace(selected))
+                        return;
+
+                    var result = MessageBox.Show(
+                        $"Delete label '{selected}'?\n\nExisting sessions keep their text, but this label will stop appearing in the dropdown.",
+                        "Confirm",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result != MessageBoxResult.Yes) return;
+
+                    await _focusLabelRepo.SoftDeleteAsync(selected);
+                    await ReloadAsync();
+                };
+
+                var closeBtn = new Button { Content = "Close", Width = 100, Margin = new Thickness(10, 0, 0, 0) };
+                closeBtn.Click += (_, __) => win.Close();
+
+                delRow.Children.Add(delBtn);
+                delRow.Children.Add(closeBtn);
+                root.Children.Add(delRow);
+
+                win.Content = root;
+                win.ShowDialog();
+
+                await RefreshFocusLabelsAsync(keepText: FocusTypeCombo?.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not manage focus labels");
             }
         }
 

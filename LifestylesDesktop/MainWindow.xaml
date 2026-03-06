@@ -155,20 +155,28 @@ SECTION B — Input Panel
                 </StackPanel>
             </GroupBox>
 
+            <!-- ============================================================
+SECTION B1 — Focus Session Input
+============================================================ -->
+
             <!-- Focus Session -->
             <GroupBox Header="Focus Session" Margin="0,0,0,12">
                 <StackPanel Margin="10">
+
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Focus Type:" Width="90" VerticalAlignment="Center"/>
+
                         <ComboBox x:Name="FocusTypeCombo"
                       Width="200"
-                      SelectedIndex="0"
                       IsEditable="True"
                       IsTextSearchEnabled="True"
-                      StaysOpenOnEdit="True">
-                            <ComboBoxItem Content="Draw"/>
-                            <ComboBoxItem Content="Music"/>
-                        </ComboBox>
+                      StaysOpenOnEdit="True"
+                      ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FocusLabelChoices}"/>
+
+                        <Button Content="Manage..."
+                    Width="90"
+                    Margin="10,0,0,0"
+                    Click="ManageFocusLabels_Click"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -177,7 +185,10 @@ SECTION B — Input Panel
                         <CheckBox x:Name="CompletedCheck" Content="Completed" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <Button x:Name="AddFocusButton" Content="Add Focus Session" Width="200" Click="AddFocusButton_Click"/>
+                    <Button x:Name="AddFocusButton"
+                Content="Add Focus Session"
+                Width="200"
+                Click="AddFocusButton_Click"/>
                 </StackPanel>
             </GroupBox>
 
@@ -360,6 +371,10 @@ SelectionChanged="SessionsTabControl_SelectionChanged"
 Margin="0,0,0,0"
 Height="520">
 
+                <!-- ============================================================
+SECTION D1 — Focus Sessions Tab
+============================================================ -->
+
                 <TabItem Header="Focus Sessions">
                     <Grid Margin="10">
                         <Grid.RowDefinitions>
@@ -368,15 +383,16 @@ Height="520">
                         </Grid.RowDefinitions>
 
                         <DataGrid x:Name="FocusSessionsGrid"
-          Grid.Row="0"
-          AutoGenerateColumns="False"
-          CanUserAddRows="False"
-          CanUserDeleteRows="False"
-          SelectionMode="Single"
-          SelectionUnit="FullRow">
+                  Grid.Row="0"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow">
                             <DataGrid.Columns>
+
                                 <DataGridTextColumn Header="Logged"
-                            Binding="{Binding LoggedAtLocalEdit, UpdateSourceTrigger=PropertyChanged}"/>
+                                    Binding="{Binding LoggedAtLocalEdit, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <DataGridTemplateColumn Header="Type">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -388,21 +404,20 @@ Height="520">
                                     <DataGridTemplateColumn.CellEditingTemplate>
                                         <DataTemplate>
                                             <ComboBox IsEditable="True"
-                      IsTextSearchEnabled="True"
-                      StaysOpenOnEdit="True"
-                      Text="{Binding FocusType, UpdateSourceTrigger=PropertyChanged}">
-                                                <ComboBoxItem Content="Draw"/>
-                                                <ComboBoxItem Content="Music"/>
-                                            </ComboBox>
+                                      IsTextSearchEnabled="True"
+                                      StaysOpenOnEdit="True"
+                                      ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FocusLabelChoices}"
+                                      Text="{Binding FocusType, UpdateSourceTrigger=PropertyChanged}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
 
                                 <DataGridTextColumn Header="Minutes"
-                            Binding="{Binding Minutes, UpdateSourceTrigger=PropertyChanged}"/>
+                                    Binding="{Binding Minutes, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <DataGridCheckBoxColumn Header="Completed"
-                                Binding="{Binding Completed, UpdateSourceTrigger=PropertyChanged}"/>
+                                        Binding="{Binding Completed, UpdateSourceTrigger=PropertyChanged}"/>
+
                             </DataGrid.Columns>
                         </DataGrid>
 
