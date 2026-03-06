@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS InventoryItems (
 -- v3: Structured item definitions (the “real game” table)
 CREATE TABLE IF NOT EXISTS ItemDefinitions (
   Name TEXT NOT NULL PRIMARY KEY COLLATE NOCASE,
+  Category TEXT NULL,
   Tier INTEGER NOT NULL,
   Weight INTEGER NOT NULL,
   IsActive INTEGER NOT NULL,
@@ -92,6 +93,9 @@ ON ItemDefinitions (Tier, IsActive);
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN CommonTierWeight INTEGER NOT NULL DEFAULT 80;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN UncommonTierWeight INTEGER NOT NULL DEFAULT 18;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN RareTierWeight INTEGER NOT NULL DEFAULT 2;");
+
+            // v4: ItemDefinitions category tag
+            TryAddColumn(@"ALTER TABLE ItemDefinitions ADD COLUMN Category TEXT NULL;");
 
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 

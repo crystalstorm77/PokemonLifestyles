@@ -308,6 +308,8 @@ namespace LifestylesDesktop
                     return;
                 }
 
+                string category = (NewItemCategoryBox?.Text ?? "").Trim();
+
                 var tierObj = NewItemTierCombo?.SelectedItem;
                 if (tierObj is not ItemTier tier) tier = ItemTier.Common;
 
@@ -315,9 +317,10 @@ namespace LifestylesDesktop
                 int.TryParse((NewItemWeightBox?.Text ?? "").Trim(), out weight);
                 weight = Math.Max(1, weight);
 
-                await _itemDefsRepo.UpsertActiveAsync(name, tier, weight);
+                await _itemDefsRepo.UpsertActiveAsync(name, tier, weight, category);
 
                 if (NewItemNameBox != null) NewItemNameBox.Text = "";
+                if (NewItemCategoryBox != null) NewItemCategoryBox.Text = "";
                 if (NewItemWeightBox != null) NewItemWeightBox.Text = "1";
 
                 await RefreshItemDropsDebugAsync();
@@ -332,7 +335,7 @@ namespace LifestylesDesktop
         {
             try
             {
-                // Save current grid contents (tier/weight/active)
+                // Save current grid contents (category/tier/weight/active)
                 await _itemDefsRepo.UpsertManyAsync(_itemDefinitions);
                 await RefreshItemDropsDebugAsync();
 
