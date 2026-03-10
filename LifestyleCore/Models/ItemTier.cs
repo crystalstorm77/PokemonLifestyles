@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Item Tier
-// ============================================================
-
+﻿#region SECTION A — Item Tier
 namespace LifestyleCore.Models
 {
     public enum ItemTier
@@ -11,3 +8,4 @@ namespace LifestyleCore.Models
         Rare = 2
     }
 }
+#endregion // SECTION A — Item Tier
