@@ -234,14 +234,71 @@ namespace LifestylesDesktop
                     return;
                 }
 
-                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, commonW, uncommonW, rareW);
-                await RefreshItemDropsDebugAsync();
+                if (_sleepHealthyMinHoursBox == null ||
+                    _sleepHealthyMaxHoursBox == null ||
+                    _sleepHealthyMultiplierBox == null ||
+                    _sleepPenaltyPer15MinBox == null ||
+                    _sleepTrackedMinimumMultiplierBox == null)
+                {
+                    MessageBox.Show("Sleep tuning controls are not ready yet.");
+                    return;
+                }
 
-                MessageBox.Show("Saved item drop settings.");
+                if (!TryParseFlexibleDouble(_sleepHealthyMinHoursBox.Text, out double healthyMinHours) || healthyMinHours < 0)
+                {
+                    MessageBox.Show("Healthy min h must be a number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepHealthyMaxHoursBox.Text, out double healthyMaxHours) || healthyMaxHours < healthyMinHours)
+                {
+                    MessageBox.Show("Healthy max h must be a number greater than or equal to healthy min h.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepHealthyMultiplierBox.Text, out double healthyMultiplier) || healthyMultiplier < 1.0)
+                {
+                    MessageBox.Show("Healthy x must be a number greater than or equal to 1.0.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepPenaltyPer15MinBox.Text, out double penaltyPer15Min) || penaltyPer15Min < 0)
+                {
+                    MessageBox.Show("Drop / 15 min must be a number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepTrackedMinimumMultiplierBox.Text, out double trackedMinimumMultiplier) || trackedMinimumMultiplier < 1.0)
+                {
+                    MessageBox.Show("Tracked min x must be a number greater than or equal to 1.0.");
+                    return;
+                }
+
+                if (trackedMinimumMultiplier > healthyMultiplier)
+                {
+                    MessageBox.Show("Tracked min x cannot be greater than healthy x.");
+                    return;
+                }
+
+                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, commonW, uncommonW, rareW);
+
+                await SaveSleepTuningSettingsAsync(new SleepTuningSettings
+                {
+                    SleepHealthyMinHours = healthyMinHours,
+                    SleepHealthyMaxHours = healthyMaxHours,
+                    SleepHealthyMultiplier = healthyMultiplier,
+                    SleepOutsideRangeStartMultiplier = healthyMultiplier,
+                    SleepPenaltyPer15Min = penaltyPer15Min,
+                    SleepTrackedMinimumMultiplier = trackedMinimumMultiplier
+                });
+
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Saved gamification settings.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not save item drop settings");
+                MessageBox.Show(ex.Message, "Could not save gamification settings");
             }
         }
 

@@ -433,6 +433,48 @@ WHERE Id = 1;");
             return NormalizeSleepTuningSettings(row ?? new SleepTuningSettings());
         }
 
+        private async Task SaveSleepTuningSettingsAsync(SleepTuningSettings settings)
+        {
+            settings = NormalizeSleepTuningSettings(settings);
+
+            ItemDropsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+
+            string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+
+            await conn.ExecuteAsync(@"
+UPDATE GamificationSettings
+SET
+    SleepHealthyMinHours = @SleepHealthyMinHours,
+    SleepHealthyMaxHours = @SleepHealthyMaxHours,
+    SleepHealthyMultiplier = @SleepHealthyMultiplier,
+    SleepOutsideRangeStartMultiplier = @SleepOutsideRangeStartMultiplier,
+    SleepPenaltyPer15Min = @SleepPenaltyPer15Min,
+    SleepTrackedMinimumMultiplier = @SleepTrackedMinimumMultiplier,
+    UpdatedAtUtc = @UpdatedAtUtc
+WHERE Id = 1;",
+                new
+                {
+                    settings.SleepHealthyMinHours,
+                    settings.SleepHealthyMaxHours,
+                    settings.SleepHealthyMultiplier,
+                    settings.SleepOutsideRangeStartMultiplier,
+                    settings.SleepPenaltyPer15Min,
+                    settings.SleepTrackedMinimumMultiplier,
+                    UpdatedAtUtc = nowUtc
+                });
+        }
+
+        private static bool TryParseFlexibleDouble(string text, out double value)
+        {
+            text = (text ?? "").Trim();
+
+            return
+                double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+                double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        }
+
         private static string FormatDoubleForBox(double value)
         {
             return value.ToString("0.###", CultureInfo.InvariantCulture);
@@ -447,6 +489,87 @@ WHERE Id = 1;");
                 return;
 
             box.Text = value;
+        }
+
+        private static void AutoSizeGridColumns(DataGrid? grid)
+        {
+            if (grid == null)
+                return;
+
+            grid.UpdateLayout();
+
+            foreach (var col in grid.Columns)
+                col.Width = DataGridLength.Auto;
+        }
+
+        private async void SaveSleepTuningButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_sleepHealthyMinHoursBox == null ||
+                    _sleepHealthyMaxHoursBox == null ||
+                    _sleepHealthyMultiplierBox == null ||
+                    _sleepPenaltyPer15MinBox == null ||
+                    _sleepTrackedMinimumMultiplierBox == null)
+                {
+                    MessageBox.Show("Sleep tuning controls are not ready yet.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepHealthyMinHoursBox.Text, out double healthyMinHours) || healthyMinHours < 0)
+                {
+                    MessageBox.Show("Healthy min h must be a number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepHealthyMaxHoursBox.Text, out double healthyMaxHours) || healthyMaxHours < healthyMinHours)
+                {
+                    MessageBox.Show("Healthy max h must be a number greater than or equal to healthy min h.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepHealthyMultiplierBox.Text, out double healthyMultiplier) || healthyMultiplier < 1.0)
+                {
+                    MessageBox.Show("Healthy x must be a number greater than or equal to 1.0.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepPenaltyPer15MinBox.Text, out double penaltyPer15Min) || penaltyPer15Min < 0)
+                {
+                    MessageBox.Show("Drop / 15 min must be a number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_sleepTrackedMinimumMultiplierBox.Text, out double trackedMinimumMultiplier) || trackedMinimumMultiplier < 1.0)
+                {
+                    MessageBox.Show("Tracked min x must be a number greater than or equal to 1.0.");
+                    return;
+                }
+
+                if (trackedMinimumMultiplier > healthyMultiplier)
+                {
+                    MessageBox.Show("Tracked min x cannot be greater than healthy x.");
+                    return;
+                }
+
+                await SaveSleepTuningSettingsAsync(new SleepTuningSettings
+                {
+                    SleepHealthyMinHours = healthyMinHours,
+                    SleepHealthyMaxHours = healthyMaxHours,
+                    SleepHealthyMultiplier = healthyMultiplier,
+                    SleepOutsideRangeStartMultiplier = healthyMultiplier,
+                    SleepPenaltyPer15Min = penaltyPer15Min,
+                    SleepTrackedMinimumMultiplier = trackedMinimumMultiplier
+                });
+
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Saved sleep tuning.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save sleep tuning");
+            }
         }
 
         private void EnsureSleepSettingsDebugUiBuilt()
@@ -554,13 +677,23 @@ WHERE Id = 1;");
 
             _sleepTrackedMinimumMultiplierBox = new TextBox
             {
-                Width = 60
+                Width = 60,
+                Margin = new Thickness(0, 0, 12, 0)
             };
             row3.Children.Add(_sleepTrackedMinimumMultiplierBox);
 
+            var saveButton = new Button
+            {
+                Content = "Save sleep tuning",
+                Width = 140,
+                Margin = new Thickness(0, 8, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            saveButton.Click += SaveSleepTuningButton_Click;
+
             var note = new TextBlock
             {
-                Text = "Visual-only for now. Save wiring comes next.",
+                Text = "This save button only affects the sleep tuning values above.",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 4, 0, 0),
                 TextWrapping = TextWrapping.Wrap
@@ -570,6 +703,7 @@ WHERE Id = 1;");
             root.Children.Insert(insertAt++, row1);
             root.Children.Insert(insertAt++, row2);
             root.Children.Insert(insertAt++, row3);
+            root.Children.Insert(insertAt++, saveButton);
             root.Children.Insert(insertAt++, note);
 
             _sleepSettingsUiBuilt = true;
@@ -771,7 +905,7 @@ WHERE Id = 1;");
                     }
                 }
 
-                // Item drops debug (includes settings + progress + inventory)
+                // Item drops debug (includes settings + progress + inventory + list)
                 await RefreshItemDropsDebugAsync();
             }
             catch
@@ -787,6 +921,7 @@ WHERE Id = 1;");
                 var settings = await _gamiSettingsRepo.GetAsync();
                 var state = await _rollStateRepo.GetAsync();
                 var items = await _inventoryRepo.GetAllAsync();
+                var itemDefinitions = await _itemDefsRepo.GetAllAsync();
 
                 int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
                 int oneInN = Math.Max(1, settings.ItemRollOneInN);
@@ -803,6 +938,24 @@ WHERE Id = 1;");
 
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
                     OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
+
+                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
+                    CommonWeightBox.Text = settings.CommonWeight.ToString();
+
+                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
+                    UncommonWeightBox.Text = settings.UncommonWeight.ToString();
+
+                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
+                    RareWeightBox.Text = settings.RareWeight.ToString();
+
+                if (NewItemTierCombo != null)
+                {
+                    if (NewItemTierCombo.ItemsSource == null)
+                        NewItemTierCombo.ItemsSource = ItemTierChoices;
+
+                    if (NewItemTierCombo.SelectedIndex < 0 && ItemTierChoices.Count > 0)
+                        NewItemTierCombo.SelectedIndex = 0;
+                }
 
                 if (ItemDropsProgressText != null)
                 {
@@ -835,6 +988,13 @@ WHERE Id = 1;");
                     }
                 }
 
+                _itemDefinitions = new ObservableCollection<ItemDefinition>(itemDefinitions);
+                if (ItemDefinitionsGrid != null)
+                {
+                    ItemDefinitionsGrid.ItemsSource = _itemDefinitions;
+                    AutoSizeGridColumns(ItemDefinitionsGrid);
+                }
+
                 if (InventoryCountText != null)
                     InventoryCountText.Text = items.Count == 0
                         ? "Inventory: (empty)"
@@ -843,7 +1003,10 @@ WHERE Id = 1;");
                 _inventoryItems = new ObservableCollection<InventoryItem>(items);
 
                 if (InventoryGrid != null)
+                {
                     InventoryGrid.ItemsSource = _inventoryItems;
+                    AutoSizeGridColumns(InventoryGrid);
+                }
             }
             catch
             {
