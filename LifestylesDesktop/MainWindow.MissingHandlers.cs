@@ -75,155 +75,75 @@ namespace LifestylesDesktop
             }
         }
 
-        private async void InventoryMinus_Click(object sender, RoutedEventArgs e)
+        private async void ViewStepsBucketsButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var key = (sender as Button)?.Tag as string;
-                if (string.IsNullOrWhiteSpace(key)) return;
+                var rows = await _stepsRepo.GetBucketsForLocalDateAsync(SelectedLogDate);
 
-                await _inventoryRepo.AdjustItemAsync(key, -1);
-                await RefreshItemDropsDebugAsync();
+                var win = new Window
+                {
+                    Title = $"Step buckets ({SelectedLogDate:yyyy-MM-dd})",
+                    Width = 360,
+                    Height = 520,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this
+                };
+
+                var root = new StackPanel { Margin = new Thickness(12) };
+
+                if (rows.Count == 0)
+                {
+                    root.Children.Add(new TextBlock
+                    {
+                        Text = "No buckets for this day.",
+                        Foreground = System.Windows.Media.Brushes.Gray
+                    });
+                }
+                else
+                {
+                    var grid = new DataGrid
+                    {
+                        AutoGenerateColumns = false,
+                        CanUserAddRows = false,
+                        CanUserDeleteRows = false,
+                        IsReadOnly = true,
+                        Height = 420,
+                        ItemsSource = rows
+                    };
+
+                    grid.Columns.Add(new DataGridTextColumn
+                    {
+                        Header = "Time",
+                        Binding = new System.Windows.Data.Binding("LocalTime")
+                    });
+
+                    grid.Columns.Add(new DataGridTextColumn
+                    {
+                        Header = "Steps",
+                        Binding = new System.Windows.Data.Binding("Steps")
+                    });
+
+                    root.Children.Add(grid);
+                }
+
+                var close = new Button
+                {
+                    Content = "Close",
+                    Width = 100,
+                    Margin = new Thickness(0, 10, 0, 0),
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Right
+                };
+
+                close.Click += (_, __) => win.Close();
+                root.Children.Add(close);
+
+                win.Content = root;
+                win.ShowDialog();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not update inventory");
-            }
-        }
-
-        private async void InventoryPlus_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var key = (sender as Button)?.Tag as string;
-                if (string.IsNullOrWhiteSpace(key)) return;
-
-                await _inventoryRepo.AdjustItemAsync(key, +1);
-                await RefreshItemDropsDebugAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Could not update inventory");
-            }
-        }
-
-        private async void ClearInventory_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var result = MessageBox.Show(
-                    "Clear ALL inventory items?\n\n(This does not affect steps, rolls, or tickets.)",
-                    "Confirm",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result != MessageBoxResult.Yes) return;
-
-                await _inventoryRepo.ClearAsync();
-                await RefreshItemDropsDebugAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Could not clear inventory");
-            }
-        }
-
-        private async void SaveItemDropSettings_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (!int.TryParse((StepsPerRollBox.Text ?? "").Trim(), out int stepsPerRoll) || stepsPerRoll <= 0)
-                {
-                    MessageBox.Show("Steps/roll must be a whole number greater than 0.");
-                    return;
-                }
-
-                if (!int.TryParse((OddsOneInBox.Text ?? "").Trim(), out int oneInN) || oneInN <= 0)
-                {
-                    MessageBox.Show("Odds (1 in) must be a whole number greater than 0.");
-                    return;
-                }
-
-                EnsureSleepSettingsDebugUiBuilt();
-
-                if (_sleepHealthyMinHoursBox == null
-                    || _sleepHealthyMaxHoursBox == null
-                    || _sleepHealthyMultiplierBox == null
-                    || _sleepOutsideRangeStartMultiplierBox == null
-                    || _sleepOutsideRangePenaltyPerHourBox == null
-                    || _sleepTrackedMinimumMultiplierBox == null)
-                {
-                    MessageBox.Show("Sleep tuning controls are not ready yet. Try reopening the window.");
-                    return;
-                }
-
-                if (!TryParseFlexibleDouble(_sleepHealthyMinHoursBox.Text, out double healthyMinHours) || healthyMinHours < 0)
-                {
-                    MessageBox.Show("Healthy min h must be a number greater than or equal to 0.");
-                    return;
-                }
-
-                if (!TryParseFlexibleDouble(_sleepHealthyMaxHoursBox.Text, out double healthyMaxHours) || healthyMaxHours < healthyMinHours)
-                {
-                    MessageBox.Show("Healthy max h must be a number greater than or equal to healthy min h.");
-                    return;
-                }
-
-                if (!TryParseFlexibleDouble(_sleepHealthyMultiplierBox.Text, out double healthyMultiplier) || healthyMultiplier < 1.0)
-                {
-                    MessageBox.Show("Healthy x must be a number greater than or equal to 1.0.");
-                    return;
-                }
-
-                if (!TryParseFlexibleDouble(_sleepOutsideRangeStartMultiplierBox.Text, out double outsideStartMultiplier) || outsideStartMultiplier < 1.0)
-                {
-                    MessageBox.Show("Outside start x must be a number greater than or equal to 1.0.");
-                    return;
-                }
-
-                if (outsideStartMultiplier > healthyMultiplier)
-                {
-                    MessageBox.Show("Outside start x cannot be greater than healthy x.");
-                    return;
-                }
-
-                if (!TryParseFlexibleDouble(_sleepOutsideRangePenaltyPerHourBox.Text, out double perHourDrop) || perHourDrop < 0)
-                {
-                    MessageBox.Show("Drop/hr must be a number greater than or equal to 0.");
-                    return;
-                }
-
-                if (!TryParseFlexibleDouble(_sleepTrackedMinimumMultiplierBox.Text, out double trackedMinimumMultiplier) || trackedMinimumMultiplier < 1.0)
-                {
-                    MessageBox.Show("Tracked min x must be a number greater than or equal to 1.0.");
-                    return;
-                }
-
-                if (trackedMinimumMultiplier > outsideStartMultiplier)
-                {
-                    MessageBox.Show("Tracked min x cannot be greater than outside start x.");
-                    return;
-                }
-
-                await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN);
-
-                await SaveSleepTuningSettingsAsync(new SleepTuningSettings
-                {
-                    SleepHealthyMinHours = healthyMinHours,
-                    SleepHealthyMaxHours = healthyMaxHours,
-                    SleepHealthyMultiplier = healthyMultiplier,
-                    SleepOutsideRangeStartMultiplier = outsideStartMultiplier,
-                    SleepOutsideRangePenaltyPerHour = perHourDrop,
-                    SleepTrackedMinimumMultiplier = trackedMinimumMultiplier
-                });
-
-                await RefreshForSelectedDateAsync();
-
-                MessageBox.Show("Saved gamification settings.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Could not save item drop settings");
+                MessageBox.Show(ex.Message, "Could not load step buckets");
             }
         }
 
