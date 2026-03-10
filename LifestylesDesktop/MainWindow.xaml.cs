@@ -44,45 +44,56 @@ namespace LifestylesDesktop
     {
         private readonly FocusSessionRepository _repo = new();
         private readonly FoodItemRepository _foodItemRepo = new();
+
         private readonly FoodEntryRepository _foodEntryRepo = new();
+
         private readonly SleepSessionRepository _sleepRepo = new();
+
         private readonly StepsRepository _stepsRepo = new();
+
         private readonly HabitRepository _habitRepo = new();
+
         private readonly RewardsLedgerRepository _rewardsRepo = new();
 
-        // Focus labels (tracking only; no gamification impact)
-        private readonly FocusLabelRepository _focusLabelRepo = new();
-        public ObservableCollection<string> FocusLabelChoices { get; } = new();
-
         // Steps → Item Drops (global; separate from tickets)
+
         private readonly GamificationSettingsRepository _gamiSettingsRepo = new();
         private readonly StepItemRollStateRepository _rollStateRepo = new();
+
         private readonly InventoryRepository _inventoryRepo = new();
+
         private readonly StepItemDropsService _stepItemDrops = new();
 
-        // Item definitions (structured; “real game” items)
-        private readonly ItemDefinitionsRepository _itemDefsRepo = new();
-        public ObservableCollection<ItemTier> ItemTierChoices { get; } = new ObservableCollection<ItemTier>
-        {
-            ItemTier.Common,
-            ItemTier.Uncommon,
-            ItemTier.Rare
-        };
-
-        private ObservableCollection<ItemDefinition> _itemDefinitions = new();
         private ObservableCollection<InventoryItem> _inventoryItems = new();
+
         private ObservableCollection<FocusSession> _focusSessions = new();
+
         private ObservableCollection<FoodEntry> _foodEntries = new();
+
         private ObservableCollection<SleepSession> _sleepSessions = new();
         private readonly Dictionary<long, double> _foodEntryOriginalKj = new();
+
         private ObservableCollection<HabitRow> _habitRows = new();
 
+        // Sleep tuning controls are injected at runtime into the debug area.
+        private bool _sleepSettingsUiBuilt = false;
+        private TextBox? _sleepHealthyMinHoursBox;
+        private TextBox? _sleepHealthyMaxHoursBox;
+        private TextBox? _sleepHealthyMultiplierBox;
+        private TextBox? _sleepOutsideRangeStartMultiplierBox;
+        private TextBox? _sleepOutsideRangePenaltyPerHourBox;
+        private TextBox? _sleepTrackedMinimumMultiplierBox;
+
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
+
         private bool _autoFitFocusDone = false;
+
         private bool _autoFitFoodDone = false;
+
         private bool _autoFitSleepDone = false;
 
         // Prevent refresh spam when we programmatically set the date picker.
+
         private bool _logDateUiUpdating = false;
 
         public MainWindow()
@@ -94,30 +105,29 @@ namespace LifestylesDesktop
             TimeZoneText.Text = $"Timezone: {TimeZoneInfo.Local.DisplayName}";
 
             // Default log date = today
+
             _logDateUiUpdating = true;
+
             LogDatePicker.SelectedDate = DateTime.Today;
+
             _logDateUiUpdating = false;
 
             UpdateLogDateUI();
 
             _ = InitializeAndRefreshAsync();
+
         }
 
         private async Task InitializeAndRefreshAsync()
         {
+
             await RefreshFoodMenuAsync();
 
-            // Load focus labels early so both the input ComboBox and grid editor have choices.
-            await RefreshFocusLabelsAsync();
+            EnsureSleepSettingsDebugUiBuilt();
 
             await RefreshForSelectedDateAsync();
+
         }
-        // ============================================================
-        // ============================================================
-
-        // ============================================================
-        // ============================================================
-
         // ============================================================
         // SECTION C — Log Date Helpers
         // ============================================================
@@ -373,6 +383,257 @@ namespace LifestylesDesktop
         // SECTION E — Refresh UI
         // ============================================================
 
+        private sealed class SleepTuningSettings
+        {
+            public double SleepHealthyMinHours { get; set; } = 6.0;
+            public double SleepHealthyMaxHours { get; set; } = 10.0;
+            public double SleepHealthyMultiplier { get; set; } = 1.10;
+            public double SleepOutsideRangeStartMultiplier { get; set; } = 1.05;
+            public double SleepOutsideRangePenaltyPerHour { get; set; } = 0.02;
+            public double SleepTrackedMinimumMultiplier { get; set; } = 1.01;
+        }
+
+        private void EnsureSleepSettingsDebugUiBuilt()
+        {
+            if (_sleepSettingsUiBuilt)
+                return;
+
+            if (StepsPerRollBox?.Parent is not StackPanel itemDropRow)
+                return;
+
+            if (itemDropRow.Parent is not StackPanel root)
+                return;
+
+            int insertAt = root.Children.IndexOf(itemDropRow) + 1;
+            if (insertAt < 0)
+                return;
+
+            var header = new TextBlock
+            {
+                Text = "Sleep tuning",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var row1 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            row1.Children.Add(new TextBlock
+            {
+                Text = "Healthy min h:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepHealthyMinHoursBox = new TextBox
+            {
+                Width = 60,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            row1.Children.Add(_sleepHealthyMinHoursBox);
+
+            row1.Children.Add(new TextBlock
+            {
+                Text = "Healthy max h:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepHealthyMaxHoursBox = new TextBox
+            {
+                Width = 60
+            };
+            row1.Children.Add(_sleepHealthyMaxHoursBox);
+
+            var row2 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            row2.Children.Add(new TextBlock
+            {
+                Text = "Healthy x:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepHealthyMultiplierBox = new TextBox
+            {
+                Width = 60,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            row2.Children.Add(_sleepHealthyMultiplierBox);
+
+            row2.Children.Add(new TextBlock
+            {
+                Text = "Outside start x:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepOutsideRangeStartMultiplierBox = new TextBox
+            {
+                Width = 60
+            };
+            row2.Children.Add(_sleepOutsideRangeStartMultiplierBox);
+
+            var row3 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            row3.Children.Add(new TextBlock
+            {
+                Text = "Drop/hr:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepOutsideRangePenaltyPerHourBox = new TextBox
+            {
+                Width = 60,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            row3.Children.Add(_sleepOutsideRangePenaltyPerHourBox);
+
+            row3.Children.Add(new TextBlock
+            {
+                Text = "Tracked min x:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepTrackedMinimumMultiplierBox = new TextBox
+            {
+                Width = 60
+            };
+            row3.Children.Add(_sleepTrackedMinimumMultiplierBox);
+
+            var note = new TextBlock
+            {
+                Text = "The existing Save button stores both item-drop and sleep tuning settings.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 4, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            root.Children.Insert(insertAt++, header);
+            root.Children.Insert(insertAt++, row1);
+            root.Children.Insert(insertAt++, row2);
+            root.Children.Insert(insertAt++, row3);
+            root.Children.Insert(insertAt++, note);
+
+            _sleepSettingsUiBuilt = true;
+        }
+
+        private static bool TryParseFlexibleDouble(string text, out double value)
+        {
+            text = (text ?? "").Trim();
+
+            return
+            double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+            double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        }
+
+        private static string FormatDoubleForBox(double value)
+        {
+            return value.ToString("0.##", CultureInfo.InvariantCulture);
+        }
+
+        private static void SetTextBoxIfIdle(TextBox? box, string value)
+        {
+            if (box == null)
+                return;
+
+            if (box.IsKeyboardFocusWithin)
+                return;
+
+            box.Text = value;
+        }
+
+        private static SleepTuningSettings NormalizeSleepTuningSettings(SleepTuningSettings settings)
+        {
+            double healthyMin = Math.Max(0.0, settings.SleepHealthyMinHours);
+            double healthyMax = Math.Max(healthyMin, settings.SleepHealthyMaxHours);
+            double healthyMult = Math.Max(1.0, settings.SleepHealthyMultiplier);
+            double outsideStart = Math.Max(1.0, settings.SleepOutsideRangeStartMultiplier);
+            double perHourDrop = Math.Max(0.0, settings.SleepOutsideRangePenaltyPerHour);
+            double trackedMin = Math.Max(1.0, settings.SleepTrackedMinimumMultiplier);
+
+            if (outsideStart > healthyMult)
+                outsideStart = healthyMult;
+
+            if (trackedMin > outsideStart)
+                trackedMin = outsideStart;
+
+            return new SleepTuningSettings
+            {
+                SleepHealthyMinHours = healthyMin,
+                SleepHealthyMaxHours = healthyMax,
+                SleepHealthyMultiplier = healthyMult,
+                SleepOutsideRangeStartMultiplier = outsideStart,
+                SleepOutsideRangePenaltyPerHour = perHourDrop,
+                SleepTrackedMinimumMultiplier = trackedMin
+            };
+        }
+
+        private async Task<SleepTuningSettings> GetSleepTuningSettingsAsync()
+        {
+            ItemDropsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+
+            var row = await conn.QuerySingleOrDefaultAsync<SleepTuningSettings>(@"
+SELECT
+ COALESCE(SleepHealthyMinHours, 6.0) AS SleepHealthyMinHours,
+ COALESCE(SleepHealthyMaxHours, 10.0) AS SleepHealthyMaxHours,
+ COALESCE(SleepHealthyMultiplier, 1.10) AS SleepHealthyMultiplier,
+ COALESCE(SleepOutsideRangeStartMultiplier, 1.05) AS SleepOutsideRangeStartMultiplier,
+ COALESCE(SleepOutsideRangePenaltyPerHour, 0.02) AS SleepOutsideRangePenaltyPerHour,
+ COALESCE(SleepTrackedMinimumMultiplier, 1.01) AS SleepTrackedMinimumMultiplier
+FROM GamificationSettings
+WHERE Id = 1;");
+
+            return NormalizeSleepTuningSettings(row ?? new SleepTuningSettings());
+        }
+
+        private async Task SaveSleepTuningSettingsAsync(SleepTuningSettings settings)
+        {
+            settings = NormalizeSleepTuningSettings(settings);
+            ItemDropsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+
+            string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+
+            await conn.ExecuteAsync(@"
+UPDATE GamificationSettings
+SET
+ SleepHealthyMinHours = @SleepHealthyMinHours,
+ SleepHealthyMaxHours = @SleepHealthyMaxHours,
+ SleepHealthyMultiplier = @SleepHealthyMultiplier,
+ SleepOutsideRangeStartMultiplier = @SleepOutsideRangeStartMultiplier,
+ SleepOutsideRangePenaltyPerHour = @SleepOutsideRangePenaltyPerHour,
+ SleepTrackedMinimumMultiplier = @SleepTrackedMinimumMultiplier,
+ UpdatedAtUtc = @UpdatedAtUtc
+WHERE Id = 1;",
+            new
+            {
+                settings.SleepHealthyMinHours,
+                settings.SleepHealthyMaxHours,
+                settings.SleepHealthyMultiplier,
+                settings.SleepOutsideRangeStartMultiplier,
+                settings.SleepOutsideRangePenaltyPerHour,
+                settings.SleepTrackedMinimumMultiplier,
+                UpdatedAtUtc = nowUtc
+            });
+        }
+
         private async Task RefreshForSelectedDateAsync()
         {
             try
@@ -394,13 +655,11 @@ namespace LifestylesDesktop
 
                 await RefreshPendingSleepTextAsync();
 
-                // Steps + Habits (time-travel aware)
+                // Steps + habits / other existing refreshes
                 await RefreshStepsAndHabitsAsync();
 
-                // Gamification debug (includes item-drops + inventory + item defs)
                 await RefreshGamificationDebugAsync();
 
-                // Auto-fit (once)
                 FitSelectedTabColumnsOnce();
             }
             catch (Exception ex)
@@ -435,7 +694,6 @@ namespace LifestylesDesktop
 
         private static DateOnly GetCurrentGameDayLocal(DateTimeOffset nowLocal)
         {
-            // 03:00 cutoff: before 3am counts as previous “game day”
             var localTime = nowLocal.LocalDateTime;
             var day = DateOnly.FromDateTime(localTime);
 
@@ -445,39 +703,57 @@ namespace LifestylesDesktop
             return day;
         }
 
-        private const int SleepHealthyMinMinutes = 6 * 60;
-        private const int SleepHealthyMaxMinutes = 10 * 60;
-
-        private const double SleepNoLogMultiplier = 1.00;
-        private const double SleepTrackedOutsideHealthyMultiplier = 1.05;
-        private const double SleepTrackedHealthyMultiplier = 1.10;
-
-        private static double ComputeSleepMultiplier(int totalMinutes)
+        private static double ComputeSleepMultiplier(SleepTuningSettings settings, int totalMinutes)
         {
+            settings = NormalizeSleepTuningSettings(settings);
+
             if (totalMinutes <= 0)
-                return SleepNoLogMultiplier;
+                return 1.00;
 
-            if (totalMinutes < SleepHealthyMinMinutes)
-                return SleepTrackedOutsideHealthyMultiplier;
+            double hours = totalMinutes / 60.0;
 
-            if (totalMinutes > SleepHealthyMaxMinutes)
-                return SleepTrackedOutsideHealthyMultiplier;
+            if (hours >= settings.SleepHealthyMinHours && hours <= settings.SleepHealthyMaxHours)
+                return settings.SleepHealthyMultiplier;
 
-            return SleepTrackedHealthyMultiplier;
+            double distanceFromHealthyRange =
+            hours < settings.SleepHealthyMinHours
+            ? settings.SleepHealthyMinHours - hours
+            : hours - settings.SleepHealthyMaxHours;
+
+            double mult = settings.SleepOutsideRangeStartMultiplier
+            - (distanceFromHealthyRange * settings.SleepOutsideRangePenaltyPerHour);
+
+            if (mult < settings.SleepTrackedMinimumMultiplier)
+                mult = settings.SleepTrackedMinimumMultiplier;
+
+            if (mult > settings.SleepHealthyMultiplier)
+                mult = settings.SleepHealthyMultiplier;
+
+            return mult;
         }
 
-        private static string DescribeSleepBand(int totalMinutes)
+        private static string DescribeSleepBand(SleepTuningSettings settings, int totalMinutes)
         {
+            settings = NormalizeSleepTuningSettings(settings);
+
             if (totalMinutes <= 0)
                 return "no sleep logged";
 
-            if (totalMinutes < SleepHealthyMinMinutes)
-                return "below healthy range";
+            double hours = totalMinutes / 60.0;
 
-            if (totalMinutes > SleepHealthyMaxMinutes)
-                return "above healthy range";
+            if (hours >= settings.SleepHealthyMinHours && hours <= settings.SleepHealthyMaxHours)
+                return "healthy range";
 
-            return "healthy range";
+            double distanceFromHealthyRange =
+            hours < settings.SleepHealthyMinHours
+            ? settings.SleepHealthyMinHours - hours
+            : hours - settings.SleepHealthyMaxHours;
+
+            string side = hours < settings.SleepHealthyMinHours
+            ? "below healthy range"
+            : "above healthy range";
+
+            return $"{side}, {distanceFromHealthyRange:0.##}h from range";
         }
 
         private static string FormatMinutes(int totalMinutes)
@@ -496,6 +772,8 @@ namespace LifestylesDesktop
         {
             try
             {
+                EnsureSleepSettingsDebugUiBuilt();
+
                 var nowLocal = DateTimeOffset.Now;
                 var gameDayNow = GetCurrentGameDayLocal(nowLocal);
 
@@ -505,7 +783,6 @@ namespace LifestylesDesktop
                 if (GameDayNowText != null)
                     GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
 
-                // Selected-day rewards summary
                 if (RewardsSummaryText != null)
                 {
                     var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
@@ -519,20 +796,27 @@ namespace LifestylesDesktop
                     }
 
                     RewardsSummaryText.Text =
-                        $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): {coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
+                    $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): {coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
                 }
 
-                // Sleep multiplier (applies to the day you woke up — i.e. the selected log date)
+                var sleepSettings = await GetSleepTuningSettingsAsync();
+
+                SetTextBoxIfIdle(_sleepHealthyMinHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMinHours));
+                SetTextBoxIfIdle(_sleepHealthyMaxHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMaxHours));
+                SetTextBoxIfIdle(_sleepHealthyMultiplierBox, FormatDoubleForBox(sleepSettings.SleepHealthyMultiplier));
+                SetTextBoxIfIdle(_sleepOutsideRangeStartMultiplierBox, FormatDoubleForBox(sleepSettings.SleepOutsideRangeStartMultiplier));
+                SetTextBoxIfIdle(_sleepOutsideRangePenaltyPerHourBox, FormatDoubleForBox(sleepSettings.SleepOutsideRangePenaltyPerHour));
+                SetTextBoxIfIdle(_sleepTrackedMinimumMultiplierBox, FormatDoubleForBox(sleepSettings.SleepTrackedMinimumMultiplier));
+
                 if (SleepMultiplierText != null)
                 {
-                    var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
                     int totalMinutes = 0;
 
-                    foreach (var s in sleeps)
+                    foreach (var s in _sleepSessions)
                         totalMinutes += Math.Max(0, s.DurationMinutes);
 
-                    double mult = ComputeSleepMultiplier(totalMinutes);
-                    string band = DescribeSleepBand(totalMinutes);
+                    double mult = ComputeSleepMultiplier(sleepSettings, totalMinutes);
+                    string band = DescribeSleepBand(sleepSettings, totalMinutes);
 
                     if (totalMinutes <= 0)
                     {
@@ -541,11 +825,10 @@ namespace LifestylesDesktop
                     else
                     {
                         SleepMultiplierText.Text =
-                            $"Sleep multiplier: x{mult:F2} (sleep: {FormatMinutes(totalMinutes)}, {band})";
+                        $"Sleep multiplier: x{mult:F2} (sleep: {FormatMinutes(totalMinutes)}, {band})";
                     }
                 }
 
-                // Item drops debug (includes settings + progress + inventory)
                 await RefreshItemDropsDebugAsync();
             }
             catch
@@ -563,7 +846,9 @@ namespace LifestylesDesktop
                 var items = await _inventoryRepo.GetAllAsync();
 
                 int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
+
                 int oneInN = Math.Max(1, settings.ItemRollOneInN);
+
                 int remainder = state.StepsRemainder;
 
                 if (remainder < 0) remainder = 0;
@@ -571,66 +856,99 @@ namespace LifestylesDesktop
 
                 int toNext = stepsPerRoll - remainder;
 
+                // Only overwrite textboxes if the user isn't actively editing them
+
                 if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
+
                     StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString();
 
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
+
                     OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
 
                 if (ItemDropsProgressText != null)
+
                 {
                     ItemDropsProgressText.Text =
-                        $"Item roll progress: {remainder:#,0}/{stepsPerRoll:#,0} steps (next roll in {toNext:#,0})";
+
+                    $"Item roll progress: {remainder:#,0}/{stepsPerRoll:#,0} steps (next roll in {toNext:#,0})";
+
                 }
 
                 if (ItemDropsStatsText != null)
+
                 {
+
                     ItemDropsStatsText.Text =
-                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN}";
+
+                    $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN}";
+
                 }
 
                 if (ItemDropsLastText != null)
+
                 {
-                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary)
-                        && !string.IsNullOrWhiteSpace(state.LastDropUtc)
-                        && DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
+
+                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary) && !string.IsNullOrWhiteSpace(state.LastDropUtc)
+
+                    && DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
+
                     {
                         ItemDropsLastText.Text =
-                            $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
+
+                        $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
+
                     }
+
                     else if (!string.IsNullOrWhiteSpace(state.LastDropSummary))
+
                     {
+
                         ItemDropsLastText.Text = $"Last drop: {state.LastDropSummary}";
+
                     }
+
                     else
+
                     {
+
                         ItemDropsLastText.Text = "Last drop: (none yet)";
+
                     }
+
                 }
 
                 if (InventoryCountText != null)
-                    InventoryCountText.Text = items.Count == 0
-                        ? "Inventory: (empty)"
-                        : $"Inventory: {items.Count} item types";
 
+                    InventoryCountText.Text = items.Count == 0 ? "Inventory: (empty)" : $"Inventory: {items.Count} item types";
                 _inventoryItems = new ObservableCollection<InventoryItem>(items);
 
                 if (InventoryGrid != null)
+
                     InventoryGrid.ItemsSource = _inventoryItems;
+
             }
             catch
             {
                 if (ItemDropsProgressText != null)
-                    ItemDropsProgressText.Text = "Item roll progress: (error loading)";
-                if (ItemDropsStatsText != null)
-                    ItemDropsStatsText.Text = "";
-                if (ItemDropsLastText != null)
-                    ItemDropsLastText.Text = "";
-                if (InventoryCountText != null)
-                    InventoryCountText.Text = "Inventory: (error loading)";
-            }
-        }
 
+                    ItemDropsProgressText.Text = "Item roll progress: (error loading)";
+
+                if (ItemDropsStatsText != null)
+
+                    ItemDropsStatsText.Text = "";
+
+                if (ItemDropsLastText != null)
+
+                    ItemDropsLastText.Text = "";
+
+                if (InventoryCountText != null)
+
+                    InventoryCountText.Text = "Inventory: (error loading)";
+
+            }
+
+        }
         // ============================================================
         // ============================================================
         // SECTION F — Food Actions
