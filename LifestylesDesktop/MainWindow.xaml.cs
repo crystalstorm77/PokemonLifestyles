@@ -80,6 +80,9 @@ namespace LifestylesDesktop
         private TextBlock? _trainerSelectedDayXpText;
         private Button? _trainerPrestigeResetButton;
 
+        // Live clock for the debug header
+        private readonly DispatcherTimer _liveClockTimer = new();
+
         // Sleep tuning controls (injected at runtime into the debug area)
         private bool _sleepSettingsUiBuilt = false;
         private TextBox? _sleepHealthyMinHoursBox;
@@ -105,6 +108,7 @@ namespace LifestylesDesktop
             InitializeComponent();
 
             Loaded += (_, __) => FitSelectedTabColumnsOnce();
+            Closed += (_, __) => _liveClockTimer.Stop();
 
             TimeZoneText.Text = $"Timezone: {TimeZoneInfo.Local.DisplayName}";
 
@@ -114,6 +118,7 @@ namespace LifestylesDesktop
             _logDateUiUpdating = false;
 
             UpdateLogDateUI();
+            StartLiveClock();
 
             _ = InitializeAndRefreshAsync();
         }
@@ -127,6 +132,7 @@ namespace LifestylesDesktop
 
             EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
+            UpdateLiveClockText();
 
             await RefreshForSelectedDateAsync();
         }
@@ -643,11 +649,11 @@ WHERE Id = 1;",
                 await _gamiSettingsRepo.UpdateFocusXpSettingsAsync(focusXpPerMinute, incompleteMultiplier);
                 await RefreshForSelectedDateAsync();
 
-                MessageBox.Show("Saved trainer XP settings.");
+                MessageBox.Show("Saved XP settings.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not save trainer XP settings");
+                MessageBox.Show(ex.Message, "Could not save XP settings");
             }
         }
 
@@ -661,11 +667,11 @@ WHERE Id = 1;",
 
                 await RefreshForSelectedDateAsync();
 
-                MessageBox.Show("Reset trainer XP settings to defaults.");
+                MessageBox.Show("Reset XP settings to defaults.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Could not reset trainer XP settings");
+                MessageBox.Show(ex.Message, "Could not reset XP settings");
             }
         }
 
@@ -681,7 +687,7 @@ WHERE Id = 1;",
                 }
 
                 var result = MessageBox.Show(
-                    "Prestige reset now?\n\nThis will reset your trainer level back to 1 and add 1 prestige star.",
+                    "Prestige reset now?\n\nThis will reset your cycle XP back to level 1 and add 1 prestige star. Lifetime trainer XP will stay unchanged.",
                     "Confirm prestige reset",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
@@ -703,6 +709,106 @@ WHERE Id = 1;",
             }
         }
 
+        private async void ResetTrainerLevelButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Reset trainer level to 1?\n\nThis will reset cycle XP to 0. Prestige stars and lifetime trainer XP will stay unchanged.",
+                    "Confirm level reset",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes)
+                    return;
+
+                await _rewardsRepo.ResetTrainerLevelAsync();
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Trainer level reset to 1.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset trainer level");
+            }
+        }
+
+        private async void ResetTrainerPrestigeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Reset prestige stars to 0?\n\nCycle XP and lifetime trainer XP will stay unchanged.",
+                    "Confirm prestige reset to 0",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes)
+                    return;
+
+                await _rewardsRepo.ResetTrainerPrestigeAsync();
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Prestige stars reset to 0.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset prestige stars");
+            }
+        }
+
+        private async void ResetTrainerLifetimeXpButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Reset lifetime trainer XP to 0?\n\nCurrent level, cycle XP, and prestige stars will stay unchanged.",
+                    "Confirm lifetime XP reset",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes)
+                    return;
+
+                await _rewardsRepo.ResetTrainerLifetimeXpAsync();
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Lifetime trainer XP reset to 0.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset lifetime trainer XP");
+            }
+        }
+
+        private void StartLiveClock()
+        {
+            _liveClockTimer.Stop();
+            _liveClockTimer.Interval = TimeSpan.FromSeconds(1);
+            _liveClockTimer.Tick -= LiveClockTimer_Tick;
+            _liveClockTimer.Tick += LiveClockTimer_Tick;
+            _liveClockTimer.Start();
+
+            UpdateLiveClockText();
+        }
+
+        private void LiveClockTimer_Tick(object? sender, EventArgs e)
+        {
+            UpdateLiveClockText();
+        }
+
+        private void UpdateLiveClockText()
+        {
+            var nowLocal = DateTimeOffset.Now;
+            var gameDayNow = GetCurrentGameDayLocal(nowLocal);
+
+            if (NowLocalText != null)
+                NowLocalText.Text = $"Now (local): {nowLocal:yyyy-MM-dd HH:mm:ss}";
+
+            if (GameDayNowText != null)
+                GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
+        }
+
         private static string BuildSleepPreviewText(SleepTuningSettings settings, int totalMinutes)
         {
             double mult = ComputeSleepMultiplier(settings, totalMinutes);
@@ -712,13 +818,13 @@ WHERE Id = 1;",
 
         private static string BuildTrainerLevelLine(TrainerProgressSnapshot progress)
         {
-            return $"Trainer: Lv {progress.CurrentLevel} | Prestige: {progress.PrestigeCount}★ | Cycle XP: {progress.CurrentCycleXp:#,0}/{progress.MaxCycleXp:#,0}";
+            return $"Trainer: Lv {progress.CurrentLevel} | Prestige: {progress.PrestigeCount}★ | Cycle XP: {progress.CurrentCycleXp:#,0}/{progress.MaxCycleXp:#,0} | Lifetime XP: {progress.TotalLifetimeXp:#,0}";
         }
 
         private static string BuildTrainerProgressLine(TrainerProgressSnapshot progress)
         {
             if (progress.IsMaxLevel)
-                return "Level 100 reached. Prestige reset is available.";
+                return "Level 100 reached. Prestige Reset (+1 Star) is available.";
 
             return
                 $"Current level progress: {progress.XpIntoCurrentLevel:#,0} XP into Lv {progress.CurrentLevel} | " +
@@ -767,30 +873,40 @@ WHERE Id = 1;",
                 Margin = new Thickness(0, 2, 0, 0)
             };
 
-            var settingsRow = new StackPanel
+            var settingsColumn = new StackPanel
             {
-                Orientation = Orientation.Horizontal,
+                Orientation = Orientation.Vertical,
                 Margin = new Thickness(0, 8, 0, 0)
             };
 
-            settingsRow.Children.Add(new TextBlock
+            var xpPerMinuteRow = new StackPanel
             {
-                Text = "XP/min:",
-                Width = 60,
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
+            xpPerMinuteRow.Children.Add(new TextBlock
+            {
+                Text = "Focus Session XP per Minute:",
+                Width = 220,
                 VerticalAlignment = VerticalAlignment.Center
             });
 
             _focusXpPerMinuteBox = new TextBox
             {
-                Width = 70,
-                Margin = new Thickness(0, 0, 12, 0)
+                Width = 70
             };
-            settingsRow.Children.Add(_focusXpPerMinuteBox);
+            xpPerMinuteRow.Children.Add(_focusXpPerMinuteBox);
 
-            settingsRow.Children.Add(new TextBlock
+            var incompleteMultiplierRow = new StackPanel
             {
-                Text = "Incomplete x:",
-                Width = 95,
+                Orientation = Orientation.Horizontal
+            };
+
+            incompleteMultiplierRow.Children.Add(new TextBlock
+            {
+                Text = "Incomplete Session Multiplier:",
+                Width = 220,
                 VerticalAlignment = VerticalAlignment.Center
             });
 
@@ -798,9 +914,12 @@ WHERE Id = 1;",
             {
                 Width = 70
             };
-            settingsRow.Children.Add(_focusXpIncompleteMultiplierBox);
+            incompleteMultiplierRow.Children.Add(_focusXpIncompleteMultiplierBox);
 
-            var buttonRow = new StackPanel
+            settingsColumn.Children.Add(xpPerMinuteRow);
+            settingsColumn.Children.Add(incompleteMultiplierRow);
+
+            var settingsButtonRow = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(0, 8, 0, 0)
@@ -808,8 +927,8 @@ WHERE Id = 1;",
 
             var saveButton = new Button
             {
-                Content = "Save trainer XP",
-                Width = 120,
+                Content = "Save XP Settings",
+                Width = 130,
                 Margin = new Thickness(0, 0, 8, 0),
                 HorizontalAlignment = HorizontalAlignment.Left
             };
@@ -817,29 +936,71 @@ WHERE Id = 1;",
 
             var resetButton = new Button
             {
-                Content = "Reset trainer XP",
-                Width = 120,
-                Margin = new Thickness(0, 0, 8, 0),
+                Content = "Reset XP Settings",
+                Width = 130,
                 HorizontalAlignment = HorizontalAlignment.Left
             };
             resetButton.Click += ResetTrainerXpSettingsButton_Click;
 
+            settingsButtonRow.Children.Add(saveButton);
+            settingsButtonRow.Children.Add(resetButton);
+
+            var debugButtonRow1 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
             _trainerPrestigeResetButton = new Button
             {
-                Content = "Prestige reset",
-                Width = 120,
+                Content = "Prestige Reset (+1 Star)",
+                Width = 180,
                 IsEnabled = false,
+                Margin = new Thickness(0, 0, 8, 0),
                 HorizontalAlignment = HorizontalAlignment.Left
             };
             _trainerPrestigeResetButton.Click += PrestigeResetButton_Click;
 
-            buttonRow.Children.Add(saveButton);
-            buttonRow.Children.Add(resetButton);
-            buttonRow.Children.Add(_trainerPrestigeResetButton);
+            var resetLevelButton = new Button
+            {
+                Content = "Reset to Level 1",
+                Width = 140,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetLevelButton.Click += ResetTrainerLevelButton_Click;
+
+            debugButtonRow1.Children.Add(_trainerPrestigeResetButton);
+            debugButtonRow1.Children.Add(resetLevelButton);
+
+            var debugButtonRow2 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var resetPrestigeButton = new Button
+            {
+                Content = "Reset Prestige to 0",
+                Width = 150,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetPrestigeButton.Click += ResetTrainerPrestigeButton_Click;
+
+            var resetLifetimeXpButton = new Button
+            {
+                Content = "Reset Lifetime XP",
+                Width = 150,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetLifetimeXpButton.Click += ResetTrainerLifetimeXpButton_Click;
+
+            debugButtonRow2.Children.Add(resetPrestigeButton);
+            debugButtonRow2.Children.Add(resetLifetimeXpButton);
 
             var note = new TextBlock
             {
-                Text = "Level 100 caps at 1,000,000 cycle XP. Prestige reset returns you to level 1 and adds a star.",
+                Text = "Cycle XP drives Lv 1–100. Lifetime trainer XP keeps counting separately, even at level 100. Prestige Reset (+1 Star) only works at level 100. Debug reset buttons do not rewrite the reward ledger.",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
                 TextWrapping = TextWrapping.Wrap
@@ -849,8 +1010,10 @@ WHERE Id = 1;",
             root.Children.Insert(insertAt++, _trainerLevelText);
             root.Children.Insert(insertAt++, _trainerProgressText);
             root.Children.Insert(insertAt++, _trainerSelectedDayXpText);
-            root.Children.Insert(insertAt++, settingsRow);
-            root.Children.Insert(insertAt++, buttonRow);
+            root.Children.Insert(insertAt++, settingsColumn);
+            root.Children.Insert(insertAt++, settingsButtonRow);
+            root.Children.Insert(insertAt++, debugButtonRow1);
+            root.Children.Insert(insertAt++, debugButtonRow2);
             root.Children.Insert(insertAt++, note);
 
             _trainerXpUiBuilt = true;
@@ -1226,14 +1389,7 @@ WHERE Id = 1;",
                 EnsureTrainerXpDebugUiBuilt();
                 EnsureSleepSettingsDebugUiBuilt();
 
-                var nowLocal = DateTimeOffset.Now;
-                var gameDayNow = GetCurrentGameDayLocal(nowLocal);
-
-                if (NowLocalText != null)
-                    NowLocalText.Text = $"Now (local): {nowLocal:yyyy-MM-dd HH:mm:ss}";
-
-                if (GameDayNowText != null)
-                    GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
+                UpdateLiveClockText();
 
                 int selectedDayCoins = 0;
                 int selectedDayTickets = 0;

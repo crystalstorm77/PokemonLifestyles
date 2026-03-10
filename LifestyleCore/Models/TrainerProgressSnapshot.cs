@@ -6,6 +6,7 @@
         public int PrestigeCount { get; set; }
         public int CurrentCycleXp { get; set; }
         public int MaxCycleXp { get; set; }
+        public long TotalLifetimeXp { get; set; }
 
         public int CurrentLevel { get; set; }
         public int CurrentLevelBaseXp { get; set; }

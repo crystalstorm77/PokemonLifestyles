@@ -16,6 +16,7 @@ namespace LifestyleCore.Data
         private sealed class TrainerProgressRow
         {
             public int CurrentCycleXp { get; set; }
+            public long TotalLifetimeXp { get; set; }
             public int PrestigeCount { get; set; }
         }
 
@@ -109,7 +110,7 @@ namespace LifestyleCore.Data
             string day = forGameDay.ToString("yyyy-MM-dd");
 
             var progress = await conn.QuerySingleOrDefaultAsync<TrainerProgressRow>(@"
-                SELECT CurrentCycleXp, PrestigeCount
+                SELECT CurrentCycleXp, TotalLifetimeXp, PrestigeCount
                 FROM TrainerProgress
                 WHERE Id = 1;",
                 transaction: tx) ?? new TrainerProgressRow();
@@ -118,18 +119,8 @@ namespace LifestyleCore.Data
             if (currentCycleXp < 0) currentCycleXp = 0;
             if (currentCycleXp > MaxTrainerCycleXp) currentCycleXp = MaxTrainerCycleXp;
 
-            if (currentCycleXp >= MaxTrainerCycleXp)
-            {
-                tx.Commit();
-                return false;
-            }
-
-            int grantXp = Math.Min(amount, MaxTrainerCycleXp - currentCycleXp);
-            if (grantXp <= 0)
-            {
-                tx.Commit();
-                return false;
-            }
+            long totalLifetimeXp = progress.TotalLifetimeXp;
+            if (totalLifetimeXp < 0) totalLifetimeXp = 0;
 
             int rows = await conn.ExecuteAsync(@"
         INSERT OR IGNORE INTO RewardsLedger
@@ -141,7 +132,7 @@ namespace LifestyleCore.Data
                     ForGameDay = day,
                     AwardedAtUtc = nowUtc,
                     RewardType = (int)RewardType.TrainerXp,
-                    Amount = grantXp,
+                    Amount = amount,
                     FocusSessionId = focusSessionId
                 },
                 tx);
@@ -152,11 +143,13 @@ namespace LifestyleCore.Data
                     UPDATE TrainerProgress
                     SET
                         CurrentCycleXp = @CurrentCycleXp,
+                        TotalLifetimeXp = @TotalLifetimeXp,
                         UpdatedAtUtc = @UpdatedAtUtc
                     WHERE Id = 1;",
                     new
                     {
-                        CurrentCycleXp = currentCycleXp + grantXp,
+                        CurrentCycleXp = Math.Min(MaxTrainerCycleXp, currentCycleXp + amount),
+                        TotalLifetimeXp = totalLifetimeXp + amount,
                         UpdatedAtUtc = nowUtc
                     },
                     tx);
@@ -177,7 +170,7 @@ namespace LifestyleCore.Data
             using var tx = conn.BeginTransaction();
 
             var progress = await conn.QuerySingleOrDefaultAsync<TrainerProgressRow>(@"
-                SELECT CurrentCycleXp, PrestigeCount
+                SELECT CurrentCycleXp, TotalLifetimeXp, PrestigeCount
                 FROM TrainerProgress
                 WHERE Id = 1;",
                 transaction: tx) ?? new TrainerProgressRow();
@@ -212,6 +205,54 @@ namespace LifestyleCore.Data
 
             tx.Commit();
             return true;
+        }
+
+        public async Task ResetTrainerLevelAsync()
+        {
+            RewardsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+            string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+
+            await conn.ExecuteAsync(@"
+                UPDATE TrainerProgress
+                SET
+                    CurrentCycleXp = 0,
+                    UpdatedAtUtc = @UpdatedAtUtc
+                WHERE Id = 1;",
+                new { UpdatedAtUtc = nowUtc });
+        }
+
+        public async Task ResetTrainerPrestigeAsync()
+        {
+            RewardsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+            string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+
+            await conn.ExecuteAsync(@"
+                UPDATE TrainerProgress
+                SET
+                    PrestigeCount = 0,
+                    UpdatedAtUtc = @UpdatedAtUtc
+                WHERE Id = 1;",
+                new { UpdatedAtUtc = nowUtc });
+        }
+
+        public async Task ResetTrainerLifetimeXpAsync()
+        {
+            RewardsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+            string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+
+            await conn.ExecuteAsync(@"
+                UPDATE TrainerProgress
+                SET
+                    TotalLifetimeXp = 0,
+                    UpdatedAtUtc = @UpdatedAtUtc
+                WHERE Id = 1;",
+                new { UpdatedAtUtc = nowUtc });
         }
         #endregion // SECTION B — Grant Rewards
 
@@ -249,13 +290,16 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             var row = await conn.QuerySingleOrDefaultAsync<TrainerProgressRow>(@"
-                SELECT CurrentCycleXp, PrestigeCount
+                SELECT CurrentCycleXp, TotalLifetimeXp, PrestigeCount
                 FROM TrainerProgress
                 WHERE Id = 1;") ?? new TrainerProgressRow();
 
             int cycleXp = row.CurrentCycleXp;
             if (cycleXp < 0) cycleXp = 0;
             if (cycleXp > MaxTrainerCycleXp) cycleXp = MaxTrainerCycleXp;
+
+            long totalLifetimeXp = row.TotalLifetimeXp;
+            if (totalLifetimeXp < 0) totalLifetimeXp = 0;
 
             int prestigeCount = row.PrestigeCount;
             if (prestigeCount < 0) prestigeCount = 0;
@@ -270,6 +314,7 @@ namespace LifestyleCore.Data
                     PrestigeCount = prestigeCount,
                     CurrentCycleXp = MaxTrainerCycleXp,
                     MaxCycleXp = MaxTrainerCycleXp,
+                    TotalLifetimeXp = totalLifetimeXp,
                     CurrentLevel = MaxTrainerLevel,
                     CurrentLevelBaseXp = MaxTrainerCycleXp,
                     NextLevelBaseXp = MaxTrainerCycleXp,
@@ -287,6 +332,7 @@ namespace LifestyleCore.Data
                 PrestigeCount = prestigeCount,
                 CurrentCycleXp = cycleXp,
                 MaxCycleXp = MaxTrainerCycleXp,
+                TotalLifetimeXp = totalLifetimeXp,
                 CurrentLevel = level,
                 CurrentLevelBaseXp = currentLevelBaseXp,
                 NextLevelBaseXp = nextLevelBaseXp,
