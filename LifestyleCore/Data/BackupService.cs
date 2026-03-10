@@ -692,8 +692,6 @@ namespace LifestyleCore.Data
             FoodSchema.EnsureCreated();
             SleepSchema.EnsureCreated();
 
-            // If you already created these schemas, keep them.
-            // If not, you’ll need to add them (I can provide them next once your build is stable).
             HabitsSchema.EnsureCreated();
             StepsSchema.EnsureCreated();
         }
@@ -756,15 +754,22 @@ namespace LifestyleCore.Data
             var list = new List<HabitEntryExport>();
             foreach (var r in rows)
             {
+                object valueObj = r.Value;
+                object updatedObj = r.UpdatedAtUtc;
+                object habitExternalIdObj = r.HabitExternalId;
+                object externalIdObj = r.ExternalId;
+                object dateObj = r.Date;
+
                 list.Add(new HabitEntryExport
                 {
-                    ExternalId = (string)r.ExternalId,
-                    Date = (string)r.Date,
-                    Value = (double)r.Value,
-                    UpdatedAtUtc = (string)r.UpdatedAtUtc,
-                    HabitExternalId = (string)r.HabitExternalId
+                    ExternalId = Convert.ToString(externalIdObj) ?? "",
+                    Date = Convert.ToString(dateObj) ?? "",
+                    Value = Convert.ToDouble(valueObj),
+                    UpdatedAtUtc = Convert.ToString(updatedObj) ?? "",
+                    HabitExternalId = Convert.ToString(habitExternalIdObj) ?? ""
                 });
             }
+
             return list;
         }
 
@@ -779,8 +784,12 @@ namespace LifestyleCore.Data
             var dict = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var r in rows)
             {
-                string date = (string)r.Date;
-                int steps = (int)r.Steps;
+                object dateObj = r.Date;
+                object stepsObj = r.Steps;
+
+                string date = Convert.ToString(dateObj) ?? "";
+                int steps = Convert.ToInt32(stepsObj);
+
                 dict[date] = steps;
             }
 
@@ -855,22 +864,27 @@ namespace LifestyleCore.Data
             var list = new List<FoodEntryExport>();
             foreach (var r in rows)
             {
+                object kjPer100gObj = r.KjPer100gSnapshot;
+                object servingsObj = r.Servings;
+                object gramsObj = r.Grams;
+                object foodItemExternalIdObj = r.FoodItemExternalId;
+
                 list.Add(new FoodEntryExport
                 {
-                    ExternalId = (string)r.ExternalId,
-                    LoggedAtUtc = (string)r.LoggedAtUtc,
-                    LogDate = (string)r.LogDate,
+                    ExternalId = Convert.ToString(r.ExternalId) ?? "",
+                    LoggedAtUtc = Convert.ToString(r.LoggedAtUtc) ?? "",
+                    LogDate = Convert.ToString(r.LogDate) ?? "",
 
-                    FoodName = (string)r.FoodName,
-                    ServingLabel = (string)r.ServingLabel,
-                    KjPerServingSnapshot = (double)r.KjPerServingSnapshot,
-                    KjPer100gSnapshot = r.KjPer100gSnapshot is null ? null : (double?)r.KjPer100gSnapshot,
+                    FoodName = Convert.ToString(r.FoodName) ?? "",
+                    ServingLabel = Convert.ToString(r.ServingLabel) ?? "",
+                    KjPerServingSnapshot = Convert.ToDouble(r.KjPerServingSnapshot),
+                    KjPer100gSnapshot = kjPer100gObj is null || kjPer100gObj is DBNull ? null : Convert.ToDouble(kjPer100gObj),
 
-                    Servings = r.Servings is null ? null : (double?)r.Servings,
-                    Grams = r.Grams is null ? null : (int?)r.Grams,
+                    Servings = servingsObj is null || servingsObj is DBNull ? null : Convert.ToDouble(servingsObj),
+                    Grams = gramsObj is null || gramsObj is DBNull ? null : Convert.ToInt32(gramsObj),
 
-                    KjComputed = (double)r.KjComputed,
-                    FoodItemExternalId = r.FoodItemExternalId is null ? "" : (string)r.FoodItemExternalId
+                    KjComputed = Convert.ToDouble(r.KjComputed),
+                    FoodItemExternalId = foodItemExternalIdObj is null || foodItemExternalIdObj is DBNull ? "" : (Convert.ToString(foodItemExternalIdObj) ?? "")
                 });
             }
             return list;
@@ -886,6 +900,7 @@ namespace LifestyleCore.Data
             return new List<SleepSessionExport>(rows);
         }
         #endregion // SECTION D — Export queries
+
 
         #region SECTION E — JSON helpers + file enumeration
         private static IEnumerable<string> EnumerateDayFiles(string rootFolder)
