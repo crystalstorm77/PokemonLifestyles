@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Habit Repository
-// ============================================================
-
+﻿#region SECTION A — Habit Repository
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -17,10 +14,7 @@ namespace LifestyleCore.Data
 
         public sealed record SetDailyValueResult(bool RewardGranted);
 
-        // ============================================================
-        // SECTION B — Habits
-        // ============================================================
-
+        #region SECTION B — Habits
         public async Task AddHabitAsync(string title, HabitKind kind, int targetPerWeek, DateOnly? createdOnLocalDate = null)
         {
             HabitsSchema.EnsureCreated();
@@ -43,8 +37,8 @@ namespace LifestyleCore.Data
             string now = createdUtc.ToString("O");
 
             await conn.ExecuteAsync(@"
-        INSERT INTO Habits (Title, Kind, TargetPerWeek, IsArchived, CreatedAtUtc, UpdatedAtUtc)
-        VALUES (@Title, @Kind, @TargetPerWeek, 0, @Now, @Now);",
+INSERT INTO Habits (Title, Kind, TargetPerWeek, IsArchived, CreatedAtUtc, UpdatedAtUtc)
+VALUES (@Title, @Kind, @TargetPerWeek, 0, @Now, @Now);",
                 new
                 {
                     Title = title,
@@ -59,20 +53,14 @@ namespace LifestyleCore.Data
             HabitsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
             var rows = await conn.QueryAsync<Habit>(@"
-        SELECT
-            Id,
-            ExternalId,
-            Title,
-            Kind,
-            TargetPerWeek,
-            IsArchived,
-            CreatedAtUtc,
-            UpdatedAtUtc
-        FROM Habits
-        WHERE IsArchived = 0
-        ORDER BY Title COLLATE NOCASE ASC;
-    ");
+SELECT Id, ExternalId, Title, Kind, TargetPerWeek, IsArchived, CreatedAtUtc, UpdatedAtUtc
+FROM Habits
+WHERE IsArchived = 0
+ORDER BY Title COLLATE NOCASE ASC;
+");
+
             return new List<Habit>(rows);
         }
 
@@ -84,11 +72,14 @@ namespace LifestyleCore.Data
             string now = DateTimeOffset.UtcNow.ToString("O");
 
             await conn.ExecuteAsync(@"
-        UPDATE Habits
-        SET IsArchived = 1,
-            UpdatedAtUtc = @Now
-        WHERE Id = @Id;",
-                new { Id = habitId, Now = now });
+UPDATE Habits
+SET IsArchived = 1, UpdatedAtUtc = @Now
+WHERE Id = @Id;",
+                new
+                {
+                    Id = habitId,
+                    Now = now
+                });
         }
 
         // Use local NOON as a safe anchor (avoids DST invalid/ambiguous midnight edge cases).
@@ -98,11 +89,9 @@ namespace LifestyleCore.Data
             var utc = TimeZoneInfo.ConvertTimeToUtc(localNoon, TimeZoneInfo.Local);
             return new DateTimeOffset(utc, TimeSpan.Zero);
         }
+        #endregion // SECTION B — Habits
 
-        // ============================================================
-        // SECTION C — Habit entries (daily)
-        // ============================================================
-
+        #region SECTION C — Habit entries (daily)
         public async Task<List<HabitEntry>> GetEntriesForDateAsync(DateOnly date)
         {
             HabitsSchema.EnsureCreated();
@@ -111,15 +100,9 @@ namespace LifestyleCore.Data
             string d = date.ToString("yyyy-MM-dd");
 
             var rows = await conn.QueryAsync<HabitEntry>(@"
-        SELECT
-            Id,
-            ExternalId,
-            HabitId,
-            Date,
-            Value,
-            UpdatedAtUtc
-        FROM HabitEntries
-        WHERE Date = @Date;",
+SELECT Id, ExternalId, HabitId, Date, Value, UpdatedAtUtc
+FROM HabitEntries
+WHERE Date = @Date;",
                 new { Date = d });
 
             return new List<HabitEntry>(rows);
@@ -130,16 +113,19 @@ namespace LifestyleCore.Data
             HabitsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
-
             string s = weekStart.ToString("yyyy-MM-dd");
             string e = weekEnd.ToString("yyyy-MM-dd");
 
             var rows = await conn.QueryAsync<(long HabitId, long Total)>(@"
-        SELECT HabitId, SUM(Value) AS Total
-        FROM HabitEntries
-        WHERE Date >= @Start AND Date <= @End
-        GROUP BY HabitId;",
-                new { Start = s, End = e });
+SELECT HabitId, SUM(Value) AS Total
+FROM HabitEntries
+WHERE Date >= @Start AND Date <= @End
+GROUP BY HabitId;",
+                new
+                {
+                    Start = s,
+                    End = e
+                });
 
             var dict = new Dictionary<long, int>();
             foreach (var r in rows)
@@ -161,11 +147,11 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             await conn.ExecuteAsync(@"
-        INSERT INTO HabitEntries (HabitId, Date, Value, UpdatedAtUtc)
-        VALUES (@HabitId, @Date, @Value, @UpdatedAtUtc)
-        ON CONFLICT(HabitId, Date) DO UPDATE SET
-            Value = Value + excluded.Value,
-            UpdatedAtUtc = excluded.UpdatedAtUtc;",
+INSERT INTO HabitEntries (HabitId, Date, Value, UpdatedAtUtc)
+VALUES (@HabitId, @Date, @Value, @UpdatedAtUtc)
+ON CONFLICT(HabitId, Date) DO UPDATE SET
+    Value = Value + excluded.Value,
+    UpdatedAtUtc = excluded.UpdatedAtUtc;",
                 new
                 {
                     HabitId = habitId,
@@ -192,7 +178,7 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             // Determine whether this day was already "done" for this habit (prevents duplicate ticket grants).
-            var priorVal = await conn.ExecuteScalarAsync<int?>(
+            int? priorVal = await conn.ExecuteScalarAsync<int?>(
                 "SELECT Value FROM HabitEntries WHERE HabitId = @HabitId AND Date = @Date LIMIT 1;",
                 new { HabitId = habitId, Date = d });
 
@@ -210,11 +196,11 @@ namespace LifestyleCore.Data
             }
 
             await conn.ExecuteAsync(@"
-        INSERT INTO HabitEntries (HabitId, Date, Value, UpdatedAtUtc)
-        VALUES (@HabitId, @Date, @Value, @UpdatedAtUtc)
-        ON CONFLICT(HabitId, Date) DO UPDATE SET
-            Value = excluded.Value,
-            UpdatedAtUtc = excluded.UpdatedAtUtc;",
+INSERT INTO HabitEntries (HabitId, Date, Value, UpdatedAtUtc)
+VALUES (@HabitId, @Date, @Value, @UpdatedAtUtc)
+ON CONFLICT(HabitId, Date) DO UPDATE SET
+    Value = excluded.Value,
+    UpdatedAtUtc = excluded.UpdatedAtUtc;",
                 new
                 {
                     HabitId = habitId,
@@ -241,7 +227,7 @@ namespace LifestyleCore.Data
 
         private static async Task<HabitKind?> TryGetHabitKindAsync(IDbConnection conn, long habitId)
         {
-            var kindInt = await conn.ExecuteScalarAsync<int?>(
+            int? kindInt = await conn.ExecuteScalarAsync<int?>(
                 "SELECT Kind FROM Habits WHERE Id = @Id LIMIT 1;",
                 new { Id = habitId });
 
@@ -264,7 +250,11 @@ namespace LifestyleCore.Data
         {
             // 03:00 local cutoff: before 03:00 counts as “yesterday” game day.
             var today = DateOnly.FromDateTime(nowLocal.DateTime);
-            return (nowLocal.TimeOfDay < new TimeSpan(3, 0, 0)) ? today.AddDays(-1) : today;
+            return (nowLocal.TimeOfDay < new TimeSpan(3, 0, 0))
+                ? today.AddDays(-1)
+                : today;
         }
+        #endregion // SECTION C — Habit entries (daily)
     }
-} //test
+}
+#endregion // SECTION A — Habit Repository

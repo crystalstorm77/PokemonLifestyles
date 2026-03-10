@@ -1,9 +1,7 @@
-﻿// ============================================================
-// SECTION A — Step Item Drops Service
-// ============================================================
-
+﻿#region SECTION A — Step Item Drops Service
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using LifestyleCore.Models;
@@ -12,20 +10,18 @@ namespace LifestyleCore.Data
 {
     public sealed class StepItemDropsService
     {
-        // ============================================================
-        // SECTION B — Item Pools (v3: ItemDefinitions table)
-        // ============================================================
-
+        #region SECTION B — Item Pools (v3: ItemDefinitions table)
         private static string NormalizeItemName(string? s)
         {
             s = (s ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(s)) return "";
+            if (string.IsNullOrWhiteSpace(s))
+                return "";
 
             // Collapse internal whitespace
             var chars = s.ToCharArray();
             var outChars = new List<char>(chars.Length);
-
             bool prevSpace = false;
+
             for (int i = 0; i < chars.Length; i++)
             {
                 char c = chars[i];
@@ -38,6 +34,7 @@ namespace LifestyleCore.Data
                         outChars.Add(' ');
                         prevSpace = true;
                     }
+
                     continue;
                 }
 
@@ -52,9 +49,13 @@ namespace LifestyleCore.Data
             for (int i = 0; i < words.Length; i++)
             {
                 var w = words[i];
-                if (w.Length == 0) continue;
-                if (w.Length == 1) words[i] = char.ToUpperInvariant(w[0]).ToString();
-                else words[i] = char.ToUpperInvariant(w[0]) + w.Substring(1).ToLowerInvariant();
+                if (w.Length == 0)
+                    continue;
+
+                if (w.Length == 1)
+                    words[i] = char.ToUpperInvariant(w[0]).ToString();
+                else
+                    words[i] = char.ToUpperInvariant(w[0]) + w.Substring(1).ToLowerInvariant();
             }
 
             return string.Join(' ', words);
@@ -67,39 +68,45 @@ namespace LifestyleCore.Data
             int rw = Math.Max(0, rareW);
 
             int total = cw + uw + rw;
-            if (total <= 0) return 0;
+            if (total <= 0)
+                return 0;
 
             int r = Random.Shared.Next(total); // 0..total-1
-            if (r < cw) return 0;
+            if (r < cw)
+                return 0;
+
             r -= cw;
-            if (r < uw) return 1;
+            if (r < uw)
+                return 1;
+
             return 2;
         }
 
         private static ItemDefinition? PickWeighted(IReadOnlyList<ItemDefinition> defs)
         {
-            if (defs == null || defs.Count == 0) return null;
+            if (defs == null || defs.Count == 0)
+                return null;
 
             int total = 0;
             for (int i = 0; i < defs.Count; i++)
                 total += Math.Max(0, defs[i].Weight);
 
-            if (total <= 0) return null;
+            if (total <= 0)
+                return null;
 
             int r = Random.Shared.Next(total);
             for (int i = 0; i < defs.Count; i++)
             {
                 r -= Math.Max(0, defs[i].Weight);
-                if (r < 0) return defs[i];
+                if (r < 0)
+                    return defs[i];
             }
 
             return defs[0];
         }
+        #endregion // SECTION B — Item Pools (v3: ItemDefinitions table)
 
-        // ============================================================
-        // SECTION C — Processing
-        // ============================================================
-
+        #region SECTION C — Processing
         public async Task<(int Rolls, List<string> ItemsFound)> ProcessStepsAddedAsync(int stepsAdded)
         {
             ItemDropsSchema.EnsureCreated();
@@ -122,9 +129,7 @@ namespace LifestyleCore.Data
                 var rows = await conn.QueryAsync<ItemDefinition>(@"
 SELECT Name, Tier, Weight, IsActive
 FROM ItemDefinitions
-WHERE IsActive = 1
-  AND Tier = @Tier
-  AND Weight > 0
+WHERE IsActive = 1 AND Tier = @Tier AND Weight > 0
 ORDER BY Name ASC;",
                     new { Tier = (int)tier },
                     transaction: tx);
@@ -140,29 +145,27 @@ ORDER BY Name ASC;",
             if (commonDefs.Count == 0 && uncommonDefs.Count == 0 && rareDefs.Count == 0)
             {
                 commonDefs = new List<ItemDefinition>
-        {
-            new() { Name = "Potion", Tier = ItemTier.Common, Weight = 1, IsActive = true },
-            new() { Name = "Poke Ball", Tier = ItemTier.Common, Weight = 1, IsActive = true },
-            new() { Name = "Antidote", Tier = ItemTier.Common, Weight = 1, IsActive = true },
-        };
+                {
+                    new() { Name = "Potion", Tier = ItemTier.Common, Weight = 1, IsActive = true },
+                    new() { Name = "Poke Ball", Tier = ItemTier.Common, Weight = 1, IsActive = true },
+                    new() { Name = "Antidote", Tier = ItemTier.Common, Weight = 1, IsActive = true },
+                };
 
                 uncommonDefs = new List<ItemDefinition>
-        {
-            new() { Name = "Super Potion", Tier = ItemTier.Uncommon, Weight = 1, IsActive = true },
-            new() { Name = "Great Ball", Tier = ItemTier.Uncommon, Weight = 1, IsActive = true },
-        };
+                {
+                    new() { Name = "Super Potion", Tier = ItemTier.Uncommon, Weight = 1, IsActive = true },
+                    new() { Name = "Great Ball", Tier = ItemTier.Uncommon, Weight = 1, IsActive = true },
+                };
 
                 rareDefs = new List<ItemDefinition>
-        {
-            new() { Name = "Rare Candy", Tier = ItemTier.Rare, Weight = 1, IsActive = true },
-            new() { Name = "Nugget", Tier = ItemTier.Rare, Weight = 1, IsActive = true },
-        };
+                {
+                    new() { Name = "Rare Candy", Tier = ItemTier.Rare, Weight = 1, IsActive = true },
+                    new() { Name = "Nugget", Tier = ItemTier.Rare, Weight = 1, IsActive = true },
+                };
             }
 
             var state = await conn.QuerySingleAsync<(int StepsRemainder, long TotalRolls, long TotalSuccesses)>(
-                @"SELECT StepsRemainder, TotalRolls, TotalSuccesses
-          FROM StepItemRollState
-          WHERE Id = 1;",
+                @"SELECT StepsRemainder, TotalRolls, TotalSuccesses FROM StepItemRollState WHERE Id = 1;",
                 transaction: tx);
 
             int total = state.StepsRemainder + stepsAdded;
@@ -194,12 +197,12 @@ WHERE Id = 1;",
             for (int i = 0; i < rolls; i++)
             {
                 int r = Random.Shared.Next(oneInN);
-                if (r != 0) continue;
+                if (r != 0)
+                    continue;
 
                 successes++;
 
                 int tierIdx = PickTierIndex(settings.CommonTierWeight, settings.UncommonTierWeight, settings.RareTierWeight);
-
                 IReadOnlyList<ItemDefinition> pool = tierIdx switch
                 {
                     2 => rareDefs,
@@ -228,8 +231,13 @@ WHERE Id = 1;",
                 await conn.ExecuteAsync(@"
 INSERT INTO InventoryItems (ItemKey, Count)
 VALUES (@ItemKey, @Count)
-ON CONFLICT(ItemKey) DO UPDATE SET Count = Count + excluded.Count;",
-                    new { ItemKey = kvp.Key, Count = kvp.Value },
+ON CONFLICT(ItemKey) DO UPDATE SET
+    Count = Count + excluded.Count;",
+                    new
+                    {
+                        ItemKey = kvp.Key,
+                        Count = kvp.Value
+                    },
                     transaction: tx);
             }
 
@@ -248,7 +256,8 @@ ON CONFLICT(ItemKey) DO UPDATE SET Count = Count + excluded.Count;",
 
             await conn.ExecuteAsync(@"
 UPDATE StepItemRollState
-SET StepsRemainder = @StepsRemainder,
+SET
+    StepsRemainder = @StepsRemainder,
     TotalRolls = TotalRolls + @AddRolls,
     TotalSuccesses = TotalSuccesses + @AddSuccesses,
     UpdatedAtUtc = @UpdatedAtUtc,
@@ -269,6 +278,7 @@ WHERE Id = 1;",
             tx.Commit();
             return (rolls, found);
         }
-
+        #endregion // SECTION C — Processing
     }
 }
+#endregion // SECTION A — Step Item Drops Service

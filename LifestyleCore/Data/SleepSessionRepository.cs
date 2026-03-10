@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Sleep Repository (SQLite + Dapper)
-// ============================================================
-
+﻿#region SECTION A — Sleep Repository (SQLite + Dapper)
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,15 +10,14 @@ namespace LifestyleCore.Data
 {
     public sealed class SleepSessionRepository
     {
-        // ============================================================
-        // SECTION B — Pending start helpers
-        // ============================================================
+        #region SECTION B — Pending start helpers
         public async Task<DateTimeOffset?> GetPendingStartUtcAsync()
         {
             SleepSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
-            var row = await conn.QueryFirstOrDefaultAsync<string>(
+
+            var row = await conn.QueryFirstOrDefaultAsync<string?>(
                 "SELECT StartUtc FROM PendingSleep WHERE Id = 1;");
 
             if (string.IsNullOrWhiteSpace(row))
@@ -35,10 +31,12 @@ namespace LifestyleCore.Data
             SleepSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
             await conn.ExecuteAsync(@"
-                INSERT INTO PendingSleep (Id, StartUtc)
-                VALUES (1, @StartUtc)
-                ON CONFLICT(Id) DO UPDATE SET StartUtc = excluded.StartUtc;",
+INSERT INTO PendingSleep (Id, StartUtc)
+VALUES (1, @StartUtc)
+ON CONFLICT(Id) DO UPDATE SET
+    StartUtc = excluded.StartUtc;",
                 new { StartUtc = startUtc.ToString("O") });
         }
 
@@ -49,10 +47,9 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
             await conn.ExecuteAsync("DELETE FROM PendingSleep WHERE Id = 1;");
         }
+        #endregion // SECTION B — Pending start helpers
 
-        // ============================================================
-        // SECTION C — Create session from pending
-        // ============================================================
+        #region SECTION C — Create session from pending
         public async Task<long> EndSleepNowAsync()
         {
             SleepSchema.EnsureCreated();
@@ -69,16 +66,15 @@ namespace LifestyleCore.Data
 
             var endLocal = endUtc.ToLocalTime();
             var wakeLogDate = DateOnly.FromDateTime(endLocal.DateTime);
-
             int durationMinutes = (int)Math.Round((endUtc - startUtc).TotalMinutes);
 
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                INSERT INTO SleepSessions (StartUtc, EndUtc, WakeLogDate, DurationMinutes)
-                VALUES (@StartUtc, @EndUtc, @WakeLogDate, @DurationMinutes);
-                SELECT last_insert_rowid();
-            ";
+INSERT INTO SleepSessions (StartUtc, EndUtc, WakeLogDate, DurationMinutes)
+VALUES (@StartUtc, @EndUtc, @WakeLogDate, @DurationMinutes);
+SELECT last_insert_rowid();
+";
 
             long id = await conn.ExecuteScalarAsync<long>(sql, new
             {
@@ -89,12 +85,12 @@ namespace LifestyleCore.Data
             });
 
             await ClearPendingAsync();
+
             return id;
         }
+        #endregion // SECTION C — Create session from pending
 
-        // ============================================================
-        // SECTION D — Query
-        // ============================================================
+        #region SECTION D — Query
         public async Task<IReadOnlyList<SleepSession>> GetForWakeDateAsync(DateOnly wakeLogDate)
         {
             SleepSchema.EnsureCreated();
@@ -102,13 +98,16 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                SELECT Id, StartUtc, EndUtc, WakeLogDate, DurationMinutes
-                FROM SleepSessions
-                WHERE WakeLogDate = @WakeLogDate
-                ORDER BY Id DESC;
-            ";
+SELECT Id, StartUtc, EndUtc, WakeLogDate, DurationMinutes
+FROM SleepSessions
+WHERE WakeLogDate = @WakeLogDate
+ORDER BY Id DESC;
+";
 
-            var rows = await conn.QueryAsync<dynamic>(sql, new { WakeLogDate = wakeLogDate.ToString("yyyy-MM-dd") });
+            var rows = await conn.QueryAsync(sql, new
+            {
+                WakeLogDate = wakeLogDate.ToString("yyyy-MM-dd")
+            });
 
             return rows.Select(r => new SleepSession
             {
@@ -119,5 +118,7 @@ namespace LifestyleCore.Data
                 DurationMinutes = (int)r.DurationMinutes
             }).ToList();
         }
+        #endregion // SECTION D — Query
     }
 }
+#endregion // SECTION A — Sleep Repository (SQLite + Dapper)

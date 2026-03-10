@@ -1,6 +1,4 @@
-﻿// ============================================================
-// SECTION A — Step Item Roll State Repository
-// ============================================================
+﻿#region SECTION A — Step Item Roll State Repository
 using System.Threading.Tasks;
 using Dapper;
 using LifestyleCore.Models;
@@ -9,15 +7,13 @@ namespace LifestyleCore.Data
 {
     public sealed class StepItemRollStateRepository
     {
-        // ============================================================
-        // SECTION B — Read
-        // ============================================================
-
+        #region SECTION B — Read
         public async Task<StepItemRollState> GetAsync()
         {
             ItemDropsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
             var row = await conn.QuerySingleAsync<(
                 int StepsRemainder,
                 long TotalRolls,
@@ -38,6 +34,7 @@ WHERE Id = 1;");
                 LastDropSummary = row.LastDropSummary
             };
         }
-
+        #endregion // SECTION B — Read
     }
 }
+#endregion // SECTION A — Step Item Roll State Repository
