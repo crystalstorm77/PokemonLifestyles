@@ -1,17 +1,10 @@
-﻿// ============================================================
-// SECTION A — Gamification Settings Model
-// ============================================================
-
+﻿#region SECTION A — Gamification Settings Model
 namespace LifestyleCore.Models
 {
     public sealed class GamificationSettings
     {
-        // ============================================================
-        // SECTION B — Columns
-        // ============================================================
-
+        #region SECTION B — Columns
         public int StepsPerItemRoll { get; set; } = 1000;
-
         public int ItemRollOneInN { get; set; } = 4;
 
         // Tier weights (used only when a roll succeeds)
@@ -27,5 +20,7 @@ namespace LifestyleCore.Models
         public string CommonPoolText { get; set; } = "";
         public string UncommonPoolText { get; set; } = "";
         public string RarePoolText { get; set; } = "";
+        #endregion // SECTION B — Columns
     }
 }
+#endregion // SECTION A — Gamification Settings Model

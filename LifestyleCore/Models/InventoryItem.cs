@@ -1,16 +1,12 @@
-﻿// ============================================================
-// SECTION A — Inventory Item Model
-// ============================================================
-
+﻿#region SECTION A — Inventory Item Model
 namespace LifestyleCore.Models
 {
     public sealed class InventoryItem
     {
-        // ============================================================
-        // SECTION B — Columns
-        // ============================================================
-
+        #region SECTION B — Columns
         public string ItemKey { get; set; } = "";
         public int Count { get; set; }
+        #endregion // SECTION B — Columns
     }
 }
+#endregion // SECTION A — Inventory Item Model
