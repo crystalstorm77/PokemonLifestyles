@@ -373,7 +373,7 @@ namespace LifestylesDesktop
             }
         }
 
-        // ============================================================
+             // ============================================================
         // SECTION E — Refresh UI
         // ============================================================
 
@@ -939,15 +939,7 @@ WHERE Id = 1;",
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
                     OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
 
-                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
-                    CommonWeightBox.Text = settings.CommonWeight.ToString();
-
-                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
-                    UncommonWeightBox.Text = settings.UncommonWeight.ToString();
-
-                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
-                    RareWeightBox.Text = settings.RareWeight.ToString();
-
+               
                 if (NewItemTierCombo != null)
                 {
                     if (NewItemTierCombo.ItemsSource == null)
