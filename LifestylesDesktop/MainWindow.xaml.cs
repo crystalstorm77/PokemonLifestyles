@@ -33,9 +33,6 @@ using TextBox = System.Windows.Controls.TextBox;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 
-// ============================================================
-// SECTION B — Main Window Class
-// ============================================================
 
 // ============================================================
 // SECTION B — Main Window Class
@@ -399,6 +396,19 @@ namespace LifestylesDesktop
             public double SleepTrackedMinimumMultiplier { get; set; } = 1.01;
         }
 
+        private static SleepTuningSettings BuildDefaultSleepTuningSettings()
+        {
+            return new SleepTuningSettings
+            {
+                SleepHealthyMinHours = 7.0,
+                SleepHealthyMaxHours = 9.0,
+                SleepHealthyMultiplier = 1.30,
+                SleepOutsideRangeStartMultiplier = 1.30,
+                SleepPenaltyPer15Min = 0.01,
+                SleepTrackedMinimumMultiplier = 1.10
+            };
+        }
+
         private static SleepTuningSettings NormalizeSleepTuningSettings(SleepTuningSettings settings)
         {
             double healthyMin = Math.Max(0.0, settings.SleepHealthyMinHours);
@@ -530,37 +540,37 @@ WHERE Id = 1;",
 
                 if (!TryParseFlexibleDouble(_sleepHealthyMinHoursBox.Text, out double healthyMinHours) || healthyMinHours < 0)
                 {
-                    MessageBox.Show("Healthy min h must be a number greater than or equal to 0.");
+                    MessageBox.Show("Healthy Minimum Hours must be a number greater than or equal to 0.");
                     return;
                 }
 
                 if (!TryParseFlexibleDouble(_sleepHealthyMaxHoursBox.Text, out double healthyMaxHours) || healthyMaxHours < healthyMinHours)
                 {
-                    MessageBox.Show("Healthy max h must be a number greater than or equal to healthy min h.");
+                    MessageBox.Show("Healthy Maximum Hours must be a number greater than or equal to Healthy Minimum Hours.");
                     return;
                 }
 
                 if (!TryParseFlexibleDouble(_sleepHealthyMultiplierBox.Text, out double healthyMultiplier) || healthyMultiplier < 1.0)
                 {
-                    MessageBox.Show("Healthy x must be a number greater than or equal to 1.0.");
+                    MessageBox.Show("Sleep Multiplier Max/Healthy must be a number greater than or equal to 1.0.");
                     return;
                 }
 
                 if (!TryParseFlexibleDouble(_sleepPenaltyPer15MinBox.Text, out double penaltyPer15Min) || penaltyPer15Min < 0)
                 {
-                    MessageBox.Show("Drop / 15 min must be a number greater than or equal to 0.");
+                    MessageBox.Show("Multiplier Minimum / 15 minutes must be a number greater than or equal to 0.");
                     return;
                 }
 
                 if (!TryParseFlexibleDouble(_sleepTrackedMinimumMultiplierBox.Text, out double trackedMinimumMultiplier) || trackedMinimumMultiplier < 1.0)
                 {
-                    MessageBox.Show("Tracked min x must be a number greater than or equal to 1.0.");
+                    MessageBox.Show("Sleep Multiplier Min/Unhealthy must be a number greater than or equal to 1.0.");
                     return;
                 }
 
                 if (trackedMinimumMultiplier > healthyMultiplier)
                 {
-                    MessageBox.Show("Tracked min x cannot be greater than healthy x.");
+                    MessageBox.Show("Sleep Multiplier Min/Unhealthy cannot be greater than Sleep Multiplier Max/Healthy.");
                     return;
                 }
 
@@ -581,6 +591,23 @@ WHERE Id = 1;",
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Could not save sleep tuning");
+            }
+        }
+
+        private async void ResetSleepTuningButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var defaults = BuildDefaultSleepTuningSettings();
+
+                await SaveSleepTuningSettingsAsync(defaults);
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Reset sleep tuning to defaults.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset sleep tuning");
             }
         }
 
@@ -615,30 +642,53 @@ WHERE Id = 1;",
                 Margin = new Thickness(0, 10, 0, 0)
             };
 
-            var row1 = new StackPanel
+            var contentRow = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(0, 6, 0, 0)
             };
 
+            var leftColumn = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 28, 0)
+            };
+
+            var rightColumn = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+
+            var row1 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
             row1.Children.Add(new TextBlock
             {
-                Text = "Healthy min h:",
-                Width = 100,
+                Text = "Healthy Minimum Hours:",
+                Width = 220,
                 VerticalAlignment = VerticalAlignment.Center
             });
 
             _sleepHealthyMinHoursBox = new TextBox
             {
-                Width = 60,
-                Margin = new Thickness(0, 0, 12, 0)
+                Width = 60
             };
             row1.Children.Add(_sleepHealthyMinHoursBox);
 
-            row1.Children.Add(new TextBlock
+            var row2 = new StackPanel
             {
-                Text = "Healthy max h:",
-                Width = 100,
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
+            row2.Children.Add(new TextBlock
+            {
+                Text = "Healthy Maximum Hours:",
+                Width = 220,
                 VerticalAlignment = VerticalAlignment.Center
             });
 
@@ -646,32 +696,37 @@ WHERE Id = 1;",
             {
                 Width = 60
             };
-            row1.Children.Add(_sleepHealthyMaxHoursBox);
+            row2.Children.Add(_sleepHealthyMaxHoursBox);
 
-            var row2 = new StackPanel
+            var row3 = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 6, 0, 0)
+                Margin = new Thickness(0, 0, 0, 6)
             };
 
-            row2.Children.Add(new TextBlock
+            row3.Children.Add(new TextBlock
             {
-                Text = "Healthy x:",
-                Width = 100,
+                Text = "Sleep Multiplier Max/Healthy:",
+                Width = 220,
                 VerticalAlignment = VerticalAlignment.Center
             });
 
             _sleepHealthyMultiplierBox = new TextBox
             {
-                Width = 60,
-                Margin = new Thickness(0, 0, 12, 0)
+                Width = 60
             };
-            row2.Children.Add(_sleepHealthyMultiplierBox);
+            row3.Children.Add(_sleepHealthyMultiplierBox);
 
-            row2.Children.Add(new TextBlock
+            var row4 = new StackPanel
             {
-                Text = "Drop / 15 min:",
-                Width = 100,
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
+            row4.Children.Add(new TextBlock
+            {
+                Text = "Multiplier Minimum / 15 minutes:",
+                Width = 220,
                 VerticalAlignment = VerticalAlignment.Center
             });
 
@@ -679,82 +734,109 @@ WHERE Id = 1;",
             {
                 Width = 60
             };
-            row2.Children.Add(_sleepPenaltyPer15MinBox);
+            row4.Children.Add(_sleepPenaltyPer15MinBox);
 
-            var row3 = new StackPanel
+            var row5 = new StackPanel
             {
-                Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 6, 0, 0)
+                Orientation = Orientation.Horizontal
             };
 
-            row3.Children.Add(new TextBlock
+            row5.Children.Add(new TextBlock
             {
-                Text = "Tracked min x:",
-                Width = 100,
+                Text = "Sleep Multiplier Min/Unhealthy:",
+                Width = 220,
                 VerticalAlignment = VerticalAlignment.Center
             });
 
             _sleepTrackedMinimumMultiplierBox = new TextBox
             {
-                Width = 60,
-                Margin = new Thickness(0, 0, 12, 0)
+                Width = 60
             };
-            row3.Children.Add(_sleepTrackedMinimumMultiplierBox);
+            row5.Children.Add(_sleepTrackedMinimumMultiplierBox);
 
-            var saveButton = new Button
-            {
-                Content = "Save sleep tuning",
-                Width = 140,
-                Margin = new Thickness(0, 8, 0, 0),
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            saveButton.Click += SaveSleepTuningButton_Click;
+            leftColumn.Children.Add(row1);
+            leftColumn.Children.Add(row2);
+            leftColumn.Children.Add(row3);
+            leftColumn.Children.Add(row4);
+            leftColumn.Children.Add(row5);
 
             var previewHeader = new TextBlock
             {
                 Text = "Preview",
                 FontWeight = FontWeights.Bold,
-                Margin = new Thickness(0, 10, 0, 0)
+                Margin = new Thickness(0, 0, 0, 6)
             };
 
             _sleepPreview5hText = new TextBlock
             {
-                Margin = new Thickness(0, 4, 0, 0)
+                Margin = new Thickness(0, 0, 0, 4),
+                Foreground = System.Windows.Media.Brushes.Gray
             };
 
             _sleepPreview8hText = new TextBlock
             {
-                Margin = new Thickness(0, 2, 0, 0)
+                Margin = new Thickness(0, 0, 0, 4),
+                Foreground = System.Windows.Media.Brushes.Gray
             };
 
             _sleepPreview11hText = new TextBlock
             {
-                Margin = new Thickness(0, 2, 0, 0)
+                Margin = new Thickness(0, 0, 0, 4),
+                Foreground = System.Windows.Media.Brushes.Gray
             };
 
             _sleepPreview24hText = new TextBlock
             {
-                Margin = new Thickness(0, 2, 0, 0)
+                Margin = new Thickness(0, 0, 0, 4),
+                Foreground = System.Windows.Media.Brushes.Gray
             };
+
+            rightColumn.Children.Add(previewHeader);
+            rightColumn.Children.Add(_sleepPreview5hText);
+            rightColumn.Children.Add(_sleepPreview8hText);
+            rightColumn.Children.Add(_sleepPreview11hText);
+            rightColumn.Children.Add(_sleepPreview24hText);
+
+            contentRow.Children.Add(leftColumn);
+            contentRow.Children.Add(rightColumn);
+
+            var buttonRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var saveButton = new Button
+            {
+                Content = "Save sleep tuning",
+                Width = 140,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            saveButton.Click += SaveSleepTuningButton_Click;
+
+            var resetButton = new Button
+            {
+                Content = "Reset sleep values",
+                Width = 140,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetButton.Click += ResetSleepTuningButton_Click;
+
+            buttonRow.Children.Add(saveButton);
+            buttonRow.Children.Add(resetButton);
 
             var note = new TextBlock
             {
-                Text = "This save button only affects the sleep tuning values above.",
+                Text = "Save stores your custom values. Reset restores the stable defaults.",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
                 TextWrapping = TextWrapping.Wrap
             };
 
             root.Children.Insert(insertAt++, header);
-            root.Children.Insert(insertAt++, row1);
-            root.Children.Insert(insertAt++, row2);
-            root.Children.Insert(insertAt++, row3);
-            root.Children.Insert(insertAt++, saveButton);
-            root.Children.Insert(insertAt++, previewHeader);
-            root.Children.Insert(insertAt++, _sleepPreview5hText);
-            root.Children.Insert(insertAt++, _sleepPreview8hText);
-            root.Children.Insert(insertAt++, _sleepPreview11hText);
-            root.Children.Insert(insertAt++, _sleepPreview24hText);
+            root.Children.Insert(insertAt++, contentRow);
+            root.Children.Insert(insertAt++, buttonRow);
             root.Children.Insert(insertAt++, note);
 
             _sleepSettingsUiBuilt = true;
