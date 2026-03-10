@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Database path + initialization
-// ============================================================
-
+﻿#region SECTION A — Database path + initialization
 using System;
 using System.IO;
 using Microsoft.Data.Sqlite;
@@ -35,19 +32,20 @@ namespace LifestyleCore.Data
             // - So we create the "base" table + safe index first,
             //   then run a migration to add ExternalId + unique index.
             cmd.CommandText = @"
-                PRAGMA foreign_keys = ON;
+PRAGMA foreign_keys = ON;
 
-                CREATE TABLE IF NOT EXISTS FocusSessions (
-                    Id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                    LoggedAtUtc    TEXT    NOT NULL,
-                    LogDate        TEXT    NOT NULL,
-                    FocusType      TEXT    NOT NULL,
-                    Minutes        INTEGER NOT NULL,
-                    Completed      INTEGER NOT NULL
-                );
+CREATE TABLE IF NOT EXISTS FocusSessions (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    LoggedAtUtc TEXT NOT NULL,
+    LogDate TEXT NOT NULL,
+    FocusType TEXT NOT NULL,
+    Minutes INTEGER NOT NULL,
+    Completed INTEGER NOT NULL
+);
 
-                CREATE INDEX IF NOT EXISTS IX_FocusSessions_LogDate ON FocusSessions(LogDate);
-            ";
+CREATE INDEX IF NOT EXISTS IX_FocusSessions_LogDate
+ON FocusSessions(LogDate);
+";
             cmd.ExecuteNonQuery();
 
             // Ensure ExternalId exists & is populated even for older DBs
@@ -55,3 +53,4 @@ namespace LifestyleCore.Data
         }
     }
 }
+#endregion // SECTION A — Database path + initialization

@@ -1,6 +1,4 @@
-﻿// ============================================================
-// SECTION A — Focus labels schema (SQLite)
-// ============================================================
+﻿#region SECTION A — Focus labels schema (SQLite)
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -37,8 +35,11 @@ CREATE TABLE IF NOT EXISTS FocusLabels (
 );
 
 -- Case-insensitive uniqueness on Name
-CREATE UNIQUE INDEX IF NOT EXISTS UX_FocusLabels_Name_NoCase ON FocusLabels (Name COLLATE NOCASE);
-CREATE INDEX IF NOT EXISTS IX_FocusLabels_IsActive ON FocusLabels (IsActive);
+CREATE UNIQUE INDEX IF NOT EXISTS UX_FocusLabels_Name_NoCase
+ON FocusLabels (Name COLLATE NOCASE);
+
+CREATE INDEX IF NOT EXISTS IX_FocusLabels_IsActive
+ON FocusLabels (IsActive);
 ");
 
                 // Support archive import/export consistency (matches other tables)
@@ -49,9 +50,7 @@ CREATE INDEX IF NOT EXISTS IX_FocusLabels_IsActive ON FocusLabels (IsActive);
                 // Seed defaults (can still be deleted later if you want).
                 conn.Execute(@"
 INSERT OR IGNORE INTO FocusLabels (Name, IsActive, CreatedAtUtc)
-VALUES ('Draw', 1, @NowUtc),
-       ('Music', 1, @NowUtc);",
-                    new { NowUtc = nowUtc });
+VALUES ('Draw', 1, @NowUtc), ('Music', 1, @NowUtc);", new { NowUtc = nowUtc });
 
                 // Import any existing labels already used in FocusSessions
                 // so older data shows up in the dropdown immediately.
@@ -60,21 +59,17 @@ VALUES ('Draw', 1, @NowUtc),
                 foreach (var raw in existing)
                 {
                     string name = Normalize(raw);
-                    if (string.IsNullOrWhiteSpace(name) || name == "(None)")
-                        continue;
+                    if (string.IsNullOrWhiteSpace(name) || name == "(None)") continue;
 
                     conn.Execute(@"
 INSERT OR IGNORE INTO FocusLabels (Name, IsActive, CreatedAtUtc)
-VALUES (@Name, 1, @NowUtc);",
-                        new { Name = name, NowUtc = nowUtc });
+VALUES (@Name, 1, @NowUtc);", new { Name = name, NowUtc = nowUtc });
 
                     // If it existed but was deleted, reactivate it.
                     conn.Execute(@"
 UPDATE FocusLabels
-SET IsActive = 1,
-    DeletedAtUtc = NULL
-WHERE Name = @Name COLLATE NOCASE;",
-                        new { Name = name });
+SET IsActive = 1, DeletedAtUtc = NULL
+WHERE Name = @Name COLLATE NOCASE;", new { Name = name });
                 }
 
                 _ensured = true;
@@ -88,8 +83,7 @@ WHERE Name = @Name COLLATE NOCASE;",
         private static string Normalize(string? raw)
         {
             string s = (raw ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(s))
-                return "(None)";
+            if (string.IsNullOrWhiteSpace(s)) return "(None)";
 
             var parts = s.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
             s = string.Join(" ", parts);
@@ -111,3 +105,4 @@ WHERE Name = @Name COLLATE NOCASE;",
         }
     }
 }
+#endregion // SECTION A — Focus labels schema (SQLite)

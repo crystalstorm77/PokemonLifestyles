@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Sleep Tables Schema (SQLite)
-// ============================================================
-
+﻿#region SECTION A — Sleep Tables Schema (SQLite)
 using Dapper;
 
 namespace LifestyleCore.Data
@@ -22,22 +19,22 @@ namespace LifestyleCore.Data
                 using var conn = Db.OpenConnection();
 
                 conn.Execute(@"
-                    CREATE TABLE IF NOT EXISTS SleepSessions (
-                        Id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                        StartUtc         TEXT    NOT NULL,
-                        EndUtc           TEXT    NOT NULL,
-                        WakeLogDate      TEXT    NOT NULL,
-                        DurationMinutes  INTEGER NOT NULL
-                    );
+CREATE TABLE IF NOT EXISTS SleepSessions (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    StartUtc TEXT NOT NULL,
+    EndUtc TEXT NOT NULL,
+    WakeLogDate TEXT NOT NULL,
+    DurationMinutes INTEGER NOT NULL
+);
 
-                    CREATE INDEX IF NOT EXISTS IX_SleepSessions_WakeLogDate
-                    ON SleepSessions (WakeLogDate);
+CREATE INDEX IF NOT EXISTS IX_SleepSessions_WakeLogDate
+ON SleepSessions (WakeLogDate);
 
-                    CREATE TABLE IF NOT EXISTS PendingSleep (
-                        Id       INTEGER PRIMARY KEY CHECK (Id = 1),
-                        StartUtc TEXT NOT NULL
-                    );
-                ");
+CREATE TABLE IF NOT EXISTS PendingSleep (
+    Id INTEGER PRIMARY KEY CHECK (Id = 1),
+    StartUtc TEXT NOT NULL
+);
+");
 
                 // Ensure ExternalId exists for archive import/export
                 DbMigrations.EnsureExternalIdSupport(conn, "SleepSessions");
@@ -47,3 +44,4 @@ namespace LifestyleCore.Data
         }
     }
 }
+#endregion // SECTION A — Sleep Tables Schema (SQLite)
