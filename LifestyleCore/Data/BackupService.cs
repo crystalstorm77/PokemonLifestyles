@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Backup/Restore service (DB snapshot + JSON archive)
-// ============================================================
-
+﻿#region SECTION A — Backup/Restore service (DB snapshot + JSON archive)
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -22,10 +19,9 @@ namespace LifestyleCore.Data
 
     public static class BackupService
     {
-        // -----------------------------
-        // SECTION B — Public API
-        // -----------------------------
+#endregion // SECTION A — Backup/Restore service (DB snapshot + JSON archive)
 
+        #region SECTION B — Public API
         public static async Task CreateDbSnapshotAsync(string destinationDbPath)
         {
             EnsureSchemas();
@@ -231,11 +227,9 @@ namespace LifestyleCore.Data
                 }
             }
         }
+        #endregion // SECTION B — Public API
 
-        // -----------------------------
-        // SECTION C — Import helpers
-        // -----------------------------
-
+        #region SECTION C1 — Import helpers (day import)
         private static async Task ImportOneDayAsync(DayArchive day, Dictionary<string, long> habitByExternalId)
         {
             using var conn = Db.OpenConnection();
@@ -536,7 +530,9 @@ namespace LifestyleCore.Data
 
             tx.Commit();
         }
+        #endregion // SECTION C1 — Import helpers (day import)
 
+        #region SECTION C2 — Import helpers (reference upserts)
         private static async Task UpsertFoodItemsAsync(List<FoodItemExport> items)
         {
             using var conn = Db.OpenConnection();
@@ -670,7 +666,9 @@ namespace LifestyleCore.Data
                     });
             }
         }
+        #endregion // SECTION C2 — Import helpers (reference upserts)
 
+        #region SECTION C3 — Import helpers (habit map)
         private static async Task<Dictionary<string, long>> GetHabitMapAsync()
         {
             using var conn = Db.OpenConnection();
@@ -685,11 +683,9 @@ namespace LifestyleCore.Data
 
             return dict;
         }
+        #endregion // SECTION C3 — Import helpers (habit map)
 
-        // -----------------------------
-        // SECTION D — Export queries
-        // -----------------------------
-
+        #region SECTION D — Export queries
         private static void EnsureSchemas()
         {
             Db.EnsureCreated();
@@ -889,10 +885,9 @@ namespace LifestyleCore.Data
             ");
             return new List<SleepSessionExport>(rows);
         }
-        // -----------------------------
-        // SECTION E — JSON helpers + file enumeration
-        // -----------------------------
+        #endregion // SECTION D — Export queries
 
+        #region SECTION E — JSON helpers + file enumeration
         private static IEnumerable<string> EnumerateDayFiles(string rootFolder)
         {
             foreach (var yearDir in Directory.EnumerateDirectories(rootFolder))
@@ -933,13 +928,10 @@ namespace LifestyleCore.Data
         }
 
         private static string LowerHex16() => Guid.NewGuid().ToString("N");
-
     }
+        #endregion // SECTION E — JSON helpers + file enumeration
 
-    // -----------------------------
-    // SECTION F — Archive DTOs
-    // -----------------------------
-
+    #region SECTION F — Archive DTOs
     public sealed class Manifest
     {
         public int FormatVersion { get; set; }
@@ -1051,3 +1043,4 @@ namespace LifestyleCore.Data
         public string HabitExternalId { get; set; } = "";
     }
 }
+    #endregion // SECTION F — Archive DTOs
