@@ -1,6 +1,4 @@
-﻿// ============================================================
-// SECTION A — Focus label repository
-// ============================================================
+﻿#region SECTION A — Focus label repository
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,17 +15,18 @@ namespace LifestyleCore.Data
             FocusLabelsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
             var rows = await conn.QueryAsync<string>(@"
 SELECT Name
 FROM FocusLabels
 WHERE IsActive = 1
 ORDER BY
-  CASE
-    WHEN Name = 'Draw' COLLATE NOCASE THEN 0
-    WHEN Name = 'Music' COLLATE NOCASE THEN 1
-    ELSE 2
-  END,
-  Name COLLATE NOCASE ASC;");
+ CASE
+ WHEN Name = 'Draw' COLLATE NOCASE THEN 0
+ WHEN Name = 'Music' COLLATE NOCASE THEN 1
+ ELSE 2
+ END,
+ Name COLLATE NOCASE ASC;");
 
             return rows.ToList();
         }
@@ -49,18 +48,15 @@ ORDER BY
 SELECT Id, IsActive
 FROM FocusLabels
 WHERE Name = @Name COLLATE NOCASE
-LIMIT 1;",
-                new { Name = name });
+LIMIT 1;", new { Name = name });
 
             if (existing.HasValue)
             {
                 // Reactivate if needed
                 await conn.ExecuteAsync(@"
 UPDATE FocusLabels
-SET IsActive = 1,
-    DeletedAtUtc = NULL
-WHERE Id = @Id;",
-                    new { Id = existing.Value.Id });
+SET IsActive = 1, DeletedAtUtc = NULL
+WHERE Id = @Id;", new { Id = existing.Value.Id });
 
                 return existing.Value.IsActive == 0;
             }
@@ -121,3 +117,4 @@ WHERE Name = @Name COLLATE NOCASE
         }
     }
 }
+#endregion // SECTION A — Focus label repository

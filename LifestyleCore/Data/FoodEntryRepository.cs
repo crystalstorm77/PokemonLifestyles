@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Food Log Repository (SQLite + Dapper)
-// ============================================================
-
+﻿#region SECTION A — Food Log Repository (SQLite + Dapper)
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -34,7 +31,6 @@ namespace LifestyleCore.Data
                 throw new InvalidOperationException("Enter grams (>0) or servings (>0).");
 
             double kjComputed;
-
             double? servingsToStore = null;
             int? gramsToStore = null;
 
@@ -57,30 +53,42 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                INSERT INTO FoodEntries (
-                    LoggedAtUtc, LogDate, FoodItemId,
-                    FoodName, ServingLabel, KjPerServingSnapshot, KjPer100gSnapshot,
-                    Servings, Grams, KjComputed
-                )
-                VALUES (
-                    @LoggedAtUtc, @LogDate, @FoodItemId,
-                    @FoodName, @ServingLabel, @KjPerServingSnapshot, @KjPer100gSnapshot,
-                    @Servings, @Grams, @KjComputed
-                );
-                SELECT last_insert_rowid();
-            ";
+INSERT INTO FoodEntries (
+    LoggedAtUtc,
+    LogDate,
+    FoodItemId,
+    FoodName,
+    ServingLabel,
+    KjPerServingSnapshot,
+    KjPer100gSnapshot,
+    Servings,
+    Grams,
+    KjComputed
+)
+VALUES (
+    @LoggedAtUtc,
+    @LogDate,
+    @FoodItemId,
+    @FoodName,
+    @ServingLabel,
+    @KjPerServingSnapshot,
+    @KjPer100gSnapshot,
+    @Servings,
+    @Grams,
+    @KjComputed
+);
+SELECT last_insert_rowid();
+";
 
             long id = await conn.ExecuteScalarAsync<long>(sql, new
             {
                 LoggedAtUtc = nowUtc.ToString("O"),
                 LogDate = logDate.ToString("yyyy-MM-dd"),
                 FoodItemId = food.Id,
-
                 FoodName = food.Name,
                 ServingLabel = food.ServingLabel,
                 KjPerServingSnapshot = food.KjPerServing,
                 KjPer100gSnapshot = food.KjPer100g,
-
                 Servings = servingsToStore,
                 Grams = gramsToStore,
                 KjComputed = kjComputed
@@ -96,14 +104,14 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                SELECT
-                    Id, LoggedAtUtc, LogDate, FoodItemId,
-                    FoodName, ServingLabel, KjPerServingSnapshot, KjPer100gSnapshot,
-                    Servings, Grams, KjComputed
-                FROM FoodEntries
-                WHERE LogDate = @LogDate
-                ORDER BY Id DESC;
-            ";
+SELECT
+    Id, LoggedAtUtc, LogDate, FoodItemId,
+    FoodName, ServingLabel, KjPerServingSnapshot, KjPer100gSnapshot,
+    Servings, Grams, KjComputed
+FROM FoodEntries
+WHERE LogDate = @LogDate
+ORDER BY Id DESC;
+";
 
             var rows = await conn.QueryAsync<dynamic>(sql, new { LogDate = logDate.ToString("yyyy-MM-dd") });
 
@@ -136,12 +144,13 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                SELECT IFNULL(SUM(KjComputed), 0)
-                FROM FoodEntries
-                WHERE LogDate = @LogDate;
-            ";
+SELECT IFNULL(SUM(KjComputed), 0)
+FROM FoodEntries
+WHERE LogDate = @LogDate;
+";
 
             return await conn.ExecuteScalarAsync<double>(sql, new { LogDate = logDate.ToString("yyyy-MM-dd") });
         }
     }
 }
+#endregion // SECTION A — Food Log Repository (SQLite + Dapper)

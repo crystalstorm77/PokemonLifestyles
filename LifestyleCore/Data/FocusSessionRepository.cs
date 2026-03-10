@@ -1,9 +1,4 @@
-﻿
-
-// ============================================================
-// SECTION A — Focus sessions repository (SQLite + Dapper)
-// ============================================================
-
+﻿#region SECTION A — Focus sessions repository (SQLite + Dapper)
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +10,7 @@ namespace LifestyleCore.Data
 {
     public sealed class FocusSessionRepository
     {
-        // ============================================================
-        // SECTION B — Add
-        // ============================================================
+        #region SECTION B — Add
         private readonly RewardsLedgerRepository _rewards = new();
 
         private static bool IsWithinRewardWindow(DateOnly logDate)
@@ -32,6 +25,7 @@ namespace LifestyleCore.Data
                 DateTimeKind.Unspecified);
 
             DateTime probe = cutoffLocalUnspec;
+
             for (int i = 0; i < 6; i++)
             {
                 try
@@ -63,10 +57,10 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                INSERT INTO FocusSessions (LoggedAtUtc, LogDate, FocusType, Minutes, Completed)
-                VALUES (@LoggedAtUtc, @LogDate, @FocusType, @Minutes, @Completed);
-                SELECT last_insert_rowid();
-            ";
+INSERT INTO FocusSessions (LoggedAtUtc, LogDate, FocusType, Minutes, Completed)
+VALUES (@LoggedAtUtc, @LogDate, @FocusType, @Minutes, @Completed);
+SELECT last_insert_rowid();
+";
 
             var parameters = new
             {
@@ -88,17 +82,17 @@ namespace LifestyleCore.Data
             {
                 const double coinsPerMinute = 1.0;
                 double mult = session.Completed ? 1.0 : 0.25;
-
                 int coins = (int)Math.Floor(session.Minutes * coinsPerMinute * mult);
+
                 if (coins > 0)
                     await _rewards.TryGrantFocusCoinsAsync(id, session.LogDate, coins);
             }
 
             return id;
         }
-        // ============================================================
-        // SECTION C — Query
-        // ============================================================
+        #endregion // SECTION B — Add
+
+        #region SECTION C — Query
         public async Task<IReadOnlyList<FocusSession>> GetForDateAsync(DateOnly logDate)
         {
             Db.EnsureCreated();
@@ -106,17 +100,17 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                SELECT
-                    Id,
-                    LoggedAtUtc,
-                    LogDate,
-                    FocusType,
-                    Minutes,
-                    Completed
-                FROM FocusSessions
-                WHERE LogDate = @LogDate
-                ORDER BY Id DESC;
-            ";
+SELECT
+    Id,
+    LoggedAtUtc,
+    LogDate,
+    FocusType,
+    Minutes,
+    Completed
+FROM FocusSessions
+WHERE LogDate = @LogDate
+ORDER BY Id DESC;
+";
 
             var rows = await conn.QueryAsync<dynamic>(
                 sql,
@@ -134,5 +128,7 @@ namespace LifestyleCore.Data
 
             return list;
         }
+        #endregion // SECTION C — Query
     }
 }
+#endregion // SECTION A — Focus sessions repository (SQLite + Dapper)

@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Food Menu Repository (SQLite + Dapper)
-// ============================================================
-
+﻿#region SECTION A — Food Menu Repository (SQLite + Dapper)
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -33,10 +30,10 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                INSERT INTO FoodItems (Name, KjPerServing, ServingLabel, KjPer100g, CreatedAtUtc, UpdatedAtUtc)
-                VALUES (@Name, @KjPerServing, @ServingLabel, @KjPer100g, @CreatedAtUtc, @UpdatedAtUtc);
-                SELECT last_insert_rowid();
-            ";
+INSERT INTO FoodItems (Name, KjPerServing, ServingLabel, KjPer100g, CreatedAtUtc, UpdatedAtUtc)
+VALUES (@Name, @KjPerServing, @ServingLabel, @KjPer100g, @CreatedAtUtc, @UpdatedAtUtc);
+SELECT last_insert_rowid();
+";
 
             try
             {
@@ -65,10 +62,10 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                SELECT Id, Name, KjPerServing, ServingLabel, KjPer100g, CreatedAtUtc, UpdatedAtUtc
-                FROM FoodItems
-                ORDER BY Name COLLATE NOCASE ASC;
-            ";
+SELECT Id, Name, KjPerServing, ServingLabel, KjPer100g, CreatedAtUtc, UpdatedAtUtc
+FROM FoodItems
+ORDER BY Name COLLATE NOCASE ASC;
+";
 
             var rows = await conn.QueryAsync<dynamic>(sql);
 
@@ -97,14 +94,15 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                SELECT Id, Name, KjPerServing, ServingLabel, KjPer100g, CreatedAtUtc, UpdatedAtUtc
-                FROM FoodItems
-                WHERE Id = @Id
-                LIMIT 1;
-            ";
+SELECT Id, Name, KjPerServing, ServingLabel, KjPer100g, CreatedAtUtc, UpdatedAtUtc
+FROM FoodItems
+WHERE Id = @Id
+LIMIT 1;
+";
 
             var r = await conn.QueryFirstOrDefaultAsync<dynamic>(sql, new { Id = id });
-            if (r is null) return null;
+            if (r is null)
+                return null;
 
             return new FoodItem
             {
@@ -118,9 +116,7 @@ namespace LifestyleCore.Data
             };
         }
 
-        // ============================================================
-        // SECTION B — Update / Delete
-        // ============================================================
+        #region SECTION B — Update / Delete
         public async Task UpdateAsync(FoodItem item)
         {
             FoodSchema.EnsureCreated();
@@ -146,15 +142,14 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-                UPDATE FoodItems
-                SET
-                    Name = @Name,
-                    KjPerServing = @KjPerServing,
-                    ServingLabel = @ServingLabel,
-                    KjPer100g = @KjPer100g,
-                    UpdatedAtUtc = @UpdatedAtUtc
-                WHERE Id = @Id;
-            ";
+UPDATE FoodItems
+SET Name = @Name,
+    KjPerServing = @KjPerServing,
+    ServingLabel = @ServingLabel,
+    KjPer100g = @KjPer100g,
+    UpdatedAtUtc = @UpdatedAtUtc
+WHERE Id = @Id;
+";
 
             try
             {
@@ -186,5 +181,7 @@ namespace LifestyleCore.Data
             const string sql = @"DELETE FROM FoodItems WHERE Id = @Id;";
             await conn.ExecuteAsync(sql, new { Id = id });
         }
+        #endregion // SECTION B — Update / Delete
     }
 }
+#endregion // SECTION A — Food Menu Repository (SQLite + Dapper)

@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — DB migrations helpers
-// ============================================================
-
+﻿#region SECTION A — DB migrations helpers
 using System;
 using Dapper;
 using Microsoft.Data.Sqlite;
@@ -18,26 +15,26 @@ namespace LifestyleCore.Data
             }
 
             conn.Execute($@"
-                UPDATE {tableName}
-                SET ExternalId = lower(hex(randomblob(16)))
-                WHERE ExternalId IS NULL OR ExternalId = '';
-            ");
+UPDATE {tableName}
+SET ExternalId = lower(hex(randomblob(16)))
+WHERE ExternalId IS NULL OR ExternalId = '';
+");
 
             conn.Execute($@"
-                CREATE UNIQUE INDEX IF NOT EXISTS UX_{tableName}_ExternalId
-                ON {tableName} (ExternalId);
-            ");
+CREATE UNIQUE INDEX IF NOT EXISTS UX_{tableName}_ExternalId
+ON {tableName} (ExternalId);
+");
 
             conn.Execute($@"
-                CREATE TRIGGER IF NOT EXISTS TR_{tableName}_ExternalId_AfterInsert
-                AFTER INSERT ON {tableName}
-                WHEN NEW.ExternalId IS NULL OR NEW.ExternalId = ''
-                BEGIN
-                    UPDATE {tableName}
-                    SET ExternalId = lower(hex(randomblob(16)))
-                    WHERE rowid = NEW.rowid;
-                END;
-            ");
+CREATE TRIGGER IF NOT EXISTS TR_{tableName}_ExternalId_AfterInsert
+AFTER INSERT ON {tableName}
+WHEN NEW.ExternalId IS NULL OR NEW.ExternalId = ''
+BEGIN
+UPDATE {tableName}
+SET ExternalId = lower(hex(randomblob(16)))
+WHERE rowid = NEW.rowid;
+END;
+");
         }
 
         private static bool ColumnExists(SqliteConnection conn, string tableName, string columnName)
@@ -49,7 +46,9 @@ namespace LifestyleCore.Data
                 if (string.Equals(name, columnName, StringComparison.OrdinalIgnoreCase))
                     return true;
             }
+
             return false;
         }
     }
 }
+#endregion // SECTION A — DB migrations helpers
