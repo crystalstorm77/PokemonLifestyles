@@ -1,5 +1,4 @@
-﻿#region SECTION A — Item Definitions Repository
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -326,4 +325,3 @@ VALUES (@Name, @Category, @Tier, @Weight, 1, @NowUtc, NULL);
         #endregion // SECTION C — Defaults + Normalization
     }
 }
-#endregion // SECTION A — Item Definitions Repository

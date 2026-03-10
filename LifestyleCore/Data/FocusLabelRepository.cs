@@ -1,5 +1,4 @@
-﻿#region SECTION A — Focus label repository
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,6 +9,7 @@ namespace LifestyleCore.Data
 {
     public sealed class FocusLabelRepository
     {
+        #region SECTION A — Focus label repository
         public async Task<List<string>> GetActiveAsync()
         {
             FocusLabelsSchema.EnsureCreated();
@@ -115,6 +115,6 @@ WHERE Name = @Name COLLATE NOCASE
 
             return s;
         }
+        #endregion // SECTION A — Focus label repository
     }
 }
-#endregion // SECTION A — Focus label repository

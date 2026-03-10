@@ -1,5 +1,4 @@
-﻿#region SECTION A — Habit Entry Model
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public sealed class HabitEntry
     {
@@ -13,4 +12,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Columns
     }
 }
-#endregion // SECTION A — Habit Entry Model

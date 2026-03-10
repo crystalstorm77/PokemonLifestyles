@@ -1,10 +1,11 @@
-﻿#region SECTION A — Habit Model
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public enum HabitKind
     {
+        #region SECTION A — Habit Model
         CheckboxDaily = 0,
         NumericDaily = 1
+        #endregion // SECTION A — Habit Model
     }
 
     public sealed class Habit
@@ -21,4 +22,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Columns
     }
 }
-#endregion // SECTION A — Habit Model

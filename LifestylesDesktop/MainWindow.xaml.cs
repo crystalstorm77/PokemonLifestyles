@@ -1,5 +1,4 @@
-﻿#region SECTION A — Usings
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -31,7 +30,6 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 
 
-#endregion // SECTION A — Usings
 
 namespace LifestylesDesktop
 {

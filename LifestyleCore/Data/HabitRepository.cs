@@ -1,5 +1,4 @@
-﻿#region SECTION A — Habit Repository
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -10,9 +9,11 @@ namespace LifestyleCore.Data
 {
     public sealed class HabitRepository
     {
+        #region SECTION A — Habit Repository
         private readonly RewardsLedgerRepository _rewards = new();
 
         public sealed record SetDailyValueResult(bool RewardGranted);
+        #endregion // SECTION A — Habit Repository
 
         #region SECTION B — Habits
         public async Task AddHabitAsync(string title, HabitKind kind, int targetPerWeek, DateOnly? createdOnLocalDate = null)
@@ -257,4 +258,3 @@ ON CONFLICT(HabitId, Date) DO UPDATE SET
         #endregion // SECTION C — Habit entries (daily)
     }
 }
-#endregion // SECTION A — Habit Repository

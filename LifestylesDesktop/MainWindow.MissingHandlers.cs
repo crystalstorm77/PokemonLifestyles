@@ -1,5 +1,4 @@
-﻿#region SECTION A — Usings
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -16,14 +15,11 @@ using Button = System.Windows.Controls.Button;
 using DataGrid = System.Windows.Controls.DataGrid;
 using StackPanel = System.Windows.Controls.StackPanel;
 using TextBlock = System.Windows.Controls.TextBlock;
-#endregion // SECTION A — Usings
 
-#region SECTION B — Event handlers missing from MainWindow.xaml.cs
 namespace LifestylesDesktop
 {
     public partial class MainWindow : Window
     {
-#endregion // SECTION B — Event handlers missing from MainWindow.xaml.cs
 
         #region SECTION C — Steps handlers
         private async void AddStepsButton_Click(object sender, RoutedEventArgs e)
@@ -756,6 +752,6 @@ namespace LifestylesDesktop
                 @"UPDATE Habits SET ArchivedAtUtc = NULL WHERE Id = @Id;",
                 new { Id = habitId });
         }
+        #endregion // SECTION G — Small helpers (local to this file)
     }
 }
-        #endregion // SECTION G — Small helpers (local to this file)

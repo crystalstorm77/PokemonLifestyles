@@ -1,5 +1,4 @@
-﻿#region SECTION A — Gamification Settings Repository
-using Dapper;
+﻿using Dapper;
 using LifestyleCore.Data;
 using LifestyleCore.Models;
 using System;
@@ -218,5 +217,4 @@ WHERE Id = 1;",
         #endregion // SECTION B — Read / Write
     }
 }
-#endregion // SECTION A — Gamification Settings Repository
 

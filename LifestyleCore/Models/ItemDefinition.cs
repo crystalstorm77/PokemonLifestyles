@@ -1,5 +1,4 @@
-﻿#region SECTION A — Item Definition Model
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public sealed class ItemDefinition
     {
@@ -22,4 +21,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Columns
     }
 }
-#endregion // SECTION A — Item Definition Model

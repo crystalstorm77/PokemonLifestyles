@@ -1,5 +1,4 @@
-﻿#region SECTION A — Trainer Progress Snapshot Model
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public sealed class TrainerProgressSnapshot
     {
@@ -19,4 +18,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Columns
     }
 }
-#endregion // SECTION A — Trainer Progress Snapshot Model

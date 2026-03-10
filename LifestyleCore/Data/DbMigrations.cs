@@ -1,5 +1,4 @@
-﻿#region SECTION A — DB migrations helpers
-using System;
+﻿using System;
 using Dapper;
 using Microsoft.Data.Sqlite;
 
@@ -7,6 +6,7 @@ namespace LifestyleCore.Data
 {
     public static class DbMigrations
     {
+        #region SECTION A — DB migrations helpers
         public static void EnsureExternalIdSupport(SqliteConnection conn, string tableName)
         {
             if (!ColumnExists(conn, tableName, "ExternalId"))
@@ -49,6 +49,6 @@ END;
 
             return false;
         }
+        #endregion // SECTION A — DB migrations helpers
     }
 }
-#endregion // SECTION A — DB migrations helpers

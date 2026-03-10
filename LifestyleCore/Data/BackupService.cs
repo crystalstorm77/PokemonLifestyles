@@ -1,5 +1,4 @@
-﻿#region SECTION A — Backup/Restore service (DB snapshot + JSON archive)
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -10,17 +9,17 @@ using Microsoft.Data.Sqlite;
 
 namespace LifestyleCore.Data
 {
+    #region SECTION A — Archive Import Mode Enum
     public enum ArchiveImportMode
     {
         Merge,
         ReplaceRange,
         ReplaceAll
     }
+    #endregion // SECTION A — Archive Import Mode Enum
 
     public static class BackupService
     {
-#endregion // SECTION A — Backup/Restore service (DB snapshot + JSON archive)
-
         #region SECTION B — Public API
         public static async Task CreateDbSnapshotAsync(string destinationDbPath)
         {
@@ -943,10 +942,10 @@ namespace LifestyleCore.Data
         }
 
         private static string LowerHex16() => Guid.NewGuid().ToString("N");
-    }
         #endregion // SECTION E — JSON helpers + file enumeration
+    }
 
-    #region SECTION F — Archive DTOs
+    #region SECTION F1 — Manifest DTO
     public sealed class Manifest
     {
         public int FormatVersion { get; set; }
@@ -954,12 +953,16 @@ namespace LifestyleCore.Data
         public string TimeZoneId { get; set; } = "";
         public string TimeZoneDisplayName { get; set; } = "";
     }
+    #endregion // SECTION F1 — Manifest DTO
 
+    #region SECTION F2 — Pending Sleep DTO
     public sealed class PendingSleepExport
     {
         public string StartUtc { get; set; } = "";
     }
+    #endregion // SECTION F2 — Pending Sleep DTO
 
+    #region SECTION F3 — Day Archive DTO
     public sealed class DayArchive
     {
         public string Date { get; set; } = "";
@@ -973,7 +976,9 @@ namespace LifestyleCore.Data
         public List<StepBucketExport> StepBuckets { get; set; } = new();
         public List<HabitEntryExport> HabitEntries { get; set; } = new();
     }
+    #endregion // SECTION F3 — Day Archive DTO
 
+    #region SECTION F4 — Food Item Export DTO
     public sealed class FoodItemExport
     {
         public string ExternalId { get; set; } = "";
@@ -984,7 +989,9 @@ namespace LifestyleCore.Data
         public string CreatedAtUtc { get; set; } = "";
         public string UpdatedAtUtc { get; set; } = "";
     }
+    #endregion // SECTION F4 — Food Item Export DTO
 
+    #region SECTION F5 — Focus Session Export DTO
     public sealed class FocusSessionExport
     {
         public string ExternalId { get; set; } = "";
@@ -996,7 +1003,9 @@ namespace LifestyleCore.Data
 
         public int CompletedInt { get; set; }
     }
+    #endregion // SECTION F5 — Focus Session Export DTO
 
+    #region SECTION F6 — Food Entry Export DTO
     public sealed class FoodEntryExport
     {
         public string ExternalId { get; set; } = "";
@@ -1015,7 +1024,9 @@ namespace LifestyleCore.Data
 
         public double KjComputed { get; set; }
     }
+    #endregion // SECTION F6 — Food Entry Export DTO
 
+    #region SECTION F7 — Sleep Session Export DTO
     public sealed class SleepSessionExport
     {
         public string ExternalId { get; set; } = "";
@@ -1024,7 +1035,9 @@ namespace LifestyleCore.Data
         public string WakeLogDate { get; set; } = "";
         public int DurationMinutes { get; set; }
     }
+    #endregion // SECTION F7 — Sleep Session Export DTO
 
+    #region SECTION F8 — Step Bucket Export DTO
     public sealed class StepBucketExport
     {
         public string ExternalId { get; set; } = "";
@@ -1033,7 +1046,9 @@ namespace LifestyleCore.Data
         public int Steps { get; set; }
         public string UpdatedAtUtc { get; set; } = "";
     }
+    #endregion // SECTION F8 — Step Bucket Export DTO
 
+    #region SECTION F9 — Habit Export DTO
     public sealed class HabitExport
     {
         public string ExternalId { get; set; } = "";
@@ -1048,7 +1063,9 @@ namespace LifestyleCore.Data
         public string CreatedAtUtc { get; set; } = "";
         public string UpdatedAtUtc { get; set; } = "";
     }
+    #endregion // SECTION F9 — Habit Export DTO
 
+    #region SECTION F10 — Habit Entry Export DTO
     public sealed class HabitEntryExport
     {
         public string ExternalId { get; set; } = "";
@@ -1057,5 +1074,5 @@ namespace LifestyleCore.Data
         public string UpdatedAtUtc { get; set; } = "";
         public string HabitExternalId { get; set; } = "";
     }
+    #endregion // SECTION F10 — Habit Entry Export DTO
 }
-    #endregion // SECTION F — Archive DTOs

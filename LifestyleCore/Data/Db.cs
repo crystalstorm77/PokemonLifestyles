@@ -1,5 +1,4 @@
-﻿#region SECTION A — Database path + initialization
-using System;
+﻿using System;
 using System.IO;
 using Microsoft.Data.Sqlite;
 
@@ -7,6 +6,7 @@ namespace LifestyleCore.Data
 {
     public static class Db
     {
+        #region SECTION A — Database path + initialization
         public static string GetDbPath()
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -51,6 +51,6 @@ ON FocusSessions(LogDate);
             // Ensure ExternalId exists & is populated even for older DBs
             DbMigrations.EnsureExternalIdSupport(conn, "FocusSessions");
         }
+        #endregion // SECTION A — Database path + initialization
     }
 }
-#endregion // SECTION A — Database path + initialization

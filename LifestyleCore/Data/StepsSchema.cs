@@ -1,10 +1,10 @@
-﻿#region SECTION A — Steps Tables Schema (SQLite)
-using Dapper;
+﻿using Dapper;
 
 namespace LifestyleCore.Data
 {
     public static class StepsSchema
     {
+        #region SECTION A — Steps Tables Schema (SQLite)
         private static bool _ensured;
         private static readonly object _lock = new();
 
@@ -63,6 +63,6 @@ ON StepsSyncState (Source);
                 _ensured = true;
             }
         }
+        #endregion // SECTION A — Steps Tables Schema (SQLite)
     }
 }
-#endregion // SECTION A — Steps Tables Schema (SQLite)

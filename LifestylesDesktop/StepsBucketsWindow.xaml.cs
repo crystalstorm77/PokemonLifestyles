@@ -1,15 +1,13 @@
-﻿#region SECTION A — Usings
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
 using LifestyleCore.Data;
-#endregion // SECTION A — Usings
 
-#region SECTION B — Window
 namespace LifestylesDesktop
 {
     public partial class StepsBucketsWindow : Window
     {
+        #region SECTION B — Window
         private readonly DateOnly _date;
         private readonly StepsRepository _repo = new();
 
@@ -19,6 +17,7 @@ namespace LifestylesDesktop
             _date = date;
             Loaded += StepsBucketsWindow_Loaded;
         }
+        #endregion // SECTION B — Window
 
         #region SECTION C — Load / Refresh
         private async void StepsBucketsWindow_Loaded(object sender, RoutedEventArgs e)
@@ -42,4 +41,3 @@ namespace LifestylesDesktop
         #endregion // SECTION D — Buttons
     }
 }
-#endregion // SECTION B — Window

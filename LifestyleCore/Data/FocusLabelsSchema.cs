@@ -1,5 +1,4 @@
-﻿#region SECTION A — Focus labels schema (SQLite)
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -9,6 +8,7 @@ namespace LifestyleCore.Data
 {
     public static class FocusLabelsSchema
     {
+        #region SECTION A — Focus labels schema (SQLite)
         private static bool _ensured;
         private static readonly object _lock = new();
 
@@ -103,6 +103,6 @@ WHERE Name = @Name COLLATE NOCASE;", new { Name = name });
 
             return s;
         }
+        #endregion // SECTION A — Focus labels schema (SQLite)
     }
 }
-#endregion // SECTION A — Focus labels schema (SQLite)

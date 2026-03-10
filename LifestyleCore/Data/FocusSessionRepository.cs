@@ -1,5 +1,4 @@
-﻿#region SECTION A — Focus sessions repository (SQLite + Dapper)
-using Dapper;
+﻿using Dapper;
 using LifestyleCore.Data;
 using LifestyleCore.Models;
 using System;
@@ -139,5 +138,4 @@ ORDER BY Id DESC;
         #endregion // SECTION C — Query
     }
 }
-#endregion // SECTION A — Focus sessions repository (SQLite + Dapper)
 

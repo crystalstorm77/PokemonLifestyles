@@ -1,5 +1,4 @@
-﻿#region SECTION A — Rewards Ledger Schema
-using Dapper;
+﻿using Dapper;
 using LifestyleCore.Data;
 using System;
 using System.Linq;
@@ -8,7 +7,9 @@ namespace LifestyleCore.Data
 {
     public static class RewardsSchema
     {
+        #region SECTION A — Rewards Ledger Schema
         private static bool _created = false;
+        #endregion // SECTION A — Rewards Ledger Schema
 
         #region SECTION B — Ensure Created
         public static void EnsureCreated()
@@ -112,5 +113,4 @@ namespace LifestyleCore.Data
         #endregion // SECTION B — Ensure Created
     }
 }
-#endregion // SECTION A — Rewards Ledger Schema
 

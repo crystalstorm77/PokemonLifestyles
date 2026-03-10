@@ -1,5 +1,4 @@
-﻿#region SECTION A — Sleep Repository (SQLite + Dapper)
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -121,4 +120,3 @@ ORDER BY Id DESC;
         #endregion // SECTION D — Query
     }
 }
-#endregion // SECTION A — Sleep Repository (SQLite + Dapper)

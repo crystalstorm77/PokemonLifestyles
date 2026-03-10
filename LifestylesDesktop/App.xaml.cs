@@ -1,16 +1,14 @@
-﻿#region SECTION A — Usings + Aliases
-using LifestyleCore.Data;
+﻿using LifestyleCore.Data;
 
 // Explicit aliases to avoid WinForms/WPF ambiguity (from <UseWindowsForms>true</UseWindowsForms>)
 using Application = System.Windows.Application;
 using StartupEventArgs = System.Windows.StartupEventArgs;
-#endregion // SECTION A — Usings + Aliases
 
-#region SECTION B — App Startup
 namespace LifestylesDesktop
 {
     public partial class App : Application
     {
+        #region SECTION B — App Startup
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -20,6 +18,6 @@ namespace LifestylesDesktop
             FoodSchema.EnsureCreated();
             SleepSchema.EnsureCreated();
         }
+        #endregion // SECTION B — App Startup
     }
 }
-#endregion // SECTION B — App Startup

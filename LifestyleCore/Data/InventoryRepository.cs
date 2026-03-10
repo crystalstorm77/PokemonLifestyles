@@ -1,5 +1,4 @@
-﻿#region SECTION A — Inventory Repository
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -123,4 +122,3 @@ WHERE ItemKey = @ItemKey AND Count <= 0;",
         #endregion // SECTION B — Read / Write
     }
 }
-#endregion // SECTION A — Inventory Repository

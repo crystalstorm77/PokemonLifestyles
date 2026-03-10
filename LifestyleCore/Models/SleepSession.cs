@@ -1,10 +1,10 @@
-﻿#region SECTION A — Sleep Session Model
-using System;
+﻿using System;
 
 namespace LifestyleCore.Models
 {
     public sealed class SleepSession
     {
+        #region SECTION A — Sleep Session Model
         public long Id { get; set; }
         public DateTimeOffset StartUtc { get; set; }
         public DateTimeOffset EndUtc { get; set; }
@@ -14,6 +14,7 @@ namespace LifestyleCore.Models
         public DateTimeOffset StartLocal => StartUtc.ToLocalTime();
         public DateTimeOffset EndLocal => EndUtc.ToLocalTime();
         public double DurationHours => Math.Round(DurationMinutes / 60.0, 2);
+        #endregion // SECTION A — Sleep Session Model
 
         #region SECTION B — Editable fields for UI (local time)
         // Format shown: yyyy-MM-dd HH:mm:ss
@@ -37,4 +38,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Editable fields for UI (local time)
     }
 }
-#endregion // SECTION A — Sleep Session Model

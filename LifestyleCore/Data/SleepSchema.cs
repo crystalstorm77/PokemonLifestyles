@@ -1,10 +1,10 @@
-﻿#region SECTION A — Sleep Tables Schema (SQLite)
-using Dapper;
+﻿using Dapper;
 
 namespace LifestyleCore.Data
 {
     public static class SleepSchema
     {
+        #region SECTION A — Sleep Tables Schema (SQLite)
         private static bool _ensured;
         private static readonly object _lock = new();
 
@@ -42,6 +42,6 @@ CREATE TABLE IF NOT EXISTS PendingSleep (
                 _ensured = true;
             }
         }
+        #endregion // SECTION A — Sleep Tables Schema (SQLite)
     }
 }
-#endregion // SECTION A — Sleep Tables Schema (SQLite)

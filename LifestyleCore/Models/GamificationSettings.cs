@@ -1,5 +1,4 @@
-﻿#region SECTION A — Gamification Settings Model
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public sealed class GamificationSettings
     {
@@ -27,5 +26,4 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Columns
     }
 }
-#endregion // SECTION A — Gamification Settings Model
 

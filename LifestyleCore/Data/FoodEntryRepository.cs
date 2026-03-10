@@ -1,5 +1,4 @@
-﻿#region SECTION A — Food Log Repository (SQLite + Dapper)
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
@@ -9,6 +8,7 @@ namespace LifestyleCore.Data
 {
     public sealed class FoodEntryRepository
     {
+        #region SECTION A — Food Log Repository (SQLite + Dapper)
         private readonly FoodItemRepository _foodRepo = new();
 
         public async Task<long> AddAsync(
@@ -151,6 +151,6 @@ WHERE LogDate = @LogDate;
 
             return await conn.ExecuteScalarAsync<double>(sql, new { LogDate = logDate.ToString("yyyy-MM-dd") });
         }
+        #endregion // SECTION A — Food Log Repository (SQLite + Dapper)
     }
 }
-#endregion // SECTION A — Food Log Repository (SQLite + Dapper)

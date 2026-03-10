@@ -1,10 +1,10 @@
-﻿#region SECTION A — Focus session model
-using System;
+﻿using System;
 
 namespace LifestyleCore.Models
 {
     public sealed class FocusSession
     {
+        #region SECTION A — Focus session model
         public long Id { get; set; }
         public DateTimeOffset LoggedAtUtc { get; set; }
         public DateOnly LogDate { get; set; }
@@ -13,6 +13,7 @@ namespace LifestyleCore.Models
         public bool Completed { get; set; }
 
         public DateTimeOffset LoggedAtLocal => LoggedAtUtc.ToLocalTime();
+        #endregion // SECTION A — Focus session model
 
         #region SECTION B — Editable fields for UI (local time + date)
         private string? _logDateEdit;
@@ -34,4 +35,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Editable fields for UI (local time + date)
     }
 }
-#endregion // SECTION A — Focus session model

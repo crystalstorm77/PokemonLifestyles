@@ -1,10 +1,10 @@
-﻿#region SECTION A — Food Item Model
-using System;
+﻿using System;
 
 namespace LifestyleCore.Models
 {
     public sealed class FoodItem
     {
+        #region SECTION A — Food Item Model
         public long Id { get; set; }
         public string Name { get; set; } = "";
         public double KjPerServing { get; set; }
@@ -12,6 +12,6 @@ namespace LifestyleCore.Models
         public double? KjPer100g { get; set; }
         public DateTimeOffset CreatedAtUtc { get; set; }
         public DateTimeOffset UpdatedAtUtc { get; set; }
+        #endregion // SECTION A — Food Item Model
     }
 }
-#endregion // SECTION A — Food Item Model

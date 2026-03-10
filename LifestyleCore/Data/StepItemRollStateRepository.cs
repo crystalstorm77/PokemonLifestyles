@@ -1,5 +1,4 @@
-﻿#region SECTION A — Step Item Roll State Repository
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Dapper;
 using LifestyleCore.Models;
 
@@ -37,4 +36,3 @@ WHERE Id = 1;");
         #endregion // SECTION B — Read
     }
 }
-#endregion // SECTION A — Step Item Roll State Repository

@@ -1,5 +1,4 @@
-﻿#region SECTION A — Rewards Ledger Repository
-using Dapper;
+﻿using Dapper;
 using LifestyleCore.Data;
 using LifestyleCore.Models;
 using System;
@@ -299,7 +298,6 @@ namespace LifestyleCore.Data
         #endregion // SECTION C — Read Rewards
     }
 }
-#endregion // SECTION A — Rewards Ledger Repository
 
 
 

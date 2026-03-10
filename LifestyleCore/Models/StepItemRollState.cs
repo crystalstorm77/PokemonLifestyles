@@ -1,5 +1,4 @@
-﻿#region SECTION A — Step Item Roll State Model
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public sealed class StepItemRollState
     {
@@ -14,4 +13,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Columns
     }
 }
-#endregion // SECTION A — Step Item Roll State Model

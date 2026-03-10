@@ -1,10 +1,10 @@
-﻿#region SECTION A — Habits Tables Schema (SQLite)
-using Dapper;
+﻿using Dapper;
 
 namespace LifestyleCore.Data
 {
     public static class HabitsSchema
     {
+        #region SECTION A — Habits Tables Schema (SQLite)
         private static bool _ensured;
         private static readonly object _lock = new();
 
@@ -54,6 +54,6 @@ ON HabitEntries (Date);
                 _ensured = true;
             }
         }
+        #endregion // SECTION A — Habits Tables Schema (SQLite)
     }
 }
-#endregion // SECTION A — Habits Tables Schema (SQLite)

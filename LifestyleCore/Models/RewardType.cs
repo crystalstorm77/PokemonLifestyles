@@ -1,5 +1,4 @@
-﻿#region SECTION A — Reward Types
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public enum RewardType
     {
@@ -20,4 +19,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION D — Sleep / Steps (Reserved)
     }
 }
-#endregion // SECTION A — Reward Types

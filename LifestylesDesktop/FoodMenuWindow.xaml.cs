@@ -1,5 +1,4 @@
-﻿#region SECTION A — Usings
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
@@ -8,13 +7,12 @@ using LifestyleCore.Models;
 
 // Explicit alias to avoid WinForms/WPF ambiguity (from <UseWindowsForms>true</UseWindowsForms>)
 using MessageBox = System.Windows.MessageBox;
-#endregion // SECTION A — Usings
 
-#region SECTION B — Window Logic
 namespace LifestylesDesktop
 {
     public partial class FoodMenuWindow : Window
     {
+        #region SECTION B — Window Logic
         private readonly FoodItemRepository _repo = new();
         private ObservableCollection<FoodItem> _items = new();
 
@@ -23,6 +21,7 @@ namespace LifestylesDesktop
             InitializeComponent();
             Loaded += FoodMenuWindow_Loaded;
         }
+        #endregion // SECTION B — Window Logic
 
         #region SECTION C — Load / Refresh
         private async void FoodMenuWindow_Loaded(object sender, RoutedEventArgs e)
@@ -100,4 +99,3 @@ namespace LifestylesDesktop
         #endregion // SECTION D — Button Handlers
     }
 }
-#endregion // SECTION B — Window Logic

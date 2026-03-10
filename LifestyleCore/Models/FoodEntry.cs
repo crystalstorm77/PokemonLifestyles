@@ -1,10 +1,10 @@
-﻿#region SECTION A — Food Entry Model
-using System;
+﻿using System;
 
 namespace LifestyleCore.Models
 {
     public sealed class FoodEntry
     {
+        #region SECTION A — Food Entry Model
         public long Id { get; set; }
         public DateTimeOffset LoggedAtUtc { get; set; }
         public DateOnly LogDate { get; set; }
@@ -24,6 +24,7 @@ namespace LifestyleCore.Models
 
         // Convenience for UI display
         public DateTimeOffset LoggedAtLocal => LoggedAtUtc.ToLocalTime();
+        #endregion // SECTION A — Food Entry Model
 
         #region SECTION B — Editable fields for UI (local time + date)
         private string? _logDateEdit;
@@ -45,4 +46,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Editable fields for UI (local time + date)
     }
 }
-#endregion // SECTION A — Food Entry Model

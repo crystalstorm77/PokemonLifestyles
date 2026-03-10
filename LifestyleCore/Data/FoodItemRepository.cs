@@ -1,5 +1,4 @@
-﻿#region SECTION A — Food Menu Repository (SQLite + Dapper)
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
@@ -10,6 +9,7 @@ namespace LifestyleCore.Data
 {
     public sealed class FoodItemRepository
     {
+        #region SECTION A — Food Menu Repository (SQLite + Dapper)
         public async Task<long> AddAsync(FoodItem item)
         {
             FoodSchema.EnsureCreated();
@@ -115,6 +115,7 @@ LIMIT 1;
                 UpdatedAtUtc = DateTimeOffset.Parse((string)r.UpdatedAtUtc),
             };
         }
+        #endregion // SECTION A — Food Menu Repository (SQLite + Dapper)
 
         #region SECTION B — Update / Delete
         public async Task UpdateAsync(FoodItem item)
@@ -184,4 +185,3 @@ WHERE Id = @Id;
         #endregion // SECTION B — Update / Delete
     }
 }
-#endregion // SECTION A — Food Menu Repository (SQLite + Dapper)

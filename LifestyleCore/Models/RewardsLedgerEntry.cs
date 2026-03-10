@@ -1,5 +1,4 @@
-﻿#region SECTION A — Rewards Ledger Entry Model
-namespace LifestyleCore.Models
+﻿namespace LifestyleCore.Models
 {
     public sealed class RewardsLedgerEntry
     {
@@ -16,4 +15,3 @@ namespace LifestyleCore.Models
         #endregion // SECTION B — Columns
     }
 }
-#endregion // SECTION A — Rewards Ledger Entry Model

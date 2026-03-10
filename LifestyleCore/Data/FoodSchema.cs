@@ -1,10 +1,10 @@
-﻿#region SECTION A — Food Tables Schema (SQLite)
-using Dapper;
+﻿using Dapper;
 
 namespace LifestyleCore.Data
 {
     public static class FoodSchema
     {
+        #region SECTION A — Food Tables Schema (SQLite)
         private static bool _ensured;
         private static readonly object _lock = new();
 
@@ -58,6 +58,6 @@ ON FoodEntries (LogDate);
                 _ensured = true;
             }
         }
+        #endregion // SECTION A — Food Tables Schema (SQLite)
     }
 }
-#endregion // SECTION A — Food Tables Schema (SQLite)

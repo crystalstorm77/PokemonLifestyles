@@ -1,5 +1,4 @@
-﻿#region SECTION A — Steps Repository
-using System;
+﻿using System;
 using System.Globalization;
 using System.Threading.Tasks;
 using Dapper;
@@ -209,4 +208,3 @@ ON CONFLICT(BucketStartUtc) DO UPDATE SET
         #endregion // SECTION C — Time helpers
     }
 }
-#endregion // SECTION A — Steps Repository
