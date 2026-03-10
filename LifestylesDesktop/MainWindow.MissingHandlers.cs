@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Usings
-// ============================================================
-
+﻿#region SECTION A — Usings
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -19,19 +16,16 @@ using Button = System.Windows.Controls.Button;
 using DataGrid = System.Windows.Controls.DataGrid;
 using StackPanel = System.Windows.Controls.StackPanel;
 using TextBlock = System.Windows.Controls.TextBlock;
+#endregion // SECTION A — Usings
 
-// ============================================================
-// SECTION B — Event handlers missing from MainWindow.xaml.cs
-// ============================================================
-
+#region SECTION B — Event handlers missing from MainWindow.xaml.cs
 namespace LifestylesDesktop
 {
     public partial class MainWindow : Window
     {
-        // ============================================================
-        // SECTION C — Steps handlers
-        // ============================================================
+#endregion // SECTION B — Event handlers missing from MainWindow.xaml.cs
 
+        #region SECTION C — Steps handlers
         private async void AddStepsButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -146,11 +140,9 @@ namespace LifestylesDesktop
                 MessageBox.Show(ex.Message, "Could not load step buckets");
             }
         }
+        #endregion // SECTION C — Steps handlers
 
-        // ============================================================
-        // SECTION D — Inventory + Item Drops handlers
-        // ============================================================
-
+        #region SECTION D — Inventory + Item Drops handlers
         private async void InventoryMinus_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -293,7 +285,6 @@ namespace LifestylesDesktop
                 });
 
                 await RefreshForSelectedDateAsync();
-
                 MessageBox.Show("Saved gamification settings.");
             }
             catch (Exception ex)
@@ -368,7 +359,8 @@ namespace LifestylesDesktop
                 string category = (NewItemCategoryBox?.Text ?? "").Trim();
 
                 var tierObj = NewItemTierCombo?.SelectedItem;
-                if (tierObj is not ItemTier tier) tier = ItemTier.Common;
+                if (tierObj is not ItemTier tier)
+                    tier = ItemTier.Common;
 
                 int weight = 1;
                 int.TryParse((NewItemWeightBox?.Text ?? "").Trim(), out weight);
@@ -430,12 +422,9 @@ namespace LifestylesDesktop
                 MessageBox.Show(ex.Message, "Could not deactivate item");
             }
         }
+        #endregion // SECTION D — Inventory + Item Drops handlers
 
-
-        // ============================================================
-        // SECTION E — Habits handlers
-        // ============================================================
-
+        #region SECTION E — Habits handlers
         private async void AddHabitAmountButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -459,9 +448,7 @@ namespace LifestylesDesktop
                 }
 
                 await _habitRepo.AddDailyDeltaAsync(h.Id, SelectedLogDate, delta);
-
                 HabitAddAmountBox.Text = "";
-
                 await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
@@ -483,8 +470,7 @@ namespace LifestylesDesktop
         private async void HabitArchivedToday_Click(object sender, RoutedEventArgs e)
         {
             // These flags exist in your main file; reading them here also removes the “never used” warnings.
-            if (_habitsUiUpdating || _habitArchiveOpInProgress)
-                return;
+            if (_habitsUiUpdating || _habitArchiveOpInProgress) return;
 
             try
             {
@@ -527,8 +513,7 @@ namespace LifestylesDesktop
         {
             try
             {
-                if (_habitArchiveOpInProgress)
-                    return;
+                if (_habitArchiveOpInProgress) return;
 
                 if (HabitsGrid.SelectedItem is not HabitRow target)
                 {
@@ -549,7 +534,6 @@ namespace LifestylesDesktop
 
                 await EnsureHabitsArchivedAtUtcColumnExistsAsync();
                 await SetHabitArchivedAtLocalDateAsync(target.HabitId, SelectedLogDate);
-
                 await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
@@ -561,11 +545,9 @@ namespace LifestylesDesktop
                 _habitArchiveOpInProgress = false;
             }
         }
+        #endregion // SECTION E — Habits handlers
 
-        // ============================================================
-        // SECTION F — Rewards viewer handler
-        // ============================================================
-
+        #region SECTION F — Rewards viewer handler
         private async void ViewRewardsForSelectedDay_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -687,6 +669,7 @@ namespace LifestylesDesktop
                     Margin = new Thickness(0, 10, 0, 0),
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right
                 };
+
                 close.Click += (_, __) => win.Close();
                 root.Children.Add(close);
 
@@ -698,11 +681,9 @@ namespace LifestylesDesktop
                 MessageBox.Show(ex.Message, "Could not load rewards ledger");
             }
         }
+        #endregion // SECTION F — Rewards viewer handler
 
-        // ============================================================
-        // SECTION G — Small helpers (local to this file)
-        // ============================================================
-
+        #region SECTION G — Small helpers (local to this file)
         private static int PreviewFocusCoins(int minutes, bool completed)
         {
             if (minutes <= 0) return 0;
@@ -744,6 +725,7 @@ namespace LifestylesDesktop
                 .ToList();
 
             bool hasArchivedAtUtc = colNames.Any(n => string.Equals(n, "ArchivedAtUtc", StringComparison.OrdinalIgnoreCase));
+
             if (!hasArchivedAtUtc)
                 await conn.ExecuteAsync("ALTER TABLE Habits ADD COLUMN ArchivedAtUtc TEXT NULL;");
         }
@@ -760,6 +742,7 @@ namespace LifestylesDesktop
             var archiveUtc = LocalDateToUtcNoonAnchor(localArchiveDate);
 
             using var conn = Db.OpenConnection();
+
             await conn.ExecuteAsync(
                 @"UPDATE Habits SET ArchivedAtUtc = @ArchivedAtUtc WHERE Id = @Id;",
                 new { Id = habitId, ArchivedAtUtc = archiveUtc.ToString("O") });
@@ -768,9 +751,11 @@ namespace LifestylesDesktop
         private async Task ClearHabitArchivedAtUtcAsync(long habitId)
         {
             using var conn = Db.OpenConnection();
+
             await conn.ExecuteAsync(
                 @"UPDATE Habits SET ArchivedAtUtc = NULL WHERE Id = @Id;",
                 new { Id = habitId });
         }
     }
 }
+        #endregion // SECTION G — Small helpers (local to this file)

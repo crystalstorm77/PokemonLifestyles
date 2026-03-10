@@ -16,7 +16,7 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
             string d = date.ToString("yyyy-MM-dd");
 
-            var steps = await conn.ExecuteScalarAsync(@"
+            long steps = await conn.ExecuteScalarAsync<long>(@"
 SELECT COALESCE((
     SELECT Steps
     FROM StepsDaily
@@ -24,7 +24,7 @@ SELECT COALESCE((
     LIMIT 1
 ), 0);", new { Date = d });
 
-            return (int)steps;
+            return checked((int)steps);
         }
 
         public sealed class StepBucketViewRow
