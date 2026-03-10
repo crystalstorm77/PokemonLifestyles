@@ -10,6 +10,7 @@ namespace LifestyleCore.Models
 
         #region SECTION C — Coins / Focus
         FocusCoins = 200,
+        TrainerXp = 210,
         #endregion // SECTION C — Coins / Focus
 
         #region SECTION D — Sleep / Steps (Reserved)

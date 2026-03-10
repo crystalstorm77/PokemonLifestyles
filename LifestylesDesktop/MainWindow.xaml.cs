@@ -73,6 +73,15 @@ namespace LifestylesDesktop
         private readonly Dictionary<long, double> _foodEntryOriginalKj = new();
         private ObservableCollection<HabitRow> _habitRows = new();
 
+        // Trainer XP / Level controls (injected at runtime into the debug area)
+        private bool _trainerXpUiBuilt = false;
+        private TextBox? _focusXpPerMinuteBox;
+        private TextBox? _focusXpIncompleteMultiplierBox;
+        private TextBlock? _trainerLevelText;
+        private TextBlock? _trainerProgressText;
+        private TextBlock? _trainerSelectedDayXpText;
+        private Button? _trainerPrestigeResetButton;
+
         // Sleep tuning controls (injected at runtime into the debug area)
         private bool _sleepSettingsUiBuilt = false;
         private TextBox? _sleepHealthyMinHoursBox;
@@ -118,6 +127,7 @@ namespace LifestylesDesktop
             // Load focus labels early so both the input ComboBox and grid editor have choices.
             await RefreshFocusLabelsAsync();
 
+            EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
 
             await RefreshForSelectedDateAsync();
@@ -403,6 +413,10 @@ namespace LifestylesDesktop
             };
         }
 
+        private static double GetDefaultFocusXpPerMinute() => 100.0;
+
+        private static double GetDefaultFocusXpIncompleteMultiplier() => 0.25;
+
         private static SleepTuningSettings NormalizeSleepTuningSettings(SleepTuningSettings settings)
         {
             double healthyMin = Math.Max(0.0, settings.SleepHealthyMinHours);
@@ -605,6 +619,92 @@ WHERE Id = 1;",
             }
         }
 
+        private async void SaveTrainerXpSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_focusXpPerMinuteBox == null || _focusXpIncompleteMultiplierBox == null)
+                {
+                    MessageBox.Show("Trainer XP controls are not ready yet.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_focusXpPerMinuteBox.Text, out double focusXpPerMinute) || focusXpPerMinute <= 0)
+                {
+                    MessageBox.Show("Focus XP per minute must be a number greater than 0.");
+                    return;
+                }
+
+                if (!TryParseFlexibleDouble(_focusXpIncompleteMultiplierBox.Text, out double incompleteMultiplier) ||
+                    incompleteMultiplier < 0 || incompleteMultiplier > 1.0)
+                {
+                    MessageBox.Show("Incomplete session multiplier must be a number between 0 and 1.");
+                    return;
+                }
+
+                await _gamiSettingsRepo.UpdateFocusXpSettingsAsync(focusXpPerMinute, incompleteMultiplier);
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Saved trainer XP settings.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save trainer XP settings");
+            }
+        }
+
+        private async void ResetTrainerXpSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await _gamiSettingsRepo.UpdateFocusXpSettingsAsync(
+                    GetDefaultFocusXpPerMinute(),
+                    GetDefaultFocusXpIncompleteMultiplier());
+
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Reset trainer XP settings to defaults.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset trainer XP settings");
+            }
+        }
+
+        private async void PrestigeResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var progress = await _rewardsRepo.GetTrainerProgressAsync();
+                if (!progress.IsMaxLevel)
+                {
+                    MessageBox.Show("You must be level 100 before you can prestige reset.");
+                    return;
+                }
+
+                var result = MessageBox.Show(
+                    "Prestige reset now?\n\nThis will reset your trainer level back to 1 and add 1 prestige star.",
+                    "Confirm prestige reset",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes)
+                    return;
+
+                bool didReset = await _rewardsRepo.TryPrestigeResetAsync();
+                await RefreshForSelectedDateAsync();
+
+                if (didReset)
+                    MessageBox.Show("Prestige reset complete.");
+                else
+                    MessageBox.Show("Prestige reset was not applied.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not prestige reset");
+            }
+        }
+
         private static string BuildSleepPreviewText(SleepTuningSettings settings, int totalMinutes)
         {
             double mult = ComputeSleepMultiplier(settings, totalMinutes);
@@ -612,9 +712,152 @@ WHERE Id = 1;",
             return $"{FormatMinutes(totalMinutes)} → x{mult:F2} ({band})";
         }
 
+        private static string BuildTrainerLevelLine(TrainerProgressSnapshot progress)
+        {
+            return $"Trainer: Lv {progress.CurrentLevel} | Prestige: {progress.PrestigeCount}★ | Cycle XP: {progress.CurrentCycleXp:#,0}/{progress.MaxCycleXp:#,0}";
+        }
+
+        private static string BuildTrainerProgressLine(TrainerProgressSnapshot progress)
+        {
+            if (progress.IsMaxLevel)
+                return "Level 100 reached. Prestige reset is available.";
+
+            return
+                $"Current level progress: {progress.XpIntoCurrentLevel:#,0} XP into Lv {progress.CurrentLevel} | " +
+                $"{progress.XpNeededForNextLevel:#,0} XP to Lv {progress.CurrentLevel + 1} " +
+                $"(next at {progress.NextLevelBaseXp:#,0} total XP)";
+        }
+
         #endregion // SECTION E1 — Sleep Tuning Settings Helpers
 
         #region SECTION E2 — Sleep Tuning Debug UI
+        private void EnsureTrainerXpDebugUiBuilt()
+        {
+            if (_trainerXpUiBuilt)
+                return;
+
+            if (SleepMultiplierText?.Parent is not StackPanel root)
+                return;
+
+            int sleepMultiplierIndex = root.Children.IndexOf(SleepMultiplierText);
+            if (sleepMultiplierIndex < 0)
+                return;
+
+            int insertAt = sleepMultiplierIndex + 1;
+
+            var header = new TextBlock
+            {
+                Text = "Trainer XP / Level",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            _trainerLevelText = new TextBlock
+            {
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            _trainerProgressText = new TextBlock
+            {
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+
+            _trainerSelectedDayXpText = new TextBlock
+            {
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+
+            var settingsRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            settingsRow.Children.Add(new TextBlock
+            {
+                Text = "XP/min:",
+                Width = 60,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _focusXpPerMinuteBox = new TextBox
+            {
+                Width = 70,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            settingsRow.Children.Add(_focusXpPerMinuteBox);
+
+            settingsRow.Children.Add(new TextBlock
+            {
+                Text = "Incomplete x:",
+                Width = 95,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _focusXpIncompleteMultiplierBox = new TextBox
+            {
+                Width = 70
+            };
+            settingsRow.Children.Add(_focusXpIncompleteMultiplierBox);
+
+            var buttonRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var saveButton = new Button
+            {
+                Content = "Save trainer XP",
+                Width = 120,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            saveButton.Click += SaveTrainerXpSettingsButton_Click;
+
+            var resetButton = new Button
+            {
+                Content = "Reset trainer XP",
+                Width = 120,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetButton.Click += ResetTrainerXpSettingsButton_Click;
+
+            _trainerPrestigeResetButton = new Button
+            {
+                Content = "Prestige reset",
+                Width = 120,
+                IsEnabled = false,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            _trainerPrestigeResetButton.Click += PrestigeResetButton_Click;
+
+            buttonRow.Children.Add(saveButton);
+            buttonRow.Children.Add(resetButton);
+            buttonRow.Children.Add(_trainerPrestigeResetButton);
+
+            var note = new TextBlock
+            {
+                Text = "Level 100 caps at 1,000,000 cycle XP. Prestige reset returns you to level 1 and adds a star.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 6, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            root.Children.Insert(insertAt++, header);
+            root.Children.Insert(insertAt++, _trainerLevelText);
+            root.Children.Insert(insertAt++, _trainerProgressText);
+            root.Children.Insert(insertAt++, _trainerSelectedDayXpText);
+            root.Children.Insert(insertAt++, settingsRow);
+            root.Children.Insert(insertAt++, buttonRow);
+            root.Children.Insert(insertAt++, note);
+
+            _trainerXpUiBuilt = true;
+        }
+
         private void EnsureSleepSettingsDebugUiBuilt()
         {
             if (_sleepSettingsUiBuilt)
@@ -982,6 +1225,7 @@ WHERE Id = 1;",
         {
             try
             {
+                EnsureTrainerXpDebugUiBuilt();
                 EnsureSleepSettingsDebugUiBuilt();
 
                 var nowLocal = DateTimeOffset.Now;
@@ -993,24 +1237,43 @@ WHERE Id = 1;",
                 if (GameDayNowText != null)
                     GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
 
+                int selectedDayCoins = 0;
+                int selectedDayTickets = 0;
+                int selectedDayTrainerXp = 0;
+
+                var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
+                foreach (var e in entries)
+                {
+                    if (e.RewardType == RewardType.FocusCoins) selectedDayCoins += e.Amount;
+                    else if (e.RewardType == RewardType.HabitTicketCheckbox) selectedDayTickets += e.Amount;
+                    else if (e.RewardType == RewardType.TrainerXp) selectedDayTrainerXp += e.Amount;
+                }
+
                 // Selected-day rewards summary
                 if (RewardsSummaryText != null)
                 {
-                    var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
-                    int coins = 0;
-                    int tickets = 0;
-
-                    foreach (var e in entries)
-                    {
-                        if (e.RewardType == RewardType.FocusCoins) coins += e.Amount;
-                        else if (e.RewardType == RewardType.HabitTicketCheckbox) tickets += e.Amount;
-                    }
-
                     RewardsSummaryText.Text =
-                        $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): {coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
+                        $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): {selectedDayCoins} coins, {selectedDayTickets} tickets, {selectedDayTrainerXp} XP | Ledger entries: {entries.Count}";
                 }
 
+                var gamiSettings = await _gamiSettingsRepo.GetAsync();
                 var sleepSettings = await GetSleepTuningSettingsAsync();
+                var trainerProgress = await _rewardsRepo.GetTrainerProgressAsync();
+
+                SetTextBoxIfIdle(_focusXpPerMinuteBox, FormatDoubleForBox(gamiSettings.FocusXpPerMinute));
+                SetTextBoxIfIdle(_focusXpIncompleteMultiplierBox, FormatDoubleForBox(gamiSettings.FocusXpIncompleteMultiplier));
+
+                if (_trainerLevelText != null)
+                    _trainerLevelText.Text = BuildTrainerLevelLine(trainerProgress);
+
+                if (_trainerProgressText != null)
+                    _trainerProgressText.Text = BuildTrainerProgressLine(trainerProgress);
+
+                if (_trainerSelectedDayXpText != null)
+                    _trainerSelectedDayXpText.Text = $"Selected day trainer XP: {selectedDayTrainerXp:#,0}";
+
+                if (_trainerPrestigeResetButton != null)
+                    _trainerPrestigeResetButton.IsEnabled = trainerProgress.IsMaxLevel;
 
                 SetTextBoxIfIdle(_sleepHealthyMinHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMinHours));
                 SetTextBoxIfIdle(_sleepHealthyMaxHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMaxHours));

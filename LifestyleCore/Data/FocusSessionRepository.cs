@@ -1,10 +1,11 @@
 ﻿#region SECTION A — Focus sessions repository (SQLite + Dapper)
+using Dapper;
+using LifestyleCore.Data;
+using LifestyleCore.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Dapper;
-using LifestyleCore.Models;
 
 namespace LifestyleCore.Data
 {
@@ -132,3 +133,92 @@ ORDER BY Id DESC;
     }
 }
 #endregion // SECTION A — Focus sessions repository (SQLite + Dapper)
+
+#region SECTION B — Add
+private readonly RewardsLedgerRepository _rewards = new();
+private readonly GamificationSettingsRepository _gamiSettings = new();
+
+private static bool IsWithinRewardWindow(DateOnly logDate)
+{
+    // Rewards for a given log date are eligible until the next calendar day at 03:00 local.
+    var tz = TimeZoneInfo.Local;
+    var nextDay = logDate.AddDays(1);
+
+    DateTime cutoffLocalUnspec = new DateTime(
+        nextDay.Year, nextDay.Month, nextDay.Day,
+        3, 0, 0,
+        DateTimeKind.Unspecified);
+
+    DateTime probe = cutoffLocalUnspec;
+
+    for (int i = 0; i < 6; i++)
+    {
+        try
+        {
+            var cutoffUtc = TimeZoneInfo.ConvertTimeToUtc(probe, tz);
+            return DateTimeOffset.UtcNow.UtcDateTime < cutoffUtc;
+        }
+        catch
+        {
+            // DST edge cases: nudge forward and retry
+            probe = probe.AddHours(1);
+        }
+    }
+
+    // Fail closed
+    return false;
+}
+
+public async Task<long> AddAsync(FocusSession session)
+{
+    Db.EnsureCreated();
+
+    if (session == null)
+        throw new ArgumentNullException(nameof(session));
+
+    if (session.Minutes <= 0)
+        throw new InvalidOperationException("Focus session minutes must be > 0.");
+
+    using var conn = Db.OpenConnection();
+
+    const string sql = @"
+INSERT INTO FocusSessions (LoggedAtUtc, LogDate, FocusType, Minutes, Completed)
+VALUES (@LoggedAtUtc, @LogDate, @FocusType, @Minutes, @Completed);
+SELECT last_insert_rowid();
+";
+
+    var parameters = new
+    {
+        LoggedAtUtc = session.LoggedAtUtc.ToString("O"),
+        LogDate = session.LogDate.ToString("yyyy-MM-dd"),
+        FocusType = session.FocusType,
+        Minutes = session.Minutes,
+        Completed = session.Completed ? 1 : 0
+    };
+
+    long id = await conn.ExecuteScalarAsync<long>(sql, parameters);
+
+    // Grant rewards immediately (immutable ledger), only if within reward window for that log date.
+    if (IsWithinRewardWindow(session.LogDate))
+    {
+        var gami = await _gamiSettings.GetAsync();
+
+        // Trainer XP
+        double trainerXpMultiplier = session.Completed ? 1.0 : gami.FocusXpIncompleteMultiplier;
+        int trainerXp = (int)Math.Floor(session.Minutes * gami.FocusXpPerMinute * trainerXpMultiplier);
+
+        if (trainerXp > 0)
+            await _rewards.TryGrantFocusTrainerXpAsync(id, session.LogDate, trainerXp);
+
+        // Focus coins (existing system)
+        const double coinsPerMinute = 1.0;
+        double coinMultiplier = session.Completed ? 1.0 : 0.25;
+        int coins = (int)Math.Floor(session.Minutes * coinsPerMinute * coinMultiplier);
+
+        if (coins > 0)
+            await _rewards.TryGrantFocusCoinsAsync(id, session.LogDate, coins);
+    }
+
+    return id;
+}
+#endregion // SECTION B — Add
