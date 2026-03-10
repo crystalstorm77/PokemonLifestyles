@@ -1,7 +1,4 @@
-﻿
-// ============================================================
-// SECTION A — Usings
-// ============================================================
+﻿#region SECTION A — Usings
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -34,14 +31,13 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 
 
-// ============================================================
-// SECTION B — Main Window Class
-// ============================================================
+#endregion // SECTION A — Usings
 
 namespace LifestylesDesktop
 {
     public partial class MainWindow : Window
     {
+        #region SECTION B — Main Window Class
         private readonly FocusSessionRepository _repo = new();
         private readonly FoodItemRepository _foodItemRepo = new();
         private readonly FoodEntryRepository _foodEntryRepo = new();
@@ -126,15 +122,14 @@ namespace LifestylesDesktop
 
             await RefreshForSelectedDateAsync();
         }
-   
 
 
 
 
-        // ============================================================
-        // SECTION C — Log Date Helpers
-        // ============================================================
 
+        #endregion // SECTION B — Main Window Class
+
+        #region SECTION C — Log Date Helpers
         private DateOnly SelectedLogDate
         {
             get
@@ -207,10 +202,9 @@ namespace LifestylesDesktop
         }
 
 
-        // ============================================================
-        // SECTION D — Focus Session Actions
-        // ============================================================
+        #endregion // SECTION C — Log Date Helpers
 
+        #region SECTION D — Focus Session Actions
         private async void AddFocusButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -303,6 +297,7 @@ namespace LifestylesDesktop
                 var root = new StackPanel { Margin = new Thickness(12) };
 
                 var labels = new ObservableCollection<string>();
+
                 var list = new ListBox
                 {
                     Height = 250,
@@ -382,10 +377,9 @@ namespace LifestylesDesktop
             }
         }
 
-        // ============================================================
-        // SECTION E — Refresh UI
-        // ============================================================
+        #endregion // SECTION D — Focus Session Actions
 
+        #region SECTION E1 — Sleep Tuning Settings Helpers
         private sealed class SleepTuningSettings
         {
             public double SleepHealthyMinHours { get; set; } = 6.0;
@@ -618,6 +612,9 @@ WHERE Id = 1;",
             return $"{FormatMinutes(totalMinutes)} → x{mult:F2} ({band})";
         }
 
+        #endregion // SECTION E1 — Sleep Tuning Settings Helpers
+
+        #region SECTION E2 — Sleep Tuning Debug UI
         private void EnsureSleepSettingsDebugUiBuilt()
         {
             if (_sleepSettingsUiBuilt)
@@ -842,6 +839,9 @@ WHERE Id = 1;",
             _sleepSettingsUiBuilt = true;
         }
 
+        #endregion // SECTION E2 — Sleep Tuning Debug UI
+
+        #region SECTION E3 — Main Refresh Pipeline
         private async Task RefreshForSelectedDateAsync()
         {
             try
@@ -975,6 +975,9 @@ WHERE Id = 1;",
             return $"{h}h {m}m";
         }
 
+        #endregion // SECTION E3 — Main Refresh Pipeline
+
+        #region SECTION E4 — Gamification + Item Drop Debug Refresh
         private async Task RefreshGamificationDebugAsync()
         {
             try
@@ -1166,11 +1169,9 @@ WHERE Id = 1;",
             }
         }
 
-        // ============================================================
-        // ============================================================
-        // SECTION F — Food Actions
-        // ============================================================
+        #endregion // SECTION E4 — Gamification + Item Drop Debug Refresh
 
+        #region SECTION F — Food Actions
         private async Task RefreshFoodMenuAsync()
         {
             var items = await _foodItemRepo.GetAllAsync();
@@ -1343,10 +1344,9 @@ WHERE Id = 1;",
         }
 
 
-        // ============================================================
-        // SECTION G — Data Backup / Restore
-        // ============================================================
+        #endregion // SECTION F — Food Actions
 
+        #region SECTION G — Data Backup / Restore
         private async void BackupEverythingButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -1588,10 +1588,9 @@ WHERE Id = 1;",
 
             return result;
         }
-        // ============================================================
-        // SECTION H — Edit/Delete Entries (Focus + Food)
-        // ============================================================
+        #endregion // SECTION G — Data Backup / Restore
 
+        #region SECTION H1 — Tab + Grid Helpers
         private void SessionsTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // Ignore bubbled SelectionChanged events from inner controls
@@ -1775,6 +1774,9 @@ WHERE Id = 1;",
             }
         }
 
+        #endregion // SECTION H1 — Tab + Grid Helpers
+
+        #region SECTION H2 — Focus Session Edit/Delete
         private async void SaveFocusSessionsChanges_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -1857,6 +1859,9 @@ WHERE Id = 1;",
             }
         }
 
+        #endregion // SECTION H2 — Focus Session Edit/Delete
+
+        #region SECTION H3 — Food Entry Edit/Delete
         private async void SaveFoodEntriesChanges_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -1970,6 +1975,9 @@ WHERE Id = 1;",
             }
         }
 
+        #endregion // SECTION H3 — Food Entry Edit/Delete
+
+        #region SECTION H4 — Sleep Session Edit/Delete
         private async void SaveSleepSessionsChanges_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -2059,18 +2067,17 @@ WHERE Id = 1;",
                 MessageBox.Show(ex.Message, "Could not delete sleep session");
             }
         }
+        #endregion // SECTION H4 — Sleep Session Edit/Delete
 
     }
 }
-
-// ============================================================
-// SECTION I — Steps + Habits
-// ============================================================
 
 namespace LifestylesDesktop
 {
     public partial class MainWindow
     {
+
+        #region SECTION I1 — Steps Helpers
         // Prevent checkbox events from firing while we are rebuilding the grid.
         private bool _habitsUiUpdating = false;
 
@@ -2104,6 +2111,9 @@ namespace LifestylesDesktop
             public string? ArchivedAtUtc { get; set; }
         }
 
+        #endregion // SECTION I1 — Steps Helpers
+
+        #region SECTION I2 — Habits Archive Helpers
         private async Task EnsureHabitsArchiveColumnAsync()
         {
             if (_habitsArchiveColumnEnsured)
@@ -2194,6 +2204,9 @@ namespace LifestylesDesktop
         // Refresh: Steps + Habits (with Created/Archived timeline)
         // ============================================================
 
+        #endregion // SECTION I2 — Habits Archive Helpers
+
+        #region SECTION I3 — Steps + Habits Refresh
         private async Task RefreshStepsAndHabitsAsync()
         {
             _habitsUiUpdating = true;
@@ -2284,6 +2297,9 @@ namespace LifestylesDesktop
             }
         }
 
+        #endregion // SECTION I3 — Steps + Habits Refresh
+
+        #region SECTION I4 — Steps + Habits Actions
         private void CounterMinus_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not System.Windows.Controls.Button b || b.DataContext is not HabitRow row)
@@ -2443,5 +2459,7 @@ namespace LifestylesDesktop
             public bool IsCounter => Kind == HabitKind.NumericDaily;
             public bool IsNumeric => IsCounter;
         }
+        #endregion // SECTION I4 — Steps + Habits Actions
     }
 }
+
