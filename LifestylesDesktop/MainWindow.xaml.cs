@@ -939,7 +939,15 @@ WHERE Id = 1;",
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
                     OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
 
-               
+                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
+                    CommonWeightBox.Text = settings.CommonTierWeight.ToString();
+
+                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
+                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString();
+
+                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
+                    RareWeightBox.Text = settings.RareTierWeight.ToString();
+
                 if (NewItemTierCombo != null)
                 {
                     if (NewItemTierCombo.ItemsSource == null)
