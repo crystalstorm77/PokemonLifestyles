@@ -395,8 +395,8 @@ namespace LifestylesDesktop
             if (outsideStart > healthyMult)
                 outsideStart = healthyMult;
 
-            if (trackedMin > outsideStart)
-                trackedMin = outsideStart;
+            if (trackedMin > healthyMult)
+                trackedMin = healthyMult;
 
             return new SleepTuningSettings
             {
@@ -501,36 +501,50 @@ WHERE Id = 1;");
             return day;
         }
 
-        private const int SleepHealthyMinMinutes = 6 * 60;
-        private const int SleepHealthyMaxMinutes = 10 * 60;
-
-        private const double SleepNoLogMultiplier = 1.00;
-        private const double SleepTrackedOutsideHealthyMultiplier = 1.05;
-        private const double SleepTrackedHealthyMultiplier = 1.10;
-
-        private static double ComputeSleepMultiplier(int totalMinutes)
+        private static double ComputeSleepMultiplier(SleepTuningSettings settings, int totalMinutes)
         {
+            settings = NormalizeSleepTuningSettings(settings);
+
             if (totalMinutes <= 0)
-                return SleepNoLogMultiplier;
+                return 1.00;
 
-            if (totalMinutes < SleepHealthyMinMinutes)
-                return SleepTrackedOutsideHealthyMultiplier;
+            double totalHours = totalMinutes / 60.0;
 
-            if (totalMinutes > SleepHealthyMaxMinutes)
-                return SleepTrackedOutsideHealthyMultiplier;
+            if (totalHours >= settings.SleepHealthyMinHours && totalHours <= settings.SleepHealthyMaxHours)
+                return settings.SleepHealthyMultiplier;
 
-            return SleepTrackedHealthyMultiplier;
+            double distanceMinutes =
+                totalHours < settings.SleepHealthyMinHours
+                    ? (settings.SleepHealthyMinHours * 60.0) - totalMinutes
+                    : totalMinutes - (settings.SleepHealthyMaxHours * 60.0);
+
+            double penaltySteps = distanceMinutes / 15.0;
+
+            double mult = settings.SleepHealthyMultiplier
+                        - (penaltySteps * settings.SleepPenaltyPer15Min);
+
+            if (mult < settings.SleepTrackedMinimumMultiplier)
+                mult = settings.SleepTrackedMinimumMultiplier;
+
+            if (mult > settings.SleepHealthyMultiplier)
+                mult = settings.SleepHealthyMultiplier;
+
+            return mult;
         }
 
-        private static string DescribeSleepBand(int totalMinutes)
+        private static string DescribeSleepBand(SleepTuningSettings settings, int totalMinutes)
         {
+            settings = NormalizeSleepTuningSettings(settings);
+
             if (totalMinutes <= 0)
                 return "no sleep logged";
 
-            if (totalMinutes < SleepHealthyMinMinutes)
+            double totalHours = totalMinutes / 60.0;
+
+            if (totalHours < settings.SleepHealthyMinHours)
                 return "below healthy range";
 
-            if (totalMinutes > SleepHealthyMaxMinutes)
+            if (totalHours > settings.SleepHealthyMaxHours)
                 return "above healthy range";
 
             return "healthy range";
@@ -581,14 +595,16 @@ WHERE Id = 1;");
                 // Sleep multiplier (applies to the day you woke up — i.e. the selected log date)
                 if (SleepMultiplierText != null)
                 {
+                    var sleepSettings = await GetSleepTuningSettingsAsync();
+
                     var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
                     int totalMinutes = 0;
 
                     foreach (var s in sleeps)
                         totalMinutes += Math.Max(0, s.DurationMinutes);
 
-                    double mult = ComputeSleepMultiplier(totalMinutes);
-                    string band = DescribeSleepBand(totalMinutes);
+                    double mult = ComputeSleepMultiplier(sleepSettings, totalMinutes);
+                    string band = DescribeSleepBand(sleepSettings, totalMinutes);
 
                     if (totalMinutes <= 0)
                     {
@@ -687,7 +703,6 @@ WHERE Id = 1;");
                     InventoryCountText.Text = "Inventory: (error loading)";
             }
         }
-
         // ============================================================
         // ============================================================
         // SECTION F — Food Actions
