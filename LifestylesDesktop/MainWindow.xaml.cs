@@ -373,6 +373,62 @@ namespace LifestylesDesktop
         // SECTION E — Refresh UI
         // ============================================================
 
+        private sealed class SleepTuningSettings
+        {
+            public double SleepHealthyMinHours { get; set; } = 6.0;
+            public double SleepHealthyMaxHours { get; set; } = 10.0;
+            public double SleepHealthyMultiplier { get; set; } = 1.10;
+            public double SleepOutsideRangeStartMultiplier { get; set; } = 1.05;
+            public double SleepPenaltyPer15Min { get; set; } = 0.005;
+            public double SleepTrackedMinimumMultiplier { get; set; } = 1.01;
+        }
+
+        private static SleepTuningSettings NormalizeSleepTuningSettings(SleepTuningSettings settings)
+        {
+            double healthyMin = Math.Max(0.0, settings.SleepHealthyMinHours);
+            double healthyMax = Math.Max(healthyMin, settings.SleepHealthyMaxHours);
+            double healthyMult = Math.Max(1.0, settings.SleepHealthyMultiplier);
+            double outsideStart = Math.Max(1.0, settings.SleepOutsideRangeStartMultiplier);
+            double penaltyPer15Min = Math.Max(0.0, settings.SleepPenaltyPer15Min);
+            double trackedMin = Math.Max(1.0, settings.SleepTrackedMinimumMultiplier);
+
+            if (outsideStart > healthyMult)
+                outsideStart = healthyMult;
+
+            if (trackedMin > outsideStart)
+                trackedMin = outsideStart;
+
+            return new SleepTuningSettings
+            {
+                SleepHealthyMinHours = healthyMin,
+                SleepHealthyMaxHours = healthyMax,
+                SleepHealthyMultiplier = healthyMult,
+                SleepOutsideRangeStartMultiplier = outsideStart,
+                SleepPenaltyPer15Min = penaltyPer15Min,
+                SleepTrackedMinimumMultiplier = trackedMin
+            };
+        }
+
+        private async Task<SleepTuningSettings> GetSleepTuningSettingsAsync()
+        {
+            ItemDropsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+
+            var row = await conn.QuerySingleOrDefaultAsync<SleepTuningSettings>(@"
+SELECT
+    COALESCE(SleepHealthyMinHours, 6.0) AS SleepHealthyMinHours,
+    COALESCE(SleepHealthyMaxHours, 10.0) AS SleepHealthyMaxHours,
+    COALESCE(SleepHealthyMultiplier, 1.10) AS SleepHealthyMultiplier,
+    COALESCE(SleepOutsideRangeStartMultiplier, 1.05) AS SleepOutsideRangeStartMultiplier,
+    COALESCE(SleepPenaltyPer15Min, 0.005) AS SleepPenaltyPer15Min,
+    COALESCE(SleepTrackedMinimumMultiplier, 1.01) AS SleepTrackedMinimumMultiplier
+FROM GamificationSettings
+WHERE Id = 1;");
+
+            return NormalizeSleepTuningSettings(row ?? new SleepTuningSettings());
+        }
+
         private async Task RefreshForSelectedDateAsync()
         {
             try
@@ -571,6 +627,7 @@ namespace LifestylesDesktop
 
                 int toNext = stepsPerRoll - remainder;
 
+                // Only overwrite textboxes if the user isn't actively editing them
                 if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
                     StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString();
 
