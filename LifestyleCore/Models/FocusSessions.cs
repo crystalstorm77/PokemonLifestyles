@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Focus session model
-// ============================================================
-
+﻿#region SECTION A — Focus session model
 using System;
 
 namespace LifestyleCore.Models
@@ -17,9 +14,7 @@ namespace LifestyleCore.Models
 
         public DateTimeOffset LoggedAtLocal => LoggedAtUtc.ToLocalTime();
 
-        // ============================================================
-        // SECTION B — Editable fields for UI (local time + date)
-        // ============================================================
+        #region SECTION B — Editable fields for UI (local time + date)
         private string? _logDateEdit;
         private string? _loggedAtLocalEdit;
 
@@ -30,11 +25,13 @@ namespace LifestyleCore.Models
             set => _logDateEdit = value;
         }
 
-        // Format: yyyy-MM-dd HH:mm  (local time)
+        // Format: yyyy-MM-dd HH:mm (local time)
         public string LoggedAtLocalEdit
         {
             get => _loggedAtLocalEdit ?? LoggedAtLocal.ToString("yyyy-MM-dd HH:mm");
             set => _loggedAtLocalEdit = value;
         }
+        #endregion // SECTION B — Editable fields for UI (local time + date)
     }
 }
+#endregion // SECTION A — Focus session model
