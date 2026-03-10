@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Steps Repository
-// ============================================================
-
+﻿#region SECTION A — Steps Repository
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -11,23 +8,21 @@ namespace LifestyleCore.Data
 {
     public sealed class StepsRepository
     {
-
-
-        // ============================================================
-        // SECTION B — Public API
-        // ============================================================
-
+        #region SECTION B — Public API
         public async Task<int> GetStepsForDateAsync(DateOnly date)
         {
             StepsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
-
             string d = date.ToString("yyyy-MM-dd");
-            var steps = await conn.ExecuteScalarAsync<long>(@"
-                SELECT COALESCE((
-                    SELECT Steps FROM StepsDaily WHERE Date = @Date LIMIT 1
-                ), 0);", new { Date = d });
+
+            var steps = await conn.ExecuteScalarAsync(@"
+SELECT COALESCE((
+    SELECT Steps
+    FROM StepsDaily
+    WHERE Date = @Date
+    LIMIT 1
+), 0);", new { Date = d });
 
             return (int)steps;
         }
@@ -57,11 +52,10 @@ namespace LifestyleCore.Data
             string d = localDate.ToString("yyyy-MM-dd");
 
             var rows = await conn.QueryAsync<(string BucketStartUtc, long Steps)>(@"
-                SELECT BucketStartUtc, Steps
-                FROM StepBuckets
-                WHERE BucketLocalDate = @Date
-                ORDER BY BucketStartUtc ASC;",
-                new { Date = d });
+SELECT BucketStartUtc, Steps
+FROM StepBuckets
+WHERE BucketLocalDate = @Date
+ORDER BY BucketStartUtc ASC;", new { Date = d });
 
             var list = new System.Collections.Generic.List<StepBucketViewRow>();
 
@@ -71,6 +65,7 @@ namespace LifestyleCore.Data
                     continue;
 
                 var local = utc.ToLocalTime();
+
                 list.Add(new StepBucketViewRow
                 {
                     LocalTime = local.ToString("yyyy-MM-dd HH:mm"),
@@ -104,52 +99,46 @@ namespace LifestyleCore.Data
 
             // StepsDaily: add delta
             await conn.ExecuteAsync(@"
-                INSERT INTO StepsDaily (Date, Steps, UpdatedAtUtc)
-                VALUES (@Date, @Steps, @UpdatedAtUtc)
-                ON CONFLICT(Date) DO UPDATE SET
-                    Steps = Steps + excluded.Steps,
-                    UpdatedAtUtc = excluded.UpdatedAtUtc;",
-                new
-                {
-                    Date = localDate,
-                    Steps = deltaSteps,
-                    UpdatedAtUtc = nowUtc
-                });
+INSERT INTO StepsDaily (Date, Steps, UpdatedAtUtc)
+VALUES (@Date, @Steps, @UpdatedAtUtc)
+ON CONFLICT(Date) DO UPDATE SET
+    Steps = Steps + excluded.Steps,
+    UpdatedAtUtc = excluded.UpdatedAtUtc;", new
+            {
+                Date = localDate,
+                Steps = deltaSteps,
+                UpdatedAtUtc = nowUtc
+            });
 
             // StepBuckets: add delta
             await conn.ExecuteAsync(@"
-                INSERT INTO StepBuckets (BucketStartUtc, BucketLocalDate, Steps, UpdatedAtUtc)
-                VALUES (@BucketStartUtc, @BucketLocalDate, @Steps, @UpdatedAtUtc)
-                ON CONFLICT(BucketStartUtc) DO UPDATE SET
-                    Steps = Steps + excluded.Steps,
-                    BucketLocalDate = excluded.BucketLocalDate,
-                    UpdatedAtUtc = excluded.UpdatedAtUtc;",
-                new
-                {
-                    BucketStartUtc = bucketStartUtc.ToString("O"),
-                    BucketLocalDate = bucketLocalDate,
-                    Steps = deltaSteps,
-                    UpdatedAtUtc = nowUtc
-                });
+INSERT INTO StepBuckets (BucketStartUtc, BucketLocalDate, Steps, UpdatedAtUtc)
+VALUES (@BucketStartUtc, @BucketLocalDate, @Steps, @UpdatedAtUtc)
+ON CONFLICT(BucketStartUtc) DO UPDATE SET
+    Steps = Steps + excluded.Steps,
+    BucketLocalDate = excluded.BucketLocalDate,
+    UpdatedAtUtc = excluded.UpdatedAtUtc;", new
+            {
+                BucketStartUtc = bucketStartUtc.ToString("O"),
+                BucketLocalDate = bucketLocalDate,
+                Steps = deltaSteps,
+                UpdatedAtUtc = nowUtc
+            });
 
             _ = source;
         }
+        #endregion // SECTION B — Public API
 
-        // ============================================================
-        // SECTION D — View DTO
-        // ============================================================
-
+        #region SECTION D — View DTO
         public sealed class StepBucketView
         {
             public string LocalBucketStart { get; set; } = "";
             public int Steps { get; set; }
             public string UpdatedLocal { get; set; } = "";
         }
+        #endregion // SECTION D — View DTO
 
-        // ============================================================
-        // SECTION C — Time helpers
-        // ============================================================
-
+        #region SECTION C — Time helpers
         private static DateTimeOffset LocalToUtc(DateTime localDateTime)
         {
             // Treat as local wall clock time.
@@ -177,7 +166,6 @@ namespace LifestyleCore.Data
             // Convert to local, floor to 15 minutes, then convert back.
             var local = sampleUtc.ToLocalTime().DateTime; // Kind=Unspecified
             int flooredMin = (local.Minute / 15) * 15;
-
             var bucketLocal = new DateTime(local.Year, local.Month, local.Day, local.Hour, flooredMin, 0);
 
             var tz = TimeZoneInfo.Local;
@@ -198,7 +186,6 @@ namespace LifestyleCore.Data
 
             // Ambiguous: choose the candidate bucket instant that is <= sampleUtc and closest.
             var offsets = tz.GetAmbiguousTimeOffsets(unspecified);
-
             DateTimeOffset? best = null;
 
             foreach (var off in offsets)
@@ -212,11 +199,14 @@ namespace LifestyleCore.Data
             }
 
             // If both candidates are after sampleUtc (should be rare), pick the earlier.
-            if (best != null) return best.Value;
+            if (best != null)
+                return best.Value;
 
             var c0 = new DateTimeOffset(unspecified, offsets[0]).ToUniversalTime();
             var c1 = new DateTimeOffset(unspecified, offsets[1]).ToUniversalTime();
             return c0 < c1 ? c0 : c1;
         }
+        #endregion // SECTION C — Time helpers
     }
 }
+#endregion // SECTION A — Steps Repository

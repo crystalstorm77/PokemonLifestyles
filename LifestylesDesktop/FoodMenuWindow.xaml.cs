@@ -1,6 +1,4 @@
-﻿// ============================================================
-// SECTION A — Usings
-// ============================================================
+﻿#region SECTION A — Usings
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -10,9 +8,9 @@ using LifestyleCore.Models;
 
 // Explicit alias to avoid WinForms/WPF ambiguity (from <UseWindowsForms>true</UseWindowsForms>)
 using MessageBox = System.Windows.MessageBox;
-// ============================================================
-// SECTION B — Window Logic
-// ============================================================
+#endregion // SECTION A — Usings
+
+#region SECTION B — Window Logic
 namespace LifestylesDesktop
 {
     public partial class FoodMenuWindow : Window
@@ -26,9 +24,7 @@ namespace LifestylesDesktop
             Loaded += FoodMenuWindow_Loaded;
         }
 
-        // ============================================================
-        // SECTION C — Load / Refresh
-        // ============================================================
+        #region SECTION C — Load / Refresh
         private async void FoodMenuWindow_Loaded(object sender, RoutedEventArgs e)
         {
             await RefreshAsync();
@@ -40,10 +36,9 @@ namespace LifestylesDesktop
             _items = new ObservableCollection<FoodItem>(items);
             FoodGrid.ItemsSource = _items;
         }
+        #endregion // SECTION C — Load / Refresh
 
-        // ============================================================
-        // SECTION D — Button Handlers
-        // ============================================================
+        #region SECTION D — Button Handlers
         private async void SaveChanges_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -102,5 +97,7 @@ namespace LifestylesDesktop
         {
             Close();
         }
+        #endregion // SECTION D — Button Handlers
     }
 }
+#endregion // SECTION B — Window Logic
