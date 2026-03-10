@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Item Drops Schema
-// ============================================================
-
+﻿#region SECTION A — Item Drops Schema
 using System;
 using Dapper;
 
@@ -10,11 +7,8 @@ namespace LifestyleCore.Data
     public static class ItemDropsSchema
     {
         private static bool _created = false;
-       
 
-        // ============================================================
-        // SECTION B — Ensure Created
-        // ============================================================
+        #region SECTION B — Ensure Created
         public static void EnsureCreated()
         {
             if (_created) return;
@@ -90,7 +84,7 @@ VALUES
 
             _created = true;
         }
-
+        #endregion // SECTION B — Ensure Created
     }
 }
-
+#endregion // SECTION A — Item Drops Schema

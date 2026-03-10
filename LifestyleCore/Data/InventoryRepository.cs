@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Inventory Repository
-// ============================================================
-
+﻿#region SECTION A — Inventory Repository
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,10 +9,7 @@ namespace LifestyleCore.Data
 {
     public sealed class InventoryRepository
     {
-        // ============================================================
-        // SECTION B — Read / Write
-        // ============================================================
-
+        #region SECTION B — Read / Write
         private static string NormalizeKey(string itemKey)
         {
             itemKey = (itemKey ?? "").Trim();
@@ -126,5 +120,7 @@ WHERE ItemKey = @ItemKey AND Count <= 0;",
             using var conn = Db.OpenConnection();
             await conn.ExecuteAsync(@"DELETE FROM InventoryItems;");
         }
+        #endregion // SECTION B — Read / Write
     }
 }
+#endregion // SECTION A — Inventory Repository

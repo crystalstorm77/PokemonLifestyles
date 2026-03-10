@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Rewards Ledger Repository
-// ============================================================
-
+﻿#region SECTION A — Rewards Ledger Repository
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,10 +9,7 @@ namespace LifestyleCore.Data
 {
     public sealed class RewardsLedgerRepository
     {
-        // ============================================================
-        // SECTION B — Grant Rewards
-        // ============================================================
-
+        #region SECTION B — Grant Rewards
         public async Task<bool> TryGrantHabitCheckboxTicketAsync(long habitId, DateOnly habitDate)
         {
             RewardsSchema.EnsureCreated();
@@ -72,11 +66,9 @@ namespace LifestyleCore.Data
 
             return rows == 1;
         }
+        #endregion // SECTION B — Grant Rewards
 
-        // ============================================================
-        // SECTION C — Read Rewards
-        // ============================================================
-
+        #region SECTION C — Read Rewards
         public async Task<List<RewardsLedgerEntry>> GetForGameDayAsync(DateOnly gameDay)
         {
             RewardsSchema.EnsureCreated();
@@ -102,5 +94,7 @@ namespace LifestyleCore.Data
 
             return new List<RewardsLedgerEntry>(rows);
         }
+        #endregion // SECTION C — Read Rewards
     }
 }
+#endregion // SECTION A — Rewards Ledger Repository

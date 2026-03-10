@@ -1,7 +1,4 @@
-﻿// ============================================================
-// SECTION A — Gamification Settings Repository
-// ============================================================
-
+﻿#region SECTION A — Gamification Settings Repository
 using System;
 using System.Threading.Tasks;
 using Dapper;
@@ -11,10 +8,7 @@ namespace LifestyleCore.Data
 {
     public sealed class GamificationSettingsRepository
     {
-        // ============================================================
-        // SECTION B — Read / Write
-        // ============================================================
-
+        #region SECTION B — Read / Write
         private const int DefaultCommonWeight = 80;
         private const int DefaultUncommonWeight = 18;
         private const int DefaultRareWeight = 2;
@@ -173,5 +167,7 @@ WHERE Id = 1;",
                     UpdatedAtUtc = nowUtc
                 });
         }
+        #endregion // SECTION B — Read / Write
     }
 }
+#endregion // SECTION A — Gamification Settings Repository
