@@ -1,15 +1,12 @@
-﻿// ============================================================
-// SECTION A — Usings + Aliases
-// ============================================================
+﻿#region SECTION A — Usings + Aliases
 using LifestyleCore.Data;
 
 // Explicit aliases to avoid WinForms/WPF ambiguity (from <UseWindowsForms>true</UseWindowsForms>)
 using Application = System.Windows.Application;
 using StartupEventArgs = System.Windows.StartupEventArgs;
+#endregion // SECTION A — Usings + Aliases
 
-// ============================================================
-// SECTION B — App Startup
-// ============================================================
+#region SECTION B — App Startup
 namespace LifestylesDesktop
 {
     public partial class App : Application
@@ -25,3 +22,4 @@ namespace LifestylesDesktop
         }
     }
 }
+#endregion // SECTION B — App Startup
