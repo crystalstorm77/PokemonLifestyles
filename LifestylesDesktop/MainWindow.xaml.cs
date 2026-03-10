@@ -37,6 +37,10 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 // SECTION B — Main Window Class
 // ============================================================
 
+// ============================================================
+// SECTION B — Main Window Class
+// ============================================================
+
 namespace LifestylesDesktop
 {
     public partial class MainWindow : Window
@@ -83,6 +87,10 @@ namespace LifestylesDesktop
         private TextBox? _sleepHealthyMultiplierBox;
         private TextBox? _sleepPenaltyPer15MinBox;
         private TextBox? _sleepTrackedMinimumMultiplierBox;
+        private TextBlock? _sleepPreview5hText;
+        private TextBlock? _sleepPreview8hText;
+        private TextBlock? _sleepPreview11hText;
+        private TextBlock? _sleepPreview24hText;
 
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
         private bool _autoFitFocusDone = false;
@@ -121,7 +129,11 @@ namespace LifestylesDesktop
 
             await RefreshForSelectedDateAsync();
         }
-      
+   
+
+
+
+
         // ============================================================
         // SECTION C — Log Date Helpers
         // ============================================================
@@ -373,7 +385,7 @@ namespace LifestylesDesktop
             }
         }
 
-             // ============================================================
+        // ============================================================
         // SECTION E — Refresh UI
         // ============================================================
 
@@ -572,6 +584,13 @@ WHERE Id = 1;",
             }
         }
 
+        private static string BuildSleepPreviewText(SleepTuningSettings settings, int totalMinutes)
+        {
+            double mult = ComputeSleepMultiplier(settings, totalMinutes);
+            string band = DescribeSleepBand(settings, totalMinutes);
+            return $"{FormatMinutes(totalMinutes)} → x{mult:F2} ({band})";
+        }
+
         private void EnsureSleepSettingsDebugUiBuilt()
         {
             if (_sleepSettingsUiBuilt)
@@ -691,11 +710,38 @@ WHERE Id = 1;",
             };
             saveButton.Click += SaveSleepTuningButton_Click;
 
+            var previewHeader = new TextBlock
+            {
+                Text = "Preview",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            _sleepPreview5hText = new TextBlock
+            {
+                Margin = new Thickness(0, 4, 0, 0)
+            };
+
+            _sleepPreview8hText = new TextBlock
+            {
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+
+            _sleepPreview11hText = new TextBlock
+            {
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+
+            _sleepPreview24hText = new TextBlock
+            {
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+
             var note = new TextBlock
             {
                 Text = "This save button only affects the sleep tuning values above.",
                 Foreground = System.Windows.Media.Brushes.Gray,
-                Margin = new Thickness(0, 4, 0, 0),
+                Margin = new Thickness(0, 6, 0, 0),
                 TextWrapping = TextWrapping.Wrap
             };
 
@@ -704,6 +750,11 @@ WHERE Id = 1;",
             root.Children.Insert(insertAt++, row2);
             root.Children.Insert(insertAt++, row3);
             root.Children.Insert(insertAt++, saveButton);
+            root.Children.Insert(insertAt++, previewHeader);
+            root.Children.Insert(insertAt++, _sleepPreview5hText);
+            root.Children.Insert(insertAt++, _sleepPreview8hText);
+            root.Children.Insert(insertAt++, _sleepPreview11hText);
+            root.Children.Insert(insertAt++, _sleepPreview24hText);
             root.Children.Insert(insertAt++, note);
 
             _sleepSettingsUiBuilt = true;
@@ -881,6 +932,18 @@ WHERE Id = 1;",
                 SetTextBoxIfIdle(_sleepHealthyMultiplierBox, FormatDoubleForBox(sleepSettings.SleepHealthyMultiplier));
                 SetTextBoxIfIdle(_sleepPenaltyPer15MinBox, FormatDoubleForBox(sleepSettings.SleepPenaltyPer15Min));
                 SetTextBoxIfIdle(_sleepTrackedMinimumMultiplierBox, FormatDoubleForBox(sleepSettings.SleepTrackedMinimumMultiplier));
+
+                if (_sleepPreview5hText != null)
+                    _sleepPreview5hText.Text = BuildSleepPreviewText(sleepSettings, 5 * 60);
+
+                if (_sleepPreview8hText != null)
+                    _sleepPreview8hText.Text = BuildSleepPreviewText(sleepSettings, 8 * 60);
+
+                if (_sleepPreview11hText != null)
+                    _sleepPreview11hText.Text = BuildSleepPreviewText(sleepSettings, 11 * 60);
+
+                if (_sleepPreview24hText != null)
+                    _sleepPreview24hText.Text = BuildSleepPreviewText(sleepSettings, 24 * 60);
 
                 // Sleep multiplier (applies to the day you woke up — i.e. the selected log date)
                 if (SleepMultiplierText != null)
