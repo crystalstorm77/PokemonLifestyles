@@ -34,6 +34,7 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 
 // ============================================================
+// ============================================================
 // SECTION B — Main Window Class
 // ============================================================
 
@@ -61,12 +62,14 @@ namespace LifestylesDesktop
 
         // Item definitions (structured; “real game” items)
         private readonly ItemDefinitionsRepository _itemDefsRepo = new();
-
-        public ObservableCollection<ItemTier> ItemTierChoices { get; } =
-            new ObservableCollection<ItemTier> { ItemTier.Common, ItemTier.Uncommon, ItemTier.Rare };
+        public ObservableCollection<ItemTier> ItemTierChoices { get; } = new ObservableCollection<ItemTier>
+        {
+            ItemTier.Common,
+            ItemTier.Uncommon,
+            ItemTier.Rare
+        };
 
         private ObservableCollection<ItemDefinition> _itemDefinitions = new();
-
         private ObservableCollection<InventoryItem> _inventoryItems = new();
         private ObservableCollection<FocusSession> _focusSessions = new();
         private ObservableCollection<FoodEntry> _foodEntries = new();
@@ -109,7 +112,6 @@ namespace LifestylesDesktop
 
             await RefreshForSelectedDateAsync();
         }
-
         // ============================================================
         // ============================================================
 
@@ -368,6 +370,7 @@ namespace LifestylesDesktop
         }
 
         // ============================================================
+        // ============================================================
         // SECTION E — Refresh UI
         // ============================================================
 
@@ -390,6 +393,8 @@ namespace LifestylesDesktop
                 _sleepSessions = new ObservableCollection<SleepSession>(sleeps);
                 SleepSessionsGrid.ItemsSource = _sleepSessions;
 
+                await RefreshPendingSleepTextAsync();
+
                 // Steps + Habits (time-travel aware)
                 await RefreshStepsAndHabitsAsync();
 
@@ -402,6 +407,30 @@ namespace LifestylesDesktop
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Refresh failed");
+            }
+        }
+
+        private async Task RefreshPendingSleepTextAsync()
+        {
+            if (PendingSleepText == null)
+                return;
+
+            try
+            {
+                var pending = await _sleepRepo.GetPendingStartUtcAsync();
+
+                if (!pending.HasValue)
+                {
+                    PendingSleepText.Text = "Pending: none";
+                    return;
+                }
+
+                var local = pending.Value.ToLocalTime();
+                PendingSleepText.Text = $"Pending: started {local:yyyy-MM-dd HH:mm}";
+            }
+            catch
+            {
+                PendingSleepText.Text = "Pending: (error loading)";
             }
         }
 
@@ -470,16 +499,15 @@ namespace LifestylesDesktop
                     }
 
                     RewardsSummaryText.Text =
-                        $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): " +
-                        $"{coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
+                        $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): {coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
                 }
 
                 // Sleep multiplier (applies to the day you woke up — i.e. the selected log date)
                 if (SleepMultiplierText != null)
                 {
                     var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
-
                     int totalMinutes = 0;
+
                     foreach (var s in sleeps)
                         totalMinutes += Math.Max(0, s.DurationMinutes);
 
@@ -503,86 +531,6 @@ namespace LifestylesDesktop
             }
         }
 
-        private async Task RefreshItemDropsDebugAsync()
-        {
-            try
-            {
-                var settings = await _gamiSettingsRepo.GetAsync();
-                var state = await _rollStateRepo.GetAsync();
-                var items = await _inventoryRepo.GetAllAsync();
-
-                int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
-                int oneInN = Math.Max(1, settings.ItemRollOneInN);
-
-                int remainder = state.StepsRemainder;
-                if (remainder < 0) remainder = 0;
-                if (remainder >= stepsPerRoll) remainder = remainder % stepsPerRoll;
-
-                int toNext = stepsPerRoll - remainder;
-
-                // Only overwrite textboxes if the user isn't actively editing them
-                if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
-                    StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString();
-
-                if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
-                    OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
-
-                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
-                    CommonWeightBox.Text = settings.CommonTierWeight.ToString();
-
-                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
-                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString();
-
-                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
-                    RareWeightBox.Text = settings.RareTierWeight.ToString();
-
-                // Progress text
-                if (ItemDropsProgressText != null)
-                    ItemDropsProgressText.Text =
-                        $"Item roll progress: {remainder} of {stepsPerRoll} steps, next roll in {toNext}";
-
-                // Stats
-                if (ItemDropsStatsText != null)
-                    ItemDropsStatsText.Text =
-                        $"Total rolls: {state.TotalRolls} | Total drops: {state.TotalSuccesses} | Odds: 1 in {oneInN}";
-
-                // Last drop
-                if (ItemDropsLastText != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(state.LastDropUtc) &&
-                        DateTimeOffset.TryParse(state.LastDropUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto) &&
-                        dto != DateTimeOffset.MinValue)
-                    {
-                        ItemDropsLastText.Text =
-                            $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
-                    }
-                    else if (!string.IsNullOrWhiteSpace(state.LastDropSummary))
-                    {
-                        ItemDropsLastText.Text = $"Last drop: {state.LastDropSummary}";
-                    }
-                    else
-                    {
-                        ItemDropsLastText.Text = "Last drop: (none yet)";
-                    }
-                }
-
-                if (InventoryCountText != null)
-                    InventoryCountText.Text = items.Count == 0 ? "Inventory: (empty)" : $"Inventory: {items.Count} item types";
-
-                _inventoryItems = new ObservableCollection<InventoryItem>(items);
-                if (InventoryGrid != null)
-                    InventoryGrid.ItemsSource = _inventoryItems;
-            }
-            catch
-            {
-                if (ItemDropsProgressText != null) ItemDropsProgressText.Text = "Item roll progress: (error loading)";
-                if (ItemDropsStatsText != null) ItemDropsStatsText.Text = "";
-                if (ItemDropsLastText != null) ItemDropsLastText.Text = "";
-                if (InventoryCountText != null) InventoryCountText.Text = "Inventory: (error loading)";
-            }
-        }
-
-    
 
         // ============================================================
         // ============================================================
@@ -592,7 +540,6 @@ namespace LifestylesDesktop
         private async Task RefreshFoodMenuAsync()
         {
             var items = await _foodItemRepo.GetAllAsync();
-
             FoodCombo.ItemsSource = items;
 
             if (FoodCombo.SelectedIndex < 0 && items.Count > 0)
@@ -625,8 +572,8 @@ namespace LifestylesDesktop
                 }
 
                 double? kjPer100g = null;
-
                 string kj100Text = (NewFoodKjPer100gBox.Text ?? "").Trim();
+
                 if (!string.IsNullOrWhiteSpace(kj100Text))
                 {
                     if (!double.TryParse(kj100Text, out double kj100Parsed) || kj100Parsed <= 0)
@@ -719,7 +666,6 @@ namespace LifestylesDesktop
             {
                 var win = new FoodMenuWindow { Owner = this };
                 win.ShowDialog();
-
                 await RefreshFoodMenuAsync();
             }
             catch (Exception ex)
@@ -761,6 +707,8 @@ namespace LifestylesDesktop
                 MessageBox.Show(ex.Message, "Could not end sleep");
             }
         }
+
+
         // ============================================================
         // SECTION G — Data Backup / Restore
         // ============================================================
