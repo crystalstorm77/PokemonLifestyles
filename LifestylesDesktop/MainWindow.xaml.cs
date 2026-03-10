@@ -460,9 +460,11 @@ WHERE Id = 1;");
             if (itemDropRow.Parent is not StackPanel root)
                 return;
 
-            int insertAt = root.Children.IndexOf(itemDropRow) + 1;
-            if (insertAt <= 0)
+            int itemDropRowIndex = root.Children.IndexOf(itemDropRow);
+            if (itemDropRowIndex < 0)
                 return;
+
+            int insertAt = Math.Max(0, itemDropRowIndex - 1);
 
             var header = new TextBlock
             {
