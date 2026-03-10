@@ -370,7 +370,6 @@ namespace LifestylesDesktop
         }
 
         // ============================================================
-        // ============================================================
         // SECTION E — Refresh UI
         // ============================================================
 
@@ -446,18 +445,39 @@ namespace LifestylesDesktop
             return day;
         }
 
+        private const int SleepHealthyMinMinutes = 6 * 60;
+        private const int SleepHealthyMaxMinutes = 10 * 60;
+
+        private const double SleepNoLogMultiplier = 1.00;
+        private const double SleepTrackedOutsideHealthyMultiplier = 1.05;
+        private const double SleepTrackedHealthyMultiplier = 1.10;
+
         private static double ComputeSleepMultiplier(int totalMinutes)
         {
-            // Simple, tweakable starting point:
-            // - 8h sleep => ~x1.10
-            // - 0h sleep => x0.80 (but if no sleep is logged we display x1.00 as "unknown")
-            double hours = totalMinutes / 60.0;
-            double mult = 0.80 + (hours * 0.0375); // 8h => 1.10
+            if (totalMinutes <= 0)
+                return SleepNoLogMultiplier;
 
-            if (mult < 0.80) mult = 0.80;
-            if (mult > 1.15) mult = 1.15;
+            if (totalMinutes < SleepHealthyMinMinutes)
+                return SleepTrackedOutsideHealthyMultiplier;
 
-            return mult;
+            if (totalMinutes > SleepHealthyMaxMinutes)
+                return SleepTrackedOutsideHealthyMultiplier;
+
+            return SleepTrackedHealthyMultiplier;
+        }
+
+        private static string DescribeSleepBand(int totalMinutes)
+        {
+            if (totalMinutes <= 0)
+                return "no sleep logged";
+
+            if (totalMinutes < SleepHealthyMinMinutes)
+                return "below healthy range";
+
+            if (totalMinutes > SleepHealthyMaxMinutes)
+                return "above healthy range";
+
+            return "healthy range";
         }
 
         private static string FormatMinutes(int totalMinutes)
@@ -511,14 +531,17 @@ namespace LifestylesDesktop
                     foreach (var s in sleeps)
                         totalMinutes += Math.Max(0, s.DurationMinutes);
 
+                    double mult = ComputeSleepMultiplier(totalMinutes);
+                    string band = DescribeSleepBand(totalMinutes);
+
                     if (totalMinutes <= 0)
                     {
-                        SleepMultiplierText.Text = "Sleep multiplier: x1.00 (no sleep logged)";
+                        SleepMultiplierText.Text = $"Sleep multiplier: x{mult:F2} ({band})";
                     }
                     else
                     {
-                        double mult = ComputeSleepMultiplier(totalMinutes);
-                        SleepMultiplierText.Text = $"Sleep multiplier: x{mult:F2} (sleep: {FormatMinutes(totalMinutes)})";
+                        SleepMultiplierText.Text =
+                            $"Sleep multiplier: x{mult:F2} (sleep: {FormatMinutes(totalMinutes)}, {band})";
                     }
                 }
 
@@ -531,6 +554,82 @@ namespace LifestylesDesktop
             }
         }
 
+        private async Task RefreshItemDropsDebugAsync()
+        {
+            try
+            {
+                var settings = await _gamiSettingsRepo.GetAsync();
+                var state = await _rollStateRepo.GetAsync();
+                var items = await _inventoryRepo.GetAllAsync();
+
+                int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
+                int oneInN = Math.Max(1, settings.ItemRollOneInN);
+                int remainder = state.StepsRemainder;
+
+                if (remainder < 0) remainder = 0;
+                if (remainder >= stepsPerRoll) remainder = remainder % stepsPerRoll;
+
+                int toNext = stepsPerRoll - remainder;
+
+                if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
+                    StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString();
+
+                if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
+                    OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
+
+                if (ItemDropsProgressText != null)
+                {
+                    ItemDropsProgressText.Text =
+                        $"Item roll progress: {remainder:#,0}/{stepsPerRoll:#,0} steps (next roll in {toNext:#,0})";
+                }
+
+                if (ItemDropsStatsText != null)
+                {
+                    ItemDropsStatsText.Text =
+                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN}";
+                }
+
+                if (ItemDropsLastText != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary)
+                        && !string.IsNullOrWhiteSpace(state.LastDropUtc)
+                        && DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
+                    {
+                        ItemDropsLastText.Text =
+                            $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(state.LastDropSummary))
+                    {
+                        ItemDropsLastText.Text = $"Last drop: {state.LastDropSummary}";
+                    }
+                    else
+                    {
+                        ItemDropsLastText.Text = "Last drop: (none yet)";
+                    }
+                }
+
+                if (InventoryCountText != null)
+                    InventoryCountText.Text = items.Count == 0
+                        ? "Inventory: (empty)"
+                        : $"Inventory: {items.Count} item types";
+
+                _inventoryItems = new ObservableCollection<InventoryItem>(items);
+
+                if (InventoryGrid != null)
+                    InventoryGrid.ItemsSource = _inventoryItems;
+            }
+            catch
+            {
+                if (ItemDropsProgressText != null)
+                    ItemDropsProgressText.Text = "Item roll progress: (error loading)";
+                if (ItemDropsStatsText != null)
+                    ItemDropsStatsText.Text = "";
+                if (ItemDropsLastText != null)
+                    ItemDropsLastText.Text = "";
+                if (InventoryCountText != null)
+                    InventoryCountText.Text = "Inventory: (error loading)";
+            }
+        }
 
         // ============================================================
         // ============================================================
