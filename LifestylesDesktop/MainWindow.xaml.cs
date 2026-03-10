@@ -34,7 +34,6 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 
 // ============================================================
-// ============================================================
 // SECTION B — Main Window Class
 // ============================================================
 
@@ -77,6 +76,14 @@ namespace LifestylesDesktop
         private readonly Dictionary<long, double> _foodEntryOriginalKj = new();
         private ObservableCollection<HabitRow> _habitRows = new();
 
+        // Sleep tuning controls (injected at runtime into the debug area)
+        private bool _sleepSettingsUiBuilt = false;
+        private TextBox? _sleepHealthyMinHoursBox;
+        private TextBox? _sleepHealthyMaxHoursBox;
+        private TextBox? _sleepHealthyMultiplierBox;
+        private TextBox? _sleepPenaltyPer15MinBox;
+        private TextBox? _sleepTrackedMinimumMultiplierBox;
+
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
         private bool _autoFitFocusDone = false;
         private bool _autoFitFoodDone = false;
@@ -110,14 +117,11 @@ namespace LifestylesDesktop
             // Load focus labels early so both the input ComboBox and grid editor have choices.
             await RefreshFocusLabelsAsync();
 
+            EnsureSleepSettingsDebugUiBuilt();
+
             await RefreshForSelectedDateAsync();
         }
-        // ============================================================
-        // ============================================================
-
-        // ============================================================
-        // ============================================================
-
+      
         // ============================================================
         // SECTION C — Log Date Helpers
         // ============================================================
@@ -429,6 +433,146 @@ WHERE Id = 1;");
             return NormalizeSleepTuningSettings(row ?? new SleepTuningSettings());
         }
 
+        private static string FormatDoubleForBox(double value)
+        {
+            return value.ToString("0.###", CultureInfo.InvariantCulture);
+        }
+
+        private static void SetTextBoxIfIdle(TextBox? box, string value)
+        {
+            if (box == null)
+                return;
+
+            if (box.IsKeyboardFocusWithin)
+                return;
+
+            box.Text = value;
+        }
+
+        private void EnsureSleepSettingsDebugUiBuilt()
+        {
+            if (_sleepSettingsUiBuilt)
+                return;
+
+            if (StepsPerRollBox?.Parent is not StackPanel itemDropRow)
+                return;
+
+            if (itemDropRow.Parent is not StackPanel root)
+                return;
+
+            int insertAt = root.Children.IndexOf(itemDropRow) + 1;
+            if (insertAt <= 0)
+                return;
+
+            var header = new TextBlock
+            {
+                Text = "Sleep tuning",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var row1 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            row1.Children.Add(new TextBlock
+            {
+                Text = "Healthy min h:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepHealthyMinHoursBox = new TextBox
+            {
+                Width = 60,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            row1.Children.Add(_sleepHealthyMinHoursBox);
+
+            row1.Children.Add(new TextBlock
+            {
+                Text = "Healthy max h:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepHealthyMaxHoursBox = new TextBox
+            {
+                Width = 60
+            };
+            row1.Children.Add(_sleepHealthyMaxHoursBox);
+
+            var row2 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            row2.Children.Add(new TextBlock
+            {
+                Text = "Healthy x:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepHealthyMultiplierBox = new TextBox
+            {
+                Width = 60,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            row2.Children.Add(_sleepHealthyMultiplierBox);
+
+            row2.Children.Add(new TextBlock
+            {
+                Text = "Drop / 15 min:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepPenaltyPer15MinBox = new TextBox
+            {
+                Width = 60
+            };
+            row2.Children.Add(_sleepPenaltyPer15MinBox);
+
+            var row3 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            row3.Children.Add(new TextBlock
+            {
+                Text = "Tracked min x:",
+                Width = 100,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            _sleepTrackedMinimumMultiplierBox = new TextBox
+            {
+                Width = 60
+            };
+            row3.Children.Add(_sleepTrackedMinimumMultiplierBox);
+
+            var note = new TextBlock
+            {
+                Text = "Visual-only for now. Save wiring comes next.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 4, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            root.Children.Insert(insertAt++, header);
+            root.Children.Insert(insertAt++, row1);
+            root.Children.Insert(insertAt++, row2);
+            root.Children.Insert(insertAt++, row3);
+            root.Children.Insert(insertAt++, note);
+
+            _sleepSettingsUiBuilt = true;
+        }
+
         private async Task RefreshForSelectedDateAsync()
         {
             try
@@ -566,6 +710,8 @@ WHERE Id = 1;");
         {
             try
             {
+                EnsureSleepSettingsDebugUiBuilt();
+
                 var nowLocal = DateTimeOffset.Now;
                 var gameDayNow = GetCurrentGameDayLocal(nowLocal);
 
@@ -592,11 +738,17 @@ WHERE Id = 1;");
                         $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): {coins} coins, {tickets} tickets | Ledger entries: {entries.Count}";
                 }
 
+                var sleepSettings = await GetSleepTuningSettingsAsync();
+
+                SetTextBoxIfIdle(_sleepHealthyMinHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMinHours));
+                SetTextBoxIfIdle(_sleepHealthyMaxHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMaxHours));
+                SetTextBoxIfIdle(_sleepHealthyMultiplierBox, FormatDoubleForBox(sleepSettings.SleepHealthyMultiplier));
+                SetTextBoxIfIdle(_sleepPenaltyPer15MinBox, FormatDoubleForBox(sleepSettings.SleepPenaltyPer15Min));
+                SetTextBoxIfIdle(_sleepTrackedMinimumMultiplierBox, FormatDoubleForBox(sleepSettings.SleepTrackedMinimumMultiplier));
+
                 // Sleep multiplier (applies to the day you woke up — i.e. the selected log date)
                 if (SleepMultiplierText != null)
                 {
-                    var sleepSettings = await GetSleepTuningSettingsAsync();
-
                     var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
                     int totalMinutes = 0;
 
@@ -703,6 +855,7 @@ WHERE Id = 1;");
                     InventoryCountText.Text = "Inventory: (error loading)";
             }
         }
+
         // ============================================================
         // ============================================================
         // SECTION F — Food Actions
