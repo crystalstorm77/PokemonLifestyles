@@ -83,6 +83,18 @@ namespace LifestylesDesktop
         // Live clock for the debug header
         private readonly DispatcherTimer _liveClockTimer = new();
 
+        // Focus timer controls/state
+        private readonly DispatcherTimer _focusTimerUiTimer = new();
+        private bool _focusTimerUiInitialized = false;
+        private bool _focusTimerRunning = false;
+        private bool _focusTimerPaused = false;
+        private bool _focusTimerIsCountUp = false;
+        private DateTimeOffset _focusTimerRunStartedUtc;
+        private TimeSpan _focusTimerElapsedBeforePause = TimeSpan.Zero;
+        private int _focusTimerCountdownTargetMinutes = 25;
+        private int _focusTimerNextCountUpPauseMinutes = 120;
+        private string _focusTimerFocusType = "(None)";
+
         // Sleep tuning controls (injected at runtime into the debug area)
         private bool _sleepSettingsUiBuilt = false;
         private TextBox? _sleepHealthyMinHoursBox;
@@ -107,9 +119,14 @@ namespace LifestylesDesktop
         public MainWindow()
         {
             InitializeComponent();
+            InitializeFocusTimerUi();
 
             Loaded += (_, __) => FitSelectedTabColumnsOnce();
-            Closed += (_, __) => _liveClockTimer.Stop();
+            Closed += (_, __) =>
+            {
+                _liveClockTimer.Stop();
+                _focusTimerUiTimer.Stop();
+            };
 
             TimeZoneText.Text = $"Timezone: {TimeZoneInfo.Local.DisplayName}";
 
@@ -134,6 +151,7 @@ namespace LifestylesDesktop
             EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
             UpdateLiveClockText();
+            UpdateFocusTimerUi();
 
             await RefreshForSelectedDateAsync();
         }
@@ -219,7 +237,539 @@ namespace LifestylesDesktop
 
         #endregion // SECTION C — Log Date Helpers
 
-        #region SECTION D — Focus Session Actions
+        #region SECTION D1 — Focus Timer State + UI Helpers
+        private enum FocusTimerStopChoice
+        {
+            KeepFocusing,
+            StopFocusing
+        }
+
+        private enum FocusTimerCheckpointChoice
+        {
+            KeepGoing,
+            TakeABreak,
+            DiscardSession,
+            Closed
+        }
+
+        private void InitializeFocusTimerUi()
+        {
+            if (_focusTimerUiInitialized)
+                return;
+
+            _focusTimerUiInitialized = true;
+            _focusTimerUiTimer.Interval = TimeSpan.FromSeconds(1);
+            _focusTimerUiTimer.Tick += FocusTimerUiTimer_Tick;
+
+            if (FocusTimerModeCombo != null && FocusTimerModeCombo.SelectedIndex < 0)
+                FocusTimerModeCombo.SelectedIndex = 0;
+
+            UpdateFocusTimerUi();
+        }
+
+        private bool IsCountUpModeSelected()
+        {
+            return FocusTimerModeCombo?.SelectedIndex == 1;
+        }
+
+        private static string FormatTimerClock(TimeSpan time)
+        {
+            if (time < TimeSpan.Zero)
+                time = TimeSpan.Zero;
+
+            int totalHours = (int)Math.Floor(time.TotalHours);
+            return $"{totalHours:00}:{time.Minutes:00}:{time.Seconds:00}";
+        }
+
+        private TimeSpan GetCurrentFocusTimerElapsed()
+        {
+            if (_focusTimerRunning)
+                return _focusTimerElapsedBeforePause + (DateTimeOffset.UtcNow - _focusTimerRunStartedUtc);
+
+            return _focusTimerElapsedBeforePause;
+        }
+
+        private void SetFocusTimerStatus(string text)
+        {
+            if (FocusTimerStatusText != null)
+                FocusTimerStatusText.Text = text;
+        }
+
+        private void UpdateFocusTimerUi()
+        {
+            bool isActiveOrPaused = _focusTimerRunning || _focusTimerPaused;
+            bool isCountUpSelected = IsCountUpModeSelected();
+
+            if (FocusCountdownMinutesRow != null)
+                FocusCountdownMinutesRow.Visibility = isCountUpSelected ? Visibility.Collapsed : Visibility.Visible;
+
+            if (FocusTimerModeCombo != null)
+                FocusTimerModeCombo.IsEnabled = !isActiveOrPaused;
+
+            if (FocusCountdownMinutesBox != null)
+                FocusCountdownMinutesBox.IsEnabled = !isActiveOrPaused && !isCountUpSelected;
+
+            if (FocusTypeCombo != null)
+                FocusTypeCombo.IsEnabled = !isActiveOrPaused;
+
+            if (ManageFocusLabelsButton != null)
+                ManageFocusLabelsButton.IsEnabled = !isActiveOrPaused;
+
+            if (MinutesBox != null)
+                MinutesBox.IsEnabled = !isActiveOrPaused;
+
+            if (CompletedCheck != null)
+                CompletedCheck.IsEnabled = !isActiveOrPaused;
+
+            if (AddFocusButton != null)
+                AddFocusButton.IsEnabled = !isActiveOrPaused;
+
+            if (StartFocusTimerButton != null)
+                StartFocusTimerButton.IsEnabled = !isActiveOrPaused;
+
+            if (ResumeFocusTimerButton != null)
+                ResumeFocusTimerButton.IsEnabled = _focusTimerPaused;
+
+            if (StopFocusTimerButton != null)
+                StopFocusTimerButton.IsEnabled = isActiveOrPaused;
+
+            TimeSpan displayTime;
+
+            if (_focusTimerRunning || _focusTimerPaused)
+            {
+                var elapsed = GetCurrentFocusTimerElapsed();
+                displayTime = _focusTimerIsCountUp
+                    ? elapsed
+                    : TimeSpan.FromMinutes(_focusTimerCountdownTargetMinutes) - elapsed;
+            }
+            else
+            {
+                if (!isCountUpSelected && TryGetCountdownTargetMinutes(out int previewCountdownMinutes))
+                    _focusTimerCountdownTargetMinutes = previewCountdownMinutes;
+
+                displayTime = isCountUpSelected
+                    ? TimeSpan.Zero
+                    : TimeSpan.FromMinutes(_focusTimerCountdownTargetMinutes);
+            }
+
+            if (FocusTimerDisplayText != null)
+                FocusTimerDisplayText.Text = FormatTimerClock(displayTime);
+
+            if (_focusTimerRunning)
+            {
+                SetFocusTimerStatus(_focusTimerIsCountUp
+                    ? $"Count-up timer running. Next pause at {FormatMinutes(_focusTimerNextCountUpPauseMinutes)}."
+                    : $"Countdown timer running for {FormatMinutes(_focusTimerCountdownTargetMinutes)}.");
+            }
+            else if (_focusTimerPaused)
+            {
+                SetFocusTimerStatus($"Timer paused at {FormatMinutes((int)Math.Floor(GetCurrentFocusTimerElapsed().TotalMinutes))}. Resume or stop when ready.");
+            }
+            else
+            {
+                SetFocusTimerStatus(isCountUpSelected
+                    ? "Count-up timer ready. It will pause every 2 hours to make sure it was not left running by accident."
+                    : "Countdown timer ready. Choose 5 to 120 minutes and press Start Focus.");
+            }
+        }
+
+        private async Task SaveFocusLabelIfNeededAsync(string focusType)
+        {
+            if (focusType == "(None)")
+                return;
+
+            await _focusLabelRepo.UpsertActiveAsync(focusType);
+            await RefreshFocusLabelsAsync(keepText: focusType);
+        }
+
+        private bool TryGetCountdownTargetMinutes(out int minutes)
+        {
+            minutes = 0;
+
+            string raw = FocusCountdownMinutesBox?.Text?.Trim() ?? "";
+            if (!int.TryParse(raw, out minutes))
+                return false;
+
+            if (minutes < 5 || minutes > 120)
+                return false;
+
+            return true;
+        }
+
+        private void ResetFocusTimerState(string status)
+        {
+            _focusTimerUiTimer.Stop();
+            _focusTimerRunning = false;
+            _focusTimerPaused = false;
+            _focusTimerIsCountUp = false;
+            _focusTimerElapsedBeforePause = TimeSpan.Zero;
+            _focusTimerNextCountUpPauseMinutes = 120;
+            _focusTimerFocusType = NormalizeFocusLabel(FocusTypeCombo?.Text);
+
+            if (TryGetCountdownTargetMinutes(out int countdownMinutes))
+            {
+                _focusTimerCountdownTargetMinutes = countdownMinutes;
+            }
+            else
+            {
+                _focusTimerCountdownTargetMinutes = 25;
+                if (FocusCountdownMinutesBox != null)
+                    FocusCountdownMinutesBox.Text = "25";
+            }
+
+            UpdateFocusTimerUi();
+            SetFocusTimerStatus(status);
+        }
+
+        private async Task SaveTimerSessionAsync(int minutes, bool completed, bool grantRewards)
+        {
+            if (minutes <= 0)
+                return;
+
+            var nowLocal = DateTimeOffset.Now;
+            var logDate = GetCurrentGameDayLocal(nowLocal);
+
+            var session = new FocusSession
+            {
+                LoggedAtUtc = nowLocal.ToUniversalTime(),
+                LogDate = logDate,
+                FocusType = _focusTimerFocusType,
+                Minutes = minutes,
+                Completed = completed
+            };
+
+            await _repo.AddAsync(session, grantRewards);
+
+            if (SelectedLogDate != logDate)
+            {
+                _logDateUiUpdating = true;
+                LogDatePicker.SelectedDate = logDate.ToDateTime(TimeOnly.MinValue);
+                _logDateUiUpdating = false;
+                UpdateLogDateUI();
+            }
+
+            await RefreshForSelectedDateAsync();
+        }
+        #endregion // SECTION D1 — Focus Timer State + UI Helpers
+
+        #region SECTION D2 — Focus Timer Dialogs
+        private FocusTimerStopChoice ShowStopFocusTimerDialog(int wholeMinutes)
+        {
+            var dialog = new Window
+            {
+                Title = "Stop focusing?",
+                Width = 360,
+                Height = 185,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.ToolWindow,
+                ShowInTaskbar = false
+            };
+
+            FocusTimerStopChoice choice = FocusTimerStopChoice.KeepFocusing;
+
+            var root = new StackPanel { Margin = new Thickness(12) };
+            root.Children.Add(new TextBlock
+            {
+                Text = $"You have completed {wholeMinutes} full minute{(wholeMinutes == 1 ? "" : "s")}.",
+                Margin = new Thickness(0, 0, 0, 6),
+                TextWrapping = TextWrapping.Wrap
+            });
+            root.Children.Add(new TextBlock
+            {
+                Text = "Stop focusing now, or keep going?",
+                Margin = new Thickness(0, 0, 0, 12),
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var keepBtn = new Button { Content = "Keep Focusing", Width = 120, Margin = new Thickness(0, 0, 10, 0) };
+            keepBtn.Click += (_, __) =>
+            {
+                choice = FocusTimerStopChoice.KeepFocusing;
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            var stopBtn = new Button { Content = "Stop Focusing", Width = 120 };
+            stopBtn.Click += (_, __) =>
+            {
+                choice = FocusTimerStopChoice.StopFocusing;
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            buttons.Children.Add(keepBtn);
+            buttons.Children.Add(stopBtn);
+            root.Children.Add(buttons);
+
+            dialog.Content = root;
+            dialog.ShowDialog();
+            return choice;
+        }
+
+        private FocusTimerCheckpointChoice ShowCountUpCheckpointDialog(int wholeMinutes)
+        {
+            var dialog = new Window
+            {
+                Title = "Count-up timer paused",
+                Width = 420,
+                Height = 215,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.ToolWindow,
+                ShowInTaskbar = false
+            };
+
+            FocusTimerCheckpointChoice choice = FocusTimerCheckpointChoice.Closed;
+
+            var root = new StackPanel { Margin = new Thickness(12) };
+            root.Children.Add(new TextBlock
+            {
+                Text = $"The count-up timer has reached {FormatMinutes(wholeMinutes)} and paused automatically.",
+                Margin = new Thickness(0, 0, 0, 6),
+                TextWrapping = TextWrapping.Wrap
+            });
+            root.Children.Add(new TextBlock
+            {
+                Text = "This is just to make sure the timer was not left running by accident.",
+                Margin = new Thickness(0, 0, 0, 12),
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var keepGoingBtn = new Button { Content = "Keep going?", Width = 105, Margin = new Thickness(0, 0, 8, 0) };
+            keepGoingBtn.Click += (_, __) =>
+            {
+                choice = FocusTimerCheckpointChoice.KeepGoing;
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            var takeBreakBtn = new Button { Content = "Take a break", Width = 105, Margin = new Thickness(0, 0, 8, 0) };
+            takeBreakBtn.Click += (_, __) =>
+            {
+                choice = FocusTimerCheckpointChoice.TakeABreak;
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            var discardBtn = new Button { Content = "Discard Session", Width = 115 };
+            discardBtn.Click += (_, __) =>
+            {
+                choice = FocusTimerCheckpointChoice.DiscardSession;
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            buttons.Children.Add(keepGoingBtn);
+            buttons.Children.Add(takeBreakBtn);
+            buttons.Children.Add(discardBtn);
+            root.Children.Add(buttons);
+
+            dialog.Content = root;
+            dialog.ShowDialog();
+            return choice;
+        }
+        #endregion // SECTION D2 — Focus Timer Dialogs
+
+        #region SECTION D3 — Focus Timer Handlers + Manual Add
+        private async void StartFocusTimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_focusTimerRunning || _focusTimerPaused)
+                    return;
+
+                _focusTimerIsCountUp = IsCountUpModeSelected();
+
+                if (!_focusTimerIsCountUp && !TryGetCountdownTargetMinutes(out _focusTimerCountdownTargetMinutes))
+                {
+                    MessageBox.Show("Countdown minutes must be a whole number from 5 to 120.");
+                    return;
+                }
+
+                _focusTimerFocusType = NormalizeFocusLabel(FocusTypeCombo?.Text);
+                await SaveFocusLabelIfNeededAsync(_focusTimerFocusType);
+
+                _focusTimerElapsedBeforePause = TimeSpan.Zero;
+                _focusTimerNextCountUpPauseMinutes = 120;
+                _focusTimerPaused = false;
+                _focusTimerRunning = true;
+                _focusTimerRunStartedUtc = DateTimeOffset.UtcNow;
+
+                _focusTimerUiTimer.Start();
+                UpdateFocusTimerUi();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not start focus timer");
+            }
+        }
+
+        private void ResumeFocusTimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_focusTimerPaused)
+                return;
+
+            _focusTimerPaused = false;
+            _focusTimerRunning = true;
+            _focusTimerRunStartedUtc = DateTimeOffset.UtcNow;
+            _focusTimerUiTimer.Start();
+            UpdateFocusTimerUi();
+        }
+
+        private async void StopFocusTimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!_focusTimerRunning && !_focusTimerPaused)
+                    return;
+
+                if (_focusTimerRunning)
+                {
+                    _focusTimerElapsedBeforePause = GetCurrentFocusTimerElapsed();
+                    _focusTimerUiTimer.Stop();
+                    _focusTimerRunning = false;
+                    _focusTimerPaused = true;
+                }
+
+                int wholeMinutes = Math.Max(0, (int)Math.Floor(_focusTimerElapsedBeforePause.TotalMinutes));
+                var choice = ShowStopFocusTimerDialog(wholeMinutes);
+
+                if (choice == FocusTimerStopChoice.KeepFocusing)
+                {
+                    _focusTimerPaused = false;
+                    _focusTimerRunning = true;
+                    _focusTimerRunStartedUtc = DateTimeOffset.UtcNow;
+                    _focusTimerUiTimer.Start();
+                    UpdateFocusTimerUi();
+                    return;
+                }
+
+                bool grantRewards = wholeMinutes >= 5;
+                bool completed = _focusTimerIsCountUp && grantRewards;
+
+                if (wholeMinutes > 0)
+                    await SaveTimerSessionAsync(wholeMinutes, completed, grantRewards);
+
+                ResetFocusTimerState(
+                    wholeMinutes <= 0
+                        ? "Timer stopped before any full minutes were completed. Nothing was logged."
+                        : grantRewards
+                            ? $"Focus session saved: {FormatMinutes(wholeMinutes)} ({(completed ? "completed" : "incomplete")})."
+                            : $"Focus session saved: {FormatMinutes(wholeMinutes)} with no rewards (under 5 minutes).");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not stop focus timer");
+            }
+        }
+
+        private async void FocusTimerUiTimer_Tick(object? sender, EventArgs e)
+        {
+            if (!_focusTimerRunning)
+                return;
+
+            var elapsed = GetCurrentFocusTimerElapsed();
+
+            if (_focusTimerIsCountUp)
+            {
+                UpdateFocusTimerUi();
+
+                int wholeMinutes = Math.Max(0, (int)Math.Floor(elapsed.TotalMinutes));
+                if (wholeMinutes < _focusTimerNextCountUpPauseMinutes)
+                    return;
+
+                _focusTimerElapsedBeforePause = elapsed;
+                _focusTimerUiTimer.Stop();
+                _focusTimerRunning = false;
+                _focusTimerPaused = true;
+                UpdateFocusTimerUi();
+
+                System.Media.SystemSounds.Exclamation.Play();
+
+                var checkpointChoice = ShowCountUpCheckpointDialog(wholeMinutes);
+
+                if (checkpointChoice == FocusTimerCheckpointChoice.KeepGoing)
+                {
+                    _focusTimerNextCountUpPauseMinutes += 120;
+                    _focusTimerPaused = false;
+                    _focusTimerRunning = true;
+                    _focusTimerRunStartedUtc = DateTimeOffset.UtcNow;
+                    _focusTimerUiTimer.Start();
+                    UpdateFocusTimerUi();
+                    return;
+                }
+
+                if (checkpointChoice == FocusTimerCheckpointChoice.TakeABreak)
+                {
+                    await SaveTimerSessionAsync(wholeMinutes, completed: true, grantRewards: true);
+                    ResetFocusTimerState($"Count-up session saved: {FormatMinutes(wholeMinutes)} (completed).");
+                    return;
+                }
+
+                if (checkpointChoice == FocusTimerCheckpointChoice.DiscardSession)
+                {
+                    ResetFocusTimerState("Count-up session discarded.");
+                    return;
+                }
+
+                SetFocusTimerStatus($"Timer paused at {FormatMinutes(wholeMinutes)}. Resume, stop, or discard when ready.");
+                return;
+            }
+
+            var remaining = TimeSpan.FromMinutes(_focusTimerCountdownTargetMinutes) - elapsed;
+
+            if (remaining > TimeSpan.Zero)
+            {
+                UpdateFocusTimerUi();
+                return;
+            }
+
+            _focusTimerElapsedBeforePause = TimeSpan.FromMinutes(_focusTimerCountdownTargetMinutes);
+            _focusTimerUiTimer.Stop();
+            _focusTimerRunning = false;
+            _focusTimerPaused = false;
+            UpdateFocusTimerUi();
+
+            await SaveTimerSessionAsync(_focusTimerCountdownTargetMinutes, completed: true, grantRewards: true);
+            System.Media.SystemSounds.Asterisk.Play();
+            ResetFocusTimerState($"Countdown complete: {FormatMinutes(_focusTimerCountdownTargetMinutes)} saved as completed.");
+            MessageBox.Show("Countdown complete.", "Focus session complete");
+        }
+
+        private void FocusTimerModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_focusTimerRunning || _focusTimerPaused)
+                return;
+
+            UpdateFocusTimerUi();
+        }
+
+        private void FocusCountdownMinutesBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_focusTimerRunning || _focusTimerPaused)
+                return;
+
+            if (TryGetCountdownTargetMinutes(out int countdownMinutes))
+                _focusTimerCountdownTargetMinutes = countdownMinutes;
+
+            UpdateFocusTimerUi();
+        }
+
         private async void AddFocusButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -232,13 +782,7 @@ namespace LifestylesDesktop
 
                 // Allow typed label (editable ComboBox)
                 string focusType = NormalizeFocusLabel(FocusTypeCombo.Text);
-
-                // Save label for future selection (but don't store "(None)")
-                if (focusType != "(None)")
-                {
-                    await _focusLabelRepo.UpsertActiveAsync(focusType);
-                    await RefreshFocusLabelsAsync(keepText: focusType);
-                }
+                await SaveFocusLabelIfNeededAsync(focusType);
 
                 var nowLocal = DateTimeOffset.Now;
                 var session = new FocusSession
@@ -262,7 +806,9 @@ namespace LifestylesDesktop
                 MessageBox.Show(ex.ToString(), "Error saving focus session");
             }
         }
+        #endregion // SECTION D3 — Focus Timer Handlers + Manual Add
 
+        #region SECTION D4 — Focus Labels
         private async Task RefreshFocusLabelsAsync(string? keepText = null)
         {
             var currentText = keepText ?? (FocusTypeCombo?.Text ?? "");
@@ -391,8 +937,7 @@ namespace LifestylesDesktop
                 MessageBox.Show(ex.Message, "Could not manage focus labels");
             }
         }
-
-        #endregion // SECTION D — Focus Session Actions
+        #endregion // SECTION D4 — Focus Labels
 
         #region SECTION E1 — Sleep Tuning Settings Helpers
         private sealed class SleepTuningSettings

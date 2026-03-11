@@ -96,7 +96,12 @@ namespace LifestyleCore.Data
             return (int)Math.Floor(minutes * normalizedXpPerMinute * completionMultiplier * normalizedSleepMultiplier);
         }
 
-        public async Task<long> AddAsync(FocusSession session)
+        public Task<long> AddAsync(FocusSession session)
+        {
+            return AddAsync(session, grantRewards: true);
+        }
+
+        public async Task<long> AddAsync(FocusSession session, bool grantRewards)
         {
             Db.EnsureCreated();
 
@@ -126,7 +131,7 @@ SELECT last_insert_rowid();
             long id = await conn.ExecuteScalarAsync<long>(sql, parameters);
 
             // Grant rewards immediately (immutable ledger), only if within reward window for that log date.
-            if (IsWithinRewardWindow(session.LogDate))
+            if (grantRewards && IsWithinRewardWindow(session.LogDate))
             {
                 var gami = await _gamiSettings.GetAsync();
                 double sleepMultiplier = await GetSleepRewardMultiplierAsync(session.LogDate, gami);

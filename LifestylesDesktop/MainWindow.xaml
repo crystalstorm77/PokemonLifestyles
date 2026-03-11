@@ -264,11 +264,74 @@ SECTION C — Focus Session Input
                 StaysOpenOnEdit="True"
                 ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FocusLabelChoices}"/>
 
-                        <Button Content="Manage..."
+                        <Button x:Name="ManageFocusLabelsButton"
+              Content="Manage..."
               Width="90"
               Margin="10,0,0,0"
               Click="ManageFocusLabels_Click"/>
                     </StackPanel>
+
+                    <Separator Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Live Timer" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Mode:" Width="90" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="FocusTimerModeCombo"
+                  Width="140"
+                  SelectedIndex="0"
+                  SelectionChanged="FocusTimerModeCombo_SelectionChanged">
+                            <ComboBoxItem Content="Countdown"/>
+                            <ComboBoxItem Content="Count Up"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel x:Name="FocusCountdownMinutesRow" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Countdown:" Width="90" VerticalAlignment="Center"/>
+                        <TextBox x:Name="FocusCountdownMinutesBox"
+                 Width="120"
+                 Text="25"
+                 Margin="0,0,10,0"
+                 TextChanged="FocusCountdownMinutesBox_TextChanged"/>
+                        <TextBlock Text="5 to 120 minutes" Foreground="Gray" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Border BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                        <TextBlock x:Name="FocusTimerDisplayText"
+                   Text="00:25:00"
+                   FontSize="28"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Stretch"/>
+                    </Border>
+
+                    <TextBlock x:Name="FocusTimerStatusText"
+               Text="Countdown timer ready. Choose 5 to 120 minutes and press Start Focus."
+               Foreground="Gray"
+               TextWrapping="Wrap"
+               Margin="0,0,0,8"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="StartFocusTimerButton"
+                Content="Start Focus"
+                Width="120"
+                Click="StartFocusTimerButton_Click"/>
+                        <Button x:Name="ResumeFocusTimerButton"
+                Content="Resume"
+                Width="100"
+                Margin="10,0,0,0"
+                Click="ResumeFocusTimerButton_Click"
+                IsEnabled="False"/>
+                        <Button x:Name="StopFocusTimerButton"
+                Content="Stop Focusing"
+                Width="120"
+                Margin="10,0,0,0"
+                Click="StopFocusTimerButton_Click"
+                IsEnabled="False"/>
+                    </StackPanel>
+
+                    <Separator Margin="0,10,0,10"/>
+
+                    <TextBlock Text="Manual Entry" FontWeight="Bold" Margin="0,0,0,8"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Minutes:" Width="90" VerticalAlignment="Center"/>
