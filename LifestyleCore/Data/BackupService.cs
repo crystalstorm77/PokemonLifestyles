@@ -25,38 +25,39 @@ namespace LifestyleCore.Data
         {
             EnsureSchemas();
 
-            Directory.CreateDirectory(Path.GetDirectoryName(destinationDbPath)!);
+            string sourceDbPath = Db.GetDatabasePath();
+            if (!File.Exists(sourceDbPath))
+                throw new FileNotFoundException("Database file not found.", sourceDbPath);
 
+            string? destDir = Path.GetDirectoryName(destinationDbPath);
+            if (!string.IsNullOrWhiteSpace(destDir))
+                Directory.CreateDirectory(destDir);
+
+            // Best-effort checkpoint to fold WAL into main DB before copying.
             try
             {
                 using var conn = Db.OpenConnection();
-                string escaped = destinationDbPath.Replace("'", "''");
-                await conn.ExecuteAsync($"VACUUM INTO '{escaped}';");
+                conn.Execute("PRAGMA wal_checkpoint(FULL);");
             }
             catch
             {
-                SqliteConnection.ClearAllPools();
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-
-                File.Copy(Db.GetDbPath(), destinationDbPath, overwrite: true);
+                // Non-fatal; copy may still succeed.
             }
+
+            File.Copy(sourceDbPath, destinationDbPath, overwrite: true);
         }
 
         public static void RestoreDbSnapshot(string sourceDbPath)
         {
+            EnsureSchemas();
+
             if (!File.Exists(sourceDbPath))
-                throw new FileNotFoundException("Snapshot file not found.", sourceDbPath);
+                throw new FileNotFoundException("Snapshot database file not found.", sourceDbPath);
 
-            string dest = Db.GetDbPath();
-            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-
-            SqliteConnection.ClearAllPools();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
-            TryDelete(dest + "-wal");
-            TryDelete(dest + "-shm");
+            string dest = Db.GetDatabasePath();
+            string? destDir = Path.GetDirectoryName(dest);
+            if (!string.IsNullOrWhiteSpace(destDir))
+                Directory.CreateDirectory(destDir);
 
             File.Copy(sourceDbPath, dest, overwrite: true);
 
@@ -130,6 +131,53 @@ namespace LifestyleCore.Data
             await WriteJsonAsync(Path.Combine(rootFolder, "manifest.json"), manifest);
         }
 
+        public static bool TryValidateDatabaseArchiveRoot(string rootFolder, out string errorMessage)
+        {
+            errorMessage = "";
+
+            if (string.IsNullOrWhiteSpace(rootFolder))
+            {
+                errorMessage = "No folder was selected.";
+                return false;
+            }
+
+            if (!Directory.Exists(rootFolder))
+            {
+                errorMessage = "The selected folder does not exist.";
+                return false;
+            }
+
+            string manifestPath = Path.Combine(rootFolder, "manifest.json");
+            string foodItemsPath = Path.Combine(rootFolder, "FoodItems.json");
+            string habitsPath = Path.Combine(rootFolder, "Habits.json");
+            string focusLabelsPath = Path.Combine(rootFolder, "FocusLabels.json");
+            string pendingSleepPath = Path.Combine(rootFolder, "PendingSleep.json");
+
+            bool looksLikeArchiveRoot =
+                File.Exists(manifestPath) &&
+                File.Exists(foodItemsPath) &&
+                File.Exists(habitsPath) &&
+                File.Exists(focusLabelsPath) &&
+                File.Exists(pendingSleepPath);
+
+            if (looksLikeArchiveRoot)
+                return true;
+
+            string nestedArchiveFolder = Path.Combine(rootFolder, "Database Archive");
+            if (Directory.Exists(nestedArchiveFolder))
+            {
+                errorMessage =
+                    "You selected the backup root folder, not the Database Archive folder.\n\n" +
+                    "Please open that backup folder and choose the inner folder named 'Database Archive'.";
+                return false;
+            }
+
+            errorMessage =
+                "That folder is not a valid Database Archive root.\n\n" +
+                "Please choose the 'Database Archive' folder — the one containing manifest.json and the year folders.";
+            return false;
+        }
+
         public static async Task ImportArchiveAsync(
             string rootFolder,
             ArchiveImportMode mode,
@@ -137,6 +185,9 @@ namespace LifestyleCore.Data
             DateOnly? rangeEndInclusive = null)
         {
             EnsureSchemas();
+
+            if (!TryValidateDatabaseArchiveRoot(rootFolder, out string validationError))
+                throw new InvalidOperationException(validationError);
 
             if (mode == ArchiveImportMode.ReplaceAll)
             {
@@ -149,85 +200,89 @@ namespace LifestyleCore.Data
             string foodItemsPath = Path.Combine(rootFolder, "FoodItems.json");
             if (File.Exists(foodItemsPath))
             {
-                var items = await ReadJsonAsync<List<FoodItemExport>>(foodItemsPath) ?? new List<FoodItemExport>();
-                await UpsertFoodItemsAsync(items);
+                var foodItems = await ReadJsonAsync<List<FoodItemExport>>(foodItemsPath) ?? new();
+                await UpsertFoodItemsAsync(foodItems);
             }
 
             string habitsPath = Path.Combine(rootFolder, "Habits.json");
+            Dictionary<string, long> habitByExternalId = new(StringComparer.OrdinalIgnoreCase);
             if (File.Exists(habitsPath))
             {
-                var habits = await ReadJsonAsync<List<HabitExport>>(habitsPath) ?? new List<HabitExport>();
-                await UpsertHabitsAsync(habits);
+                var habits = await ReadJsonAsync<List<HabitExport>>(habitsPath) ?? new();
+                habitByExternalId = await UpsertHabitsAsync(habits);
             }
 
             string focusLabelsPath = Path.Combine(rootFolder, "FocusLabels.json");
             if (File.Exists(focusLabelsPath))
             {
-                var focusLabels = await ReadJsonAsync<List<FocusLabelExport>>(focusLabelsPath) ?? new List<FocusLabelExport>();
-                await UpsertFocusLabelsAsync(focusLabels);
+                var labels = await ReadJsonAsync<List<FocusLabelExport>>(focusLabelsPath) ?? new();
+                await UpsertFocusLabelsAsync(labels);
+            }
+
+            string pendingSleepPath = Path.Combine(rootFolder, "PendingSleep.json");
+            if (File.Exists(pendingSleepPath))
+            {
+                var pending = await ReadJsonAsync<PendingSleep>(pendingSleepPath) ?? new PendingSleep();
+                await ReplacePendingSleepAsync(pending);
             }
 
             if (mode == ArchiveImportMode.ReplaceRange)
             {
                 if (!rangeStartInclusive.HasValue || !rangeEndInclusive.HasValue)
-                    throw new InvalidOperationException("ReplaceRange requires start and end dates.");
-
-                string start = rangeStartInclusive.Value.ToString("yyyy-MM-dd");
-                string end = rangeEndInclusive.Value.ToString("yyyy-MM-dd");
+                    throw new InvalidOperationException("ReplaceRange requires a start and end date.");
 
                 using var conn = Db.OpenConnection();
-
-                await conn.ExecuteAsync("DELETE FROM FocusSessions WHERE LogDate >= @s AND LogDate <= @e;", new { s = start, e = end });
-                await conn.ExecuteAsync("DELETE FROM FoodEntries WHERE LogDate >= @s AND LogDate <= @e;", new { s = start, e = end });
-                await conn.ExecuteAsync("DELETE FROM SleepSessions WHERE WakeLogDate >= @s AND WakeLogDate <= @e;", new { s = start, e = end });
-                await conn.ExecuteAsync("DELETE FROM StepsDaily WHERE Date >= @s AND Date <= @e;", new { s = start, e = end });
-                await conn.ExecuteAsync("DELETE FROM StepBuckets WHERE BucketLocalDate >= @s AND BucketLocalDate <= @e;", new { s = start, e = end });
-                await conn.ExecuteAsync("DELETE FROM HabitEntries WHERE Date >= @s AND Date <= @e;", new { s = start, e = end });
+                using var tx = conn.BeginTransaction();
+                await DeleteDateRangeAsync(conn, tx, rangeStartInclusive.Value, rangeEndInclusive.Value);
+                tx.Commit();
             }
 
-            var habitMap = await GetHabitMapAsync();
-
-            foreach (var file in EnumerateDayFiles(rootFolder))
+            foreach (var file in EnumerateDayJsonFiles(rootFolder))
             {
-                var day = await ReadJsonAsync<DayArchive>(file);
-                if (day == null) continue;
+                string relative = Path.GetRelativePath(rootFolder, file);
+                string[] parts = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (parts.Length != 3)
+                    continue;
 
-                var dt = DateOnly.ParseExact(day.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                string yyyy = parts[0];
+                string mm = parts[1];
+                string ddWithExt = parts[2];
+                if (!ddWithExt.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string dd = Path.GetFileNameWithoutExtension(ddWithExt);
+                if (!DateOnly.TryParseExact($"{yyyy}-{mm}-{dd}", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fileDate))
+                    continue;
 
                 if (mode == ArchiveImportMode.ReplaceRange)
                 {
-                    if (dt < rangeStartInclusive!.Value || dt > rangeEndInclusive!.Value)
+                    if (fileDate < rangeStartInclusive!.Value || fileDate > rangeEndInclusive!.Value)
                         continue;
                 }
 
-                await ImportOneDayAsync(day, habitMap);
-            }
+                var day = await ReadJsonAsync<DayArchive>(file);
+                if (day == null)
+                    continue;
 
-            string pendingPath = Path.Combine(rootFolder, "PendingSleep.json");
-            if (File.Exists(pendingPath))
-            {
-                var pending = await ReadJsonAsync<PendingSleepExport>(pendingPath);
-                using var conn = Db.OpenConnection();
-                await conn.ExecuteAsync("DELETE FROM PendingSleep;");
+                if (mode == ArchiveImportMode.ReplaceRange)
+                    day.Date = fileDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-                if (pending != null && !string.IsNullOrWhiteSpace(pending.StartUtc))
-                {
-                    await conn.ExecuteAsync("INSERT INTO PendingSleep (Id, StartUtc) VALUES (1, @StartUtc);", new { StartUtc = pending.StartUtc });
-                }
+                await ImportOneDayAsync(day, habitByExternalId);
             }
         }
 
         public static async Task ExportGamificationDataAsync(string destinationJsonPath)
         {
             EnsureSchemas();
-            Directory.CreateDirectory(Path.GetDirectoryName(destinationJsonPath)!);
+
+            string? dir = Path.GetDirectoryName(destinationJsonPath);
+            if (!string.IsNullOrWhiteSpace(dir))
+                Directory.CreateDirectory(dir);
 
             var save = new GamificationSaveExport
             {
-                FormatVersion = 1,
                 ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
-                TimeZoneId = TimeZoneInfo.Local.Id,
-                TimeZoneDisplayName = TimeZoneInfo.Local.DisplayName,
+                FormatVersion = 1,
                 TrainerProgress = await GetTrainerProgressExportAsync(),
                 RewardsLedger = await GetRewardsLedgerExportAsync(),
                 Settings = await GetGamificationSettingsExportAsync(),
@@ -287,7 +342,7 @@ namespace LifestyleCore.Data
             using var tx = conn.BeginTransaction();
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
-            await ResetGamificationDataInternalAsync(conn, tx, nowUtc, seedDefaultItemDefinitions: true);
+            await ResetGamificationDataInternalAsync(conn, tx, nowUtc, seedDefaultItemDefinitions: false, preserveItemDefinitions: true);
 
             tx.Commit();
         }
@@ -813,66 +868,42 @@ namespace LifestyleCore.Data
         #endregion // SECTION C3 — Import helpers (habit map)
 
         #region SECTION C4 — Import helpers (gamification resets)
-        private static async Task EnsureTrainerProgressLifetimeColumnAsync(System.Data.IDbConnection conn, System.Data.IDbTransaction? tx = null)
+        private static async Task EnsureTrainerProgressLifetimeColumnAsync(System.Data.IDbConnection conn, System.Data.IDbTransaction tx)
         {
             var cols = await conn.QueryAsync("PRAGMA table_info(TrainerProgress);", transaction: tx);
+            bool has = false;
 
-            bool hasTotalLifetimeXp = false;
             foreach (var c in cols)
             {
                 string name = (string)c.name;
                 if (string.Equals(name, "TotalLifetimeXp", StringComparison.OrdinalIgnoreCase))
                 {
-                    hasTotalLifetimeXp = true;
+                    has = true;
                     break;
                 }
             }
 
-            if (!hasTotalLifetimeXp)
+            if (!has)
             {
                 await conn.ExecuteAsync(
                     "ALTER TABLE TrainerProgress ADD COLUMN TotalLifetimeXp INTEGER NOT NULL DEFAULT 0;",
                     transaction: tx);
             }
-
-            await conn.ExecuteAsync(@"
-                UPDATE TrainerProgress
-                SET TotalLifetimeXp = COALESCE(TotalLifetimeXp, 0)
-                WHERE Id = 1;",
-                transaction: tx);
         }
 
-        private static async Task ResetDatabaseDataInternalAsync(System.Data.IDbConnection conn, System.Data.IDbTransaction tx, bool seedDefaultFocusLabels)
-        {
-            await conn.ExecuteAsync("DELETE FROM FoodEntries;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM FocusSessions;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM SleepSessions;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM PendingSleep;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM StepBuckets;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM StepsDaily;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM HabitEntries;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM Habits;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM FoodItems;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM FocusLabels;", transaction: tx);
-
-            if (seedDefaultFocusLabels)
-            {
-                string nowUtc = DateTimeOffset.UtcNow.ToString("O");
-                await conn.ExecuteAsync(@"
-INSERT INTO FocusLabels (Name, IsActive, CreatedAtUtc)
-VALUES ('Draw', 1, @NowUtc), ('Music', 1, @NowUtc);",
-                    new { NowUtc = nowUtc },
-                    tx);
-            }
-        }
-
-        private static async Task ResetGamificationDataInternalAsync(System.Data.IDbConnection conn, System.Data.IDbTransaction tx, string nowUtc, bool seedDefaultItemDefinitions)
+        private static async Task ResetGamificationDataInternalAsync(
+            System.Data.IDbConnection conn,
+            System.Data.IDbTransaction tx,
+            string nowUtc,
+            bool seedDefaultItemDefinitions,
+            bool preserveItemDefinitions = false)
         {
             await EnsureTrainerProgressLifetimeColumnAsync(conn, tx);
 
             await conn.ExecuteAsync("DELETE FROM RewardsLedger;", transaction: tx);
             await conn.ExecuteAsync("DELETE FROM InventoryItems;", transaction: tx);
-            await conn.ExecuteAsync("DELETE FROM ItemDefinitions;", transaction: tx);
+            if (!preserveItemDefinitions)
+                await conn.ExecuteAsync("DELETE FROM ItemDefinitions;", transaction: tx);
             await conn.ExecuteAsync("DELETE FROM StepItemRollState;", transaction: tx);
             await conn.ExecuteAsync("DELETE FROM GamificationSettings;", transaction: tx);
             await conn.ExecuteAsync("DELETE FROM TrainerProgress;", transaction: tx);
@@ -938,7 +969,7 @@ VALUES (1, 0, 0, 0, NULL, NULL, @UpdatedAtUtc);",
                 new { UpdatedAtUtc = nowUtc },
                 tx);
 
-            if (seedDefaultItemDefinitions)
+            if (!preserveItemDefinitions && seedDefaultItemDefinitions)
                 await InsertDefaultItemDefinitionsAsync(conn, tx, nowUtc);
         }
 
@@ -948,19 +979,18 @@ VALUES (1, 0, 0, 0, NULL, NULL, @UpdatedAtUtc);",
 INSERT INTO ItemDefinitions (Name, Category, Tier, Weight, IsActive, CreatedAtUtc, DeletedAtUtc)
 VALUES
  ('Potion', 'Healing', 0, 1, 1, @NowUtc, NULL),
+ ('Super Potion', 'Healing', 1, 1, 1, @NowUtc, NULL),
+ ('Rare Candy', 'Rare', 2, 1, 1, @NowUtc, NULL),
  ('Poke Ball', 'Ball', 0, 1, 1, @NowUtc, NULL),
+ ('Great Ball', 'Ball', 1, 1, 1, @NowUtc, NULL),
+ ('Revive', 'Revive', 1, 1, 1, @NowUtc, NULL),
  ('Antidote', 'Status', 0, 1, 1, @NowUtc, NULL),
  ('Paralyze Heal', 'Status', 0, 1, 1, @NowUtc, NULL),
- ('Escape Rope', 'Escape', 0, 1, 1, @NowUtc, NULL),
- ('Super Potion', 'Healing', 1, 1, 1, @NowUtc, NULL),
- ('Great Ball', 'Ball', 1, 1, 1, @NowUtc, NULL),
- ('Revive', 'Healing', 1, 1, 1, @NowUtc, NULL),
- ('Rare Candy', 'Candy', 2, 1, 1, @NowUtc, NULL),
- ('Nugget', 'Valuable', 2, 1, 1, @NowUtc, NULL);",
+ ('Escape Rope', 'Utility', 0, 1, 1, @NowUtc, NULL),
+ ('Nugget', 'Currency', 2, 1, 1, @NowUtc, NULL);",
                 new { NowUtc = nowUtc },
                 tx);
         }
-
         #endregion // SECTION C4 — Import helpers (gamification resets)
 
         #region SECTION C5 — Import helpers (gamification replace)

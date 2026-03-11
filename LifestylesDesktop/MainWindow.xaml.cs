@@ -1809,7 +1809,7 @@ WHERE Id = 1;",
                 Directory.CreateDirectory(backupRoot);
 
                 string snapshotPath = Path.Combine(backupRoot, $"Full App Snapshot - {stamp}.db");
-                string archiveRoot = Path.Combine(backupRoot, "Archive");
+                string archiveRoot = Path.Combine(backupRoot, "Database Archive");
                 string gamificationPath = Path.Combine(backupRoot, $"Gamification Data - {stamp}.json");
 
                 Directory.CreateDirectory(archiveRoot);
@@ -1819,7 +1819,7 @@ WHERE Id = 1;",
                 await BackupService.ExportGamificationDataAsync(gamificationPath);
 
                 MessageBox.Show(
-                    $"Backup created:\n\n{backupRoot}\n\nIncludes:\n- Full app snapshot (.db)\n- Database archive (Archive folder)\n- Gamification save (.json)",
+                    $"Backup created:\n\n{backupRoot}\n\nIncludes:\n- Full app snapshot (.db)\n- Database Archive folder\n- Gamification save (.json)",
                     "Backup complete",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
@@ -1870,9 +1870,15 @@ WHERE Id = 1;",
         {
             try
             {
-                string? folder = PickFolder("Choose the root folder of the database archive to import");
+                string? folder = PickFolder("Choose the Database Archive folder to import");
                 if (string.IsNullOrWhiteSpace(folder))
                     return;
+
+                if (!BackupService.TryValidateDatabaseArchiveRoot(folder, out string validationError))
+                {
+                    MessageBox.Show(validationError, "Invalid Database Archive folder", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
                 var confirm = MessageBox.Show(
                     "This will MERGE the database archive into your current tracked database data. Gamification save data will remain untouched.\n\nContinue?",
@@ -1899,9 +1905,15 @@ WHERE Id = 1;",
         {
             try
             {
-                string? folder = PickFolder("Choose the root folder of the database archive to import");
+                string? folder = PickFolder("Choose the Database Archive folder to import");
                 if (string.IsNullOrWhiteSpace(folder))
                     return;
+
+                if (!BackupService.TryValidateDatabaseArchiveRoot(folder, out string validationError))
+                {
+                    MessageBox.Show(validationError, "Invalid Database Archive folder", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
                 var range = PromptDateRange();
                 if (range is null)
@@ -2003,18 +2015,18 @@ WHERE Id = 1;",
         {
             try
             {
-                var confirm = MessageBox.Show(
-                    "Delete ALL tracked database data and ALL gamification save data?\n\nThis cannot be undone.",
+                var first = MessageBox.Show(
+                    "This will permanently delete ALL tracked database data and ALL gamification save data.\n\nContinue?",
                     "Confirm delete all data",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
-                if (confirm != MessageBoxResult.Yes)
+                if (first != MessageBoxResult.Yes)
                     return;
 
                 if (!PromptDelayedDangerousConfirmation(
                         "Final confirmation — Delete All Data",
-                        "This will permanently delete tracked database data and gamification save data.\n\nThe confirmation button will unlock after 3 seconds.",
+                        "This action permanently deletes everything: tracked database data, trainer progress, gamification settings, inventory, and rewards ledger.",
                         "Yes, Delete All Data"))
                     return;
 
@@ -2033,25 +2045,25 @@ WHERE Id = 1;",
         {
             try
             {
-                var confirm = MessageBox.Show(
-                    "Delete ALL tracked database data only?\n\nGamification save data will remain untouched.",
+                var first = MessageBox.Show(
+                    "This will permanently delete tracked database data only. Gamification save data will remain untouched.\n\nContinue?",
                     "Confirm delete all database data",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
-                if (confirm != MessageBoxResult.Yes)
+                if (first != MessageBoxResult.Yes)
                     return;
 
                 if (!PromptDelayedDangerousConfirmation(
                         "Final confirmation — Delete All Database Data",
-                        "This will permanently delete tracked database data only.\n\nGamification save data will remain untouched.\n\nThe confirmation button will unlock after 3 seconds.",
+                        "This action permanently deletes tracked database data only: focus, food, sleep, steps, habits, and labels. Gamification save data will remain untouched.",
                         "Yes, Delete All Database Data"))
                     return;
 
                 await BackupService.DeleteAllDatabaseDataAsync();
                 await InitializeAndRefreshAsync();
 
-                MessageBox.Show("All tracked database data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("All database data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -2063,25 +2075,25 @@ WHERE Id = 1;",
         {
             try
             {
-                var confirm = MessageBox.Show(
-                    "Delete ALL gamification save data only?\n\nTracked database data will remain untouched.",
+                var first = MessageBox.Show(
+                    "This will permanently delete gamification save data only. Tracked database data will remain untouched. Item definitions in the drop items list will also remain untouched.\n\nContinue?",
                     "Confirm delete all gamification data",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
-                if (confirm != MessageBoxResult.Yes)
+                if (first != MessageBoxResult.Yes)
                     return;
 
                 if (!PromptDelayedDangerousConfirmation(
                         "Final confirmation — Delete All Gamification Data",
-                        "This will permanently delete gamification save data only.\n\nTracked database data will remain untouched.\n\nThe confirmation button will unlock after 3 seconds.",
+                        "This action permanently deletes trainer progress, rewards, inventory, item-roll state, and gamification settings only. Tracked database data and item definitions in the drop items list will remain untouched.",
                         "Yes, Delete All Gamification Data"))
                     return;
 
                 await BackupService.DeleteAllGamificationDataAsync();
                 await InitializeAndRefreshAsync();
 
-                MessageBox.Show("All gamification save data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("All gamification data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -2089,21 +2101,18 @@ WHERE Id = 1;",
             }
         }
 
-        private static string? PickFolder(string title)
+        private string? PickFolder(string title)
         {
-            var dlg = new OpenFileDialog
+            var dlg = new Microsoft.Win32.OpenFolderDialog
             {
                 Title = title,
-                CheckFileExists = false,
-                CheckPathExists = true,
-                ValidateNames = false,
-                FileName = "Select folder"
+                Multiselect = false
             };
 
             if (dlg.ShowDialog() != true)
                 return null;
 
-            return Path.GetDirectoryName(dlg.FileName);
+            return dlg.FolderName;
         }
 
         private static (DateOnly Start, DateOnly End)? PromptDateRange()

@@ -440,7 +440,7 @@ SECTION C — Focus Session Input
 
                         <Button x:Name="ImportArchiveRangeButton"
               Content="Import Database Archive (Replace Date Range)..."
-              Width="220"
+              Width="320"
               Click="ImportArchiveRangeButton_Click"/>
                     </StackPanel>
 
@@ -476,9 +476,15 @@ SECTION C — Focus Session Input
               Click="DeleteAllGamificationDataButton_Click"/>
                     </StackPanel>
 
-                    <TextBlock Text="Backup Everything creates a dated folder containing a full app snapshot, database archive, and gamification save file."
+                    <TextBlock Text="Backup Everything creates a dated folder containing a full app snapshot, a Database Archive folder, and a gamification save file."
                Foreground="Gray"
                FontStyle="Italic"
+               TextWrapping="Wrap"/>
+
+                    <TextBlock Text="For database archive imports, choose the Database Archive folder itself — the one containing manifest.json and the year folders."
+               Foreground="Gray"
+               FontStyle="Italic"
+               Margin="0,4,0,0"
                TextWrapping="Wrap"/>
                 </StackPanel>
             </GroupBox>
