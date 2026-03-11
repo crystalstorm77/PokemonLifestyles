@@ -123,6 +123,7 @@ namespace LifestylesDesktop
         {
             InitializeComponent();
             InitializeFocusTimerUi();
+            AttachNestedDataGridWheelForwarding();
 
             Loaded += (_, __) => FitSelectedTabColumnsOnce();
             Closed += (_, __) =>
@@ -158,11 +159,6 @@ namespace LifestylesDesktop
 
             await RefreshForSelectedDateAsync();
         }
-
-
-
-
-
         #endregion // SECTION B — Main Window Class
 
         #region SECTION C — Log Date Helpers
@@ -1147,7 +1143,6 @@ namespace LifestylesDesktop
         }
         #endregion // SECTION D3 — Focus Timer Handlers + Manual Add
 
-
         #region SECTION D4 — Focus Labels
         private async Task RefreshFocusLabelsAsync(string? keepText = null)
         {
@@ -1961,6 +1956,8 @@ WHERE Id = 1;",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
                 MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left,
                 TextWrapping = TextWrapping.Wrap
             };
 
@@ -2214,6 +2211,8 @@ WHERE Id = 1;",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
                 MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left,
                 TextWrapping = TextWrapping.Wrap
             };
 
@@ -3220,7 +3219,6 @@ WHERE Id = 1;",
         }
         #endregion // SECTION G2 — Data Delete Actions + Dialog Helpers
 
-
         #region SECTION H1 — Tab + Grid Helpers
         private void SessionsTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -3241,6 +3239,93 @@ WHERE Id = 1;",
                 ScheduleAutoFitFood();
             else if (idx == 2)
                 ScheduleAutoFitSleep();
+        }
+
+        private void AttachNestedDataGridWheelForwarding()
+        {
+            RegisterNestedDataGrid(ItemDefinitionsGrid);
+            RegisterNestedDataGrid(InventoryGrid);
+            RegisterNestedDataGrid(FocusSessionsGrid);
+            RegisterNestedDataGrid(FoodEntriesGrid);
+            RegisterNestedDataGrid(SleepSessionsGrid);
+            RegisterNestedDataGrid(HabitsGrid);
+        }
+
+        private static void RegisterNestedDataGrid(DataGrid? grid)
+        {
+            if (grid == null)
+                return;
+
+            grid.PreviewMouseWheel -= NestedDataGrid_PreviewMouseWheel;
+            grid.PreviewMouseWheel += NestedDataGrid_PreviewMouseWheel;
+        }
+
+        private static void NestedDataGrid_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (sender is not DataGrid grid)
+                return;
+
+            var innerScrollViewer = FindDescendantScrollViewer(grid);
+            if (innerScrollViewer == null || innerScrollViewer.ScrollableHeight <= 0)
+                return;
+
+            bool atTop = innerScrollViewer.VerticalOffset <= 0.5;
+            bool atBottom = innerScrollViewer.VerticalOffset >= innerScrollViewer.ScrollableHeight - 0.5;
+
+            bool shouldBubbleToOuter =
+                (e.Delta > 0 && atTop) ||
+                (e.Delta < 0 && atBottom);
+
+            if (!shouldBubbleToOuter)
+                return;
+
+            var outerScrollViewer = FindAncestorScrollViewer(grid);
+            if (outerScrollViewer == null)
+                return;
+
+            e.Handled = true;
+
+            var forwardedEvent = new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+            {
+                RoutedEvent = System.Windows.UIElement.MouseWheelEvent,
+                Source = grid
+            };
+
+            outerScrollViewer.RaiseEvent(forwardedEvent);
+        }
+
+        private static System.Windows.Controls.ScrollViewer? FindDescendantScrollViewer(System.Windows.DependencyObject root)
+        {
+            int childCount = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+
+                if (child is System.Windows.Controls.ScrollViewer scrollViewer)
+                    return scrollViewer;
+
+                var nested = FindDescendantScrollViewer(child);
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
+        }
+
+        private static System.Windows.Controls.ScrollViewer? FindAncestorScrollViewer(System.Windows.DependencyObject start)
+        {
+            System.Windows.DependencyObject? current = System.Windows.Media.VisualTreeHelper.GetParent(start);
+
+            while (current != null)
+            {
+                if (current is System.Windows.Controls.ScrollViewer scrollViewer)
+                    return scrollViewer;
+
+                current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+            }
+
+            return null;
         }
 
         private void ScheduleAutoFitFocus()
@@ -3312,9 +3397,9 @@ WHERE Id = 1;",
 
             string[] formats = new[]
             {
-        "yyyy-MM-dd HH:mm",
-        "yyyy-MM-dd HH:mm:ss"
-    };
+                "yyyy-MM-dd HH:mm",
+                "yyyy-MM-dd HH:mm:ss"
+            };
 
             return DateTime.TryParseExact(
                 input,
