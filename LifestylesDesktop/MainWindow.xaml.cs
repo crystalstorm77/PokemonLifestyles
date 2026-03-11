@@ -3265,22 +3265,31 @@ WHERE Id = 1;",
             if (sender is not DataGrid grid)
                 return;
 
-            var innerScrollViewer = FindDescendantScrollViewer(grid);
-            if (innerScrollViewer == null || innerScrollViewer.ScrollableHeight <= 0)
-                return;
-
-            bool atTop = innerScrollViewer.VerticalOffset <= 0.5;
-            bool atBottom = innerScrollViewer.VerticalOffset >= innerScrollViewer.ScrollableHeight - 0.5;
-
-            bool shouldBubbleToOuter =
-                (e.Delta > 0 && atTop) ||
-                (e.Delta < 0 && atBottom);
-
-            if (!shouldBubbleToOuter)
-                return;
-
             var outerScrollViewer = FindAncestorScrollViewer(grid);
             if (outerScrollViewer == null)
+                return;
+
+            var innerScrollViewer = FindDescendantScrollViewer(grid);
+
+            bool shouldBubbleToOuter;
+
+            if (innerScrollViewer == null || innerScrollViewer.ScrollableHeight <= 0)
+            {
+                // Grid has no usable internal scrolling (empty list / too few rows / no scrollbar),
+                // so let the main app continue scrolling.
+                shouldBubbleToOuter = true;
+            }
+            else
+            {
+                bool atTop = innerScrollViewer.VerticalOffset <= 0.5;
+                bool atBottom = innerScrollViewer.VerticalOffset >= innerScrollViewer.ScrollableHeight - 0.5;
+
+                shouldBubbleToOuter =
+                    (e.Delta > 0 && atTop) ||
+                    (e.Delta < 0 && atBottom);
+            }
+
+            if (!shouldBubbleToOuter)
                 return;
 
             e.Handled = true;
