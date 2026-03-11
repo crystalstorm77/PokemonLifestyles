@@ -1,6 +1,4 @@
-﻿<!-- ============================================================
-     SECTION A — Window + Layout
-     ============================================================ -->
+﻿<!-- SECTION A START — Window + Layout -->
 <Window x:Class="LifestylesDesktop.StepsBucketsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -15,18 +13,16 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+        <!-- SECTION A END — Window + Layout -->
 
-        <!-- ============================================================
-             SECTION B — Header
-             ============================================================ -->
+        <!-- SECTION B START — Header -->
         <TextBlock x:Name="HeaderText"
                    Grid.Row="0"
                    FontWeight="Bold"
                    Margin="0,0,0,10"/>
+        <!-- SECTION B END — Header -->
 
-        <!-- ============================================================
-             SECTION C — Buckets Grid
-             ============================================================ -->
+        <!-- SECTION C START — Buckets Grid -->
         <DataGrid x:Name="BucketsGrid"
                   Grid.Row="1"
                   AutoGenerateColumns="False"
@@ -41,10 +37,9 @@
                 <DataGridTextColumn Header="Updated" Binding="{Binding UpdatedLocal}"/>
             </DataGrid.Columns>
         </DataGrid>
+        <!-- SECTION C END — Buckets Grid -->
 
-        <!-- ============================================================
-             SECTION D — Buttons
-             ============================================================ -->
+        <!-- SECTION D START — Buttons -->
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
@@ -53,5 +48,9 @@
                     Width="90"
                     Click="Close_Click"/>
         </StackPanel>
+        <!-- SECTION D END — Buttons -->
+
+        <!-- SECTION E START — Window Close -->
     </Grid>
 </Window>
+<!-- SECTION E END — Window Close -->
