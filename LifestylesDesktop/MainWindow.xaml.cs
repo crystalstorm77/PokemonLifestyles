@@ -299,6 +299,16 @@ namespace LifestylesDesktop
             return ((currentWholeMinutes / 120) + 1) * 120;
         }
 
+        private static bool HasMetFocusLoggingThreshold(int wholeMinutes)
+        {
+            return wholeMinutes >= 1;
+        }
+
+        private static bool HasMetFocusRewardThreshold(int wholeMinutes)
+        {
+            return wholeMinutes >= 5;
+        }
+
         private TimeSpan GetCurrentFocusTimerElapsed()
         {
             if (_focusTimerRunning)
@@ -594,7 +604,7 @@ namespace LifestylesDesktop
         #endregion // SECTION D1 — Focus Timer State + UI Helpers
 
         #region SECTION D2 — Focus Timer Dialogs
-        private Task<FocusTimerStopChoice> ShowStopFocusTimerDialogAsync(int wholeMinutes)
+        private Task<FocusTimerStopChoice> ShowStopFocusTimerDialogAsync(int wholeMinutes, bool discardInsteadOfStop)
         {
             if (_focusTimerStopDialogOpen)
                 return Task.FromResult(FocusTimerStopChoice.KeepFocusing);
@@ -659,7 +669,8 @@ namespace LifestylesDesktop
             var keepBtn = new Button { Content = "Keep going?", Width = 120, Margin = new Thickness(0, 0, 10, 0) };
             keepBtn.Click += (_, __) => Finish(FocusTimerStopChoice.KeepFocusing);
 
-            var stopBtn = new Button { Content = "Stop Focusing", Width = 120 };
+            string stopButtonText = discardInsteadOfStop ? "Discard Session" : "Stop Focusing";
+            var stopBtn = new Button { Content = stopButtonText, Width = 120 };
             stopBtn.Click += (_, __) => Finish(FocusTimerStopChoice.StopFocusing);
 
             buttons.Children.Add(keepBtn);
@@ -780,7 +791,7 @@ namespace LifestylesDesktop
 
             root.Children.Add(new TextBlock
             {
-                Text = $"Cycle XP gained: {trainerXp}",
+                Text = $"XP gained: {trainerXp}",
                 Margin = new Thickness(0, 0, 0, 12)
             });
 
@@ -915,7 +926,8 @@ namespace LifestylesDesktop
                 int wholeMinutesAtPrompt = Math.Max(0, (int)Math.Floor(
                     _focusTimerRunning ? GetCurrentFocusTimerElapsed().TotalMinutes : _focusTimerElapsedBeforePause.TotalMinutes));
 
-                var choice = await ShowStopFocusTimerDialogAsync(wholeMinutesAtPrompt);
+                bool discardInsteadOfStop = !HasMetFocusLoggingThreshold(wholeMinutesAtPrompt);
+                var choice = await ShowStopFocusTimerDialogAsync(wholeMinutesAtPrompt, discardInsteadOfStop);
 
                 if (!_focusTimerRunning && !_focusTimerPaused)
                     return;
@@ -946,10 +958,10 @@ namespace LifestylesDesktop
                 _focusTimerPausedByUser = false;
 
                 int wholeMinutes = Math.Max(0, (int)Math.Floor(finalElapsed.TotalMinutes));
-                bool grantRewards = wholeMinutes >= 5;
+                bool grantRewards = HasMetFocusRewardThreshold(wholeMinutes);
                 bool completed = _focusTimerIsCountUp && grantRewards;
 
-                if (wholeMinutes > 0)
+                if (HasMetFocusLoggingThreshold(wholeMinutes))
                 {
                     var nowLocal = DateTimeOffset.Now;
                     var logDate = GetCurrentGameDayLocal(nowLocal);
@@ -1134,6 +1146,7 @@ namespace LifestylesDesktop
             }
         }
         #endregion // SECTION D3 — Focus Timer Handlers + Manual Add
+
 
         #region SECTION D4 — Focus Labels
         private async Task RefreshFocusLabelsAsync(string? keepText = null)
