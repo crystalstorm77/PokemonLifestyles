@@ -32,6 +32,6 @@ namespace LifestyleCore.Models
             get => _loggedAtLocalEdit ?? LoggedAtLocal.ToString("yyyy-MM-dd HH:mm");
             set => _loggedAtLocalEdit = value;
         }
-        #endregion // SECTION B — Editable fields for UI (local time + date) 
+        #endregion // SECTION B — Editable fields for UI (local time + date)
     }
 }
