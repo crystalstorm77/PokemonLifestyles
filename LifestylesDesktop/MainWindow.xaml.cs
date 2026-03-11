@@ -2720,27 +2720,37 @@ WHERE Id = 1;",
                 int remainder = state.StepsRemainder;
 
                 if (remainder < 0) remainder = 0;
-                if (remainder >= stepsPerRoll) remainder = remainder % stepsPerRoll;
+                if (remainder >= stepsPerRoll) remainder %= stepsPerRoll;
 
                 int toNext = stepsPerRoll - remainder;
 
                 if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
-                    StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString();
+                    StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString(CultureInfo.InvariantCulture);
 
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
-                    OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
+                    OddsOneInBox.Text = settings.ItemRollOneInN.ToString(CultureInfo.InvariantCulture);
 
-                if (DropChanceText != null)
-                    DropChanceText.Text = $"Drop chance per roll: 1 in {oneInN} ({(100.0 / oneInN):0.##}%)";
+                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
+                    CommonWeightBox.Text = settings.CommonTierWeight.ToString(CultureInfo.InvariantCulture);
 
-                if (ItemDropsSummaryText != null)
+                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
+                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString(CultureInfo.InvariantCulture);
+
+                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
+                    RareWeightBox.Text = settings.RareTierWeight.ToString(CultureInfo.InvariantCulture);
+
+                if (ItemDropsProgressText != null)
+                    ItemDropsProgressText.Text = $"Steps remainder: {remainder}/{stepsPerRoll} | Steps to next roll: {toNext}";
+
+                if (ItemDropsStatsText != null)
+                    ItemDropsStatsText.Text = $"Roll chance: 1 in {oneInN} ({(100.0 / oneInN):0.##}%) | Rolls: {state.TotalRolls} | Successes: {state.TotalSuccesses}";
+
+                if (ItemDropsLastText != null)
                 {
                     string lastDrop = string.IsNullOrWhiteSpace(state.LastDropSummary)
-                        ? "none yet"
-                        : state.LastDropSummary!;
-
-                    ItemDropsSummaryText.Text =
-                        $"Steps remainder: {remainder}/{stepsPerRoll} | Steps to next roll: {toNext} | Rolls: {state.TotalRolls} | Successes: {state.TotalSuccesses} | Last drop: {lastDrop}";
+                        ? "Last drop: none yet"
+                        : $"Last drop: {state.LastDropSummary}";
+                    ItemDropsLastText.Text = lastDrop;
                 }
 
                 _inventoryItems = new ObservableCollection<InventoryItem>(items.OrderBy(x => x.ItemKey));
@@ -2754,42 +2764,28 @@ WHERE Id = 1;",
                 if (ItemDefinitionsGrid != null)
                     ItemDefinitionsGrid.ItemsSource = _itemDefinitions;
 
-                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
-                    CommonWeightBox.Text = settings.CommonTierWeight.ToString(CultureInfo.InvariantCulture);
-
-                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
-                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString(CultureInfo.InvariantCulture);
-
-                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
-                    RareWeightBox.Text = settings.RareTierWeight.ToString(CultureInfo.InvariantCulture);
-
-                if (CommonPoolBox != null && !CommonPoolBox.IsKeyboardFocusWithin)
-                    CommonPoolBox.Text = settings.CommonPoolText ?? "";
-
-                if (UncommonPoolBox != null && !UncommonPoolBox.IsKeyboardFocusWithin)
-                    UncommonPoolBox.Text = settings.UncommonPoolText ?? "";
-
-                if (RarePoolBox != null && !RarePoolBox.IsKeyboardFocusWithin)
-                    RarePoolBox.Text = settings.RarePoolText ?? "";
-
-                if (TierWeightsSummaryText != null)
+                if (InventoryCountText != null)
                 {
-                    int totalWeight = settings.CommonTierWeight + settings.UncommonTierWeight + settings.RareTierWeight;
-                    double commonPct = totalWeight > 0 ? (settings.CommonTierWeight * 100.0 / totalWeight) : 0;
-                    double uncommonPct = totalWeight > 0 ? (settings.UncommonTierWeight * 100.0 / totalWeight) : 0;
-                    double rarePct = totalWeight > 0 ? (settings.RareTierWeight * 100.0 / totalWeight) : 0;
-
-                    TierWeightsSummaryText.Text =
-                        $"Tier split: Common {commonPct:0.#}% | Uncommon {uncommonPct:0.#}% | Rare {rarePct:0.#}%";
+                    int totalCount = _inventoryItems.Sum(x => Math.Max(0, x.Count));
+                    InventoryCountText.Text = $"Inventory ({totalCount} total)";
                 }
 
-                AutoSizeGridColumns(InventoryGrid);
-                AutoSizeGridColumns(ItemDefinitionsGrid);
+                if (ItemDefinitionsGrid != null)
+                    AutoFitGridColumns(ItemDefinitionsGrid);
+
+                if (InventoryGrid != null)
+                    AutoFitGridColumns(InventoryGrid);
             }
             catch (Exception ex)
             {
-                if (ItemDropsSummaryText != null)
-                    ItemDropsSummaryText.Text = $"Item drops: (error loading) {ex.Message}";
+                if (ItemDropsProgressText != null)
+                    ItemDropsProgressText.Text = $"Item drops: (error loading) {ex.Message}";
+
+                if (ItemDropsStatsText != null)
+                    ItemDropsStatsText.Text = "";
+
+                if (ItemDropsLastText != null)
+                    ItemDropsLastText.Text = "";
             }
         }
         #endregion // SECTION E4 — Gamification + Item Drop Debug Refresh
