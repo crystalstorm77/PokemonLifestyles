@@ -162,14 +162,22 @@ ON CONFLICT(HabitId, Date) DO UPDATE SET
                 });
         }
 
-        // Back-compat: older callers that don't care about rewards can keep using 3 args.
         public async Task SetDailyValueAsync(long habitId, DateOnly date, int value)
         {
-            await SetDailyValueAsync(habitId, date, value, tryAward: false);
+            await SetDailyValueAsync(habitId, date, value, tryAward: false, currentLocalNowOverride: null);
         }
 
-        // New API used by the desktop debug UI (returns whether a NEW ticket was granted).
         public async Task<SetDailyValueResult> SetDailyValueAsync(long habitId, DateOnly date, int value, bool tryAward)
+        {
+            return await SetDailyValueAsync(habitId, date, value, tryAward, currentLocalNowOverride: null);
+        }
+
+        public async Task<SetDailyValueResult> SetDailyValueAsync(
+            long habitId,
+            DateOnly date,
+            int value,
+            bool tryAward,
+            DateTimeOffset? currentLocalNowOverride)
         {
             HabitsSchema.EnsureCreated();
 
@@ -178,7 +186,6 @@ ON CONFLICT(HabitId, Date) DO UPDATE SET
 
             using var conn = Db.OpenConnection();
 
-            // Determine whether this day was already "done" for this habit (prevents duplicate ticket grants).
             int? priorVal = await conn.ExecuteScalarAsync<int?>(
                 "SELECT Value FROM HabitEntries WHERE HabitId = @HabitId AND Date = @Date LIMIT 1;",
                 new { HabitId = habitId, Date = d });
@@ -187,12 +194,10 @@ ON CONFLICT(HabitId, Date) DO UPDATE SET
 
             if (value <= 0)
             {
-                // Treat 0/unchecked as “no entry”
                 await conn.ExecuteAsync(
                     "DELETE FROM HabitEntries WHERE HabitId = @HabitId AND Date = @Date;",
                     new { HabitId = habitId, Date = d });
 
-                // Honour-system v1: no refunds on uncheck
                 return new SetDailyValueResult(false);
             }
 
@@ -212,9 +217,7 @@ ON CONFLICT(HabitId, Date) DO UPDATE SET
 
             bool rewardGranted = false;
 
-            // Reward: checkbox habits grant +1 ticket the first time they become done for a given date,
-            // but only if we're still within that date's reward window.
-            if (tryAward && !wasDone && value > 0 && IsWithinRewardWindow(date))
+            if (tryAward && !wasDone && value > 0 && IsWithinRewardWindow(date, currentLocalNowOverride))
             {
                 var kind = await TryGetHabitKindAsync(conn, habitId);
                 if (kind.HasValue && kind.Value == HabitKind.CheckboxDaily)
@@ -238,18 +241,15 @@ ON CONFLICT(HabitId, Date) DO UPDATE SET
             return (HabitKind)kindInt.Value;
         }
 
-        private static bool IsWithinRewardWindow(DateOnly habitDate)
+        private static bool IsWithinRewardWindow(DateOnly habitDate, DateTimeOffset? currentLocalNowOverride)
         {
-            // We only grant tickets for the CURRENT "game day" (03:00 local cutoff),
-            // so you can't farm tickets by editing past days.
-            var nowLocal = DateTimeOffset.Now;
+            var nowLocal = currentLocalNowOverride ?? DateTimeOffset.Now;
             var currentGameDay = GetCurrentGameDayLocal(nowLocal);
             return habitDate == currentGameDay;
         }
 
         private static DateOnly GetCurrentGameDayLocal(DateTimeOffset nowLocal)
         {
-            // 03:00 local cutoff: before 03:00 counts as “yesterday” game day.
             var today = DateOnly.FromDateTime(nowLocal.DateTime);
             return (nowLocal.TimeOfDay < new TimeSpan(3, 0, 0))
                 ? today.AddDays(-1)

@@ -24,36 +24,118 @@ SECTION B — Input Panel
 
             <TextBlock x:Name="TimeZoneText" FontSize="12" Foreground="Gray" Margin="0,0,0,12"/>
 
-            <!-- Log Date selector -->
+            <!-- Archive View Date selector -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
 
-                <TextBlock Text="Log date:" Width="70" VerticalAlignment="Center"/>
+                <TextBlock Text="Archive View Date:"
+                           Width="120"
+                           VerticalAlignment="Center"
+                           ToolTip="Browsing only. This changes which day you are viewing in the archive. Tracking actions use the current effective game time instead."/>
 
                 <Button x:Name="LogTodayButton"
-            Content="Today"
-            Width="60"
+            Content="View Today"
+            Width="90"
+            ToolTip="Set Archive View Date to the current game day. If simulated time is enabled, this uses the simulated game day."
             Click="LogTodayButton_Click"/>
 
                 <Button x:Name="LogYesterdayButton"
-            Content="Yesterday"
-            Width="80"
+            Content="View Yesterday"
+            Width="110"
             Margin="6,0,0,0"
+            ToolTip="Set Archive View Date to the previous game day. If simulated time is enabled, this uses the simulated game day."
             Click="LogYesterdayButton_Click"/>
 
                 <DatePicker x:Name="LogDatePicker"
                 Width="140"
                 Margin="12,0,0,0"
+                ToolTip="Choose a day to browse in the archive."
                 SelectedDateChanged="LogDatePicker_SelectedDateChanged"/>
-                <TextBlock x:Name="LogDateDisplay" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBlock x:Name="LogDateDisplay"
+                           Margin="12,0,0,0"
+                           VerticalAlignment="Center"
+                           ToolTip="The Archive View Date currently being displayed."/>
 
             </StackPanel>
 
             <GroupBox Header="Gamification (Debug)" Margin="0,0,0,12">
                 <StackPanel Margin="10">
 
-                    <TextBlock x:Name="NowLocalText" Foreground="Gray"/>
+                    <TextBlock Text="Time Travel"
+                               FontWeight="Bold"
+                               ToolTip="Debug-only clock override. This lets you make the game think it is a different local date and time for testing weekly bonuses and other time-based features."/>
 
-                    <TextBlock x:Name="GameDayNowText" Foreground="Gray" Margin="0,2,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <CheckBox x:Name="UseSimulatedTimeCheckBox"
+                                  Content="Use Simulated Time"
+                                  VerticalAlignment="Center"
+                                  ToolTip="When checked, the game uses the simulated date and time below instead of the real-world local time."
+                                  Checked="UseSimulatedTimeCheckBox_Checked"
+                                  Unchecked="UseSimulatedTimeCheckBox_Unchecked"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <TextBlock Text="Simulated Date:"
+                                   Width="120"
+                                   VerticalAlignment="Center"
+                                   ToolTip="Choose the local date that the game should treat as 'now' when simulated time is enabled."/>
+                        <DatePicker x:Name="SimulatedDatePicker"
+                                    Width="150"
+                                    Margin="0,0,12,0"
+                                    ToolTip="Choose the simulated local date."
+                                    SelectedDateChanged="SimulatedDatePicker_SelectedDateChanged"/>
+
+                        <TextBlock Text="Simulated Time:"
+                                   Width="120"
+                                   VerticalAlignment="Center"
+                                   ToolTip="Enter the simulated local time in HH:mm:ss format. The simulated clock continues ticking forward after you apply it."/>
+                        <TextBox x:Name="SimulatedTimeBox"
+                                 Width="100"
+                                 ToolTip="Format: HH:mm:ss"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button x:Name="TimeTravelBackOneDayButton"
+                                Content="Back 1 Day"
+                                Width="100"
+                                ToolTip="Move the simulated date picker back by one day. If simulated time is already active, the new date is applied immediately."
+                                Click="TimeTravelBackOneDayButton_Click"/>
+
+                        <Button x:Name="TimeTravelForwardOneDayButton"
+                                Content="Forward 1 Day"
+                                Width="110"
+                                Margin="8,0,0,0"
+                                ToolTip="Move the simulated date picker forward by one day. If simulated time is already active, the new date is applied immediately."
+                                Click="TimeTravelForwardOneDayButton_Click"/>
+
+                        <Button x:Name="ApplySimulatedTimeButton"
+                                Content="Apply"
+                                Width="80"
+                                Margin="8,0,0,0"
+                                ToolTip="Apply the selected simulated date and time and turn simulated time on."
+                                Click="ApplySimulatedTimeButton_Click"/>
+
+                        <Button x:Name="ResetTimeToNowLocalButton"
+                                Content="Reset Time to 'Now (Local)'"
+                                Width="180"
+                                Margin="8,0,0,0"
+                                ToolTip="Turn simulated time off and sync the simulated date and time controls back to the real local clock."
+                                Click="ResetTimeToNowLocalButton_Click"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="NowLocalText"
+                               Foreground="Gray"
+                               Margin="0,8,0,0"
+                               ToolTip="The real-world local date and time outside the game. This does not change when simulated time is enabled."/>
+
+                    <TextBlock x:Name="SimulatedDateTimeText"
+                               Foreground="Gray"
+                               Margin="0,2,0,0"
+                               ToolTip="The date and time the game is currently using as 'now'. This matches Now (Local) when simulated time is off."/>
+
+                    <TextBlock x:Name="GameDayNowText"
+                               Foreground="Gray"
+                               Margin="0,2,0,0"
+                               ToolTip="The game's current day after applying the 03:00 rollover rule. For example, 02:30 still counts as the previous day."/>
 
                     <TextBlock x:Name="RewardsSummaryText" Margin="0,6,0,0"/>
 
@@ -61,7 +143,9 @@ SECTION B — Input Panel
 
                     <Separator Margin="0,10,0,10"/>
 
-                    <TextBlock Text="Step item drops (from steps)" FontWeight="Bold"/>
+                    <TextBlock x:Name="StepItemDropsHeaderText"
+                               Text="Step item drops (from steps)"
+                               FontWeight="Bold"/>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
 
                         <TextBlock Text="Steps/roll:" Width="80" VerticalAlignment="Center"/>
@@ -77,7 +161,11 @@ SECTION B — Input Panel
                     <TextBlock x:Name="ItemDropsProgressText" Foreground="Gray" Margin="0,6,0,0"/>
 
                     <TextBlock x:Name="ItemDropsStatsText" Foreground="Gray" Margin="0,2,0,0"/>
-                    <TextBlock x:Name="ItemDropsLastText" Foreground="Gray" Margin="0,2,0,0"/>
+                    <TextBlock x:Name="ItemDropsLastText"
+                               Foreground="Gray"
+                               Margin="0,2,0,0"
+                               MaxWidth="520"
+                               TextWrapping="Wrap"/>
 
                     <!-- Tier weights -->
 
@@ -147,7 +235,6 @@ SECTION B — Input Panel
 
                     </StackPanel>
 
-                    <!-- Auto-size columns based on BOTH header + cell contents -->
                     <DataGrid x:Name="ItemDefinitionsGrid"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -163,7 +250,6 @@ SECTION B — Input Panel
 
                             <DataGridTextColumn Header="Category" Binding="{Binding Category, UpdateSourceTrigger=PropertyChanged}" Width="Auto"/>
 
-                            <!-- Template column so Tier always displays (even when not editing) -->
                             <DataGridTemplateColumn Header="Tier" Width="Auto">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -199,7 +285,6 @@ SECTION B — Input Panel
                    FontSize="11"
                    Margin="0,2,0,0"/>
 
-                    <!-- Inventory -->
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
                         <TextBlock x:Name="InventoryCountText" VerticalAlignment="Center"/>
 
@@ -235,15 +320,7 @@ SECTION B — Input Panel
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
-
                     </DataGrid>
-
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                        <Button Content="View rewards..."
-                    Width="140"
-                    Click="ViewRewardsForSelectedDay_Click"/>
-                    </StackPanel>
-
                 </StackPanel>
             </GroupBox>
             <!-- ============================================================
@@ -492,9 +569,10 @@ SECTION C — Focus Session Input
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                        <TextBlock Text="At (optional):" Width="90" VerticalAlignment="Center"/>
+                        <TextBlock Text="At (optional):" Width="90" VerticalAlignment="Center"
+                                   ToolTip="Leave blank to use the current effective date and time. If simulated time is enabled, blank uses the simulated date and time."/>
                         <TextBox x:Name="StepsAtBox" Width="240"
-               ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss"/>
+               ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss. Leave blank to use the current effective date and time."/>
                     </StackPanel>
 
                     <TextBlock Text="Steps are stored in 15-minute buckets."

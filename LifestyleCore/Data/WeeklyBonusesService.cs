@@ -41,7 +41,12 @@ namespace LifestyleCore.Data
         #endregion // SECTION A — Weekly Bonuses Service Fields
 
         #region SECTION B — Grant Weekly Bonuses
-        public async Task<WeeklyBonusesGrantResult> GrantMostRecentCompletedWeekAsync()
+        public Task<WeeklyBonusesGrantResult> GrantMostRecentCompletedWeekAsync()
+        {
+            return GrantMostRecentCompletedWeekAsync(DateTimeOffset.Now);
+        }
+
+        public async Task<WeeklyBonusesGrantResult> GrantMostRecentCompletedWeekAsync(DateTimeOffset currentLocalNow)
         {
             ItemDropsSchema.EnsureCreated();
             HabitsSchema.EnsureCreated();
@@ -49,7 +54,7 @@ namespace LifestyleCore.Data
             StepsSchema.EnsureCreated();
             RewardsSchema.EnsureCreated();
 
-            var currentGameDay = SleepRewardCalculator.GetGameDayForWakeLocal(DateTimeOffset.Now.LocalDateTime);
+            var currentGameDay = SleepRewardCalculator.GetGameDayForWakeLocal(currentLocalNow.LocalDateTime);
             var mostRecentCompletedDay = currentGameDay.AddDays(-1);
             var weekStart = GetWeekStartMonday(mostRecentCompletedDay);
             var weekEnd = weekStart.AddDays(6);

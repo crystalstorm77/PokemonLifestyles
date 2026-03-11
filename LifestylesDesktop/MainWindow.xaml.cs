@@ -99,6 +99,12 @@ namespace LifestylesDesktop
         private int _focusTimerNextCountUpPauseMinutes = 120;
         private string _focusTimerFocusType = "(None)";
 
+        // Time travel / effective current time
+        private bool _timeTravelUiUpdating = false;
+        private bool _useSimulatedTime = false;
+        private DateTimeOffset _simulatedTimeAnchorLocal;
+        private DateTimeOffset _simulatedTimeAppliedAtUtc;
+
         // Sleep tuning controls (injected at runtime into the debug area)
         private bool _sleepSettingsUiBuilt = false;
         private TextBox? _sleepHealthyMinHoursBox;
@@ -143,13 +149,16 @@ namespace LifestylesDesktop
 
             TimeZoneText.Text = $"Timezone: {TimeZoneInfo.Local.DisplayName}";
 
-            // Default log date = today
-            _logDateUiUpdating = true;
-            LogDatePicker.SelectedDate = DateTime.Today;
-            _logDateUiUpdating = false;
+            InitializeTimeTravelUiFromRealNow();
+
+            // Default archive view date = current effective game day
+            SetArchiveViewDate(GetEffectiveCurrentGameDay());
 
             UpdateLogDateUI();
             StartLiveClock();
+            _liveClockTimer.Tick -= TimeTravelLiveClockTimer_Tick;
+            _liveClockTimer.Tick += TimeTravelLiveClockTimer_Tick;
+            UpdateTimeTravelStatusText();
 
             _ = InitializeAndRefreshAsync();
         }
@@ -165,6 +174,7 @@ namespace LifestylesDesktop
             EnsureSleepSettingsDebugUiBuilt();
             EnsureWeeklyBonusesDebugUiBuilt();
             UpdateLiveClockText();
+            UpdateTimeTravelStatusText();
             UpdateFocusTimerUi();
 
             await RefreshForSelectedDateAsync();
@@ -176,34 +186,178 @@ namespace LifestylesDesktop
         {
             get
             {
-                DateTime dt = LogDatePicker?.SelectedDate ?? DateTime.Today;
+                DateTime dt = LogDatePicker?.SelectedDate ?? GetEffectiveCurrentGameDay().ToDateTime(TimeOnly.MinValue);
                 return DateOnly.FromDateTime(dt);
             }
+        }
+
+        private DateTimeOffset GetRealNowLocal()
+        {
+            return DateTimeOffset.Now;
+        }
+
+        private DateTimeOffset GetEffectiveCurrentLocalTime()
+        {
+            if (!_useSimulatedTime)
+                return GetRealNowLocal();
+
+            if (_simulatedTimeAppliedAtUtc == default)
+                return GetRealNowLocal();
+
+            var elapsed = DateTimeOffset.UtcNow - _simulatedTimeAppliedAtUtc;
+            var simulatedLocalDateTime = _simulatedTimeAnchorLocal.LocalDateTime + elapsed;
+            return LocalDateTimeToLocalOffset(simulatedLocalDateTime);
+        }
+
+        private DateOnly GetEffectiveCurrentGameDay()
+        {
+            return GetCurrentGameDayLocal(GetEffectiveCurrentLocalTime());
+        }
+
+        private void InitializeTimeTravelUiFromRealNow()
+        {
+            var realNowLocal = GetRealNowLocal();
+            _simulatedTimeAnchorLocal = realNowLocal;
+            _simulatedTimeAppliedAtUtc = DateTimeOffset.UtcNow;
+
+            _timeTravelUiUpdating = true;
+            try
+            {
+                if (UseSimulatedTimeCheckBox != null)
+                    UseSimulatedTimeCheckBox.IsChecked = false;
+
+                if (SimulatedDatePicker != null)
+                    SimulatedDatePicker.SelectedDate = realNowLocal.Date;
+
+                if (SimulatedTimeBox != null)
+                    SimulatedTimeBox.Text = realNowLocal.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            }
+            finally
+            {
+                _timeTravelUiUpdating = false;
+            }
+        }
+
+        private void SetArchiveViewDate(DateOnly date)
+        {
+            _logDateUiUpdating = true;
+            try
+            {
+                if (LogDatePicker != null)
+                    LogDatePicker.SelectedDate = date.ToDateTime(TimeOnly.MinValue);
+            }
+            finally
+            {
+                _logDateUiUpdating = false;
+            }
+        }
+
+        private async Task SwitchArchiveViewToDateAsync(DateOnly date)
+        {
+            bool changed = SelectedLogDate != date;
+            SetArchiveViewDate(date);
+            UpdateLogDateUI();
+
+            if (changed)
+                await RefreshForSelectedDateAsync();
+        }
+
+        private static bool TryParseSimulatedTimeText(string text, out TimeOnly time)
+        {
+            text = (text ?? "").Trim();
+
+            string[] formats = { "HH:mm:ss", "H:mm:ss", "HH:mm", "H:mm" };
+            return TimeOnly.TryParseExact(text, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out time);
+        }
+
+        private static DateTimeOffset LocalDateTimeToLocalOffset(DateTime localDateTime)
+        {
+            var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
+            var offset = TimeZoneInfo.Local.GetUtcOffset(unspecified);
+            return new DateTimeOffset(unspecified, offset);
+        }
+
+        private bool TryGetSimulatedDateTimeFromUi(out DateTimeOffset simulatedLocal)
+        {
+            simulatedLocal = default;
+
+            if (SimulatedDatePicker?.SelectedDate == null)
+                return false;
+
+            if (!TryParseSimulatedTimeText(SimulatedTimeBox?.Text ?? "", out var time))
+                return false;
+
+            var date = DateOnly.FromDateTime(SimulatedDatePicker.SelectedDate.Value);
+            var localDateTime = date.ToDateTime(time);
+            simulatedLocal = LocalDateTimeToLocalOffset(localDateTime);
+            return true;
+        }
+
+        private async Task ApplySimulatedTimeFromUiAsync(bool enableSimulation)
+        {
+            if (!TryGetSimulatedDateTimeFromUi(out var simulatedLocal))
+                throw new InvalidOperationException("Simulated Time must be in HH:mm:ss or HH:mm format.");
+
+            _simulatedTimeAnchorLocal = simulatedLocal;
+            _simulatedTimeAppliedAtUtc = DateTimeOffset.UtcNow;
+            _useSimulatedTime = enableSimulation;
+
+            _timeTravelUiUpdating = true;
+            try
+            {
+                if (UseSimulatedTimeCheckBox != null)
+                    UseSimulatedTimeCheckBox.IsChecked = enableSimulation;
+            }
+            finally
+            {
+                _timeTravelUiUpdating = false;
+            }
+
+            UpdateTimeTravelStatusText();
+            await SwitchArchiveViewToDateAsync(GetEffectiveCurrentGameDay());
         }
 
         private void UpdateLogDateUI()
         {
             var d = SelectedLogDate;
             LogDateDisplay.Text = d.ToString("yyyy-MM-dd");
-            SessionsHeaderText.Text = $"Sessions ({d:yyyy-MM-dd})";
+            SessionsHeaderText.Text = $"Sessions — Archive View ({d:yyyy-MM-dd})";
+        }
+
+        private void UpdateTimeTravelStatusText()
+        {
+            var realNowLocal = GetRealNowLocal();
+            var effectiveNowLocal = GetEffectiveCurrentLocalTime();
+            var gameDayNow = GetEffectiveCurrentGameDay();
+
+            if (NowLocalText != null)
+                NowLocalText.Text = $"Now (Local): {realNowLocal:yyyy-MM-dd HH:mm:ss}";
+
+            if (SimulatedDateTimeText != null)
+            {
+                string suffix = _useSimulatedTime ? "(simulated)" : "(using real now)";
+                SimulatedDateTimeText.Text = $"Simulated Date/Time: {effectiveNowLocal:yyyy-MM-dd HH:mm:ss} {suffix}";
+            }
+
+            if (GameDayNowText != null)
+                GameDayNowText.Text = $"Game Day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
+        }
+
+        private void TimeTravelLiveClockTimer_Tick(object? sender, EventArgs e)
+        {
+            UpdateTimeTravelStatusText();
         }
 
         private async void LogTodayButton_Click(object sender, RoutedEventArgs e)
         {
-            _logDateUiUpdating = true;
-            LogDatePicker.SelectedDate = DateTime.Today;
-            _logDateUiUpdating = false;
-
+            SetArchiveViewDate(GetEffectiveCurrentGameDay());
             UpdateLogDateUI();
             await RefreshForSelectedDateAsync();
         }
 
         private async void LogYesterdayButton_Click(object sender, RoutedEventArgs e)
         {
-            _logDateUiUpdating = true;
-            LogDatePicker.SelectedDate = DateTime.Today.AddDays(-1);
-            _logDateUiUpdating = false;
-
+            SetArchiveViewDate(GetEffectiveCurrentGameDay().AddDays(-1));
             UpdateLogDateUI();
             await RefreshForSelectedDateAsync();
         }
@@ -216,6 +370,95 @@ namespace LifestylesDesktop
             UpdateLogDateUI();
             await RefreshForSelectedDateAsync();
         }
+
+        private async void UseSimulatedTimeCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_timeTravelUiUpdating)
+                return;
+
+            try
+            {
+                await ApplySimulatedTimeFromUiAsync(enableSimulation: true);
+            }
+            catch (Exception ex)
+            {
+                _timeTravelUiUpdating = true;
+                try
+                {
+                    if (UseSimulatedTimeCheckBox != null)
+                        UseSimulatedTimeCheckBox.IsChecked = false;
+                }
+                finally
+                {
+                    _timeTravelUiUpdating = false;
+                }
+
+                _useSimulatedTime = false;
+                UpdateTimeTravelStatusText();
+                MessageBox.Show(ex.Message, "Could not enable simulated time");
+            }
+        }
+
+        private async void UseSimulatedTimeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_timeTravelUiUpdating)
+                return;
+
+            _useSimulatedTime = false;
+            UpdateTimeTravelStatusText();
+            await SwitchArchiveViewToDateAsync(GetEffectiveCurrentGameDay());
+        }
+
+        private async void SimulatedDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_timeTravelUiUpdating)
+                return;
+
+            if (!_useSimulatedTime)
+                return;
+
+            try
+            {
+                await ApplySimulatedTimeFromUiAsync(enableSimulation: true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not update simulated date");
+            }
+        }
+
+        private async void ApplySimulatedTimeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await ApplySimulatedTimeFromUiAsync(enableSimulation: true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not apply simulated time");
+            }
+        }
+
+        private async void ResetTimeToNowLocalButton_Click(object sender, RoutedEventArgs e)
+        {
+            _useSimulatedTime = false;
+            InitializeTimeTravelUiFromRealNow();
+            UpdateTimeTravelStatusText();
+            await SwitchArchiveViewToDateAsync(GetEffectiveCurrentGameDay());
+        }
+
+        private void TimeTravelBackOneDayButton_Click(object sender, RoutedEventArgs e)
+        {
+            DateTime current = SimulatedDatePicker?.SelectedDate ?? GetEffectiveCurrentLocalTime().Date;
+            SimulatedDatePicker.SelectedDate = current.AddDays(-1);
+        }
+
+        private void TimeTravelForwardOneDayButton_Click(object sender, RoutedEventArgs e)
+        {
+            DateTime current = SimulatedDatePicker?.SelectedDate ?? GetEffectiveCurrentLocalTime().Date;
+            SimulatedDatePicker.SelectedDate = current.AddDays(1);
+        }
+
         private static string NormalizeFocusLabel(string? raw)
         {
             string s = (raw ?? "").Trim();
@@ -969,7 +1212,7 @@ namespace LifestylesDesktop
 
                 if (HasMetFocusLoggingThreshold(wholeMinutes))
                 {
-                    var nowLocal = DateTimeOffset.Now;
+                    var nowLocal = GetEffectiveCurrentLocalTime();
                     var logDate = GetCurrentGameDayLocal(nowLocal);
                     var rewardPreview = await BuildTimerRewardPreviewAsync(logDate, wholeMinutes, completed, grantRewards);
 
@@ -1029,7 +1272,7 @@ namespace LifestylesDesktop
 
                 if (checkpointChoice == FocusTimerCheckpointChoice.TakeABreak)
                 {
-                    var nowLocal = DateTimeOffset.Now;
+                    var nowLocal = GetEffectiveCurrentLocalTime();
                     var logDate = GetCurrentGameDayLocal(nowLocal);
                     var rewardPreview = await BuildTimerRewardPreviewAsync(logDate, wholeMinutes, completed: true, grantRewards: true);
 
@@ -1066,7 +1309,7 @@ namespace LifestylesDesktop
             CloseOpenStopFocusTimerDialog();
             UpdateFocusTimerUi();
 
-            var countdownNowLocal = DateTimeOffset.Now;
+            var countdownNowLocal = GetEffectiveCurrentLocalTime();
             var countdownLogDate = GetCurrentGameDayLocal(countdownNowLocal);
             var countdownRewardPreview = await BuildTimerRewardPreviewAsync(
                 countdownLogDate,
@@ -1125,15 +1368,16 @@ namespace LifestylesDesktop
                     return;
                 }
 
-                // Allow typed label (editable ComboBox)
                 string focusType = NormalizeFocusLabel(FocusTypeCombo.Text);
                 await SaveFocusLabelIfNeededAsync(focusType);
 
-                var nowLocal = DateTimeOffset.Now;
+                var nowLocal = GetEffectiveCurrentLocalTime();
+                var effectiveGameDay = GetCurrentGameDayLocal(nowLocal);
+
                 var session = new FocusSession
                 {
                     LoggedAtUtc = nowLocal.ToUniversalTime(),
-                    LogDate = SelectedLogDate,
+                    LogDate = effectiveGameDay,
                     FocusType = focusType,
                     Minutes = minutes,
                     Completed = CompletedCheck.IsChecked == true
@@ -1144,7 +1388,10 @@ namespace LifestylesDesktop
                 MinutesBox.Text = "";
                 CompletedCheck.IsChecked = false;
 
-                await RefreshForSelectedDateAsync();
+                if (SelectedLogDate != effectiveGameDay)
+                    await SwitchArchiveViewToDateAsync(effectiveGameDay);
+                else
+                    await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
             {
@@ -1991,17 +2238,14 @@ WHERE Id = 1;",
             if (_sleepSettingsUiBuilt)
                 return;
 
-            if (StepsPerRollBox?.Parent is not StackPanel itemDropRow)
+            if (StepItemDropsHeaderText?.Parent is not StackPanel root)
                 return;
 
-            if (itemDropRow.Parent is not StackPanel root)
+            int stepItemDropsHeaderIndex = root.Children.IndexOf(StepItemDropsHeaderText);
+            if (stepItemDropsHeaderIndex < 0)
                 return;
 
-            int itemDropRowIndex = root.Children.IndexOf(itemDropRow);
-            if (itemDropRowIndex < 0)
-                return;
-
-            int insertAt = Math.Max(0, itemDropRowIndex - 1);
+            int insertAt = stepItemDropsHeaderIndex;
 
             var header = new TextBlock
             {
@@ -2241,17 +2485,14 @@ WHERE Id = 1;",
             if (_weeklyBonusesUiBuilt)
                 return;
 
-            if (StepsPerRollBox?.Parent is not StackPanel itemDropRow)
+            if (StepItemDropsHeaderText?.Parent is not StackPanel root)
                 return;
 
-            if (itemDropRow.Parent is not StackPanel root)
+            int stepItemDropsHeaderIndex = root.Children.IndexOf(StepItemDropsHeaderText);
+            if (stepItemDropsHeaderIndex < 0)
                 return;
 
-            int itemDropRowIndex = root.Children.IndexOf(itemDropRow);
-            if (itemDropRowIndex < 0)
-                return;
-
-            int insertAt = itemDropRowIndex;
+            int insertAt = stepItemDropsHeaderIndex;
 
             var header = new TextBlock
             {
@@ -2266,7 +2507,7 @@ WHERE Id = 1;",
                 Margin = new Thickness(0, 6, 0, 0)
             };
 
-            StackPanel BuildRow(string label, out TextBox box, string suffix)
+            StackPanel BuildRow(string label, out TextBox box, string suffix, string toolTip)
             {
                 var row = new StackPanel
                 {
@@ -2279,7 +2520,8 @@ WHERE Id = 1;",
                     Text = label,
                     Width = 220,
                     VerticalAlignment = VerticalAlignment.Center,
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = TextWrapping.Wrap,
+                    ToolTip = toolTip
                 });
 
                 box = new TextBox
@@ -2299,11 +2541,35 @@ WHERE Id = 1;",
                 return row;
             }
 
-            settingsColumn.Children.Add(BuildRow("Weekly Sleep Tracking Bonus:", out var weeklySleepTrackingBonusBox, "tickets"));
-            settingsColumn.Children.Add(BuildRow("Weekly Habit Tracking Bonus:", out var weeklyHabitTrackingBonusBox, "tickets"));
-            settingsColumn.Children.Add(BuildRow("Daily Steps Goal:", out var dailyStepsGoalBox, "steps"));
-            settingsColumn.Children.Add(BuildRow("Daily Steps Goal Quota:", out var dailyStepsGoalQuotaBox, "days"));
-            settingsColumn.Children.Add(BuildRow("Weekly Steps Tracking Bonus:", out var weeklyStepsTrackingBonusBox, "tickets"));
+            settingsColumn.Children.Add(BuildRow(
+                "Weekly Sleep Tracking Bonus:",
+                out var weeklySleepTrackingBonusBox,
+                "tickets",
+                "How many tickets to grant when all 7 days of the most recently completed week contain reward-eligible sleep."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Weekly Habit Tracking Bonus:",
+                out var weeklyHabitTrackingBonusBox,
+                "tickets",
+                "How many bonus tickets to grant when a habit meets or beats its weekly target."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Daily Steps Goal:",
+                out var dailyStepsGoalBox,
+                "steps",
+                "The number of steps required for a single day to count toward the weekly steps bonus."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Daily Steps Goal Quota:",
+                out var dailyStepsGoalQuotaBox,
+                "days",
+                "How many days in the week must meet the Daily Steps Goal to unlock the weekly steps bonus."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Weekly Steps Tracking Bonus:",
+                out var weeklyStepsTrackingBonusBox,
+                "tickets",
+                "How many tickets to grant when the Daily Steps Goal is met on the required number of days in the most recently completed week."));
 
             _weeklySleepTrackingBonusBox = weeklySleepTrackingBonusBox;
             _weeklyHabitTrackingBonusBox = weeklyHabitTrackingBonusBox;
@@ -2572,10 +2838,11 @@ WHERE Id = 1;",
             EnsureWeeklyBonusesDebugUiBuilt();
 
             UpdateLiveClockText();
+            UpdateTimeTravelStatusText();
 
             try
             {
-                await _weeklyBonusesService.GrantMostRecentCompletedWeekAsync();
+                await _weeklyBonusesService.GrantMostRecentCompletedWeekAsync(GetEffectiveCurrentLocalTime());
             }
             catch
             {
@@ -2901,12 +3168,16 @@ WHERE Id = 1;",
                     grams = g;
                 }
 
-                await _foodEntryRepo.AddAsync(SelectedLogDate, selected.Id, servings, grams);
+                var effectiveGameDay = GetEffectiveCurrentGameDay();
+                await _foodEntryRepo.AddAsync(effectiveGameDay, selected.Id, servings, grams);
 
                 FoodServingsBox.Text = "";
                 FoodGramsBox.Text = "";
 
-                await RefreshForSelectedDateAsync();
+                if (SelectedLogDate != effectiveGameDay)
+                    await SwitchArchiveViewToDateAsync(effectiveGameDay);
+                else
+                    await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
             {
@@ -2940,8 +3211,14 @@ WHERE Id = 1;",
                     return;
                 }
 
-                await _sleepRepo.SetPendingStartUtcAsync(DateTimeOffset.UtcNow);
-                await RefreshForSelectedDateAsync();
+                var effectiveNowLocal = GetEffectiveCurrentLocalTime();
+                await _sleepRepo.SetPendingStartUtcAsync(effectiveNowLocal.ToUniversalTime());
+
+                var effectiveGameDay = GetCurrentGameDayLocal(effectiveNowLocal);
+                if (SelectedLogDate != effectiveGameDay)
+                    await SwitchArchiveViewToDateAsync(effectiveGameDay);
+                else
+                    await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
             {
@@ -2953,8 +3230,14 @@ WHERE Id = 1;",
         {
             try
             {
-                await _sleepRepo.EndSleepNowAsync();
-                await RefreshForSelectedDateAsync();
+                var effectiveNowLocal = GetEffectiveCurrentLocalTime();
+                await _sleepRepo.EndSleepNowAsync(effectiveNowLocal.ToUniversalTime());
+
+                var wakeGameDay = GetCurrentGameDayLocal(effectiveNowLocal);
+                if (SelectedLogDate != wakeGameDay)
+                    await SwitchArchiveViewToDateAsync(wakeGameDay);
+                else
+                    await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
             {
@@ -4317,14 +4600,17 @@ namespace LifestylesDesktop
                     ? HabitKind.NumericDaily
                     : HabitKind.CheckboxDaily;
 
-                // Anchor creation to the selected log date (so time-travel works)
-                await _habitRepo.AddHabitAsync(title, kind, target, SelectedLogDate);
+                var effectiveGameDay = GetEffectiveCurrentGameDay();
+                await _habitRepo.AddHabitAsync(title, kind, target, effectiveGameDay);
 
                 HabitTitleBox.Text = "";
                 HabitTargetBox.Text = "";
                 HabitKindCombo.SelectedIndex = 0;
 
-                await RefreshStepsAndHabitsAsync();
+                if (SelectedLogDate != effectiveGameDay)
+                    await SwitchArchiveViewToDateAsync(effectiveGameDay);
+                else
+                    await RefreshStepsAndHabitsAsync();
             }
             catch (Exception ex)
             {
@@ -4341,13 +4627,9 @@ namespace LifestylesDesktop
                 HabitsGrid.CommitEdit();
                 HabitsGrid.CommitEdit();
 
-                // Use selected log date as the reward game day.
-                DateOnly rewardDay = SelectedLogDate;
-
-                // Reward window: allow granting tickets for "today" or "yesterday" (for late-night catch-up),
-                // but don't allow backfilling older days.
-                DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-                bool canAwardRewards = (rewardDay == today || rewardDay == today.AddDays(-1));
+                var effectiveNowLocal = GetEffectiveCurrentLocalTime();
+                DateOnly rewardDay = GetCurrentGameDayLocal(effectiveNowLocal);
+                bool canAwardRewards = true;
 
                 var newlyGranted = new List<string>();
                 var alreadyGranted = new List<string>();
@@ -4357,11 +4639,9 @@ namespace LifestylesDesktop
                     if (row.Kind == HabitKind.CheckboxDaily)
                     {
                         int value = row.TodayChecked ? 1 : 0;
-
-                        // Only attempt reward grant if we are within the window and the user marked it done.
                         bool tryAward = canAwardRewards && value > 0;
 
-                        var result = await _habitRepo.SetDailyValueAsync(row.HabitId, SelectedLogDate, value, tryAward);
+                        var result = await _habitRepo.SetDailyValueAsync(row.HabitId, rewardDay, value, tryAward, effectiveNowLocal);
                         if (tryAward)
                         {
                             if (result.RewardGranted)
@@ -4374,33 +4654,27 @@ namespace LifestylesDesktop
                     {
                         int value = row.TodayValue;
 
-                        // Clamp instead of throwing (debug UI convenience)
                         if (value < 0) value = 0;
                         if (row.TodayValue != value) row.TodayValue = value;
 
-                        await _habitRepo.SetDailyValueAsync(row.HabitId, SelectedLogDate, value);
+                        await _habitRepo.SetDailyValueAsync(row.HabitId, rewardDay, value);
                     }
                 }
 
-                await RefreshStepsAndHabitsAsync();
-
-                // Popup summary (debug UI)
-                if (canAwardRewards)
-                {
-                    string msg =
-                        "Saved habit changes.\n\n" +
-                        $"Tickets newly granted: {newlyGranted.Count}\n" +
-                        (newlyGranted.Count == 0 ? "" : string.Join("\n", newlyGranted)) +
-                        "\n\n" +
-                        $"Tickets already granted (unchanged): {alreadyGranted.Count}\n" +
-                        (alreadyGranted.Count == 0 ? "" : string.Join("\n", alreadyGranted));
-
-                    MessageBox.Show(msg);
-                }
+                if (SelectedLogDate != rewardDay)
+                    await SwitchArchiveViewToDateAsync(rewardDay);
                 else
-                {
-                    MessageBox.Show("Saved habit changes.");
-                }
+                    await RefreshStepsAndHabitsAsync();
+
+                string msg =
+                    "Saved habit changes.\n\n" +
+                    $"Tickets newly granted: {newlyGranted.Count}\n" +
+                    (newlyGranted.Count == 0 ? "" : string.Join("\n", newlyGranted)) +
+                    "\n\n" +
+                    $"Tickets already granted (unchanged): {alreadyGranted.Count}\n" +
+                    (alreadyGranted.Count == 0 ? "" : string.Join("\n", alreadyGranted));
+
+                MessageBox.Show(msg);
             }
             catch (Exception ex)
             {

@@ -15,7 +15,7 @@ namespace LifestyleCore.Data
         private readonly GamificationSettingsRepository _gamiSettings = new();
         private readonly SleepSessionRepository _sleepSessions = new();
 
-        private static bool IsWithinRewardWindow(DateOnly logDate)
+        private static bool IsWithinRewardWindow(DateOnly logDate, DateTimeOffset loggedAtLocal)
         {
             // Rewards for a given log date are eligible until the next calendar day at 03:00 local.
             var tz = TimeZoneInfo.Local;
@@ -33,16 +33,14 @@ namespace LifestyleCore.Data
                 try
                 {
                     var cutoffUtc = TimeZoneInfo.ConvertTimeToUtc(probe, tz);
-                    return DateTimeOffset.UtcNow.UtcDateTime < cutoffUtc;
+                    return loggedAtLocal.UtcDateTime < cutoffUtc;
                 }
                 catch
                 {
-                    // DST edge cases: nudge forward and retry
                     probe = probe.AddHours(1);
                 }
             }
 
-            // Fail closed
             return false;
         }
 
@@ -130,8 +128,7 @@ SELECT last_insert_rowid();
 
             long id = await conn.ExecuteScalarAsync<long>(sql, parameters);
 
-            // Grant rewards immediately (immutable ledger), only if within reward window for that log date.
-            if (grantRewards && IsWithinRewardWindow(session.LogDate))
+            if (grantRewards && IsWithinRewardWindow(session.LogDate, session.LoggedAtUtc.ToLocalTime()))
             {
                 var gami = await _gamiSettings.GetAsync();
                 double sleepMultiplier = await GetSleepRewardMultiplierAsync(session.LogDate, gami);

@@ -51,6 +51,11 @@ ON CONFLICT(Id) DO UPDATE SET
         #region SECTION C — Create session from pending
         public async Task<long> EndSleepNowAsync()
         {
+            return await EndSleepNowAsync(DateTimeOffset.UtcNow);
+        }
+
+        public async Task<long> EndSleepNowAsync(DateTimeOffset endUtc)
+        {
             SleepSchema.EnsureCreated();
 
             var pending = await GetPendingStartUtcAsync();
@@ -58,7 +63,6 @@ ON CONFLICT(Id) DO UPDATE SET
                 throw new InvalidOperationException("No pending sleep start exists.");
 
             var startUtc = pending.Value;
-            var endUtc = DateTimeOffset.UtcNow;
 
             if (endUtc <= startUtc)
                 throw new InvalidOperationException("Sleep end must be after sleep start.");

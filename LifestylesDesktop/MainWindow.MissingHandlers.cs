@@ -33,11 +33,14 @@ namespace LifestylesDesktop
                 }
 
                 DateTime localWhen;
+                DateOnly archiveViewDateAfterSave;
                 string whenText = (StepsAtBox.Text ?? "").Trim();
 
                 if (string.IsNullOrWhiteSpace(whenText))
                 {
-                    localWhen = DateTime.Now;
+                    var effectiveNowLocal = GetEffectiveCurrentLocalTime();
+                    localWhen = effectiveNowLocal.LocalDateTime;
+                    archiveViewDateAfterSave = DateOnly.FromDateTime(localWhen);
                 }
                 else
                 {
@@ -46,6 +49,8 @@ namespace LifestylesDesktop
                         MessageBox.Show("Time must be: yyyy-MM-dd HH:mm (or yyyy-MM-dd HH:mm:ss)");
                         return;
                     }
+
+                    archiveViewDateAfterSave = DateOnly.FromDateTime(localWhen);
                 }
 
                 await _stepsRepo.AddStepsAsync(localWhen, steps, source: "ManualDesktop");
@@ -56,8 +61,10 @@ namespace LifestylesDesktop
                 StepsAddBox.Text = "";
                 StepsAtBox.Text = "";
 
-                // Refresh UI (this will update progress + last drop + inventory)
-                await RefreshForSelectedDateAsync();
+                if (SelectedLogDate != archiveViewDateAfterSave)
+                    await SwitchArchiveViewToDateAsync(archiveViewDateAfterSave);
+                else
+                    await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
             {
@@ -451,9 +458,14 @@ namespace LifestylesDesktop
                     return;
                 }
 
-                await _habitRepo.AddDailyDeltaAsync(h.Id, SelectedLogDate, delta);
+                var effectiveGameDay = GetEffectiveCurrentGameDay();
+                await _habitRepo.AddDailyDeltaAsync(h.Id, effectiveGameDay, delta);
                 HabitAddAmountBox.Text = "";
-                await RefreshForSelectedDateAsync();
+
+                if (SelectedLogDate != effectiveGameDay)
+                    await SwitchArchiveViewToDateAsync(effectiveGameDay);
+                else
+                    await RefreshForSelectedDateAsync();
             }
             catch (Exception ex)
             {
