@@ -13,6 +13,7 @@ namespace LifestyleCore.Data
         #region SECTION B — Add
         private readonly RewardsLedgerRepository _rewards = new();
         private readonly GamificationSettingsRepository _gamiSettings = new();
+        private readonly SleepSessionRepository _sleepSessions = new();
 
         private static bool IsWithinRewardWindow(DateOnly logDate)
         {
@@ -43,6 +44,56 @@ namespace LifestyleCore.Data
 
             // Fail closed
             return false;
+        }
+
+        private async Task<double> GetSleepRewardMultiplierAsync(DateOnly gameDay, GamificationSettings settings)
+        {
+            var sleepSessions = await _sleepSessions.GetForWakeDateAsync(gameDay);
+
+            var orderedDurations = sleepSessions
+                .OrderBy(x => x.EndUtc)
+                .ThenBy(x => x.Id)
+                .Select(x => Math.Max(0, x.DurationMinutes));
+
+            var summary = SleepRewardCalculator.Calculate(
+                orderedDurations,
+                settings.SleepHealthyMinHours,
+                settings.SleepHealthyMaxHours,
+                settings.SleepHealthyMultiplier,
+                settings.SleepPenaltyPer15Min,
+                settings.SleepTrackedMinimumMultiplier,
+                settings.SleepRewardMinimumMinutes);
+
+            return Math.Max(1.0, summary.Multiplier);
+        }
+
+        private static int CalculateFocusCoins(int minutes, bool completed, double sleepMultiplier)
+        {
+            if (minutes <= 0)
+                return 0;
+
+            double normalizedSleepMultiplier = Math.Max(1.0, sleepMultiplier);
+            double completionMultiplier = completed ? 1.0 : 0.25;
+
+            return (int)Math.Floor(minutes * completionMultiplier * normalizedSleepMultiplier);
+        }
+
+        private static int CalculateFocusTrainerXp(
+            int minutes,
+            bool completed,
+            double focusXpPerMinute,
+            double focusXpIncompleteMultiplier,
+            double sleepMultiplier)
+        {
+            if (minutes <= 0)
+                return 0;
+
+            double normalizedXpPerMinute = Math.Max(0.0, focusXpPerMinute);
+            double normalizedIncompleteMultiplier = Math.Clamp(focusXpIncompleteMultiplier, 0.0, 1.0);
+            double normalizedSleepMultiplier = Math.Max(1.0, sleepMultiplier);
+            double completionMultiplier = completed ? 1.0 : normalizedIncompleteMultiplier;
+
+            return (int)Math.Floor(minutes * normalizedXpPerMinute * completionMultiplier * normalizedSleepMultiplier);
         }
 
         public async Task<long> AddAsync(FocusSession session)
@@ -78,18 +129,19 @@ SELECT last_insert_rowid();
             if (IsWithinRewardWindow(session.LogDate))
             {
                 var gami = await _gamiSettings.GetAsync();
+                double sleepMultiplier = await GetSleepRewardMultiplierAsync(session.LogDate, gami);
 
-                // Trainer XP
-                double trainerXpMultiplier = session.Completed ? 1.0 : gami.FocusXpIncompleteMultiplier;
-                int trainerXp = (int)Math.Floor(session.Minutes * gami.FocusXpPerMinute * trainerXpMultiplier);
+                int trainerXp = CalculateFocusTrainerXp(
+                    session.Minutes,
+                    session.Completed,
+                    gami.FocusXpPerMinute,
+                    gami.FocusXpIncompleteMultiplier,
+                    sleepMultiplier);
 
                 if (trainerXp > 0)
                     await _rewards.TryGrantFocusTrainerXpAsync(id, session.LogDate, trainerXp);
 
-                // Focus coins (existing system)
-                const double coinsPerMinute = 1.0;
-                double coinMultiplier = session.Completed ? 1.0 : 0.25;
-                int coins = (int)Math.Floor(session.Minutes * coinsPerMinute * coinMultiplier);
+                int coins = CalculateFocusCoins(session.Minutes, session.Completed, sleepMultiplier);
 
                 if (coins > 0)
                     await _rewards.TryGrantFocusCoinsAsync(id, session.LogDate, coins);

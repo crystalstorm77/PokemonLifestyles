@@ -562,6 +562,35 @@ namespace LifestylesDesktop
                 var focusList = (_focusSessions ?? new System.Collections.ObjectModel.ObservableCollection<FocusSession>()).ToList();
                 var focusById = focusList.ToDictionary(x => x.Id, x => x);
 
+                double currentSleepMultiplier = 1.0;
+                double currentFocusXpPerMinute = GetDefaultFocusXpPerMinute();
+                double currentFocusXpIncompleteMultiplier = GetDefaultFocusXpIncompleteMultiplier();
+
+                if (entries.Any(x => x.FocusSessionId.HasValue))
+                {
+                    var gami = await _gamiSettingsRepo.GetAsync();
+                    currentFocusXpPerMinute = gami.FocusXpPerMinute;
+                    currentFocusXpIncompleteMultiplier = gami.FocusXpIncompleteMultiplier;
+
+                    var currentSleepSummary = BuildSleepRewardSummary(
+                        new SleepTuningSettings
+                        {
+                            SleepHealthyMinHours = gami.SleepHealthyMinHours,
+                            SleepHealthyMaxHours = gami.SleepHealthyMaxHours,
+                            SleepHealthyMultiplier = gami.SleepHealthyMultiplier,
+                            SleepOutsideRangeStartMultiplier = gami.SleepOutsideRangeStartMultiplier,
+                            SleepPenaltyPer15Min = gami.SleepPenaltyPer15Min,
+                            SleepTrackedMinimumMultiplier = gami.SleepTrackedMinimumMultiplier,
+                            SleepRewardMinimumMinutes = gami.SleepRewardMinimumMinutes
+                        },
+                        (_sleepSessions ?? new System.Collections.ObjectModel.ObservableCollection<SleepSession>())
+                            .OrderBy(x => x.EndUtc)
+                            .ThenBy(x => x.Id)
+                            .Select(x => Math.Max(0, x.DurationMinutes)));
+
+                    currentSleepMultiplier = Math.Max(1.0, currentSleepSummary.Multiplier);
+                }
+
                 var win = new Window
                 {
                     Title = $"Rewards ledger ({SelectedLogDate:yyyy-MM-dd})",
@@ -606,10 +635,21 @@ namespace LifestylesDesktop
                                 // If focus exists, show its *current* label/minutes/completed
                                 source = $"Focus ID {fs.Id} ({(fs.FocusType ?? "").Trim()}, {fs.Minutes}m, Completed={fs.Completed})";
 
-                                // If the current state would produce a different coin amount, flag it.
                                 if (e1.RewardType == RewardType.FocusCoins)
                                 {
-                                    int expected = PreviewFocusCoins(fs.Minutes, fs.Completed);
+                                    int expected = PreviewFocusCoins(fs.Minutes, fs.Completed, currentSleepMultiplier);
+                                    if (expected != e1.Amount)
+                                        source += " — changed since award";
+                                }
+                                else if (e1.RewardType == RewardType.TrainerXp)
+                                {
+                                    int expected = PreviewFocusTrainerXp(
+                                        fs.Minutes,
+                                        fs.Completed,
+                                        currentFocusXpPerMinute,
+                                        currentFocusXpIncompleteMultiplier,
+                                        currentSleepMultiplier);
+
                                     if (expected != e1.Amount)
                                         source += " — changed since award";
                                 }
@@ -688,15 +728,33 @@ namespace LifestylesDesktop
         #endregion // SECTION F — Rewards viewer handler
 
         #region SECTION G — Small helpers (local to this file)
-        private static int PreviewFocusCoins(int minutes, bool completed)
+        private static int PreviewFocusCoins(int minutes, bool completed, double sleepMultiplier)
         {
-            if (minutes <= 0) return 0;
+            if (minutes <= 0)
+                return 0;
 
-            // Completed sessions: 1 coin per minute
-            if (completed) return minutes;
+            double normalizedSleepMultiplier = Math.Max(1.0, sleepMultiplier);
+            double completionMultiplier = completed ? 1.0 : 0.25;
 
-            // Incomplete sessions: 0.25x, floored (e.g. 77 -> 19)
-            return (int)Math.Floor(minutes * 0.25);
+            return (int)Math.Floor(minutes * completionMultiplier * normalizedSleepMultiplier);
+        }
+
+        private static int PreviewFocusTrainerXp(
+            int minutes,
+            bool completed,
+            double focusXpPerMinute,
+            double focusXpIncompleteMultiplier,
+            double sleepMultiplier)
+        {
+            if (minutes <= 0)
+                return 0;
+
+            double normalizedXpPerMinute = Math.Max(0.0, focusXpPerMinute);
+            double normalizedIncompleteMultiplier = Math.Clamp(focusXpIncompleteMultiplier, 0.0, 1.0);
+            double normalizedSleepMultiplier = Math.Max(1.0, sleepMultiplier);
+            double completionMultiplier = completed ? 1.0 : normalizedIncompleteMultiplier;
+
+            return (int)Math.Floor(minutes * normalizedXpPerMinute * completionMultiplier * normalizedSleepMultiplier);
         }
 
         private sealed class RewardDisplayRow
