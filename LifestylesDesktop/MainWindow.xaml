@@ -421,32 +421,65 @@ SECTION C — Focus Session Input
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Button x:Name="BackupEverythingButton"
               Content="Backup Everything..."
-              Width="200"
+              Width="220"
               Margin="0,0,10,0"
               Click="BackupEverythingButton_Click"/>
 
                         <Button x:Name="RestoreDbButton"
-              Content="Restore (DB snapshot)..."
-              Width="200"
+              Content="Restore Full App Snapshot..."
+              Width="220"
               Click="RestoreDbButton_Click"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Button x:Name="ImportArchiveMergeButton"
-              Content="Import Archive (Merge)..."
-              Width="200"
+              Content="Import Database Archive (Merge)..."
+              Width="220"
               Margin="0,0,10,0"
               Click="ImportArchiveMergeButton_Click"/>
 
                         <Button x:Name="ImportArchiveRangeButton"
-              Content="Import Archive (Replace Range)..."
-              Width="200"
+              Content="Import Database Archive (Replace Date Range)..."
+              Width="220"
               Click="ImportArchiveRangeButton_Click"/>
                     </StackPanel>
 
-                    <TextBlock Text="Backup Everything creates a dated folder containing a DB snapshot + JSON archive."
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="ExportGamificationButton"
+              Content="Export Gamification Save..."
+              Width="220"
+              Margin="0,0,10,0"
+              Click="ExportGamificationButton_Click"/>
+
+                        <Button x:Name="ImportGamificationButton"
+              Content="Import Gamification Save..."
+              Width="220"
+              Click="ImportGamificationButton_Click"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="DeleteAllDataButton"
+              Content="Delete All Data..."
+              Width="150"
+              Margin="0,0,10,0"
+              Click="DeleteAllDataButton_Click"/>
+
+                        <Button x:Name="DeleteAllDatabaseDataButton"
+              Content="Delete All Database Data..."
+              Width="180"
+              Margin="0,0,10,0"
+              Click="DeleteAllDatabaseDataButton_Click"/>
+
+                        <Button x:Name="DeleteAllGamificationDataButton"
+              Content="Delete All Gamification Data..."
+              Width="190"
+              Click="DeleteAllGamificationDataButton_Click"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Backup Everything creates a dated folder containing a full app snapshot, database archive, and gamification save file."
                Foreground="Gray"
-               FontStyle="Italic"/>
+               FontStyle="Italic"
+               TextWrapping="Wrap"/>
                 </StackPanel>
             </GroupBox>
             <!-- ============================================================

@@ -1795,7 +1795,7 @@ WHERE Id = 1;",
 
         #endregion // SECTION F — Food Actions
 
-        #region SECTION G — Data Backup / Restore
+        #region SECTION G1 — Data Backup / Import Actions
         private async void BackupEverythingButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -1808,18 +1808,18 @@ WHERE Id = 1;",
                 string backupRoot = Path.Combine(folder, $"LifestylesBackup_{stamp}");
                 Directory.CreateDirectory(backupRoot);
 
-                // 1) DB snapshot file
-                string snapshotPath = Path.Combine(backupRoot, $"lifestyles_snapshot_{stamp}.db");
-
-                // 2) JSON archive folder
+                string snapshotPath = Path.Combine(backupRoot, $"Full App Snapshot - {stamp}.db");
                 string archiveRoot = Path.Combine(backupRoot, "Archive");
+                string gamificationPath = Path.Combine(backupRoot, $"Gamification Data - {stamp}.json");
+
                 Directory.CreateDirectory(archiveRoot);
 
                 await BackupService.CreateDbSnapshotAsync(snapshotPath);
                 await BackupService.ExportArchiveAsync(archiveRoot);
+                await BackupService.ExportGamificationDataAsync(gamificationPath);
 
                 MessageBox.Show(
-                    $"Backup created:\n\n{backupRoot}\n\nIncludes:\n- DB snapshot (.db)\n- JSON archive (Archive folder)",
+                    $"Backup created:\n\n{backupRoot}\n\nIncludes:\n- Full app snapshot (.db)\n- Database archive (Archive folder)\n- Gamification save (.json)",
                     "Backup complete",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
@@ -1836,7 +1836,7 @@ WHERE Id = 1;",
             {
                 var dlg = new OpenFileDialog
                 {
-                    Title = "Select DB snapshot to restore",
+                    Title = "Select Full App Snapshot to restore",
                     Filter = "SQLite DB (*.db)|*.db|All files (*.*)|*.*",
                     CheckFileExists = true,
                     Multiselect = false
@@ -1846,8 +1846,8 @@ WHERE Id = 1;",
                     return;
 
                 var confirm = MessageBox.Show(
-                    "This will REPLACE your current database with the snapshot you selected.\n\nContinue?",
-                    "Confirm restore",
+                    "This will REPLACE your current database with the full app snapshot you selected.\n\nContinue?",
+                    "Confirm full app snapshot restore",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
@@ -1870,13 +1870,13 @@ WHERE Id = 1;",
         {
             try
             {
-                string? folder = PickFolder("Choose the root folder of the archive to import");
+                string? folder = PickFolder("Choose the root folder of the database archive to import");
                 if (string.IsNullOrWhiteSpace(folder))
                     return;
 
                 var confirm = MessageBox.Show(
-                    "This will MERGE the archive into your current database.\n\nContinue?",
-                    "Confirm import (merge)",
+                    "This will MERGE the database archive into your current tracked database data. Gamification save data will remain untouched.\n\nContinue?",
+                    "Confirm database archive import (merge)",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
 
@@ -1887,7 +1887,7 @@ WHERE Id = 1;",
 
                 await InitializeAndRefreshAsync();
 
-                MessageBox.Show("Archive import (merge) complete.", "Import complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Database archive import (merge) complete.", "Import complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -1899,7 +1899,7 @@ WHERE Id = 1;",
         {
             try
             {
-                string? folder = PickFolder("Choose the root folder of the archive to import");
+                string? folder = PickFolder("Choose the root folder of the database archive to import");
                 if (string.IsNullOrWhiteSpace(folder))
                     return;
 
@@ -1908,8 +1908,8 @@ WHERE Id = 1;",
                     return;
 
                 var confirm = MessageBox.Show(
-                    $"This will DELETE and REPLACE data in the date range:\n\n{range.Value.Start:yyyy-MM-dd} to {range.Value.End:yyyy-MM-dd}\n\nContinue?",
-                    "Confirm import (replace date range)",
+                    $"This will DELETE and REPLACE tracked database data in the date range:\n\n{range.Value.Start:yyyy-MM-dd} to {range.Value.End:yyyy-MM-dd}\n\nGamification save data will remain untouched.\n\nContinue?",
+                    "Confirm database archive import (replace date range)",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
@@ -1924,7 +1924,7 @@ WHERE Id = 1;",
 
                 await InitializeAndRefreshAsync();
 
-                MessageBox.Show("Archive import (replace date range) complete.", "Import complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Database archive import (replace date range) complete.", "Import complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -1932,10 +1932,165 @@ WHERE Id = 1;",
             }
         }
 
+        private async void ExportGamificationButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmm");
+
+                var dlg = new SaveFileDialog
+                {
+                    Title = "Export Gamification Save",
+                    Filter = "JSON (*.json)|*.json|All files (*.*)|*.*",
+                    FileName = $"Gamification Data - {stamp}.json",
+                    AddExtension = true,
+                    DefaultExt = ".json",
+                    OverwritePrompt = true
+                };
+
+                if (dlg.ShowDialog(this) != true)
+                    return;
+
+                await BackupService.ExportGamificationDataAsync(dlg.FileName);
+
+                MessageBox.Show("Gamification save exported.", "Export complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Export failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void ImportGamificationButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new OpenFileDialog
+                {
+                    Title = "Import Gamification Save",
+                    Filter = "JSON (*.json)|*.json|All files (*.*)|*.*",
+                    CheckFileExists = true,
+                    Multiselect = false
+                };
+
+                if (dlg.ShowDialog(this) != true)
+                    return;
+
+                var confirm = MessageBox.Show(
+                    "This will REPLACE your current gamification save data only. Tracked database data will remain untouched.\n\nContinue?",
+                    "Confirm gamification save import",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirm != MessageBoxResult.Yes)
+                    return;
+
+                await BackupService.ImportGamificationDataAsync(dlg.FileName);
+
+                await InitializeAndRefreshAsync();
+
+                MessageBox.Show("Gamification save import complete.", "Import complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Import failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        #endregion // SECTION G1 — Data Backup / Import Actions
+
+        #region SECTION G2 — Data Delete Actions + Dialog Helpers
+        private async void DeleteAllDataButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var confirm = MessageBox.Show(
+                    "Delete ALL tracked database data and ALL gamification save data?\n\nThis cannot be undone.",
+                    "Confirm delete all data",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirm != MessageBoxResult.Yes)
+                    return;
+
+                if (!PromptDelayedDangerousConfirmation(
+                        "Final confirmation — Delete All Data",
+                        "This will permanently delete tracked database data and gamification save data.\n\nThe confirmation button will unlock after 3 seconds.",
+                        "Yes, Delete All Data"))
+                    return;
+
+                await BackupService.DeleteAllDataAsync();
+                await InitializeAndRefreshAsync();
+
+                MessageBox.Show("All data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Delete failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void DeleteAllDatabaseDataButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var confirm = MessageBox.Show(
+                    "Delete ALL tracked database data only?\n\nGamification save data will remain untouched.",
+                    "Confirm delete all database data",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirm != MessageBoxResult.Yes)
+                    return;
+
+                if (!PromptDelayedDangerousConfirmation(
+                        "Final confirmation — Delete All Database Data",
+                        "This will permanently delete tracked database data only.\n\nGamification save data will remain untouched.\n\nThe confirmation button will unlock after 3 seconds.",
+                        "Yes, Delete All Database Data"))
+                    return;
+
+                await BackupService.DeleteAllDatabaseDataAsync();
+                await InitializeAndRefreshAsync();
+
+                MessageBox.Show("All tracked database data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Delete failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void DeleteAllGamificationDataButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var confirm = MessageBox.Show(
+                    "Delete ALL gamification save data only?\n\nTracked database data will remain untouched.",
+                    "Confirm delete all gamification data",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirm != MessageBoxResult.Yes)
+                    return;
+
+                if (!PromptDelayedDangerousConfirmation(
+                        "Final confirmation — Delete All Gamification Data",
+                        "This will permanently delete gamification save data only.\n\nTracked database data will remain untouched.\n\nThe confirmation button will unlock after 3 seconds.",
+                        "Yes, Delete All Gamification Data"))
+                    return;
+
+                await BackupService.DeleteAllGamificationDataAsync();
+                await InitializeAndRefreshAsync();
+
+                MessageBox.Show("All gamification save data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Delete failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private static string? PickFolder(string title)
         {
-            // WPF doesn't have a native folder picker.
-            // This OpenFileDialog trick returns a folder path without requiring WinForms references.
             var dlg = new OpenFileDialog
             {
                 Title = title,
@@ -1953,7 +2108,6 @@ WHERE Id = 1;",
 
         private static (DateOnly Start, DateOnly End)? PromptDateRange()
         {
-            // Simple modal input window: Start + End in yyyy-MM-dd
             var win = new Window
             {
                 Title = "Choose date range (yyyy-MM-dd)",
@@ -1995,9 +2149,7 @@ WHERE Id = 1;",
 
             buttons.Children.Add(ok);
             buttons.Children.Add(cancel);
-
             root.Children.Add(buttons);
-
             win.Content = root;
 
             (DateOnly Start, DateOnly End)? result = null;
@@ -2034,10 +2186,110 @@ WHERE Id = 1;",
             };
 
             win.ShowDialog();
-
             return result;
         }
-        #endregion // SECTION G — Data Backup / Restore
+
+        private bool PromptDelayedDangerousConfirmation(string title, string body, string confirmButtonText)
+        {
+            var win = new Window
+            {
+                Title = title,
+                Width = 470,
+                Height = 230,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ResizeMode = ResizeMode.NoResize,
+                Owner = this
+            };
+
+            var root = new StackPanel { Margin = new Thickness(12) };
+
+            root.Children.Add(new TextBlock
+            {
+                Text = body,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
+
+            var countdownText = new TextBlock
+            {
+                Text = "You can confirm in 3 seconds.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+            root.Children.Add(countdownText);
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var confirmButton = new Button
+            {
+                Content = confirmButtonText,
+                Width = 190,
+                IsEnabled = false,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+
+            var cancelButton = new Button
+            {
+                Content = "Cancel",
+                Width = 100
+            };
+
+            buttons.Children.Add(confirmButton);
+            buttons.Children.Add(cancelButton);
+            root.Children.Add(buttons);
+
+            win.Content = root;
+
+            bool confirmed = false;
+            int remaining = 3;
+
+            var timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+
+            timer.Tick += (_, __) =>
+            {
+                remaining--;
+
+                if (remaining > 0)
+                {
+                    countdownText.Text = $"You can confirm in {remaining} second{(remaining == 1 ? "" : "s")}.";
+                    return;
+                }
+
+                timer.Stop();
+                confirmButton.IsEnabled = true;
+                countdownText.Text = "You may now confirm or cancel.";
+            };
+
+            confirmButton.Click += (_, __) =>
+            {
+                confirmed = true;
+                win.DialogResult = true;
+                win.Close();
+            };
+
+            cancelButton.Click += (_, __) =>
+            {
+                confirmed = false;
+                win.DialogResult = false;
+                win.Close();
+            };
+
+            win.Closed += (_, __) => timer.Stop();
+
+            timer.Start();
+            win.ShowDialog();
+
+            return confirmed;
+        }
+        #endregion // SECTION G2 — Data Delete Actions + Dialog Helpers
+
 
         #region SECTION H1 — Tab + Grid Helpers
         private void SessionsTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)

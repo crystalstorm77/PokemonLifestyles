@@ -24,23 +24,12 @@ namespace LifestyleCore.Data
                 CREATE TABLE IF NOT EXISTS RewardsLedger (
                     Id             INTEGER PRIMARY KEY AUTOINCREMENT,
                     ExternalId     TEXT,
-
-                    -- The game day this reward applies to (yyyy-MM-dd, using the selected log date / game-day notion)
                     ForGameDay     TEXT    NOT NULL,
-
-                    -- When the reward was actually granted
                     AwardedAtUtc   TEXT    NOT NULL,
-
-                    -- What kind of reward this is (see RewardType enum)
                     RewardType     INTEGER NOT NULL,
-
-                    -- Amount (tickets/coins/etc.)
                     Amount         INTEGER NOT NULL,
-
-                    -- Optional linkage for dedupe/auditing
                     HabitId        INTEGER,
                     HabitDate      TEXT,
-
                     FocusSessionId INTEGER
                 );
 
@@ -48,43 +37,48 @@ namespace LifestyleCore.Data
                 CREATE INDEX IF NOT EXISTS IX_RewardsLedger_RewardType ON RewardsLedger(RewardType);
 
                 CREATE TABLE IF NOT EXISTS TrainerProgress (
-                    Id             INTEGER PRIMARY KEY CHECK (Id = 1),
-                    CurrentCycleXp INTEGER NOT NULL,
-                    PrestigeCount  INTEGER NOT NULL,
-                    UpdatedAtUtc   TEXT    NOT NULL
+                    Id              INTEGER PRIMARY KEY CHECK (Id = 1),
+                    CurrentCycleXp  INTEGER NOT NULL,
+                    TotalLifetimeXp INTEGER NOT NULL DEFAULT 0,
+                    PrestigeCount   INTEGER NOT NULL,
+                    UpdatedAtUtc    TEXT    NOT NULL
                 );
             ");
 
-            // ---- Migrate older DBs safely (CREATE TABLE IF NOT EXISTS doesn't add columns) ----
             EnsureColumnExists(conn, "RewardsLedger", "HabitId", "INTEGER");
             EnsureColumnExists(conn, "RewardsLedger", "HabitDate", "TEXT");
             EnsureColumnExists(conn, "RewardsLedger", "FocusSessionId", "INTEGER");
+            EnsureColumnExists(conn, "TrainerProgress", "TotalLifetimeXp", "INTEGER NOT NULL DEFAULT 0");
 
-            // ---- Dedupe rules ----
-            // Prevent double-granting a checkbox ticket for the same habit+date
             conn.Execute(@"
                 CREATE UNIQUE INDEX IF NOT EXISTS UX_RewardsLedger_HabitTicket
                 ON RewardsLedger(RewardType, HabitId, HabitDate)
                 WHERE HabitId IS NOT NULL AND HabitDate IS NOT NULL;
             ");
 
-            // Prevent double-granting focus-linked rewards for the same focus session + reward type
             conn.Execute(@"
                 CREATE UNIQUE INDEX IF NOT EXISTS UX_RewardsLedger_FocusCoins
                 ON RewardsLedger(RewardType, FocusSessionId)
                 WHERE FocusSessionId IS NOT NULL;
             ");
 
-            // Add/populate ExternalId for older DBs and ensure uniqueness.
             DbMigrations.EnsureExternalIdSupport(conn, "RewardsLedger");
 
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
             conn.Execute(@"
                 INSERT OR IGNORE INTO TrainerProgress
-                    (Id, CurrentCycleXp, PrestigeCount, UpdatedAtUtc)
+                    (Id, CurrentCycleXp, TotalLifetimeXp, PrestigeCount, UpdatedAtUtc)
                 VALUES
-                    (1, 0, 0, @UpdatedAtUtc);",
+                    (1, 0, 0, 0, @UpdatedAtUtc);",
+                new { UpdatedAtUtc = nowUtc });
+
+            conn.Execute(@"
+                UPDATE TrainerProgress
+                SET
+                    TotalLifetimeXp = COALESCE(TotalLifetimeXp, 0),
+                    UpdatedAtUtc = COALESCE(UpdatedAtUtc, @UpdatedAtUtc)
+                WHERE Id = 1;",
                 new { UpdatedAtUtc = nowUtc });
 
             _created = true;
@@ -113,4 +107,3 @@ namespace LifestyleCore.Data
         #endregion // SECTION B — Ensure Created
     }
 }
-
