@@ -4506,246 +4506,274 @@ namespace LifestylesDesktop
 
         #endregion // SECTION I2 — Habits Archive Helpers
 
-        #region SECTION E4 — Gamification + Item Drop Debug Refresh
-        private async Task RefreshGamificationDebugAsync()
+        #region SECTION I3 — Steps + Habits Refresh
+        private async Task RefreshStepsAndHabitsAsync()
         {
-            EnsureTrainerXpDebugUiBuilt();
-            EnsureSleepSettingsDebugUiBuilt();
-            EnsureWeeklyBonusesDebugUiBuilt();
-
-            UpdateLiveClockText();
-            UpdateTimeTravelStatusText();
-
+            _habitsUiUpdating = true;
             try
             {
-                await _weeklyBonusesService.GrantMostRecentCompletedWeekAsync(GetEffectiveCurrentLocalTime());
-            }
-            catch
-            {
-                // Keep the rest of the refresh usable even if weekly bonus evaluation fails.
-            }
+                int steps = await _stepsRepo.GetStepsForDateAsync(SelectedLogDate);
+                StepsDayText.Text = $"Steps ({SelectedLogDate:yyyy-MM-dd}): {steps:#,0}";
 
-            int selectedDayCoins = 0;
-            int selectedDayTickets = 0;
-            int selectedDayTrainerXp = 0;
+                var weekStart = GetWeekStartMonday(SelectedLogDate);
+                var weekEnd = weekStart.AddDays(6);
+                HabitsWeekText.Text = $"Week: {weekStart:yyyy-MM-dd} → {weekEnd:yyyy-MM-dd}";
 
-            try
-            {
-                var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
+                var allHabits = await GetAllHabitsDbAsync();
 
-                foreach (var e in entries)
+                // Show if: CreatedDate <= SelectedDate AND (ArchivedDate is null OR SelectedDate <= ArchivedDate)
+                var habitsVisibleOnThisDate = new List<HabitDbRow>();
+                foreach (var h in allHabits)
                 {
-                    if (e.RewardType == RewardType.FocusCoins) selectedDayCoins += e.Amount;
-                    else if (IsTicketRewardType(e.RewardType)) selectedDayTickets += e.Amount;
-                    else if (e.RewardType == RewardType.TrainerXp) selectedDayTrainerXp += e.Amount;
+                    if (TryParseUtcIsoToLocalDate(h.CreatedAtUtc, out var createdLocal) && createdLocal > SelectedLogDate)
+                        continue;
+
+                    if (TryParseUtcIsoToLocalDate(h.ArchivedAtUtc, out var archivedLocal) && SelectedLogDate > archivedLocal)
+                        continue;
+
+                    habitsVisibleOnThisDate.Add(h);
                 }
 
-                if (RewardsSummaryText != null)
+                var todayEntries = await _habitRepo.GetEntriesForDateAsync(SelectedLogDate);
+                var weekTotals = await _habitRepo.GetWeekTotalsAsync(weekStart, weekEnd);
+
+                var byHabitIdToday = new Dictionary<long, int>();
+                foreach (var e in todayEntries)
+                    byHabitIdToday[e.HabitId] = e.Value;
+
+                _habitRows = new ObservableCollection<HabitRow>();
+
+                foreach (var h in habitsVisibleOnThisDate)
                 {
-                    RewardsSummaryText.Text =
-                        $"Archive view day rewards ({SelectedLogDate:yyyy-MM-dd}): {selectedDayCoins} coins, {selectedDayTickets} tickets, {selectedDayTrainerXp} XP | Ledger entries: {entries.Count}";
+                    byHabitIdToday.TryGetValue(h.Id, out int todayVal);
+                    weekTotals.TryGetValue(h.Id, out int weekTotal);
+
+                    bool isCheckbox = h.Kind == HabitKind.CheckboxDaily;
+                    bool isCounter = h.Kind == HabitKind.NumericDaily;
+
+                    DateOnly? archivedLocalDate = null;
+                    bool archivedToday = false;
+
+                    if (TryParseUtcIsoToLocalDate(h.ArchivedAtUtc, out var aLocal))
+                    {
+                        archivedLocalDate = aLocal;
+                        archivedToday = aLocal == SelectedLogDate;
+                    }
+
+                    var row = new HabitRow
+                    {
+                        HabitId = h.Id,
+                        Title = h.Title,
+                        OriginalTitle = h.Title,
+                        Kind = h.Kind,
+                        KindLabel = isCheckbox ? "Checkbox" : "Counter",
+                        TargetPerWeek = h.TargetPerWeek,
+                        TodayChecked = isCheckbox && todayVal > 0,
+                        TodayValue = isCounter ? todayVal : (todayVal > 0 ? 1 : 0),
+                        WeekTotal = weekTotal,
+                        WeekMet = weekTotal >= h.TargetPerWeek,
+
+                        ArchivedOnSelectedDate = archivedToday,
+                        ArchivedLocalDate = archivedLocalDate
+                    };
+
+                    _habitRows.Add(row);
                 }
+
+                HabitsGrid.ItemsSource = _habitRows;
+
+                if (HabitsGrid.Columns.Count > 0)
+                    HabitsGrid.Columns[0].IsReadOnly = false;
+
+                var counterHabits = new List<HabitDbRow>();
+                foreach (var h in habitsVisibleOnThisDate)
+                    if (h.Kind == HabitKind.NumericDaily)
+                        counterHabits.Add(h);
+
+                HabitLogCombo.ItemsSource = counterHabits;
+
+                if (HabitLogCombo.SelectedItem is not HabitDbRow && counterHabits.Count > 0)
+                    HabitLogCombo.SelectedIndex = 0;
             }
-            catch (Exception ex)
+            finally
             {
-                if (RewardsSummaryText != null)
-                    RewardsSummaryText.Text = $"Archive view day rewards ({SelectedLogDate:yyyy-MM-dd}): (error loading) {ex.Message}";
+                _habitsUiUpdating = false;
             }
+        }
+        #endregion // SECTION I3 — Steps + Habits Refresh
 
-            if (_trainerSelectedDayXpText != null)
-                _trainerSelectedDayXpText.Text = $"Archive view day trainer XP: {selectedDayTrainerXp:#,0}";
+        #region SECTION I4 — Steps + Habits Actions
+        private void CounterMinus_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.Button b || b.DataContext is not HabitRow row)
+                return;
 
-            try
-            {
-                var gamiSettings = await _gamiSettingsRepo.GetAsync();
+            row.TodayValue = Math.Max(0, row.TodayValue - 1);
 
-                SetTextBoxIfIdle(_focusXpPerMinuteBox, FormatDoubleForBox(gamiSettings.FocusXpPerMinute));
-                SetTextBoxIfIdle(_focusXpIncompleteMultiplierBox, FormatDoubleForBox(gamiSettings.FocusXpIncompleteMultiplier));
-                SetTextBoxIfIdle(_weeklySleepTrackingBonusBox, gamiSettings.WeeklySleepTrackingBonus.ToString(CultureInfo.InvariantCulture));
-                SetTextBoxIfIdle(_weeklySleepTrackingQuotaBox, gamiSettings.WeeklySleepTrackingQuota.ToString(CultureInfo.InvariantCulture));
-                SetTextBoxIfIdle(_weeklyHabitTrackingBonusBox, gamiSettings.WeeklyHabitTrackingBonus.ToString(CultureInfo.InvariantCulture));
-                SetTextBoxIfIdle(_dailyStepsGoalBox, gamiSettings.DailyStepsGoal.ToString(CultureInfo.InvariantCulture));
-                SetTextBoxIfIdle(_dailyStepsGoalQuotaBox, gamiSettings.DailyStepsGoalQuota.ToString(CultureInfo.InvariantCulture));
-                SetTextBoxIfIdle(_weeklyStepsTrackingBonusBox, gamiSettings.WeeklyStepsTrackingBonus.ToString(CultureInfo.InvariantCulture));
-            }
-            catch (Exception ex)
-            {
-                if (_trainerProgressText != null && string.IsNullOrWhiteSpace(_trainerProgressText.Text))
-                    _trainerProgressText.Text = $"XP settings load failed: {ex.Message}";
-            }
-
-            try
-            {
-                var sleepSettings = await GetSleepTuningSettingsAsync();
-
-                SetTextBoxIfIdle(_sleepHealthyMinHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMinHours));
-                SetTextBoxIfIdle(_sleepHealthyMaxHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMaxHours));
-                SetTextBoxIfIdle(_sleepHealthyMultiplierBox, FormatDoubleForBox(sleepSettings.SleepHealthyMultiplier));
-                SetTextBoxIfIdle(_sleepPenaltyPer15MinBox, FormatDoubleForBox(sleepSettings.SleepPenaltyPer15Min));
-                SetTextBoxIfIdle(_sleepTrackedMinimumMultiplierBox, FormatDoubleForBox(sleepSettings.SleepTrackedMinimumMultiplier));
-                SetTextBoxIfIdle(_sleepRewardMinimumMinutesBox, sleepSettings.SleepRewardMinimumMinutes.ToString(CultureInfo.InvariantCulture));
-
-                if (_sleepPreview5hText != null)
-                    _sleepPreview5hText.Text = BuildSleepPreviewText(sleepSettings, 5 * 60);
-
-                if (_sleepPreview8hText != null)
-                    _sleepPreview8hText.Text = BuildSleepPreviewText(sleepSettings, 8 * 60);
-
-                if (_sleepPreview11hText != null)
-                    _sleepPreview11hText.Text = BuildSleepPreviewText(sleepSettings, 11 * 60);
-
-                if (_sleepPreview24hText != null)
-                    _sleepPreview24hText.Text = BuildSleepPreviewText(sleepSettings, 24 * 60);
-
-                var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
-                var orderedSleepDurations = sleeps
-                    .OrderBy(s => s.EndUtc)
-                    .ThenBy(s => s.StartUtc)
-                    .Select(s => Math.Max(0, s.DurationMinutes))
-                    .ToList();
-
-                var sleepSummary = BuildSleepRewardSummary(sleepSettings, orderedSleepDurations);
-
-                if (SleepMultiplierText != null)
-                    SleepMultiplierText.Text = BuildSleepStatusText(sleepSummary);
-
-                if (SleepTotalText != null)
-                    SleepTotalText.Text = BuildSleepSessionsSummaryText(sleepSummary);
-            }
-            catch (Exception ex)
-            {
-                if (_sleepPreview5hText != null) _sleepPreview5hText.Text = $"Sleep settings load failed: {ex.Message}";
-                if (_sleepPreview8hText != null) _sleepPreview8hText.Text = "";
-                if (_sleepPreview11hText != null) _sleepPreview11hText.Text = "";
-                if (_sleepPreview24hText != null) _sleepPreview24hText.Text = "";
-                if (SleepMultiplierText != null) SleepMultiplierText.Text = "Sleep multiplier: (error loading)";
-                if (SleepTotalText != null) SleepTotalText.Text = "Sleep summary: (error loading)";
-            }
-
-            try
-            {
-                var trainerProgress = await _rewardsRepo.GetTrainerProgressAsync();
-                var currencyTotals = await _rewardsRepo.GetCurrencyTotalsAsync();
-
-                if (_trainerLevelText != null)
-                    _trainerLevelText.Text = BuildTrainerLevelLine(trainerProgress);
-
-                if (_trainerCurrencyTotalsText != null)
-                    _trainerCurrencyTotalsText.Text = $"Current total coins: {currencyTotals.Coins:#,0} | Current total tickets: {currencyTotals.Tickets:#,0}";
-
-                if (_trainerProgressText != null)
-                    _trainerProgressText.Text = BuildTrainerProgressLine(trainerProgress);
-
-                if (_trainerPrestigeResetButton != null)
-                    _trainerPrestigeResetButton.IsEnabled = trainerProgress.IsMaxLevel;
-            }
-            catch (Exception ex)
-            {
-                if (_trainerLevelText != null)
-                    _trainerLevelText.Text = "Trainer progress: (error loading)";
-
-                if (_trainerCurrencyTotalsText != null)
-                    _trainerCurrencyTotalsText.Text = "Current total coins: (error loading) | Current total tickets: (error loading)";
-
-                if (_trainerProgressText != null)
-                    _trainerProgressText.Text = ex.Message;
-
-                if (_trainerPrestigeResetButton != null)
-                    _trainerPrestigeResetButton.IsEnabled = false;
-            }
-
-            await RefreshItemDropsDebugAsync();
+            // HabitRow doesn't implement INotifyPropertyChanged (debug UI), so force a refresh.
+            HabitsGrid.Items.Refresh();
         }
 
-        private async Task RefreshItemDropsDebugAsync()
+        private void CounterPlus_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.Button b || b.DataContext is not HabitRow row)
+                return;
+
+            row.TodayValue = row.TodayValue + 1;
+
+            HabitsGrid.Items.Refresh();
+        }
+
+        private async void AddHabitButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var settings = await _gamiSettingsRepo.GetAsync();
-                var state = await _rollStateRepo.GetAsync();
-                var items = await _inventoryRepo.GetAllAsync();
-                var itemDefinitions = await _itemDefsRepo.GetAllAsync();
-
-                int stepsPerRoll = Math.Max(1, settings.StepsPerItemRoll);
-                int oneInN = Math.Max(1, settings.ItemRollOneInN);
-                int remainder = state.StepsRemainder;
-
-                if (remainder < 0) remainder = 0;
-                if (remainder >= stepsPerRoll) remainder %= stepsPerRoll;
-
-                int toNext = stepsPerRoll - remainder;
-
-                if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
-                    StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString(CultureInfo.InvariantCulture);
-
-                if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
-                    OddsOneInBox.Text = settings.ItemRollOneInN.ToString(CultureInfo.InvariantCulture);
-
-                if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
-                    CommonWeightBox.Text = settings.CommonTierWeight.ToString(CultureInfo.InvariantCulture);
-
-                if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
-                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString(CultureInfo.InvariantCulture);
-
-                if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
-                    RareWeightBox.Text = settings.RareTierWeight.ToString(CultureInfo.InvariantCulture);
-
-                if (ItemDropsProgressText != null)
-                    ItemDropsProgressText.Text = $"Steps remainder: {remainder}/{stepsPerRoll} | Steps to next roll: {toNext}";
-
-                if (ItemDropsStatsText != null)
-                    ItemDropsStatsText.Text = $"Roll chance: 1 in {oneInN} ({(100.0 / oneInN):0.##}%) | Rolls: {state.TotalRolls} | Successes: {state.TotalSuccesses}";
-
-                if (ResetTimeToNowLocalButton != null)
-                    ResetTimeToNowLocalButton.Content = "Reset Date/Time to 'Now (Local)'";
-
-                if (ItemDropsLastText != null)
+                string title = (HabitTitleBox.Text ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(title))
                 {
-                    ItemDropsLastText.HorizontalAlignment = HorizontalAlignment.Left;
-                    ItemDropsLastText.TextAlignment = TextAlignment.Left;
-
-                    string lastDrop = string.IsNullOrWhiteSpace(state.LastDropSummary)
-                        ? "Last drop: none yet"
-                        : $"Last drop: {state.LastDropSummary}";
-                    ItemDropsLastText.Text = lastDrop;
+                    MessageBox.Show("Habit title can’t be blank.");
+                    return;
                 }
 
-                _inventoryItems = new ObservableCollection<InventoryItem>(items.OrderBy(x => x.ItemKey));
-                if (InventoryGrid != null)
-                    InventoryGrid.ItemsSource = _inventoryItems;
-
-                _itemDefinitions = new ObservableCollection<ItemDefinition>(itemDefinitions
-                    .OrderBy(x => x.Tier)
-                    .ThenBy(x => x.Name));
-
-                if (ItemDefinitionsGrid != null)
-                    ItemDefinitionsGrid.ItemsSource = _itemDefinitions;
-
-                if (InventoryCountText != null)
+                if (!int.TryParse((HabitTargetBox.Text ?? "").Trim(), out int target) || target <= 0)
                 {
-                    int totalCount = _inventoryItems.Sum(x => Math.Max(0, x.Count));
-                    InventoryCountText.Text = $"Inventory ({totalCount} total)";
+                    MessageBox.Show("Target/wk must be a whole number greater than 0.");
+                    return;
                 }
 
-                if (ItemDefinitionsGrid != null)
-                    AutoFitGridColumns(ItemDefinitionsGrid);
+                HabitKind kind = (HabitKindCombo.SelectedIndex == 1)
+                    ? HabitKind.NumericDaily
+                    : HabitKind.CheckboxDaily;
 
-                if (InventoryGrid != null)
-                    AutoFitGridColumns(InventoryGrid);
+                var effectiveGameDay = GetEffectiveCurrentGameDay();
+                await _habitRepo.AddHabitAsync(title, kind, target, effectiveGameDay);
+
+                HabitTitleBox.Text = "";
+                HabitTargetBox.Text = "";
+                HabitKindCombo.SelectedIndex = 0;
+
+                if (SelectedLogDate != effectiveGameDay)
+                    await SwitchArchiveViewToDateAsync(effectiveGameDay);
+                else
+                    await RefreshStepsAndHabitsAsync();
             }
             catch (Exception ex)
             {
-                if (ItemDropsProgressText != null)
-                    ItemDropsProgressText.Text = $"Item drops: (error loading) {ex.Message}";
-
-                if (ItemDropsStatsText != null)
-                    ItemDropsStatsText.Text = "";
-
-                if (ItemDropsLastText != null)
-                    ItemDropsLastText.Text = "";
+                MessageBox.Show(ex.Message, "Could not add habit");
             }
         }
-        #endregion // SECTION E4 — Gamification + Item Drop Debug Refresh
+
+        private async void SaveHabitsChanges_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                HabitsGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+                HabitsGrid.CommitEdit(DataGridEditingUnit.Row, true);
+                HabitsGrid.CommitEdit();
+                HabitsGrid.CommitEdit();
+
+                var effectiveNowLocal = GetEffectiveCurrentLocalTime();
+                DateOnly rewardDay = GetCurrentGameDayLocal(effectiveNowLocal);
+                bool canAwardRewards = true;
+
+                var renamedHabits = new List<string>();
+                var newlyGranted = new List<string>();
+                var alreadyGranted = new List<string>();
+
+                foreach (var row in _habitRows)
+                {
+                    string normalizedTitle = (row.Title ?? "").Trim();
+                    if (string.IsNullOrWhiteSpace(normalizedTitle))
+                    {
+                        MessageBox.Show("Habit title can’t be blank.");
+                        return;
+                    }
+
+                    if (!string.Equals(normalizedTitle, row.OriginalTitle, StringComparison.Ordinal))
+                    {
+                        await _habitRepo.UpdateHabitTitleAsync(row.HabitId, normalizedTitle);
+                        row.Title = normalizedTitle;
+                        row.OriginalTitle = normalizedTitle;
+                        renamedHabits.Add($"{normalizedTitle} (HabitId {row.HabitId})");
+                    }
+
+                    if (row.Kind == HabitKind.CheckboxDaily)
+                    {
+                        int value = row.TodayChecked ? 1 : 0;
+                        bool tryAward = canAwardRewards && value > 0;
+
+                        var result = await _habitRepo.SetDailyValueAsync(row.HabitId, rewardDay, value, tryAward, effectiveNowLocal);
+                        if (tryAward)
+                        {
+                            if (result.RewardGranted)
+                                newlyGranted.Add($"{row.Title} (HabitId {row.HabitId})");
+                            else if (value > 0)
+                                alreadyGranted.Add($"{row.Title} (HabitId {row.HabitId})");
+                        }
+                    }
+                    else
+                    {
+                        int value = row.TodayValue;
+
+                        if (value < 0) value = 0;
+                        if (row.TodayValue != value) row.TodayValue = value;
+
+                        await _habitRepo.SetDailyValueAsync(row.HabitId, rewardDay, value);
+                    }
+                }
+
+                if (SelectedLogDate != rewardDay)
+                    await SwitchArchiveViewToDateAsync(rewardDay);
+                else
+                    await RefreshStepsAndHabitsAsync();
+
+                string msg =
+                    "Saved habit changes.\n\n" +
+                    $"Habits renamed: {renamedHabits.Count}\n" +
+                    (renamedHabits.Count == 0 ? "" : string.Join("\n", renamedHabits)) +
+                    "\n\n" +
+                    $"Tickets newly granted: {newlyGranted.Count}\n" +
+                    (newlyGranted.Count == 0 ? "" : string.Join("\n", newlyGranted)) +
+                    "\n\n" +
+                    $"Tickets already granted (unchanged): {alreadyGranted.Count}\n" +
+                    (alreadyGranted.Count == 0 ? "" : string.Join("\n", alreadyGranted));
+
+                MessageBox.Show(msg);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save habit changes");
+            }
+        }
+
+        private sealed class HabitRow
+        {
+            public long HabitId { get; set; }
+            public string Title { get; set; } = "";
+            public string OriginalTitle { get; set; } = "";
+
+            public HabitKind Kind { get; set; }
+            public string KindLabel { get; set; } = "";
+
+            public int TargetPerWeek { get; set; }
+
+            public bool TodayChecked { get; set; }
+            public int TodayValue { get; set; }
+
+            public int WeekTotal { get; set; }
+            public bool WeekMet { get; set; }
+
+            // Archive lifecycle
+            public bool ArchivedOnSelectedDate { get; set; }
+            public DateOnly? ArchivedLocalDate { get; set; }
+
+            public bool IsCheckbox => Kind == HabitKind.CheckboxDaily;
+
+            // Counter habits are still stored as NumericDaily in the enum (display name only changes)
+            public bool IsCounter => Kind == HabitKind.NumericDaily;
+            public bool IsNumeric => IsCounter;
+        }
+        #endregion // SECTION I4 — Steps + Habits Actions
     }
 }
 
