@@ -90,6 +90,7 @@ namespace LifestylesDesktop
         private TextBox? _sleepHealthyMultiplierBox;
         private TextBox? _sleepPenaltyPer15MinBox;
         private TextBox? _sleepTrackedMinimumMultiplierBox;
+        private TextBox? _sleepRewardMinimumMinutesBox;
         private TextBlock? _sleepPreview5hText;
         private TextBlock? _sleepPreview8hText;
         private TextBlock? _sleepPreview11hText;
@@ -396,12 +397,13 @@ namespace LifestylesDesktop
         #region SECTION E1 — Sleep Tuning Settings Helpers
         private sealed class SleepTuningSettings
         {
-            public double SleepHealthyMinHours { get; set; } = 6.0;
-            public double SleepHealthyMaxHours { get; set; } = 10.0;
-            public double SleepHealthyMultiplier { get; set; } = 1.10;
-            public double SleepOutsideRangeStartMultiplier { get; set; } = 1.05;
-            public double SleepPenaltyPer15Min { get; set; } = 0.005;
-            public double SleepTrackedMinimumMultiplier { get; set; } = 1.01;
+            public double SleepHealthyMinHours { get; set; } = 7.0;
+            public double SleepHealthyMaxHours { get; set; } = 9.0;
+            public double SleepHealthyMultiplier { get; set; } = 1.30;
+            public double SleepOutsideRangeStartMultiplier { get; set; } = 1.30;
+            public double SleepPenaltyPer15Min { get; set; } = 0.01;
+            public double SleepTrackedMinimumMultiplier { get; set; } = 1.10;
+            public int SleepRewardMinimumMinutes { get; set; } = 60;
         }
 
         private static SleepTuningSettings BuildDefaultSleepTuningSettings()
@@ -413,7 +415,8 @@ namespace LifestylesDesktop
                 SleepHealthyMultiplier = 1.30,
                 SleepOutsideRangeStartMultiplier = 1.30,
                 SleepPenaltyPer15Min = 0.01,
-                SleepTrackedMinimumMultiplier = 1.10
+                SleepTrackedMinimumMultiplier = 1.10,
+                SleepRewardMinimumMinutes = 60
             };
         }
 
@@ -429,6 +432,7 @@ namespace LifestylesDesktop
             double outsideStart = Math.Max(1.0, settings.SleepOutsideRangeStartMultiplier);
             double penaltyPer15Min = Math.Max(0.0, settings.SleepPenaltyPer15Min);
             double trackedMin = Math.Max(1.0, settings.SleepTrackedMinimumMultiplier);
+            int rewardMinimumMinutes = Math.Max(1, settings.SleepRewardMinimumMinutes);
 
             if (outsideStart > healthyMult)
                 outsideStart = healthyMult;
@@ -443,7 +447,8 @@ namespace LifestylesDesktop
                 SleepHealthyMultiplier = healthyMult,
                 SleepOutsideRangeStartMultiplier = outsideStart,
                 SleepPenaltyPer15Min = penaltyPer15Min,
-                SleepTrackedMinimumMultiplier = trackedMin
+                SleepTrackedMinimumMultiplier = trackedMin,
+                SleepRewardMinimumMinutes = rewardMinimumMinutes
             };
         }
 
@@ -455,12 +460,13 @@ namespace LifestylesDesktop
 
             var row = await conn.QuerySingleOrDefaultAsync<SleepTuningSettings>(@"
 SELECT
-    COALESCE(SleepHealthyMinHours, 6.0) AS SleepHealthyMinHours,
-    COALESCE(SleepHealthyMaxHours, 10.0) AS SleepHealthyMaxHours,
-    COALESCE(SleepHealthyMultiplier, 1.10) AS SleepHealthyMultiplier,
-    COALESCE(SleepOutsideRangeStartMultiplier, 1.05) AS SleepOutsideRangeStartMultiplier,
-    COALESCE(SleepPenaltyPer15Min, 0.005) AS SleepPenaltyPer15Min,
-    COALESCE(SleepTrackedMinimumMultiplier, 1.01) AS SleepTrackedMinimumMultiplier
+    COALESCE(SleepHealthyMinHours, 7.0) AS SleepHealthyMinHours,
+    COALESCE(SleepHealthyMaxHours, 9.0) AS SleepHealthyMaxHours,
+    COALESCE(SleepHealthyMultiplier, 1.30) AS SleepHealthyMultiplier,
+    COALESCE(SleepOutsideRangeStartMultiplier, 1.30) AS SleepOutsideRangeStartMultiplier,
+    COALESCE(SleepPenaltyPer15Min, 0.01) AS SleepPenaltyPer15Min,
+    COALESCE(SleepTrackedMinimumMultiplier, 1.10) AS SleepTrackedMinimumMultiplier,
+    COALESCE(SleepRewardMinimumMinutes, 60) AS SleepRewardMinimumMinutes
 FROM GamificationSettings
 WHERE Id = 1;");
 
@@ -486,6 +492,7 @@ SET
     SleepOutsideRangeStartMultiplier = @SleepOutsideRangeStartMultiplier,
     SleepPenaltyPer15Min = @SleepPenaltyPer15Min,
     SleepTrackedMinimumMultiplier = @SleepTrackedMinimumMultiplier,
+    SleepRewardMinimumMinutes = @SleepRewardMinimumMinutes,
     UpdatedAtUtc = @UpdatedAtUtc
 WHERE Id = 1;",
                 new
@@ -496,6 +503,7 @@ WHERE Id = 1;",
                     settings.SleepOutsideRangeStartMultiplier,
                     settings.SleepPenaltyPer15Min,
                     settings.SleepTrackedMinimumMultiplier,
+                    settings.SleepRewardMinimumMinutes,
                     UpdatedAtUtc = nowUtc
                 });
         }
@@ -544,7 +552,8 @@ WHERE Id = 1;",
                     _sleepHealthyMaxHoursBox == null ||
                     _sleepHealthyMultiplierBox == null ||
                     _sleepPenaltyPer15MinBox == null ||
-                    _sleepTrackedMinimumMultiplierBox == null)
+                    _sleepTrackedMinimumMultiplierBox == null ||
+                    _sleepRewardMinimumMinutesBox == null)
                 {
                     MessageBox.Show("Sleep tuning controls are not ready yet.");
                     return;
@@ -586,6 +595,12 @@ WHERE Id = 1;",
                     return;
                 }
 
+                if (!int.TryParse((_sleepRewardMinimumMinutesBox.Text ?? "").Trim(), out int rewardMinimumMinutes) || rewardMinimumMinutes < 1)
+                {
+                    MessageBox.Show("Minimum Sleep Minutes for Reward-Eligibility must be a whole number greater than or equal to 1.");
+                    return;
+                }
+
                 await SaveSleepTuningSettingsAsync(new SleepTuningSettings
                 {
                     SleepHealthyMinHours = healthyMinHours,
@@ -593,7 +608,8 @@ WHERE Id = 1;",
                     SleepHealthyMultiplier = healthyMultiplier,
                     SleepOutsideRangeStartMultiplier = healthyMultiplier,
                     SleepPenaltyPer15Min = penaltyPer15Min,
-                    SleepTrackedMinimumMultiplier = trackedMinimumMultiplier
+                    SleepTrackedMinimumMultiplier = trackedMinimumMultiplier,
+                    SleepRewardMinimumMinutes = rewardMinimumMinutes
                 });
 
                 await RefreshForSelectedDateAsync();
@@ -809,11 +825,67 @@ WHERE Id = 1;",
                 GameDayNowText.Text = $"Game day (03:00 cutoff): {gameDayNow:yyyy-MM-dd}";
         }
 
+        private static SleepRewardSummary BuildSleepRewardSummary(SleepTuningSettings settings, IEnumerable<int> sessionDurationsMinutesChronological)
+        {
+            settings = NormalizeSleepTuningSettings(settings);
+
+            return SleepRewardCalculator.Calculate(
+                sessionDurationsMinutesChronological,
+                settings.SleepHealthyMinHours,
+                settings.SleepHealthyMaxHours,
+                settings.SleepHealthyMultiplier,
+                settings.SleepPenaltyPer15Min,
+                settings.SleepTrackedMinimumMultiplier,
+                settings.SleepRewardMinimumMinutes);
+        }
+
         private static string BuildSleepPreviewText(SleepTuningSettings settings, int totalMinutes)
         {
-            double mult = ComputeSleepMultiplier(settings, totalMinutes);
-            string band = DescribeSleepBand(settings, totalMinutes);
-            return $"{FormatMinutes(totalMinutes)} → x{mult:F2} ({band})";
+            var summary = BuildSleepRewardSummary(settings, new[] { totalMinutes });
+            return $"{FormatMinutes(totalMinutes)} → x{summary.Multiplier:F2} ({summary.Band})";
+        }
+
+        private static string BuildSleepStatusText(SleepRewardSummary summary)
+        {
+            if (summary.CountedSessionCount <= 0)
+                return $"Sleep multiplier: x{summary.Multiplier:F2} ({summary.Band})";
+
+            string rewardSleepText = FormatMinutes(summary.RewardEligibleMinutes);
+            string mainSleepText = FormatMinutes(summary.MainSleepMinutes);
+
+            if (summary.CatchUpMinutesUsed > 0)
+            {
+                return
+                    $"Sleep multiplier: x{summary.Multiplier:F2} " +
+                    $"(reward sleep: {rewardSleepText}, main: {mainSleepText}, catch-up used: {FormatMinutes(summary.CatchUpMinutesUsed)}, {summary.Band})";
+            }
+
+            return $"Sleep multiplier: x{summary.Multiplier:F2} (reward sleep: {rewardSleepText}, {summary.Band})";
+        }
+
+        private static string BuildSleepSessionsSummaryText(SleepRewardSummary summary)
+        {
+            string totalLoggedText = FormatMinutes(summary.TotalLoggedMinutes);
+
+            if (summary.CountedSessionCount <= 0)
+            {
+                return
+                    $"Total logged sleep: {totalLoggedText} across {summary.TotalLoggedSessionCount} session(s) | " +
+                    $"Reward-eligible: none (minimum {summary.RewardEligibleSessionMinimumMinutes}m per session)";
+            }
+
+            string countedText =
+                summary.IgnoredQualifyingSessionCount > 0
+                    ? $"{summary.CountedSessionCount}/{summary.QualifyingSessionCount} qualifying session(s) counted"
+                    : $"{summary.CountedSessionCount} qualifying session(s) counted";
+
+            string catchUpText = summary.CatchUpMinutesUsed > 0
+                ? $" | Catch-up used: {FormatMinutes(summary.CatchUpMinutesUsed)}"
+                : "";
+
+            return
+                $"Total logged sleep: {totalLoggedText} across {summary.TotalLoggedSessionCount} session(s) | " +
+                $"Reward-eligible: {FormatMinutes(summary.RewardEligibleMinutes)} | Main sleep: {FormatMinutes(summary.MainSleepMinutes)}{catchUpText} | {countedText}";
         }
 
         private static string BuildTrainerLevelLine(TrainerProgressSnapshot progress)
@@ -1139,7 +1211,8 @@ WHERE Id = 1;",
 
             var row5 = new StackPanel
             {
-                Orientation = Orientation.Horizontal
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 6)
             };
 
             row5.Children.Add(new TextBlock
@@ -1155,11 +1228,31 @@ WHERE Id = 1;",
             };
             row5.Children.Add(_sleepTrackedMinimumMultiplierBox);
 
+            var row6 = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+
+            row6.Children.Add(new TextBlock
+            {
+                Text = "Minimum Sleep Minutes for Reward-Eligibility:",
+                Width = 220,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            _sleepRewardMinimumMinutesBox = new TextBox
+            {
+                Width = 60
+            };
+            row6.Children.Add(_sleepRewardMinimumMinutesBox);
+
             leftColumn.Children.Add(row1);
             leftColumn.Children.Add(row2);
             leftColumn.Children.Add(row3);
             leftColumn.Children.Add(row4);
             leftColumn.Children.Add(row5);
+            leftColumn.Children.Add(row6);
 
             var previewHeader = new TextBlock
             {
@@ -1229,7 +1322,7 @@ WHERE Id = 1;",
 
             var note = new TextBlock
             {
-                Text = "Save stores your custom values. Reset restores the stable defaults.",
+                Text = "Largest qualifying session is treated as the main sleep. Up to 2 more qualifying sessions can catch you up to the healthy maximum, but they do not add extra oversleep penalty. Save stores your custom values. Reset restores the stable defaults.",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
                 TextWrapping = TextWrapping.Wrap
@@ -1308,63 +1401,7 @@ WHERE Id = 1;",
 
         private static DateOnly GetCurrentGameDayLocal(DateTimeOffset nowLocal)
         {
-            // 03:00 cutoff: before 3am counts as previous “game day”
-            var localTime = nowLocal.LocalDateTime;
-            var day = DateOnly.FromDateTime(localTime);
-
-            if (localTime.TimeOfDay < new TimeSpan(3, 0, 0))
-                day = day.AddDays(-1);
-
-            return day;
-        }
-
-        private static double ComputeSleepMultiplier(SleepTuningSettings settings, int totalMinutes)
-        {
-            settings = NormalizeSleepTuningSettings(settings);
-
-            if (totalMinutes <= 0)
-                return 1.00;
-
-            double totalHours = totalMinutes / 60.0;
-
-            if (totalHours >= settings.SleepHealthyMinHours && totalHours <= settings.SleepHealthyMaxHours)
-                return settings.SleepHealthyMultiplier;
-
-            double distanceMinutes =
-                totalHours < settings.SleepHealthyMinHours
-                    ? (settings.SleepHealthyMinHours * 60.0) - totalMinutes
-                    : totalMinutes - (settings.SleepHealthyMaxHours * 60.0);
-
-            double penaltySteps = distanceMinutes / 15.0;
-
-            double mult = settings.SleepHealthyMultiplier
-                        - (penaltySteps * settings.SleepPenaltyPer15Min);
-
-            if (mult < settings.SleepTrackedMinimumMultiplier)
-                mult = settings.SleepTrackedMinimumMultiplier;
-
-            if (mult > settings.SleepHealthyMultiplier)
-                mult = settings.SleepHealthyMultiplier;
-
-            return mult;
-        }
-
-        private static string DescribeSleepBand(SleepTuningSettings settings, int totalMinutes)
-        {
-            settings = NormalizeSleepTuningSettings(settings);
-
-            if (totalMinutes <= 0)
-                return "no sleep logged";
-
-            double totalHours = totalMinutes / 60.0;
-
-            if (totalHours < settings.SleepHealthyMinHours)
-                return "below healthy range";
-
-            if (totalHours > settings.SleepHealthyMaxHours)
-                return "above healthy range";
-
-            return "healthy range";
+            return SleepRewardCalculator.GetGameDayForWakeLocal(nowLocal.LocalDateTime);
         }
 
         private static string FormatMinutes(int totalMinutes)
@@ -1441,6 +1478,7 @@ WHERE Id = 1;",
                 SetTextBoxIfIdle(_sleepHealthyMultiplierBox, FormatDoubleForBox(sleepSettings.SleepHealthyMultiplier));
                 SetTextBoxIfIdle(_sleepPenaltyPer15MinBox, FormatDoubleForBox(sleepSettings.SleepPenaltyPer15Min));
                 SetTextBoxIfIdle(_sleepTrackedMinimumMultiplierBox, FormatDoubleForBox(sleepSettings.SleepTrackedMinimumMultiplier));
+                SetTextBoxIfIdle(_sleepRewardMinimumMinutesBox, sleepSettings.SleepRewardMinimumMinutes.ToString(CultureInfo.InvariantCulture));
 
                 if (_sleepPreview5hText != null)
                     _sleepPreview5hText.Text = BuildSleepPreviewText(sleepSettings, 5 * 60);
@@ -1454,27 +1492,20 @@ WHERE Id = 1;",
                 if (_sleepPreview24hText != null)
                     _sleepPreview24hText.Text = BuildSleepPreviewText(sleepSettings, 24 * 60);
 
+                var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
+                var orderedSleepDurations = sleeps
+                    .OrderBy(s => s.EndUtc)
+                    .ThenBy(s => s.StartUtc)
+                    .Select(s => Math.Max(0, s.DurationMinutes))
+                    .ToList();
+
+                var sleepSummary = BuildSleepRewardSummary(sleepSettings, orderedSleepDurations);
+
                 if (SleepMultiplierText != null)
-                {
-                    var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
-                    int totalMinutes = 0;
+                    SleepMultiplierText.Text = BuildSleepStatusText(sleepSummary);
 
-                    foreach (var s in sleeps)
-                        totalMinutes += Math.Max(0, s.DurationMinutes);
-
-                    double mult = ComputeSleepMultiplier(sleepSettings, totalMinutes);
-                    string band = DescribeSleepBand(sleepSettings, totalMinutes);
-
-                    if (totalMinutes <= 0)
-                    {
-                        SleepMultiplierText.Text = $"Sleep multiplier: x{mult:F2} ({band})";
-                    }
-                    else
-                    {
-                        SleepMultiplierText.Text =
-                            $"Sleep multiplier: x{mult:F2} (sleep: {FormatMinutes(totalMinutes)}, {band})";
-                    }
-                }
+                if (SleepTotalText != null)
+                    SleepTotalText.Text = BuildSleepSessionsSummaryText(sleepSummary);
             }
             catch (Exception ex)
             {
@@ -1482,6 +1513,8 @@ WHERE Id = 1;",
                 if (_sleepPreview8hText != null) _sleepPreview8hText.Text = "";
                 if (_sleepPreview11hText != null) _sleepPreview11hText.Text = "";
                 if (_sleepPreview24hText != null) _sleepPreview24hText.Text = "";
+                if (SleepMultiplierText != null) SleepMultiplierText.Text = "Sleep multiplier: (error loading)";
+                if (SleepTotalText != null) SleepTotalText.Text = "Sleep summary: (error loading)";
             }
 
             try

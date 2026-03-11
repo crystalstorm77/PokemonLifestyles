@@ -226,7 +226,8 @@ namespace LifestylesDesktop
                     _sleepHealthyMaxHoursBox == null ||
                     _sleepHealthyMultiplierBox == null ||
                     _sleepPenaltyPer15MinBox == null ||
-                    _sleepTrackedMinimumMultiplierBox == null)
+                    _sleepTrackedMinimumMultiplierBox == null ||
+                    _sleepRewardMinimumMinutesBox == null)
                 {
                     MessageBox.Show("Sleep tuning controls are not ready yet.");
                     return;
@@ -268,6 +269,12 @@ namespace LifestylesDesktop
                     return;
                 }
 
+                if (!int.TryParse((_sleepRewardMinimumMinutesBox.Text ?? "").Trim(), out int rewardMinimumMinutes) || rewardMinimumMinutes < 1)
+                {
+                    MessageBox.Show("Minimum Sleep Minutes for Reward-Eligibility must be a whole number greater than or equal to 1.");
+                    return;
+                }
+
                 await _gamiSettingsRepo.UpdateAsync(stepsPerRoll, oneInN, commonW, uncommonW, rareW);
 
                 await SaveSleepTuningSettingsAsync(new SleepTuningSettings
@@ -277,7 +284,8 @@ namespace LifestylesDesktop
                     SleepHealthyMultiplier = healthyMultiplier,
                     SleepOutsideRangeStartMultiplier = healthyMultiplier,
                     SleepPenaltyPer15Min = penaltyPer15Min,
-                    SleepTrackedMinimumMultiplier = trackedMinimumMultiplier
+                    SleepTrackedMinimumMultiplier = trackedMinimumMultiplier,
+                    SleepRewardMinimumMinutes = rewardMinimumMinutes
                 });
 
                 await RefreshForSelectedDateAsync();

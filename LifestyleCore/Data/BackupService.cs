@@ -932,6 +932,7 @@ INSERT INTO GamificationSettings (
     SleepOutsideRangeStartMultiplier,
     SleepPenaltyPer15Min,
     SleepTrackedMinimumMultiplier,
+    SleepRewardMinimumMinutes,
     FocusXpPerMinute,
     FocusXpIncompleteMultiplier,
     UpdatedAtUtc)
@@ -945,12 +946,13 @@ VALUES (
     'Potion\nPoke Ball\nAntidote\nParalyze Heal\nEscape Rope',
     'Super Potion\nGreat Ball\nRevive',
     'Rare Candy\nNugget',
-    6.0,
-    10.0,
+    7.0,
+     9.0,
+     1.30,
+     1.30,
+    0.01,
     1.10,
-    1.05,
-    0.005,
-    1.01,
+    60,
     100.0,
     0.25,
     @UpdatedAtUtc);",
@@ -1110,6 +1112,7 @@ SET StepsPerItemRoll = @StepsPerItemRoll,
     SleepOutsideRangeStartMultiplier = @SleepOutsideRangeStartMultiplier,
     SleepPenaltyPer15Min = @SleepPenaltyPer15Min,
     SleepTrackedMinimumMultiplier = @SleepTrackedMinimumMultiplier,
+    SleepRewardMinimumMinutes = @SleepRewardMinimumMinutes,
     FocusXpPerMinute = @FocusXpPerMinute,
     FocusXpIncompleteMultiplier = @FocusXpIncompleteMultiplier,
     UpdatedAtUtc = @UpdatedAtUtc
@@ -1131,6 +1134,7 @@ WHERE Id = 1;",
                     SleepOutsideRangeStartMultiplier = settings.SleepOutsideRangeStartMultiplier,
                     SleepPenaltyPer15Min = settings.SleepPenaltyPer15Min,
                     SleepTrackedMinimumMultiplier = settings.SleepTrackedMinimumMultiplier,
+                    SleepRewardMinimumMinutes = settings.SleepRewardMinimumMinutes < 1 ? 60 : settings.SleepRewardMinimumMinutes,
                     FocusXpPerMinute = settings.FocusXpPerMinute <= 0 ? 100.0 : settings.FocusXpPerMinute,
                     FocusXpIncompleteMultiplier = settings.FocusXpIncompleteMultiplier < 0 ? 0.0 : (settings.FocusXpIncompleteMultiplier > 1.0 ? 1.0 : settings.FocusXpIncompleteMultiplier),
                     UpdatedAtUtc = string.IsNullOrWhiteSpace(settings.UpdatedAtUtc) ? nowUtc : settings.UpdatedAtUtc
@@ -1479,12 +1483,13 @@ VALUES (@ExternalId, @ForGameDay, @AwardedAtUtc, @RewardType, @Amount, NULL, @Ha
                     COALESCE(CommonPoolText, '') AS CommonPoolText,
                     COALESCE(UncommonPoolText, '') AS UncommonPoolText,
                     COALESCE(RarePoolText, '') AS RarePoolText,
-                    COALESCE(SleepHealthyMinHours, 6.0) AS SleepHealthyMinHours,
-                    COALESCE(SleepHealthyMaxHours, 10.0) AS SleepHealthyMaxHours,
-                    COALESCE(SleepHealthyMultiplier, 1.10) AS SleepHealthyMultiplier,
-                    COALESCE(SleepOutsideRangeStartMultiplier, 1.05) AS SleepOutsideRangeStartMultiplier,
-                    COALESCE(SleepPenaltyPer15Min, 0.005) AS SleepPenaltyPer15Min,
-                    COALESCE(SleepTrackedMinimumMultiplier, 1.01) AS SleepTrackedMinimumMultiplier,
+                    COALESCE(SleepHealthyMinHours, 7.0) AS SleepHealthyMinHours,
+                    COALESCE(SleepHealthyMaxHours, 9.0) AS SleepHealthyMaxHours,
+                    COALESCE(SleepHealthyMultiplier, 1.30) AS SleepHealthyMultiplier,
+                    COALESCE(SleepOutsideRangeStartMultiplier, 1.30) AS SleepOutsideRangeStartMultiplier,
+                    COALESCE(SleepPenaltyPer15Min, 0.01) AS SleepPenaltyPer15Min,
+                    COALESCE(SleepTrackedMinimumMultiplier, 1.10) AS SleepTrackedMinimumMultiplier,
+                    COALESCE(SleepRewardMinimumMinutes, 60) AS SleepRewardMinimumMinutes,
                     COALESCE(FocusXpPerMinute, 100.0) AS FocusXpPerMinute,
                     COALESCE(FocusXpIncompleteMultiplier, 0.25) AS FocusXpIncompleteMultiplier,
                     UpdatedAtUtc
@@ -1821,12 +1826,13 @@ VALUES (@ExternalId, @ForGameDay, @AwardedAtUtc, @RewardType, @Amount, NULL, @Ha
         public string CommonPoolText { get; set; } = "";
         public string UncommonPoolText { get; set; } = "";
         public string RarePoolText { get; set; } = "";
-        public double SleepHealthyMinHours { get; set; } = 6.0;
-        public double SleepHealthyMaxHours { get; set; } = 10.0;
-        public double SleepHealthyMultiplier { get; set; } = 1.10;
-        public double SleepOutsideRangeStartMultiplier { get; set; } = 1.05;
-        public double SleepPenaltyPer15Min { get; set; } = 0.005;
-        public double SleepTrackedMinimumMultiplier { get; set; } = 1.01;
+        public double SleepHealthyMinHours { get; set; } = 7.0;
+        public double SleepHealthyMaxHours { get; set; } = 9.0;
+        public double SleepHealthyMultiplier { get; set; } = 1.30;
+        public double SleepOutsideRangeStartMultiplier { get; set; } = 1.30;
+        public double SleepPenaltyPer15Min { get; set; } = 0.01;
+        public double SleepTrackedMinimumMultiplier { get; set; } = 1.10;
+        public int SleepRewardMinimumMinutes { get; set; } = 60;
         public double FocusXpPerMinute { get; set; } = 100.0;
         public double FocusXpIncompleteMultiplier { get; set; } = 0.25;
         public string UpdatedAtUtc { get; set; } = "";

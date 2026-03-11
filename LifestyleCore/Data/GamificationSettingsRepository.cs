@@ -13,37 +13,29 @@ namespace LifestyleCore.Data
         private const int DefaultUncommonWeight = 18;
         private const int DefaultRareWeight = 2;
 
+        private const double DefaultSleepHealthyMinHours = 7.0;
+        private const double DefaultSleepHealthyMaxHours = 9.0;
+        private const double DefaultSleepHealthyMultiplier = 1.30;
+        private const double DefaultSleepOutsideRangeStartMultiplier = 1.30;
+        private const double DefaultSleepPenaltyPer15Min = 0.01;
+        private const double DefaultSleepTrackedMinimumMultiplier = 1.10;
+        private const int DefaultSleepRewardMinimumMinutes = 60;
+
         private const double DefaultFocusXpPerMinute = 100.0;
         private const double DefaultFocusXpIncompleteMultiplier = 0.25;
 
         private const string DefaultCommonPoolText =
-            "Potion\n" +
-            "Poke Ball\n" +
-            "Antidote\n" +
-            "Paralyze Heal\n" +
-            "Escape Rope";
+            "Potion" + "Poke Ball" + "Antidote" + "Paralyze Heal" + "Escape Rope";
 
         private const string DefaultUncommonPoolText =
-            "Super Potion\n" +
-            "Great Ball\n" +
-            "Revive";
+            "Super Potion" +"Great Ball" +"Revive";
 
         private const string DefaultRarePoolText =
-            "Rare Candy\n" +
-            "Nugget";
+            "Rare Candy" +"Nugget";
 
         // Legacy fallback for older DBs
         private const string LegacyDefaultPoolText =
-            "Potion\n" +
-            "Super Potion\n" +
-            "Poke Ball\n" +
-            "Great Ball\n" +
-            "Revive\n" +
-            "Antidote\n" +
-            "Paralyze Heal\n" +
-            "Escape Rope\n" +
-            "Rare Candy\n" +
-            "Nugget";
+            "Potion" +"Super Potion" +"Poke Ball" +"Great Ball" +"Revive" +"Antidote" +"Paralyze Heal" +"Escape Rope" +"Rare Candy" +"Nugget";
 
         public async Task<GamificationSettings> GetAsync()
         {
@@ -54,13 +46,20 @@ namespace LifestyleCore.Data
             var row = await conn.QuerySingleAsync<(
                 int StepsPerItemRoll,
                 int ItemRollOneInN,
-                string? ItemPoolText, // legacy
+                string? ItemPoolText,
                 string? CommonPoolText,
                 string? UncommonPoolText,
                 string? RarePoolText,
                 int CommonTierWeight,
                 int UncommonTierWeight,
                 int RareTierWeight,
+                double? SleepHealthyMinHours,
+                double? SleepHealthyMaxHours,
+                double? SleepHealthyMultiplier,
+                double? SleepOutsideRangeStartMultiplier,
+                double? SleepPenaltyPer15Min,
+                double? SleepTrackedMinimumMultiplier,
+                int? SleepRewardMinimumMinutes,
                 double? FocusXpPerMinute,
                 double? FocusXpIncompleteMultiplier
             )>(@"
@@ -74,25 +73,60 @@ SELECT
   CommonTierWeight,
   UncommonTierWeight,
   RareTierWeight,
+  SleepHealthyMinHours,
+  SleepHealthyMaxHours,
+  SleepHealthyMultiplier,
+  SleepOutsideRangeStartMultiplier,
+  SleepPenaltyPer15Min,
+  SleepTrackedMinimumMultiplier,
+  SleepRewardMinimumMinutes,
   FocusXpPerMinute,
   FocusXpIncompleteMultiplier
 FROM GamificationSettings
 WHERE Id = 1;");
 
-            // Fallback chain:
-            // Common: CommonPoolText -> ItemPoolText (legacy) -> defaults
             string common = !string.IsNullOrWhiteSpace(row.CommonPoolText)
                 ? row.CommonPoolText!
                 : (!string.IsNullOrWhiteSpace(row.ItemPoolText) ? row.ItemPoolText! : DefaultCommonPoolText);
 
-            // If we fell back to legacy ItemPoolText, we still want a proper Uncommon/Rare default
             string uncommon = string.IsNullOrWhiteSpace(row.UncommonPoolText) ? DefaultUncommonPoolText : row.UncommonPoolText!;
             string rare = string.IsNullOrWhiteSpace(row.RarePoolText) ? DefaultRarePoolText : row.RarePoolText!;
 
-            // IMPORTANT: allow 0 to mean “disabled” (only negative is invalid)
             int cw = row.CommonTierWeight < 0 ? DefaultCommonWeight : row.CommonTierWeight;
             int uw = row.UncommonTierWeight < 0 ? 0 : row.UncommonTierWeight;
             int rw = row.RareTierWeight < 0 ? 0 : row.RareTierWeight;
+
+            double sleepHealthyMinHours = row.SleepHealthyMinHours.GetValueOrDefault(DefaultSleepHealthyMinHours);
+            if (sleepHealthyMinHours < 0)
+                sleepHealthyMinHours = DefaultSleepHealthyMinHours;
+
+            double sleepHealthyMaxHours = row.SleepHealthyMaxHours.GetValueOrDefault(DefaultSleepHealthyMaxHours);
+            if (sleepHealthyMaxHours < sleepHealthyMinHours)
+                sleepHealthyMaxHours = sleepHealthyMinHours;
+
+            double sleepHealthyMultiplier = row.SleepHealthyMultiplier.GetValueOrDefault(DefaultSleepHealthyMultiplier);
+            if (sleepHealthyMultiplier < 1.0)
+                sleepHealthyMultiplier = DefaultSleepHealthyMultiplier;
+
+            double sleepOutsideRangeStartMultiplier = row.SleepOutsideRangeStartMultiplier.GetValueOrDefault(DefaultSleepOutsideRangeStartMultiplier);
+            if (sleepOutsideRangeStartMultiplier < 1.0)
+                sleepOutsideRangeStartMultiplier = DefaultSleepOutsideRangeStartMultiplier;
+            if (sleepOutsideRangeStartMultiplier > sleepHealthyMultiplier)
+                sleepOutsideRangeStartMultiplier = sleepHealthyMultiplier;
+
+            double sleepPenaltyPer15Min = row.SleepPenaltyPer15Min.GetValueOrDefault(DefaultSleepPenaltyPer15Min);
+            if (sleepPenaltyPer15Min < 0)
+                sleepPenaltyPer15Min = DefaultSleepPenaltyPer15Min;
+
+            double sleepTrackedMinimumMultiplier = row.SleepTrackedMinimumMultiplier.GetValueOrDefault(DefaultSleepTrackedMinimumMultiplier);
+            if (sleepTrackedMinimumMultiplier < 1.0)
+                sleepTrackedMinimumMultiplier = DefaultSleepTrackedMinimumMultiplier;
+            if (sleepTrackedMinimumMultiplier > sleepHealthyMultiplier)
+                sleepTrackedMinimumMultiplier = sleepHealthyMultiplier;
+
+            int sleepRewardMinimumMinutes = row.SleepRewardMinimumMinutes.GetValueOrDefault(DefaultSleepRewardMinimumMinutes);
+            if (sleepRewardMinimumMinutes < 1)
+                sleepRewardMinimumMinutes = DefaultSleepRewardMinimumMinutes;
 
             double focusXpPerMinute = row.FocusXpPerMinute.GetValueOrDefault(DefaultFocusXpPerMinute);
             if (focusXpPerMinute <= 0)
@@ -114,12 +148,18 @@ WHERE Id = 1;");
                 CommonTierWeight = cw,
                 UncommonTierWeight = uw,
                 RareTierWeight = rw,
+                SleepHealthyMinHours = sleepHealthyMinHours,
+                SleepHealthyMaxHours = sleepHealthyMaxHours,
+                SleepHealthyMultiplier = sleepHealthyMultiplier,
+                SleepOutsideRangeStartMultiplier = sleepOutsideRangeStartMultiplier,
+                SleepPenaltyPer15Min = sleepPenaltyPer15Min,
+                SleepTrackedMinimumMultiplier = sleepTrackedMinimumMultiplier,
+                SleepRewardMinimumMinutes = sleepRewardMinimumMinutes,
                 FocusXpPerMinute = focusXpPerMinute,
                 FocusXpIncompleteMultiplier = focusXpIncompleteMultiplier
             };
         }
 
-        // Backwards-compatible overloads
         public Task UpdateAsync(int stepsPerRoll, int oneInN)
             => UpdateAsync(stepsPerRoll, oneInN, DefaultCommonWeight, DefaultUncommonWeight, DefaultRareWeight, null, null, null);
 
@@ -179,7 +219,6 @@ WHERE Id = 1;",
             if (commonWeight + uncommonWeight + rareWeight <= 0)
                 throw new InvalidOperationException("At least one tier weight must be > 0.");
 
-            // If user clears a tier textbox, treat that as "use defaults for that tier"
             string? commonToStore = string.IsNullOrWhiteSpace(commonPoolText) ? null : commonPoolText.Trim();
             string? uncommonToStore = string.IsNullOrWhiteSpace(uncommonPoolText) ? null : uncommonPoolText.Trim();
             string? rareToStore = string.IsNullOrWhiteSpace(rarePoolText) ? null : rarePoolText.Trim();

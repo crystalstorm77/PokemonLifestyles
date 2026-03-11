@@ -64,7 +64,7 @@ ON CONFLICT(Id) DO UPDATE SET
                 throw new InvalidOperationException("Sleep end must be after sleep start.");
 
             var endLocal = endUtc.ToLocalTime();
-            var wakeLogDate = DateOnly.FromDateTime(endLocal.DateTime);
+            var wakeLogDate = SleepRewardCalculator.GetGameDayForWakeLocal(endLocal.DateTime);
             int durationMinutes = (int)Math.Round((endUtc - startUtc).TotalMinutes);
 
             using var conn = Db.OpenConnection();

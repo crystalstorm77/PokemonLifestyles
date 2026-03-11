@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS GamificationSettings (
  SleepOutsideRangeStartMultiplier REAL NULL,
  SleepPenaltyPer15Min REAL NULL,
  SleepTrackedMinimumMultiplier REAL NULL,
+ SleepRewardMinimumMinutes INTEGER NULL,
  FocusXpPerMinute REAL NULL,
  FocusXpIncompleteMultiplier REAL NULL,
  UpdatedAtUtc TEXT NOT NULL
@@ -92,6 +93,7 @@ ON ItemDefinitions (IsActive, Tier);
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN SleepOutsideRangeStartMultiplier REAL NULL;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN SleepPenaltyPer15Min REAL NULL;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN SleepTrackedMinimumMultiplier REAL NULL;");
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN SleepRewardMinimumMinutes INTEGER NULL;");
 
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN FocusXpPerMinute REAL NULL;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN FocusXpIncompleteMultiplier REAL NULL;");
@@ -121,12 +123,13 @@ SET
  CommonPoolText = COALESCE(CommonPoolText, 'Potion\nPoke Ball\nAntidote\nParalyze Heal\nEscape Rope'),
  UncommonPoolText = COALESCE(UncommonPoolText, 'Super Potion\nGreat Ball\nRevive'),
  RarePoolText = COALESCE(RarePoolText, 'Rare Candy\nNugget'),
- SleepHealthyMinHours = COALESCE(SleepHealthyMinHours, 6.0),
- SleepHealthyMaxHours = COALESCE(SleepHealthyMaxHours, 10.0),
- SleepHealthyMultiplier = COALESCE(SleepHealthyMultiplier, 1.10),
- SleepOutsideRangeStartMultiplier = COALESCE(SleepOutsideRangeStartMultiplier, 1.05),
- SleepPenaltyPer15Min = COALESCE(SleepPenaltyPer15Min, 0.005),
- SleepTrackedMinimumMultiplier = COALESCE(SleepTrackedMinimumMultiplier, 1.01),
+ SleepHealthyMinHours = COALESCE(SleepHealthyMinHours, 7.0),
+ SleepHealthyMaxHours = COALESCE(SleepHealthyMaxHours, 9.0),
+ SleepHealthyMultiplier = COALESCE(SleepHealthyMultiplier, 1.30),
+ SleepOutsideRangeStartMultiplier = COALESCE(SleepOutsideRangeStartMultiplier, 1.30),
+ SleepPenaltyPer15Min = COALESCE(SleepPenaltyPer15Min, 0.01),
+ SleepTrackedMinimumMultiplier = COALESCE(SleepTrackedMinimumMultiplier, 1.10),
+ SleepRewardMinimumMinutes = COALESCE(SleepRewardMinimumMinutes, 60),
  FocusXpPerMinute = COALESCE(FocusXpPerMinute, 100.0),
  FocusXpIncompleteMultiplier = COALESCE(FocusXpIncompleteMultiplier, 0.25),
  UpdatedAtUtc = COALESCE(UpdatedAtUtc, @NowUtc)

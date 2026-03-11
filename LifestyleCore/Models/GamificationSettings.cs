@@ -11,6 +11,15 @@
         public int UncommonTierWeight { get; set; } = 18;
         public int RareTierWeight { get; set; } = 2;
 
+        // Sleep reward tuning
+        public double SleepHealthyMinHours { get; set; } = 7.0;
+        public double SleepHealthyMaxHours { get; set; } = 9.0;
+        public double SleepHealthyMultiplier { get; set; } = 1.30;
+        public double SleepOutsideRangeStartMultiplier { get; set; } = 1.30;
+        public double SleepPenaltyPer15Min { get; set; } = 0.01;
+        public double SleepTrackedMinimumMultiplier { get; set; } = 1.10;
+        public int SleepRewardMinimumMinutes { get; set; } = 60;
+
         // Trainer XP tuning
         public double FocusXpPerMinute { get; set; } = 100.0;
         public double FocusXpIncompleteMultiplier { get; set; } = 0.25;
