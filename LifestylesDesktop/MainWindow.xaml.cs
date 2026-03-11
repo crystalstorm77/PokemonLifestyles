@@ -1791,7 +1791,7 @@ WHERE Id = 1;",
 
         #endregion // SECTION E1 — Sleep Tuning Settings Helpers
 
-        #region SECTION E2 — Sleep Tuning Debug UI
+        #region SECTION E2A — Trainer XP Debug UI
         private void EnsureTrainerXpDebugUiBuilt()
         {
             if (_trainerXpUiBuilt)
@@ -1957,9 +1957,10 @@ WHERE Id = 1;",
 
             var note = new TextBlock
             {
-                Text = "Cycle XP drives Lv 1–100. Lifetime trainer XP keeps counting separately, even at level 100. Prestige Reset (+1 Star) only works at level 100. Debug reset buttons do not rewrite the reward ledger.",
+                Text = "Cycle XP drives Lv 1–100. Lifetime trainer XP keeps counting separately,\neven at level 100.\nPrestige Reset (+1 Star) only works at level 100.\nDebug reset buttons do not rewrite the reward ledger.",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
+                MaxWidth = 520,
                 TextWrapping = TextWrapping.Wrap
             };
 
@@ -1975,7 +1976,9 @@ WHERE Id = 1;",
 
             _trainerXpUiBuilt = true;
         }
+        #endregion // SECTION E2A — Trainer XP Debug UI
 
+        #region SECTION E2B — Sleep Tuning Debug UI
         private void EnsureSleepSettingsDebugUiBuilt()
         {
             if (_sleepSettingsUiBuilt)
@@ -2207,9 +2210,10 @@ WHERE Id = 1;",
 
             var note = new TextBlock
             {
-                Text = "Largest qualifying session is treated as the main sleep. Up to 2 more qualifying sessions can catch you up to the healthy maximum, but they do not add extra oversleep penalty. Save stores your custom values. Reset restores the stable defaults.",
+                Text = "Largest qualifying session is treated as the main sleep.\nUp to 2 more qualifying sessions can catch you up\nto the healthy maximum, but they do not add extra oversleep penalty.\nSave stores your custom values. Reset restores the stable defaults.",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
+                MaxWidth = 520,
                 TextWrapping = TextWrapping.Wrap
             };
 
@@ -2220,8 +2224,7 @@ WHERE Id = 1;",
 
             _sleepSettingsUiBuilt = true;
         }
-
-        #endregion // SECTION E2 — Sleep Tuning Debug UI
+        #endregion // SECTION E2B — Sleep Tuning Debug UI
 
         #region SECTION E3 — Main Refresh Pipeline
         private async Task RefreshForSelectedDateAsync()
