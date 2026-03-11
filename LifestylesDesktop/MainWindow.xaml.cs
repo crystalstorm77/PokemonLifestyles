@@ -89,6 +89,8 @@ namespace LifestylesDesktop
         private bool _focusTimerRunning = false;
         private bool _focusTimerPaused = false;
         private bool _focusTimerIsCountUp = false;
+        private bool _focusTimerStopDialogOpen = false;
+        private Window? _focusTimerStopDialogWindow;
         private DateTimeOffset _focusTimerRunStartedUtc;
         private TimeSpan _focusTimerElapsedBeforePause = TimeSpan.Zero;
         private int _focusTimerCountdownTargetMinutes = 25;
@@ -281,6 +283,14 @@ namespace LifestylesDesktop
             return $"{totalHours:00}:{time.Minutes:00}:{time.Seconds:00}";
         }
 
+        private static int CalculateNextCountUpPauseMinutes(int currentWholeMinutes)
+        {
+            if (currentWholeMinutes < 0)
+                currentWholeMinutes = 0;
+
+            return ((currentWholeMinutes / 120) + 1) * 120;
+        }
+
         private TimeSpan GetCurrentFocusTimerElapsed()
         {
             if (_focusTimerRunning)
@@ -295,19 +305,44 @@ namespace LifestylesDesktop
                 FocusTimerStatusText.Text = text;
         }
 
+        private void CloseOpenStopFocusTimerDialog()
+        {
+            if (_focusTimerStopDialogWindow == null)
+                return;
+
+            var dialog = _focusTimerStopDialogWindow;
+            _focusTimerStopDialogWindow = null;
+            _focusTimerStopDialogOpen = false;
+
+            if (dialog.IsVisible)
+                dialog.Close();
+        }
+
         private void UpdateFocusTimerUi()
         {
             bool isActiveOrPaused = _focusTimerRunning || _focusTimerPaused;
             bool isCountUpSelected = IsCountUpModeSelected();
 
+            if (FocusCountUpDebugStartRow != null)
+                FocusCountUpDebugStartRow.Visibility = isCountUpSelected ? Visibility.Visible : Visibility.Collapsed;
+
             if (FocusCountdownMinutesRow != null)
                 FocusCountdownMinutesRow.Visibility = isCountUpSelected ? Visibility.Collapsed : Visibility.Visible;
+
+            if (FocusCountdownDebugRemainingRow != null)
+                FocusCountdownDebugRemainingRow.Visibility = isCountUpSelected ? Visibility.Collapsed : Visibility.Visible;
 
             if (FocusTimerModeCombo != null)
                 FocusTimerModeCombo.IsEnabled = !isActiveOrPaused;
 
+            if (FocusCountUpDebugStartMinutesBox != null)
+                FocusCountUpDebugStartMinutesBox.IsEnabled = !isActiveOrPaused && isCountUpSelected;
+
             if (FocusCountdownMinutesBox != null)
                 FocusCountdownMinutesBox.IsEnabled = !isActiveOrPaused && !isCountUpSelected;
+
+            if (FocusCountdownDebugRemainingMinutesBox != null)
+                FocusCountdownDebugRemainingMinutesBox.IsEnabled = !isActiveOrPaused && !isCountUpSelected;
 
             if (FocusTypeCombo != null)
                 FocusTypeCombo.IsEnabled = !isActiveOrPaused;
@@ -328,10 +363,13 @@ namespace LifestylesDesktop
                 StartFocusTimerButton.IsEnabled = !isActiveOrPaused;
 
             if (ResumeFocusTimerButton != null)
+            {
+                ResumeFocusTimerButton.Visibility = _focusTimerPaused ? Visibility.Visible : Visibility.Collapsed;
                 ResumeFocusTimerButton.IsEnabled = _focusTimerPaused;
+            }
 
             if (StopFocusTimerButton != null)
-                StopFocusTimerButton.IsEnabled = isActiveOrPaused;
+                StopFocusTimerButton.IsEnabled = isActiveOrPaused && !_focusTimerStopDialogOpen;
 
             TimeSpan displayTime;
 
@@ -342,20 +380,32 @@ namespace LifestylesDesktop
                     ? elapsed
                     : TimeSpan.FromMinutes(_focusTimerCountdownTargetMinutes) - elapsed;
             }
+            else if (isCountUpSelected)
+            {
+                displayTime = TryGetCountUpDebugStartMinutes(out int debugStartMinutes) && debugStartMinutes > 0
+                    ? TimeSpan.FromMinutes(debugStartMinutes)
+                    : TimeSpan.Zero;
+            }
             else
             {
-                if (!isCountUpSelected && TryGetCountdownTargetMinutes(out int previewCountdownMinutes))
+                if (TryGetCountdownTargetMinutes(out int previewCountdownMinutes))
                     _focusTimerCountdownTargetMinutes = previewCountdownMinutes;
 
-                displayTime = isCountUpSelected
-                    ? TimeSpan.Zero
-                    : TimeSpan.FromMinutes(_focusTimerCountdownTargetMinutes);
+                int displayMinutes = _focusTimerCountdownTargetMinutes;
+                if (TryGetCountdownDebugRemainingMinutes(out int debugRemainingMinutes) && debugRemainingMinutes > 0 && debugRemainingMinutes <= _focusTimerCountdownTargetMinutes)
+                    displayMinutes = debugRemainingMinutes;
+
+                displayTime = TimeSpan.FromMinutes(displayMinutes);
             }
 
             if (FocusTimerDisplayText != null)
                 FocusTimerDisplayText.Text = FormatTimerClock(displayTime);
 
-            if (_focusTimerRunning)
+            if (_focusTimerStopDialogOpen)
+            {
+                SetFocusTimerStatus("Stop confirmation is open. The timer is still running.");
+            }
+            else if (_focusTimerRunning)
             {
                 SetFocusTimerStatus(_focusTimerIsCountUp
                     ? $"Count-up timer running. Next pause at {FormatMinutes(_focusTimerNextCountUpPauseMinutes)}."
@@ -363,7 +413,7 @@ namespace LifestylesDesktop
             }
             else if (_focusTimerPaused)
             {
-                SetFocusTimerStatus($"Timer paused at {FormatMinutes((int)Math.Floor(GetCurrentFocusTimerElapsed().TotalMinutes))}. Resume or stop when ready.");
+                SetFocusTimerStatus($"Timer paused at {FormatMinutes((int)Math.Floor(GetCurrentFocusTimerElapsed().TotalMinutes))}. Use Resume or Stop Focusing when ready.");
             }
             else
             {
@@ -382,6 +432,20 @@ namespace LifestylesDesktop
             await RefreshFocusLabelsAsync(keepText: focusType);
         }
 
+        private bool TryGetCountUpDebugStartMinutes(out int minutes)
+        {
+            minutes = 0;
+
+            string raw = FocusCountUpDebugStartMinutesBox?.Text?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(raw))
+                return true;
+
+            if (!int.TryParse(raw, out minutes))
+                return false;
+
+            return minutes >= 0;
+        }
+
         private bool TryGetCountdownTargetMinutes(out int minutes)
         {
             minutes = 0;
@@ -396,8 +460,23 @@ namespace LifestylesDesktop
             return true;
         }
 
+        private bool TryGetCountdownDebugRemainingMinutes(out int minutes)
+        {
+            minutes = 0;
+
+            string raw = FocusCountdownDebugRemainingMinutesBox?.Text?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(raw))
+                return true;
+
+            if (!int.TryParse(raw, out minutes))
+                return false;
+
+            return minutes >= 0;
+        }
+
         private void ResetFocusTimerState(string status)
         {
+            CloseOpenStopFocusTimerDialog();
             _focusTimerUiTimer.Stop();
             _focusTimerRunning = false;
             _focusTimerPaused = false;
@@ -453,13 +532,17 @@ namespace LifestylesDesktop
         #endregion // SECTION D1 — Focus Timer State + UI Helpers
 
         #region SECTION D2 — Focus Timer Dialogs
-        private FocusTimerStopChoice ShowStopFocusTimerDialog(int wholeMinutes)
+        private Task<FocusTimerStopChoice> ShowStopFocusTimerDialogAsync(int wholeMinutes)
         {
+            if (_focusTimerStopDialogOpen)
+                return Task.FromResult(FocusTimerStopChoice.KeepFocusing);
+
+            var tcs = new TaskCompletionSource<FocusTimerStopChoice>();
             var dialog = new Window
             {
                 Title = "Stop focusing?",
                 Width = 360,
-                Height = 185,
+                Height = 160,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = this,
                 ResizeMode = ResizeMode.NoResize,
@@ -467,18 +550,39 @@ namespace LifestylesDesktop
                 ShowInTaskbar = false
             };
 
-            FocusTimerStopChoice choice = FocusTimerStopChoice.KeepFocusing;
+            bool resolved = false;
+
+            void Finish(FocusTimerStopChoice result)
+            {
+                if (resolved)
+                    return;
+
+                resolved = true;
+                _focusTimerStopDialogOpen = false;
+                _focusTimerStopDialogWindow = null;
+                UpdateFocusTimerUi();
+                tcs.TrySetResult(result);
+
+                if (dialog.IsVisible)
+                    dialog.Close();
+            }
+
+            dialog.Closed += (_, __) =>
+            {
+                if (resolved)
+                    return;
+
+                resolved = true;
+                _focusTimerStopDialogOpen = false;
+                _focusTimerStopDialogWindow = null;
+                UpdateFocusTimerUi();
+                tcs.TrySetResult(FocusTimerStopChoice.KeepFocusing);
+            };
 
             var root = new StackPanel { Margin = new Thickness(12) };
             root.Children.Add(new TextBlock
             {
                 Text = $"You have completed {wholeMinutes} full minute{(wholeMinutes == 1 ? "" : "s")}.",
-                Margin = new Thickness(0, 0, 0, 6),
-                TextWrapping = TextWrapping.Wrap
-            });
-            root.Children.Add(new TextBlock
-            {
-                Text = "Stop focusing now, or keep going?",
                 Margin = new Thickness(0, 0, 0, 12),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -489,29 +593,25 @@ namespace LifestylesDesktop
                 HorizontalAlignment = HorizontalAlignment.Right
             };
 
-            var keepBtn = new Button { Content = "Keep Focusing", Width = 120, Margin = new Thickness(0, 0, 10, 0) };
-            keepBtn.Click += (_, __) =>
-            {
-                choice = FocusTimerStopChoice.KeepFocusing;
-                dialog.DialogResult = true;
-                dialog.Close();
-            };
+            var keepBtn = new Button { Content = "Keep going?", Width = 120, Margin = new Thickness(0, 0, 10, 0) };
+            keepBtn.Click += (_, __) => Finish(FocusTimerStopChoice.KeepFocusing);
 
             var stopBtn = new Button { Content = "Stop Focusing", Width = 120 };
-            stopBtn.Click += (_, __) =>
-            {
-                choice = FocusTimerStopChoice.StopFocusing;
-                dialog.DialogResult = true;
-                dialog.Close();
-            };
+            stopBtn.Click += (_, __) => Finish(FocusTimerStopChoice.StopFocusing);
 
             buttons.Children.Add(keepBtn);
             buttons.Children.Add(stopBtn);
             root.Children.Add(buttons);
 
             dialog.Content = root;
-            dialog.ShowDialog();
-            return choice;
+
+            _focusTimerStopDialogOpen = true;
+            _focusTimerStopDialogWindow = dialog;
+            UpdateFocusTimerUi();
+            dialog.Show();
+            dialog.Activate();
+
+            return tcs.Task;
         }
 
         private FocusTimerCheckpointChoice ShowCountUpCheckpointDialog(int wholeMinutes)
@@ -595,20 +695,57 @@ namespace LifestylesDesktop
 
                 _focusTimerIsCountUp = IsCountUpModeSelected();
 
-                if (!_focusTimerIsCountUp && !TryGetCountdownTargetMinutes(out _focusTimerCountdownTargetMinutes))
+                int countUpDebugStartMinutes = 0;
+                int countdownDebugRemainingMinutes = 0;
+
+                if (_focusTimerIsCountUp)
                 {
-                    MessageBox.Show("Countdown minutes must be a whole number from 5 to 120.");
-                    return;
+                    if (!TryGetCountUpDebugStartMinutes(out countUpDebugStartMinutes))
+                    {
+                        MessageBox.Show("Debug Start From must be a whole number of minutes 0 or greater.");
+                        return;
+                    }
+                }
+                else
+                {
+                    if (!TryGetCountdownTargetMinutes(out _focusTimerCountdownTargetMinutes))
+                    {
+                        MessageBox.Show("Countdown minutes must be a whole number from 5 to 120.");
+                        return;
+                    }
+
+                    if (!TryGetCountdownDebugRemainingMinutes(out countdownDebugRemainingMinutes))
+                    {
+                        MessageBox.Show("Debug Remaining must be a whole number of minutes 0 or greater.");
+                        return;
+                    }
+
+                    if (countdownDebugRemainingMinutes > _focusTimerCountdownTargetMinutes)
+                    {
+                        MessageBox.Show("Debug Remaining cannot be greater than the countdown target.");
+                        return;
+                    }
                 }
 
                 _focusTimerFocusType = NormalizeFocusLabel(FocusTypeCombo?.Text);
                 await SaveFocusLabelIfNeededAsync(_focusTimerFocusType);
 
-                _focusTimerElapsedBeforePause = TimeSpan.Zero;
-                _focusTimerNextCountUpPauseMinutes = 120;
                 _focusTimerPaused = false;
                 _focusTimerRunning = true;
                 _focusTimerRunStartedUtc = DateTimeOffset.UtcNow;
+
+                if (_focusTimerIsCountUp)
+                {
+                    _focusTimerElapsedBeforePause = TimeSpan.FromMinutes(countUpDebugStartMinutes);
+                    _focusTimerNextCountUpPauseMinutes = CalculateNextCountUpPauseMinutes(countUpDebugStartMinutes);
+                }
+                else
+                {
+                    _focusTimerElapsedBeforePause = countdownDebugRemainingMinutes > 0
+                        ? TimeSpan.FromMinutes(_focusTimerCountdownTargetMinutes - countdownDebugRemainingMinutes)
+                        : TimeSpan.Zero;
+                    _focusTimerNextCountUpPauseMinutes = 120;
+                }
 
                 _focusTimerUiTimer.Start();
                 UpdateFocusTimerUi();
@@ -635,30 +772,39 @@ namespace LifestylesDesktop
         {
             try
             {
+                if ((!_focusTimerRunning && !_focusTimerPaused) || _focusTimerStopDialogOpen)
+                    return;
+
+                int wholeMinutesAtPrompt = Math.Max(0, (int)Math.Floor(GetCurrentFocusTimerElapsed().TotalMinutes));
+                var choice = await ShowStopFocusTimerDialogAsync(wholeMinutesAtPrompt);
+
                 if (!_focusTimerRunning && !_focusTimerPaused)
                     return;
 
-                if (_focusTimerRunning)
-                {
-                    _focusTimerElapsedBeforePause = GetCurrentFocusTimerElapsed();
-                    _focusTimerUiTimer.Stop();
-                    _focusTimerRunning = false;
-                    _focusTimerPaused = true;
-                }
-
-                int wholeMinutes = Math.Max(0, (int)Math.Floor(_focusTimerElapsedBeforePause.TotalMinutes));
-                var choice = ShowStopFocusTimerDialog(wholeMinutes);
-
                 if (choice == FocusTimerStopChoice.KeepFocusing)
                 {
-                    _focusTimerPaused = false;
-                    _focusTimerRunning = true;
-                    _focusTimerRunStartedUtc = DateTimeOffset.UtcNow;
-                    _focusTimerUiTimer.Start();
+                    if (_focusTimerPaused)
+                    {
+                        _focusTimerPaused = false;
+                        _focusTimerRunning = true;
+                        _focusTimerRunStartedUtc = DateTimeOffset.UtcNow;
+                        _focusTimerUiTimer.Start();
+                    }
+
                     UpdateFocusTimerUi();
                     return;
                 }
 
+                var finalElapsed = _focusTimerRunning
+                    ? GetCurrentFocusTimerElapsed()
+                    : _focusTimerElapsedBeforePause;
+
+                _focusTimerElapsedBeforePause = finalElapsed;
+                _focusTimerUiTimer.Stop();
+                _focusTimerRunning = false;
+                _focusTimerPaused = false;
+
+                int wholeMinutes = Math.Max(0, (int)Math.Floor(finalElapsed.TotalMinutes));
                 bool grantRewards = wholeMinutes >= 5;
                 bool completed = _focusTimerIsCountUp && grantRewards;
 
@@ -689,6 +835,9 @@ namespace LifestylesDesktop
             {
                 UpdateFocusTimerUi();
 
+                if (_focusTimerStopDialogOpen)
+                    return;
+
                 int wholeMinutes = Math.Max(0, (int)Math.Floor(elapsed.TotalMinutes));
                 if (wholeMinutes < _focusTimerNextCountUpPauseMinutes)
                     return;
@@ -716,8 +865,8 @@ namespace LifestylesDesktop
 
                 if (checkpointChoice == FocusTimerCheckpointChoice.TakeABreak)
                 {
-                    await SaveTimerSessionAsync(wholeMinutes, completed: true, grantRewards: true);
-                    ResetFocusTimerState($"Count-up session saved: {FormatMinutes(wholeMinutes)} (completed).");
+                    SetFocusTimerStatus($"Timer paused at {FormatMinutes(wholeMinutes)}. Use Resume or Stop Focusing when ready.");
+                    UpdateFocusTimerUi();
                     return;
                 }
 
@@ -727,7 +876,8 @@ namespace LifestylesDesktop
                     return;
                 }
 
-                SetFocusTimerStatus($"Timer paused at {FormatMinutes(wholeMinutes)}. Resume, stop, or discard when ready.");
+                SetFocusTimerStatus($"Timer paused at {FormatMinutes(wholeMinutes)}. Use Resume or Stop Focusing when ready.");
+                UpdateFocusTimerUi();
                 return;
             }
 
@@ -743,6 +893,7 @@ namespace LifestylesDesktop
             _focusTimerUiTimer.Stop();
             _focusTimerRunning = false;
             _focusTimerPaused = false;
+            CloseOpenStopFocusTimerDialog();
             UpdateFocusTimerUi();
 
             await SaveTimerSessionAsync(_focusTimerCountdownTargetMinutes, completed: true, grantRewards: true);
@@ -766,6 +917,14 @@ namespace LifestylesDesktop
 
             if (TryGetCountdownTargetMinutes(out int countdownMinutes))
                 _focusTimerCountdownTargetMinutes = countdownMinutes;
+
+            UpdateFocusTimerUi();
+        }
+
+        private void FocusTimerDebugTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_focusTimerRunning || _focusTimerPaused)
+                return;
 
             UpdateFocusTimerUi();
         }

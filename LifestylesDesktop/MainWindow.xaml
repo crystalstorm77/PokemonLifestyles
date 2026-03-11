@@ -286,6 +286,16 @@ SECTION C — Focus Session Input
                         </ComboBox>
                     </StackPanel>
 
+                    <StackPanel x:Name="FocusCountUpDebugStartRow" Orientation="Horizontal" Margin="0,0,0,8" Visibility="Collapsed">
+                        <TextBlock Text="Debug Start From:" Width="120" VerticalAlignment="Center"/>
+                        <TextBox x:Name="FocusCountUpDebugStartMinutesBox"
+                 Width="120"
+                 Text="0"
+                 Margin="0,0,10,0"
+                 TextChanged="FocusTimerDebugTextChanged"/>
+                        <TextBlock Text="elapsed whole minutes" Foreground="Gray" VerticalAlignment="Center"/>
+                    </StackPanel>
+
                     <StackPanel x:Name="FocusCountdownMinutesRow" Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="Countdown:" Width="90" VerticalAlignment="Center"/>
                         <TextBox x:Name="FocusCountdownMinutesBox"
@@ -294,6 +304,16 @@ SECTION C — Focus Session Input
                  Margin="0,0,10,0"
                  TextChanged="FocusCountdownMinutesBox_TextChanged"/>
                         <TextBlock Text="5 to 120 minutes" Foreground="Gray" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="FocusCountdownDebugRemainingRow" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Debug Remaining:" Width="120" VerticalAlignment="Center"/>
+                        <TextBox x:Name="FocusCountdownDebugRemainingMinutesBox"
+                 Width="120"
+                 Text="0"
+                 Margin="0,0,10,0"
+                 TextChanged="FocusTimerDebugTextChanged"/>
+                        <TextBlock Text="remaining whole minutes" Foreground="Gray" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <Border BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
@@ -320,7 +340,8 @@ SECTION C — Focus Session Input
                 Width="100"
                 Margin="10,0,0,0"
                 Click="ResumeFocusTimerButton_Click"
-                IsEnabled="False"/>
+                IsEnabled="False"
+                Visibility="Collapsed"/>
                         <Button x:Name="StopFocusTimerButton"
                 Content="Stop Focusing"
                 Width="120"
