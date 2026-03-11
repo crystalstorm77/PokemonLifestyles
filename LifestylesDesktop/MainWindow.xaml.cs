@@ -1384,18 +1384,19 @@ WHERE Id = 1;",
         #region SECTION E4 — Gamification + Item Drop Debug Refresh
         private async Task RefreshGamificationDebugAsync()
         {
+            EnsureTrainerXpDebugUiBuilt();
+            EnsureSleepSettingsDebugUiBuilt();
+
+            UpdateLiveClockText();
+
+            int selectedDayCoins = 0;
+            int selectedDayTickets = 0;
+            int selectedDayTrainerXp = 0;
+
             try
             {
-                EnsureTrainerXpDebugUiBuilt();
-                EnsureSleepSettingsDebugUiBuilt();
-
-                UpdateLiveClockText();
-
-                int selectedDayCoins = 0;
-                int selectedDayTickets = 0;
-                int selectedDayTrainerXp = 0;
-
                 var entries = await _rewardsRepo.GetForGameDayAsync(SelectedLogDate);
+
                 foreach (var e in entries)
                 {
                     if (e.RewardType == RewardType.FocusCoins) selectedDayCoins += e.Amount;
@@ -1403,31 +1404,37 @@ WHERE Id = 1;",
                     else if (e.RewardType == RewardType.TrainerXp) selectedDayTrainerXp += e.Amount;
                 }
 
-                // Selected-day rewards summary
                 if (RewardsSummaryText != null)
                 {
                     RewardsSummaryText.Text =
                         $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): {selectedDayCoins} coins, {selectedDayTickets} tickets, {selectedDayTrainerXp} XP | Ledger entries: {entries.Count}";
                 }
+            }
+            catch (Exception ex)
+            {
+                if (RewardsSummaryText != null)
+                    RewardsSummaryText.Text = $"Selected day rewards ({SelectedLogDate:yyyy-MM-dd}): (error loading) {ex.Message}";
+            }
 
+            if (_trainerSelectedDayXpText != null)
+                _trainerSelectedDayXpText.Text = $"Selected day trainer XP: {selectedDayTrainerXp:#,0}";
+
+            try
+            {
                 var gamiSettings = await _gamiSettingsRepo.GetAsync();
-                var sleepSettings = await GetSleepTuningSettingsAsync();
-                var trainerProgress = await _rewardsRepo.GetTrainerProgressAsync();
 
                 SetTextBoxIfIdle(_focusXpPerMinuteBox, FormatDoubleForBox(gamiSettings.FocusXpPerMinute));
                 SetTextBoxIfIdle(_focusXpIncompleteMultiplierBox, FormatDoubleForBox(gamiSettings.FocusXpIncompleteMultiplier));
+            }
+            catch (Exception ex)
+            {
+                if (_trainerProgressText != null && string.IsNullOrWhiteSpace(_trainerProgressText.Text))
+                    _trainerProgressText.Text = $"XP settings load failed: {ex.Message}";
+            }
 
-                if (_trainerLevelText != null)
-                    _trainerLevelText.Text = BuildTrainerLevelLine(trainerProgress);
-
-                if (_trainerProgressText != null)
-                    _trainerProgressText.Text = BuildTrainerProgressLine(trainerProgress);
-
-                if (_trainerSelectedDayXpText != null)
-                    _trainerSelectedDayXpText.Text = $"Selected day trainer XP: {selectedDayTrainerXp:#,0}";
-
-                if (_trainerPrestigeResetButton != null)
-                    _trainerPrestigeResetButton.IsEnabled = trainerProgress.IsMaxLevel;
+            try
+            {
+                var sleepSettings = await GetSleepTuningSettingsAsync();
 
                 SetTextBoxIfIdle(_sleepHealthyMinHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMinHours));
                 SetTextBoxIfIdle(_sleepHealthyMaxHoursBox, FormatDoubleForBox(sleepSettings.SleepHealthyMaxHours));
@@ -1447,7 +1454,6 @@ WHERE Id = 1;",
                 if (_sleepPreview24hText != null)
                     _sleepPreview24hText.Text = BuildSleepPreviewText(sleepSettings, 24 * 60);
 
-                // Sleep multiplier (applies to the day you woke up — i.e. the selected log date)
                 if (SleepMultiplierText != null)
                 {
                     var sleeps = await _sleepRepo.GetForWakeDateAsync(SelectedLogDate);
@@ -1469,14 +1475,41 @@ WHERE Id = 1;",
                             $"Sleep multiplier: x{mult:F2} (sleep: {FormatMinutes(totalMinutes)}, {band})";
                     }
                 }
-
-                // Item drops debug (includes settings + progress + inventory + list)
-                await RefreshItemDropsDebugAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                // Keep debug UI resilient
+                if (_sleepPreview5hText != null) _sleepPreview5hText.Text = $"Sleep settings load failed: {ex.Message}";
+                if (_sleepPreview8hText != null) _sleepPreview8hText.Text = "";
+                if (_sleepPreview11hText != null) _sleepPreview11hText.Text = "";
+                if (_sleepPreview24hText != null) _sleepPreview24hText.Text = "";
             }
+
+            try
+            {
+                var trainerProgress = await _rewardsRepo.GetTrainerProgressAsync();
+
+                if (_trainerLevelText != null)
+                    _trainerLevelText.Text = BuildTrainerLevelLine(trainerProgress);
+
+                if (_trainerProgressText != null)
+                    _trainerProgressText.Text = BuildTrainerProgressLine(trainerProgress);
+
+                if (_trainerPrestigeResetButton != null)
+                    _trainerPrestigeResetButton.IsEnabled = trainerProgress.IsMaxLevel;
+            }
+            catch (Exception ex)
+            {
+                if (_trainerLevelText != null)
+                    _trainerLevelText.Text = "Trainer progress: (error loading)";
+
+                if (_trainerProgressText != null)
+                    _trainerProgressText.Text = ex.Message;
+
+                if (_trainerPrestigeResetButton != null)
+                    _trainerPrestigeResetButton.IsEnabled = false;
+            }
+
+            await RefreshItemDropsDebugAsync();
         }
 
         private async Task RefreshItemDropsDebugAsync()
@@ -1497,7 +1530,6 @@ WHERE Id = 1;",
 
                 int toNext = stepsPerRoll - remainder;
 
-                // Only overwrite textboxes if the user isn't actively editing them
                 if (StepsPerRollBox != null && !StepsPerRollBox.IsKeyboardFocusWithin)
                     StepsPerRollBox.Text = settings.StepsPerItemRoll.ToString();
 

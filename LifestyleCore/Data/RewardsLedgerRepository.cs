@@ -39,6 +39,36 @@ namespace LifestyleCore.Data
             return 1;
         }
 
+        private static async Task EnsureTrainerProgressLifetimeColumnAsync(System.Data.IDbConnection conn, System.Data.IDbTransaction? tx = null)
+        {
+            var cols = await conn.QueryAsync("PRAGMA table_info(TrainerProgress);", transaction: tx);
+
+            bool hasTotalLifetimeXp = false;
+
+            foreach (var c in cols)
+            {
+                string name = (string)c.name;
+                if (string.Equals(name, "TotalLifetimeXp", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasTotalLifetimeXp = true;
+                    break;
+                }
+            }
+
+            if (!hasTotalLifetimeXp)
+            {
+                await conn.ExecuteAsync(
+                    "ALTER TABLE TrainerProgress ADD COLUMN TotalLifetimeXp INTEGER NOT NULL DEFAULT 0;",
+                    transaction: tx);
+            }
+
+            await conn.ExecuteAsync(@"
+                UPDATE TrainerProgress
+                SET TotalLifetimeXp = COALESCE(TotalLifetimeXp, (PrestigeCount * 1000000) + CurrentCycleXp)
+                WHERE Id = 1;",
+                transaction: tx);
+        }
+
         public async Task<bool> TryGrantHabitCheckboxTicketAsync(long habitId, DateOnly habitDate)
         {
             RewardsSchema.EnsureCreated();
@@ -48,7 +78,6 @@ namespace LifestyleCore.Data
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
             string day = habitDate.ToString("yyyy-MM-dd");
 
-            // v1: +1 ticket for checkbox completion
             int rows = await conn.ExecuteAsync(@"
         INSERT OR IGNORE INTO RewardsLedger
             (ForGameDay, AwardedAtUtc, RewardType, Amount, HabitId, HabitDate)
@@ -105,6 +134,8 @@ namespace LifestyleCore.Data
 
             using var conn = Db.OpenConnection();
             using var tx = conn.BeginTransaction();
+
+            await EnsureTrainerProgressLifetimeColumnAsync(conn, tx);
 
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
             string day = forGameDay.ToString("yyyy-MM-dd");
@@ -169,6 +200,8 @@ namespace LifestyleCore.Data
             using var conn = Db.OpenConnection();
             using var tx = conn.BeginTransaction();
 
+            await EnsureTrainerProgressLifetimeColumnAsync(conn, tx);
+
             var progress = await conn.QuerySingleOrDefaultAsync<TrainerProgressRow>(@"
                 SELECT CurrentCycleXp, TotalLifetimeXp, PrestigeCount
                 FROM TrainerProgress
@@ -212,6 +245,9 @@ namespace LifestyleCore.Data
             RewardsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
+            await EnsureTrainerProgressLifetimeColumnAsync(conn);
+
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
             await conn.ExecuteAsync(@"
@@ -228,6 +264,9 @@ namespace LifestyleCore.Data
             RewardsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
+            await EnsureTrainerProgressLifetimeColumnAsync(conn);
+
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
             await conn.ExecuteAsync(@"
@@ -244,6 +283,9 @@ namespace LifestyleCore.Data
             RewardsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
+            await EnsureTrainerProgressLifetimeColumnAsync(conn);
+
             string nowUtc = DateTimeOffset.UtcNow.ToString("O");
 
             await conn.ExecuteAsync(@"
@@ -288,6 +330,8 @@ namespace LifestyleCore.Data
             RewardsSchema.EnsureCreated();
 
             using var conn = Db.OpenConnection();
+
+            await EnsureTrainerProgressLifetimeColumnAsync(conn);
 
             var row = await conn.QuerySingleOrDefaultAsync<TrainerProgressRow>(@"
                 SELECT CurrentCycleXp, TotalLifetimeXp, PrestigeCount
