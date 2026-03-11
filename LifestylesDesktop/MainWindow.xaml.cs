@@ -72,6 +72,11 @@ namespace LifestylesDesktop
         private readonly Dictionary<long, double> _foodEntryOriginalKj = new();
         private ObservableCollection<HabitRow> _habitRows = new();
 
+        // Analytics range state
+        private bool _analyticsRangeUiUpdating = false;
+        private DateOnly _analyticsRangeStart;
+        private DateOnly _analyticsRangeEnd;
+
         // Trainer statistics controls (injected at runtime into the debug area)
         private bool _trainerXpUiBuilt = false;
         private TextBox? _focusXpPerMinuteBox;
@@ -157,6 +162,7 @@ namespace LifestylesDesktop
             SetArchiveViewDate(GetEffectiveCurrentGameDay());
 
             UpdateLogDateUI();
+            InitializeAnalyticsRangeUi();
             StartLiveClock();
             _liveClockTimer.Tick -= TimeTravelLiveClockTimer_Tick;
             _liveClockTimer.Tick += TimeTravelLiveClockTimer_Tick;
@@ -2778,7 +2784,384 @@ WHERE Id = 1;",
         }
         #endregion // SECTION E2D — Weekly Bonus Settings Helpers
 
-        #region SECTION E3 — Main Refresh Pipeline
+        #region SECTION E3A — Analytics Range Helpers
+        private void InitializeAnalyticsRangeUi()
+        {
+            var anchor = SelectedLogDate;
+            SetAnalyticsRangeUi(anchor, anchor);
+        }
+
+        private void SetAnalyticsRangeUi(DateOnly start, DateOnly end)
+        {
+            _analyticsRangeStart = start;
+            _analyticsRangeEnd = end;
+
+            _analyticsRangeUiUpdating = true;
+            try
+            {
+                if (AnalyticsStartDatePicker != null)
+                    AnalyticsStartDatePicker.SelectedDate = start.ToDateTime(TimeOnly.MinValue);
+
+                if (AnalyticsEndDatePicker != null)
+                    AnalyticsEndDatePicker.SelectedDate = end.ToDateTime(TimeOnly.MinValue);
+            }
+            finally
+            {
+                _analyticsRangeUiUpdating = false;
+            }
+        }
+
+        private bool TryGetAnalyticsRangeFromUi(out DateOnly start, out DateOnly end, bool showErrors)
+        {
+            start = _analyticsRangeStart == default ? SelectedLogDate : _analyticsRangeStart;
+            end = _analyticsRangeEnd == default ? SelectedLogDate : _analyticsRangeEnd;
+
+            if (AnalyticsStartDatePicker?.SelectedDate == null || AnalyticsEndDatePicker?.SelectedDate == null)
+            {
+                if (showErrors)
+                    MessageBox.Show("Choose both a start and end date for Analytics.");
+
+                return false;
+            }
+
+            start = DateOnly.FromDateTime(AnalyticsStartDatePicker.SelectedDate.Value);
+            end = DateOnly.FromDateTime(AnalyticsEndDatePicker.SelectedDate.Value);
+
+            if (end < start)
+            {
+                if (showErrors)
+                    MessageBox.Show("Analytics end date must be on or after the start date.");
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private static DateOnly GetFirstDayOfMonth(DateOnly date)
+        {
+            return new DateOnly(date.Year, date.Month, 1);
+        }
+
+        private static DateOnly GetLastDayOfMonth(DateOnly date)
+        {
+            return new DateOnly(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
+        }
+
+        private static DateOnly AddMonths(DateOnly date, int months)
+        {
+            return DateOnly.FromDateTime(date.ToDateTime(TimeOnly.MinValue).AddMonths(months));
+        }
+
+        private static int GetInclusiveDayCount(DateOnly start, DateOnly end)
+        {
+            return (end.DayNumber - start.DayNumber) + 1;
+        }
+
+        private static (DateOnly Start, DateOnly End) GetAnalyticsPresetRange(string presetKey, DateOnly anchorDate)
+        {
+            return presetKey switch
+            {
+                "Day" => (anchorDate, anchorDate),
+                "Week" => (GetWeekStartMonday(anchorDate), GetWeekStartMonday(anchorDate).AddDays(6)),
+                "Month" => (GetFirstDayOfMonth(anchorDate), GetLastDayOfMonth(anchorDate)),
+                "3Months" => (GetFirstDayOfMonth(AddMonths(anchorDate, -2)), GetLastDayOfMonth(anchorDate)),
+                "6Months" => (GetFirstDayOfMonth(AddMonths(anchorDate, -5)), GetLastDayOfMonth(anchorDate)),
+                "Year" => (new DateOnly(anchorDate.Year, 1, 1), new DateOnly(anchorDate.Year, 12, 31)),
+                "Custom" => (anchorDate, anchorDate),
+                _ => (anchorDate, anchorDate)
+            };
+        }
+
+        private async void AnalyticsPresetButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button)
+                return;
+
+            string presetKey = (button.Tag as string ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(presetKey))
+                return;
+
+            try
+            {
+                if (string.Equals(presetKey, "Custom", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!TryGetAnalyticsRangeFromUi(out var manualStart, out var manualEnd, showErrors: true))
+                        return;
+
+                    SetAnalyticsRangeUi(manualStart, manualEnd);
+                }
+                else
+                {
+                    var range = GetAnalyticsPresetRange(presetKey, SelectedLogDate);
+                    SetAnalyticsRangeUi(range.Start, range.End);
+                }
+
+                await RefreshAnalyticsAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not apply analytics preset");
+            }
+        }
+
+        private async void AnalyticsApplyRangeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_analyticsRangeUiUpdating)
+                return;
+
+            try
+            {
+                if (!TryGetAnalyticsRangeFromUi(out var start, out var end, showErrors: true))
+                    return;
+
+                SetAnalyticsRangeUi(start, end);
+                await RefreshAnalyticsAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not refresh analytics");
+            }
+        }
+        #endregion // SECTION E3A — Analytics Range Helpers
+
+        #region SECTION E3B — Analytics Summary Refresh
+        private sealed class AnalyticsSnapshot
+        {
+            public DateOnly StartDate { get; set; }
+            public DateOnly EndDate { get; set; }
+            public int DayCount { get; set; }
+
+            public int FocusTotalMinutes { get; set; }
+            public int FocusSessionCount { get; set; }
+            public int FocusCompletedCount { get; set; }
+
+            public double FoodTotalKj { get; set; }
+            public int FoodEntryCount { get; set; }
+
+            public int SleepTotalMinutes { get; set; }
+            public int SleepSessionCount { get; set; }
+
+            public int StepsTotal { get; set; }
+            public int StepsBestDay { get; set; }
+            public int DaysWithSteps { get; set; }
+            public int DaysMeetingStepsGoal { get; set; }
+            public int DailyStepsGoal { get; set; }
+
+            public int CheckboxCompletionCount { get; set; }
+            public int CounterUnitsLogged { get; set; }
+            public int HabitDaysWithAnyActivity { get; set; }
+            public int UniqueHabitsWithActivity { get; set; }
+
+            public int RewardCoins { get; set; }
+            public int RewardTickets { get; set; }
+            public int RewardTrainerXp { get; set; }
+        }
+
+        private async Task<AnalyticsSnapshot> BuildAnalyticsSnapshotAsync(DateOnly start, DateOnly end)
+        {
+            string startText = start.ToString("yyyy-MM-dd");
+            string endText = end.ToString("yyyy-MM-dd");
+
+            var snapshot = new AnalyticsSnapshot
+            {
+                StartDate = start,
+                EndDate = end,
+                DayCount = GetInclusiveDayCount(start, end)
+            };
+
+            using var conn = Db.OpenConnection();
+
+            var focusRow = await conn.QuerySingleAsync(@"
+SELECT
+    COALESCE(SUM(Minutes), 0) AS TotalMinutes,
+    COUNT(*) AS SessionCount,
+    COALESCE(SUM(CASE WHEN Completed = 1 THEN 1 ELSE 0 END), 0) AS CompletedCount
+FROM FocusSessions
+WHERE LogDate >= @StartDate AND LogDate <= @EndDate;",
+                new { StartDate = startText, EndDate = endText });
+
+            snapshot.FocusTotalMinutes = Convert.ToInt32(focusRow.TotalMinutes);
+            snapshot.FocusSessionCount = Convert.ToInt32(focusRow.SessionCount);
+            snapshot.FocusCompletedCount = Convert.ToInt32(focusRow.CompletedCount);
+
+            var foodRow = await conn.QuerySingleAsync(@"
+SELECT
+    COALESCE(SUM(KjComputed), 0) AS TotalKj,
+    COUNT(*) AS EntryCount
+FROM FoodEntries
+WHERE LogDate >= @StartDate AND LogDate <= @EndDate;",
+                new { StartDate = startText, EndDate = endText });
+
+            snapshot.FoodTotalKj = Convert.ToDouble(foodRow.TotalKj);
+            snapshot.FoodEntryCount = Convert.ToInt32(foodRow.EntryCount);
+
+            var sleepRow = await conn.QuerySingleAsync(@"
+SELECT
+    COALESCE(SUM(DurationMinutes), 0) AS TotalMinutes,
+    COUNT(*) AS SessionCount
+FROM SleepSessions
+WHERE WakeLogDate >= @StartDate AND WakeLogDate <= @EndDate;",
+                new { StartDate = startText, EndDate = endText });
+
+            snapshot.SleepTotalMinutes = Convert.ToInt32(sleepRow.TotalMinutes);
+            snapshot.SleepSessionCount = Convert.ToInt32(sleepRow.SessionCount);
+
+            var gamiSettings = await _gamiSettingsRepo.GetAsync();
+            snapshot.DailyStepsGoal = Math.Max(1, gamiSettings.DailyStepsGoal);
+
+            var stepsRow = await conn.QuerySingleAsync(@"
+SELECT
+    COALESCE(SUM(Steps), 0) AS TotalSteps,
+    COALESCE(MAX(Steps), 0) AS BestDaySteps,
+    COALESCE(SUM(CASE WHEN Steps > 0 THEN 1 ELSE 0 END), 0) AS DaysWithSteps,
+    COALESCE(SUM(CASE WHEN Steps >= @DailyStepsGoal THEN 1 ELSE 0 END), 0) AS DaysMeetingGoal
+FROM StepsDaily
+WHERE Date >= @StartDate AND Date <= @EndDate;",
+                new { StartDate = startText, EndDate = endText, DailyStepsGoal = snapshot.DailyStepsGoal });
+
+            snapshot.StepsTotal = Convert.ToInt32(stepsRow.TotalSteps);
+            snapshot.StepsBestDay = Convert.ToInt32(stepsRow.BestDaySteps);
+            snapshot.DaysWithSteps = Convert.ToInt32(stepsRow.DaysWithSteps);
+            snapshot.DaysMeetingStepsGoal = Convert.ToInt32(stepsRow.DaysMeetingGoal);
+
+            var habitTypeRows = await conn.QueryAsync(@"
+SELECT
+    h.Kind AS Kind,
+    COALESCE(SUM(e.Value), 0) AS TotalValue
+FROM HabitEntries e
+INNER JOIN Habits h ON h.Id = e.HabitId
+WHERE e.Date >= @StartDate AND e.Date <= @EndDate
+GROUP BY h.Kind;",
+                new { StartDate = startText, EndDate = endText });
+
+            foreach (var row in habitTypeRows)
+            {
+                HabitKind kind = (HabitKind)Convert.ToInt32(row.Kind);
+                int totalValue = Convert.ToInt32(row.TotalValue);
+
+                if (kind == HabitKind.CheckboxDaily)
+                    snapshot.CheckboxCompletionCount = totalValue;
+                else if (kind == HabitKind.NumericDaily)
+                    snapshot.CounterUnitsLogged = totalValue;
+            }
+
+            var habitActivityRow = await conn.QuerySingleAsync(@"
+SELECT
+    COUNT(DISTINCT Date) AS ActiveDayCount,
+    COUNT(DISTINCT HabitId) AS UniqueHabitCount
+FROM HabitEntries
+WHERE Date >= @StartDate AND Date <= @EndDate;",
+                new { StartDate = startText, EndDate = endText });
+
+            snapshot.HabitDaysWithAnyActivity = Convert.ToInt32(habitActivityRow.ActiveDayCount);
+            snapshot.UniqueHabitsWithActivity = Convert.ToInt32(habitActivityRow.UniqueHabitCount);
+
+            var rewardRows = await conn.QueryAsync(@"
+SELECT RewardType, COALESCE(SUM(Amount), 0) AS TotalAmount
+FROM RewardsLedger
+WHERE ForGameDay >= @StartDate AND ForGameDay <= @EndDate
+GROUP BY RewardType;",
+                new { StartDate = startText, EndDate = endText });
+
+            foreach (var row in rewardRows)
+            {
+                RewardType rewardType = (RewardType)Convert.ToInt32(row.RewardType);
+                int amount = Convert.ToInt32(row.TotalAmount);
+
+                switch (rewardType)
+                {
+                    case RewardType.FocusCoins:
+                        snapshot.RewardCoins += amount;
+                        break;
+
+                    case RewardType.TrainerXp:
+                        snapshot.RewardTrainerXp += amount;
+                        break;
+
+                    case RewardType.HabitTicketCheckbox:
+                    case RewardType.HabitTicketWeeklyBonus:
+                    case RewardType.SleepTicketWeeklyBonus:
+                    case RewardType.StepsTicketWeeklyBonus:
+                        snapshot.RewardTickets += amount;
+                        break;
+                }
+            }
+
+            return snapshot;
+        }
+
+        private async Task RefreshAnalyticsAsync()
+        {
+            if (AnalyticsAnchorText != null)
+                AnalyticsAnchorText.Text = $"Preset anchor (Archive View Date): {SelectedLogDate:yyyy-MM-dd}";
+
+            if (!TryGetAnalyticsRangeFromUi(out var start, out var end, showErrors: false))
+            {
+                start = _analyticsRangeStart == default ? SelectedLogDate : _analyticsRangeStart;
+                end = _analyticsRangeEnd == default ? SelectedLogDate : _analyticsRangeEnd;
+                SetAnalyticsRangeUi(start, end);
+            }
+
+            _analyticsRangeStart = start;
+            _analyticsRangeEnd = end;
+
+            var snapshot = await BuildAnalyticsSnapshotAsync(start, end);
+            int dayCount = Math.Max(1, snapshot.DayCount);
+            int averageFocusMinutes = (int)Math.Round(snapshot.FocusTotalMinutes / (double)dayCount);
+            double averageFoodKj = snapshot.FoodTotalKj / dayCount;
+            double totalSleepHours = snapshot.SleepTotalMinutes / 60.0;
+            double averageSleepHours = totalSleepHours / dayCount;
+            int averageSteps = (int)Math.Round(snapshot.StepsTotal / (double)dayCount);
+
+            if (AnalyticsRangeSummaryText != null)
+                AnalyticsRangeSummaryText.Text = $"Selected range: {start:yyyy-MM-dd} → {end:yyyy-MM-dd} ({dayCount} day{(dayCount == 1 ? "" : "s")})";
+
+            if (AnalyticsRangeDetailText != null)
+                AnalyticsRangeDetailText.Text =
+                    $"Archive View Date: {SelectedLogDate:yyyy-MM-dd}. Preset buttons anchor to that day, while the overview below totals the full selected range.";
+
+            if (AnalyticsOverviewFocusText != null)
+                AnalyticsOverviewFocusText.Text =
+                    $"Total focus: {FormatMinutes(snapshot.FocusTotalMinutes)}\n" +
+                    $"Sessions: {snapshot.FocusSessionCount} ({snapshot.FocusCompletedCount} completed)\n" +
+                    $"Average per day: {FormatMinutes(averageFocusMinutes)}";
+
+            if (AnalyticsOverviewFoodText != null)
+                AnalyticsOverviewFoodText.Text =
+                    $"Total food: {snapshot.FoodTotalKj:#,0} kJ\n" +
+                    $"Entries: {snapshot.FoodEntryCount}\n" +
+                    $"Average per day: {averageFoodKj:#,0} kJ";
+
+            if (AnalyticsOverviewSleepText != null)
+                AnalyticsOverviewSleepText.Text =
+                    $"Total sleep: {totalSleepHours:0.0} hours\n" +
+                    $"Sleep sessions: {snapshot.SleepSessionCount}\n" +
+                    $"Average per day: {averageSleepHours:0.0} hours";
+
+            if (AnalyticsOverviewStepsText != null)
+                AnalyticsOverviewStepsText.Text =
+                    $"Total steps: {snapshot.StepsTotal:#,0}\n" +
+                    $"Average per day: {averageSteps:#,0}\n" +
+                    $"Best day: {snapshot.StepsBestDay:#,0}\n" +
+                    $"Met daily goal ({snapshot.DailyStepsGoal:#,0}): {snapshot.DaysMeetingStepsGoal}/{dayCount}";
+
+            if (AnalyticsOverviewHabitsText != null)
+                AnalyticsOverviewHabitsText.Text =
+                    $"Checkbox days completed: {snapshot.CheckboxCompletionCount:#,0}\n" +
+                    $"Counter units logged: {snapshot.CounterUnitsLogged:#,0}\n" +
+                    $"Days with habit activity: {snapshot.HabitDaysWithAnyActivity}\n" +
+                    $"Habits with activity: {snapshot.UniqueHabitsWithActivity}";
+
+            if (AnalyticsOverviewRewardsText != null)
+                AnalyticsOverviewRewardsText.Text =
+                    $"Coins gained: {snapshot.RewardCoins:#,0}\n" +
+                    $"Tickets gained: {snapshot.RewardTickets:#,0}\n" +
+                    $"Trainer XP gained: {snapshot.RewardTrainerXp:#,0}";
+        }
+        #endregion // SECTION E3B — Analytics Summary Refresh
+
+        #region SECTION E3C — Main Refresh Pipeline
         private async Task RefreshForSelectedDateAsync()
         {
             try
@@ -2805,6 +3188,9 @@ WHERE Id = 1;",
 
                 // Gamification debug (includes item-drops + inventory + item defs)
                 await RefreshGamificationDebugAsync();
+
+                // Analytics overview
+                await RefreshAnalyticsAsync();
 
                 // Auto-fit (once)
                 FitSelectedTabColumnsOnce();
@@ -2855,8 +3241,7 @@ WHERE Id = 1;",
             if (m == 0) return $"{h}h";
             return $"{h}h {m}m";
         }
-
-        #endregion // SECTION E3 — Main Refresh Pipeline
+        #endregion // SECTION E3C — Main Refresh Pipeline
 
         #region SECTION E4 — Gamification + Item Drop Debug Refresh
         private async Task RefreshGamificationDebugAsync()

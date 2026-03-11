@@ -925,7 +925,7 @@
                        FontWeight="Bold"
                        TextWrapping="Wrap"
                        Margin="0,0,0,8"/>
-                                    <TextBlock Text="Detailed range filters and dashboard analytics will be built out on the Analytics tab next."
+                                    <TextBlock Text="The sessions editor stays here for quick same-day checking and archive edits while the Analytics tab grows into the longer-term dashboard."
                        Foreground="Gray"
                        TextWrapping="Wrap"
                        Margin="0,0,0,6"/>
@@ -950,60 +950,115 @@
                                 <TextBlock Text="{Binding ElementName=GameDayNowText, Path=Text}"
                                Foreground="Gray"
                                Margin="0,2,0,0"/>
-                            </StackPanel>
-                        </GroupBox>
-
-                        <GroupBox Header="Archive View" Margin="0,0,0,12">
-                            <StackPanel Margin="10">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Archive View Date:"
-                                   Width="120"
-                                   VerticalAlignment="Center"/>
-
-                                    <Button Content="View Today"
-                                Width="90"
-                                Click="LogTodayButton_Click"/>
-
-                                    <Button Content="View Yesterday"
-                                Width="110"
-                                Margin="6,0,0,0"
-                                Click="LogYesterdayButton_Click"/>
-
-                                    <DatePicker Width="140"
-                                    Margin="12,0,0,0"
-                                    SelectedDate="{Binding ElementName=LogDatePicker, Path=SelectedDate, Mode=TwoWay}"/>
-
-                                    <TextBlock Text="{Binding ElementName=LogDateDisplay, Path=Text}"
-                                   Margin="12,0,0,0"
-                                   VerticalAlignment="Center"/>
-                                </StackPanel>
-
-                                <TextBlock Text="{Binding ElementName=SessionsHeaderText, Path=Text}"
+                                <TextBlock Text="Preset buttons use the current Archive View Date as their anchor."
                                FontWeight="Bold"
-                               Margin="0,10,0,0"/>
+                               Margin="0,8,0,0"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="Range Filters (Foundation)" Margin="0,0,0,12">
+                        <GroupBox Header="Range Filters" Margin="0,0,0,12">
                             <StackPanel Margin="10">
+                                <TextBlock x:Name="AnalyticsAnchorText"
+                                   Foreground="Gray"
+                                   Margin="0,0,0,8"/>
+
                                 <WrapPanel Margin="0,0,0,8">
-                                    <Button Content="Day" Width="80" Margin="0,0,6,6" IsEnabled="False"/>
-                                    <Button Content="Week" Width="80" Margin="0,0,6,6" IsEnabled="False"/>
-                                    <Button Content="Month" Width="80" Margin="0,0,6,6" IsEnabled="False"/>
-                                    <Button Content="3 Months" Width="90" Margin="0,0,6,6" IsEnabled="False"/>
-                                    <Button Content="6 Months" Width="90" Margin="0,0,6,6" IsEnabled="False"/>
-                                    <Button Content="Year" Width="80" Margin="0,0,6,6" IsEnabled="False"/>
-                                    <Button Content="Custom" Width="90" Margin="0,0,6,6" IsEnabled="False"/>
+                                    <Button Content="Day" Width="80" Margin="0,0,6,6" Tag="Day" Click="AnalyticsPresetButton_Click"/>
+                                    <Button Content="Week" Width="80" Margin="0,0,6,6" Tag="Week" Click="AnalyticsPresetButton_Click"/>
+                                    <Button Content="Month" Width="80" Margin="0,0,6,6" Tag="Month" Click="AnalyticsPresetButton_Click"/>
+                                    <Button Content="3 Months" Width="90" Margin="0,0,6,6" Tag="3Months" Click="AnalyticsPresetButton_Click"/>
+                                    <Button Content="6 Months" Width="90" Margin="0,0,6,6" Tag="6Months" Click="AnalyticsPresetButton_Click"/>
+                                    <Button Content="Year" Width="80" Margin="0,0,6,6" Tag="Year" Click="AnalyticsPresetButton_Click"/>
+                                    <Button Content="Custom" Width="90" Margin="0,0,6,6" Tag="Custom" Click="AnalyticsPresetButton_Click"/>
                                 </WrapPanel>
 
-                                <TextBlock Text="This first patch creates the Analytics home. Range filters, overview cards, and historical trend views land in the next analytics patch."
-                               Foreground="Gray"
-                               TextWrapping="Wrap"/>
+                                <WrapPanel>
+                                    <TextBlock Text="Start Date:"
+                                   Width="75"
+                                   VerticalAlignment="Center"/>
+                                    <DatePicker x:Name="AnalyticsStartDatePicker"
+                                    Width="140"
+                                    Margin="0,0,12,0"/>
+
+                                    <TextBlock Text="End Date:"
+                                   Width="70"
+                                   VerticalAlignment="Center"/>
+                                    <DatePicker x:Name="AnalyticsEndDatePicker"
+                                    Width="140"
+                                    Margin="0,0,12,0"/>
+
+                                    <Button x:Name="AnalyticsApplyRangeButton"
+                                Content="Apply / Refresh"
+                                Width="120"
+                                Click="AnalyticsApplyRangeButton_Click"/>
+                                </WrapPanel>
                             </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Selected Range Summary" Margin="0,0,0,12">
+                            <StackPanel Margin="10">
+                                <TextBlock x:Name="AnalyticsRangeSummaryText"
+                                   FontWeight="Bold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,4"/>
+                                <TextBlock x:Name="AnalyticsRangeDetailText"
+                                   Foreground="Gray"
+                                   TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Overview" Margin="0,0,0,12">
+                            <WrapPanel Margin="10">
+                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="Focus" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <TextBlock x:Name="AnalyticsOverviewFocusText" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="Food" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <TextBlock x:Name="AnalyticsOverviewFoodText" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="Sleep" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <TextBlock x:Name="AnalyticsOverviewSleepText" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="Steps" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <TextBlock x:Name="AnalyticsOverviewStepsText" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="Habits" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <TextBlock x:Name="AnalyticsOverviewHabitsText" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="Rewards" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <TextBlock x:Name="AnalyticsOverviewRewardsText" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
                         </GroupBox>
 
                         <GroupBox Header="Current Archive Snapshot">
                             <StackPanel Margin="10">
+                                <TextBlock Text="This block still mirrors the currently browsed Archive View Date, even if your Analytics range is wider."
+                               Foreground="Gray"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
                                 <TextBlock Text="{Binding ElementName=FoodTotalText, Path=Text}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,4"/>
@@ -1023,6 +1078,9 @@
                     </StackPanel>
                 </TabItem>
                 <!-- SECTION N END — Tracking Sidebar + Analytics Tab -->
+                
+                
+                
                 <!-- SECTION O START — Gamification Tab -->
                 <TabItem Header="Gamification">
                     <StackPanel Margin="12">
