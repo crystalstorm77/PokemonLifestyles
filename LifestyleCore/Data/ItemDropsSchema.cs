@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS GamificationSettings (
  FocusXpPerMinute REAL NULL,
  FocusXpIncompleteMultiplier REAL NULL,
  WeeklySleepTrackingBonus INTEGER NULL,
+ WeeklySleepTrackingQuota INTEGER NULL,
  WeeklyHabitTrackingBonus INTEGER NULL,
  DailyStepsGoal INTEGER NULL,
  DailyStepsGoalQuota INTEGER NULL,
@@ -107,6 +108,7 @@ ON ItemDefinitions (IsActive, Tier);
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN DailyStepsGoal INTEGER NULL;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN WeeklyHabitTrackingBonus INTEGER NULL;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN WeeklySleepTrackingBonus INTEGER NULL;");
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN WeeklySleepTrackingQuota INTEGER NULL;");
 
             TryAddColumn(@"ALTER TABLE ItemDefinitions ADD COLUMN Category TEXT NULL;");
             TryAddColumn(@"ALTER TABLE ItemDefinitions ADD COLUMN CreatedAtUtc TEXT NULL;");
@@ -143,6 +145,7 @@ SET
  FocusXpPerMinute = COALESCE(FocusXpPerMinute, 100.0),
  FocusXpIncompleteMultiplier = COALESCE(FocusXpIncompleteMultiplier, 0.25),
  WeeklySleepTrackingBonus = COALESCE(WeeklySleepTrackingBonus, 7),
+ WeeklySleepTrackingQuota = COALESCE(WeeklySleepTrackingQuota, 7),
  WeeklyHabitTrackingBonus = COALESCE(WeeklyHabitTrackingBonus, 3),
  DailyStepsGoal = COALESCE(DailyStepsGoal, 10000),
  DailyStepsGoalQuota = COALESCE(DailyStepsGoalQuota, 5),

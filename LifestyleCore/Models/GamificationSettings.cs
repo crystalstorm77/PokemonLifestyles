@@ -26,6 +26,7 @@
 
         // Weekly bonuses
         public int WeeklySleepTrackingBonus { get; set; } = 7;
+        public int WeeklySleepTrackingQuota { get; set; } = 7;
         public int WeeklyHabitTrackingBonus { get; set; } = 3;
         public int DailyStepsGoal { get; set; } = 10000;
         public int DailyStepsGoalQuota { get; set; } = 5;

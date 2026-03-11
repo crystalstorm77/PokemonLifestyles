@@ -430,6 +430,38 @@ namespace LifestyleCore.Data
                 IsMaxLevel = false
             };
         }
+
+        public async Task<(int Coins, int Tickets)> GetCurrencyTotalsAsync()
+        {
+            RewardsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+
+            var rows = await conn.QueryAsync<(int RewardType, long TotalAmount)>(@"
+                SELECT RewardType, COALESCE(SUM(Amount), 0) AS TotalAmount
+                FROM RewardsLedger
+                GROUP BY RewardType;");
+
+            int coins = 0;
+            int tickets = 0;
+
+            foreach (var row in rows)
+            {
+                var rewardType = (RewardType)row.RewardType;
+                int amount = (int)row.TotalAmount;
+
+                if (rewardType == RewardType.FocusCoins)
+                    coins += amount;
+                else if (rewardType == RewardType.HabitTicketCheckbox ||
+                         rewardType == RewardType.HabitTicketWeeklyBonus ||
+                         rewardType == RewardType.SleepTicketWeeklyBonus ||
+                         rewardType == RewardType.StepsTicketWeeklyBonus)
+                    tickets += amount;
+            }
+
+            return (coins, tickets);
+        }
+
         #endregion // SECTION C — Read Rewards
     }
 }

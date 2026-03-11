@@ -25,6 +25,7 @@ namespace LifestyleCore.Data
         private const double DefaultFocusXpIncompleteMultiplier = 0.25;
 
         private const int DefaultWeeklySleepTrackingBonus = 7;
+        private const int DefaultWeeklySleepTrackingQuota = 7;
         private const int DefaultWeeklyHabitTrackingBonus = 3;
         private const int DefaultDailyStepsGoal = 10000;
         private const int DefaultDailyStepsGoalQuota = 5;
@@ -59,6 +60,7 @@ namespace LifestyleCore.Data
             public double? FocusXpPerMinute { get; set; }
             public double? FocusXpIncompleteMultiplier { get; set; }
             public int? WeeklySleepTrackingBonus { get; set; }
+            public int? WeeklySleepTrackingQuota { get; set; }
             public int? WeeklyHabitTrackingBonus { get; set; }
             public int? DailyStepsGoal { get; set; }
             public int? DailyStepsGoalQuota { get; set; }
@@ -91,6 +93,7 @@ SELECT
   FocusXpPerMinute,
   FocusXpIncompleteMultiplier,
   WeeklySleepTrackingBonus,
+  WeeklySleepTrackingQuota,
   WeeklyHabitTrackingBonus,
   DailyStepsGoal,
   DailyStepsGoalQuota,
@@ -162,6 +165,12 @@ WHERE Id = 1;");
             if (weeklySleepTrackingBonus < 0)
                 weeklySleepTrackingBonus = DefaultWeeklySleepTrackingBonus;
 
+            int weeklySleepTrackingQuota = row.WeeklySleepTrackingQuota.GetValueOrDefault(DefaultWeeklySleepTrackingQuota);
+            if (weeklySleepTrackingQuota < 1)
+                weeklySleepTrackingQuota = DefaultWeeklySleepTrackingQuota;
+            if (weeklySleepTrackingQuota > 7)
+                weeklySleepTrackingQuota = 7;
+
             int weeklyHabitTrackingBonus = row.WeeklyHabitTrackingBonus.GetValueOrDefault(DefaultWeeklyHabitTrackingBonus);
             if (weeklyHabitTrackingBonus < 0)
                 weeklyHabitTrackingBonus = DefaultWeeklyHabitTrackingBonus;
@@ -200,6 +209,7 @@ WHERE Id = 1;");
                 FocusXpPerMinute = focusXpPerMinute,
                 FocusXpIncompleteMultiplier = focusXpIncompleteMultiplier,
                 WeeklySleepTrackingBonus = weeklySleepTrackingBonus,
+                WeeklySleepTrackingQuota = weeklySleepTrackingQuota,
                 WeeklyHabitTrackingBonus = weeklyHabitTrackingBonus,
                 DailyStepsGoal = dailyStepsGoal,
                 DailyStepsGoalQuota = dailyStepsGoalQuota,
@@ -247,6 +257,7 @@ WHERE Id = 1;",
 
         public async Task UpdateWeeklyBonusSettingsAsync(
             int weeklySleepTrackingBonus,
+            int weeklySleepTrackingQuota,
             int weeklyHabitTrackingBonus,
             int dailyStepsGoal,
             int dailyStepsGoalQuota,
@@ -256,6 +267,9 @@ WHERE Id = 1;",
 
             if (weeklySleepTrackingBonus < 0)
                 throw new InvalidOperationException("Weekly sleep tracking bonus must be >= 0.");
+
+            if (weeklySleepTrackingQuota < 1 || weeklySleepTrackingQuota > 7)
+                throw new InvalidOperationException("Weekly sleep tracking quota must be between 1 and 7.");
 
             if (weeklyHabitTrackingBonus < 0)
                 throw new InvalidOperationException("Weekly habit tracking bonus must be >= 0.");
@@ -276,6 +290,7 @@ WHERE Id = 1;",
 UPDATE GamificationSettings
 SET
   WeeklySleepTrackingBonus = @WeeklySleepTrackingBonus,
+  WeeklySleepTrackingQuota = @WeeklySleepTrackingQuota,
   WeeklyHabitTrackingBonus = @WeeklyHabitTrackingBonus,
   DailyStepsGoal = @DailyStepsGoal,
   DailyStepsGoalQuota = @DailyStepsGoalQuota,
@@ -285,6 +300,7 @@ WHERE Id = 1;",
                 new
                 {
                     WeeklySleepTrackingBonus = weeklySleepTrackingBonus,
+                    WeeklySleepTrackingQuota = weeklySleepTrackingQuota,
                     WeeklyHabitTrackingBonus = weeklyHabitTrackingBonus,
                     DailyStepsGoal = dailyStepsGoal,
                     DailyStepsGoalQuota = dailyStepsGoalQuota,

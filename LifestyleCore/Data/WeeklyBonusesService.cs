@@ -83,6 +83,7 @@ namespace LifestyleCore.Data
             if (settings.WeeklySleepTrackingBonus <= 0)
                 return;
 
+            int requiredDays = Math.Clamp(settings.WeeklySleepTrackingQuota, 1, 7);
             int successfulDays = 0;
 
             for (int i = 0; i < 7; i++)
@@ -103,7 +104,7 @@ namespace LifestyleCore.Data
                     successfulDays++;
             }
 
-            if (successfulDays < 7)
+            if (successfulDays < requiredDays)
                 return;
 
             bool granted = await _rewards.TryGrantWeeklySleepTrackingBonusAsync(
@@ -207,6 +208,7 @@ namespace LifestyleCore.Data
             settings ??= new GamificationSettings();
 
             settings.WeeklySleepTrackingBonus = Math.Max(0, settings.WeeklySleepTrackingBonus);
+            settings.WeeklySleepTrackingQuota = Math.Clamp(settings.WeeklySleepTrackingQuota, 1, 7);
             settings.WeeklyHabitTrackingBonus = Math.Max(0, settings.WeeklyHabitTrackingBonus);
             settings.DailyStepsGoal = Math.Max(1, settings.DailyStepsGoal);
             settings.DailyStepsGoalQuota = Math.Clamp(settings.DailyStepsGoalQuota, 1, 7);

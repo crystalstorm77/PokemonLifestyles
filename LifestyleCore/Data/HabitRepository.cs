@@ -83,6 +83,29 @@ WHERE Id = @Id;",
                 });
         }
 
+        public async Task UpdateHabitTitleAsync(long habitId, string title)
+        {
+            HabitsSchema.EnsureCreated();
+
+            title = (title ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(title))
+                throw new InvalidOperationException("Habit title can’t be blank.");
+
+            using var conn = Db.OpenConnection();
+            string now = DateTimeOffset.UtcNow.ToString("O");
+
+            await conn.ExecuteAsync(@"
+UPDATE Habits
+SET Title = @Title, UpdatedAtUtc = @Now
+WHERE Id = @Id;",
+                new
+                {
+                    Id = habitId,
+                    Title = title,
+                    Now = now
+                });
+        }
+
         // Use local NOON as a safe anchor (avoids DST invalid/ambiguous midnight edge cases).
         private static DateTimeOffset LocalDateToUtcAnchor(DateOnly localDate)
         {
