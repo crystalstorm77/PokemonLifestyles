@@ -562,6 +562,9 @@ namespace LifestylesDesktop
                 var focusList = (_focusSessions ?? new System.Collections.ObjectModel.ObservableCollection<FocusSession>()).ToList();
                 var focusById = focusList.ToDictionary(x => x.Id, x => x);
 
+                var allHabits = await GetAllHabitsDbAsync();
+                var habitTitleById = allHabits.ToDictionary(x => x.Id, x => x.Title);
+
                 double currentSleepMultiplier = 1.0;
                 double currentFocusXpPerMinute = GetDefaultFocusXpPerMinute();
                 double currentFocusXpIncompleteMultiplier = GetDefaultFocusXpIncompleteMultiplier();
@@ -616,13 +619,28 @@ namespace LifestylesDesktop
 
                     foreach (var e1 in entries)
                     {
-                        // Award time
                         if (!DateTimeOffset.TryParse(e1.AwardedAtUtc, out var awardedUtc))
                             awardedUtc = DateTimeOffset.UtcNow;
 
                         string source = "";
 
-                        if (e1.HabitId.HasValue)
+                        if (e1.RewardType == RewardType.HabitTicketWeeklyBonus)
+                        {
+                            string habitTitle = e1.HabitId.HasValue && habitTitleById.TryGetValue(e1.HabitId.Value, out var title)
+                                ? title
+                                : $"HabitId {e1.HabitId?.ToString() ?? "?"}";
+
+                            source = $"Weekly habit bonus ({habitTitle}, week of {e1.HabitDate})";
+                        }
+                        else if (e1.RewardType == RewardType.SleepTicketWeeklyBonus)
+                        {
+                            source = $"Weekly sleep bonus (week of {e1.HabitDate})";
+                        }
+                        else if (e1.RewardType == RewardType.StepsTicketWeeklyBonus)
+                        {
+                            source = $"Weekly steps bonus (week of {e1.HabitDate})";
+                        }
+                        else if (e1.HabitId.HasValue)
                         {
                             source = $"HabitId {e1.HabitId.Value} ({e1.HabitDate})";
                         }
@@ -632,7 +650,6 @@ namespace LifestylesDesktop
 
                             if (focusById.TryGetValue(id, out var fs))
                             {
-                                // If focus exists, show its *current* label/minutes/completed
                                 source = $"Focus ID {fs.Id} ({(fs.FocusType ?? "").Trim()}, {fs.Minutes}m, Completed={fs.Completed})";
 
                                 if (e1.RewardType == RewardType.FocusCoins)
@@ -711,7 +728,7 @@ namespace LifestylesDesktop
                     Content = "Close",
                     Width = 100,
                     Margin = new Thickness(0, 10, 0, 0),
-                    HorizontalAlignment = System.Windows.HorizontalAlignment.Right
+                    HorizontalAlignment = HorizontalAlignment.Right
                 };
 
                 close.Click += (_, __) => win.Close();
@@ -763,6 +780,14 @@ namespace LifestylesDesktop
             public string Type { get; set; } = "";
             public int Amount { get; set; }
             public string Source { get; set; } = "";
+        }
+
+        private static bool IsTicketRewardType(RewardType rewardType)
+        {
+            return rewardType == RewardType.HabitTicketCheckbox ||
+                   rewardType == RewardType.HabitTicketWeeklyBonus ||
+                   rewardType == RewardType.SleepTicketWeeklyBonus ||
+                   rewardType == RewardType.StepsTicketWeeklyBonus;
         }
 
         private static bool TryParseLocalDateTimeFallback(string text, out DateTime localDateTime)

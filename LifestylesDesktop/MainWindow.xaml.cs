@@ -43,6 +43,7 @@ namespace LifestylesDesktop
         private readonly StepsRepository _stepsRepo = new();
         private readonly HabitRepository _habitRepo = new();
         private readonly RewardsLedgerRepository _rewardsRepo = new();
+        private readonly WeeklyBonusesService _weeklyBonusesService = new();
 
         // Focus labels (tracking only; no gamification impact)
         private readonly FocusLabelRepository _focusLabelRepo = new();
@@ -111,6 +112,14 @@ namespace LifestylesDesktop
         private TextBlock? _sleepPreview11hText;
         private TextBlock? _sleepPreview24hText;
 
+        // Weekly bonus controls (injected at runtime into the debug area)
+        private bool _weeklyBonusesUiBuilt = false;
+        private TextBox? _weeklySleepTrackingBonusBox;
+        private TextBox? _weeklyHabitTrackingBonusBox;
+        private TextBox? _dailyStepsGoalBox;
+        private TextBox? _dailyStepsGoalQuotaBox;
+        private TextBox? _weeklyStepsTrackingBonusBox;
+
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
         private bool _autoFitFocusDone = false;
         private bool _autoFitFoodDone = false;
@@ -154,6 +163,7 @@ namespace LifestylesDesktop
 
             EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
+            EnsureWeeklyBonusesDebugUiBuilt();
             UpdateLiveClockText();
             UpdateFocusTimerUi();
 
@@ -2225,6 +2235,255 @@ WHERE Id = 1;",
         }
         #endregion // SECTION E2B — Sleep Tuning Debug UI
 
+        #region SECTION E2C — Weekly Bonuses Debug UI
+        private void EnsureWeeklyBonusesDebugUiBuilt()
+        {
+            if (_weeklyBonusesUiBuilt)
+                return;
+
+            if (StepsPerRollBox?.Parent is not StackPanel itemDropRow)
+                return;
+
+            if (itemDropRow.Parent is not StackPanel root)
+                return;
+
+            int itemDropRowIndex = root.Children.IndexOf(itemDropRow);
+            if (itemDropRowIndex < 0)
+                return;
+
+            int insertAt = itemDropRowIndex;
+
+            var header = new TextBlock
+            {
+                Text = "Weekly Bonuses",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var settingsColumn = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            StackPanel BuildRow(string label, out TextBox box, string suffix)
+            {
+                var row = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 0, 6)
+                };
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = label,
+                    Width = 220,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap
+                });
+
+                box = new TextBox
+                {
+                    Width = 70,
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+                row.Children.Add(box);
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = suffix,
+                    Foreground = System.Windows.Media.Brushes.Gray,
+                    VerticalAlignment = VerticalAlignment.Center
+                });
+
+                return row;
+            }
+
+            settingsColumn.Children.Add(BuildRow("Weekly Sleep Tracking Bonus:", out var weeklySleepTrackingBonusBox, "tickets"));
+            settingsColumn.Children.Add(BuildRow("Weekly Habit Tracking Bonus:", out var weeklyHabitTrackingBonusBox, "tickets"));
+            settingsColumn.Children.Add(BuildRow("Daily Steps Goal:", out var dailyStepsGoalBox, "steps"));
+            settingsColumn.Children.Add(BuildRow("Daily Steps Goal Quota:", out var dailyStepsGoalQuotaBox, "days"));
+            settingsColumn.Children.Add(BuildRow("Weekly Steps Tracking Bonus:", out var weeklyStepsTrackingBonusBox, "tickets"));
+
+            _weeklySleepTrackingBonusBox = weeklySleepTrackingBonusBox;
+            _weeklyHabitTrackingBonusBox = weeklyHabitTrackingBonusBox;
+            _dailyStepsGoalBox = dailyStepsGoalBox;
+            _dailyStepsGoalQuotaBox = dailyStepsGoalQuotaBox;
+            _weeklyStepsTrackingBonusBox = weeklyStepsTrackingBonusBox;
+
+            var buttonRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var saveButton = new Button
+            {
+                Content = "Save weekly bonuses",
+                Width = 150,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            saveButton.Click += SaveWeeklyBonusesButton_Click;
+
+            var resetButton = new Button
+            {
+                Content = "Reset weekly bonuses",
+                Width = 150,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetButton.Click += ResetWeeklyBonusesButton_Click;
+
+            buttonRow.Children.Add(saveButton);
+            buttonRow.Children.Add(resetButton);
+
+            var note = new TextBlock
+            {
+                Text = "This first foundation checks the most recently completed week only.\nSleep bonus needs all 7 days with reward-eligible sleep.\nSteps bonus needs Daily Steps Goal met on the Daily Steps Goal Quota number of days.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 6, 0, 0),
+                MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left,
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            root.Children.Insert(insertAt++, header);
+            root.Children.Insert(insertAt++, settingsColumn);
+            root.Children.Insert(insertAt++, buttonRow);
+            root.Children.Insert(insertAt++, note);
+
+            _weeklyBonusesUiBuilt = true;
+        }
+        #endregion // SECTION E2C — Weekly Bonuses Debug UI
+
+        #region SECTION E2D — Weekly Bonus Settings Helpers
+        private sealed class WeeklyBonusSettings
+        {
+            public int WeeklySleepTrackingBonus { get; set; } = 7;
+            public int WeeklyHabitTrackingBonus { get; set; } = 3;
+            public int DailyStepsGoal { get; set; } = 10000;
+            public int DailyStepsGoalQuota { get; set; } = 5;
+            public int WeeklyStepsTrackingBonus { get; set; } = 5;
+        }
+
+        private static WeeklyBonusSettings BuildDefaultWeeklyBonusSettings()
+        {
+            return new WeeklyBonusSettings
+            {
+                WeeklySleepTrackingBonus = 7,
+                WeeklyHabitTrackingBonus = 3,
+                DailyStepsGoal = 10000,
+                DailyStepsGoalQuota = 5,
+                WeeklyStepsTrackingBonus = 5
+            };
+        }
+
+        private static WeeklyBonusSettings NormalizeWeeklyBonusSettings(WeeklyBonusSettings settings)
+        {
+            return new WeeklyBonusSettings
+            {
+                WeeklySleepTrackingBonus = Math.Max(0, settings.WeeklySleepTrackingBonus),
+                WeeklyHabitTrackingBonus = Math.Max(0, settings.WeeklyHabitTrackingBonus),
+                DailyStepsGoal = Math.Max(1, settings.DailyStepsGoal),
+                DailyStepsGoalQuota = Math.Clamp(settings.DailyStepsGoalQuota, 1, 7),
+                WeeklyStepsTrackingBonus = Math.Max(0, settings.WeeklyStepsTrackingBonus)
+            };
+        }
+
+        private async Task SaveWeeklyBonusSettingsAsync(WeeklyBonusSettings settings)
+        {
+            settings = NormalizeWeeklyBonusSettings(settings);
+
+            await _gamiSettingsRepo.UpdateWeeklyBonusSettingsAsync(
+                settings.WeeklySleepTrackingBonus,
+                settings.WeeklyHabitTrackingBonus,
+                settings.DailyStepsGoal,
+                settings.DailyStepsGoalQuota,
+                settings.WeeklyStepsTrackingBonus);
+        }
+
+        private async void SaveWeeklyBonusesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_weeklySleepTrackingBonusBox == null ||
+                    _weeklyHabitTrackingBonusBox == null ||
+                    _dailyStepsGoalBox == null ||
+                    _dailyStepsGoalQuotaBox == null ||
+                    _weeklyStepsTrackingBonusBox == null)
+                {
+                    MessageBox.Show("Weekly bonus controls are not ready yet.");
+                    return;
+                }
+
+                if (!int.TryParse((_weeklySleepTrackingBonusBox.Text ?? "").Trim(), out int weeklySleepTrackingBonus) || weeklySleepTrackingBonus < 0)
+                {
+                    MessageBox.Show("Weekly Sleep Tracking Bonus must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_weeklyHabitTrackingBonusBox.Text ?? "").Trim(), out int weeklyHabitTrackingBonus) || weeklyHabitTrackingBonus < 0)
+                {
+                    MessageBox.Show("Weekly Habit Tracking Bonus must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_dailyStepsGoalBox.Text ?? "").Trim(), out int dailyStepsGoal) || dailyStepsGoal < 1)
+                {
+                    MessageBox.Show("Daily Steps Goal must be a whole number greater than or equal to 1.");
+                    return;
+                }
+
+                if (!int.TryParse((_dailyStepsGoalQuotaBox.Text ?? "").Trim(), out int dailyStepsGoalQuota) || dailyStepsGoalQuota < 1 || dailyStepsGoalQuota > 7)
+                {
+                    MessageBox.Show("Daily Steps Goal Quota must be a whole number between 1 and 7.");
+                    return;
+                }
+
+                if (!int.TryParse((_weeklyStepsTrackingBonusBox.Text ?? "").Trim(), out int weeklyStepsTrackingBonus) || weeklyStepsTrackingBonus < 0)
+                {
+                    MessageBox.Show("Weekly Steps Tracking Bonus must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                await SaveWeeklyBonusSettingsAsync(new WeeklyBonusSettings
+                {
+                    WeeklySleepTrackingBonus = weeklySleepTrackingBonus,
+                    WeeklyHabitTrackingBonus = weeklyHabitTrackingBonus,
+                    DailyStepsGoal = dailyStepsGoal,
+                    DailyStepsGoalQuota = dailyStepsGoalQuota,
+                    WeeklyStepsTrackingBonus = weeklyStepsTrackingBonus
+                });
+
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Saved weekly bonus settings.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save weekly bonus settings");
+            }
+        }
+
+        private async void ResetWeeklyBonusesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var defaults = BuildDefaultWeeklyBonusSettings();
+
+                await SaveWeeklyBonusSettingsAsync(defaults);
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Reset weekly bonus settings to defaults.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset weekly bonus settings");
+            }
+        }
+        #endregion // SECTION E2D — Weekly Bonus Settings Helpers
+
         #region SECTION E3 — Main Refresh Pipeline
         private async Task RefreshForSelectedDateAsync()
         {
@@ -2310,8 +2569,18 @@ WHERE Id = 1;",
         {
             EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
+            EnsureWeeklyBonusesDebugUiBuilt();
 
             UpdateLiveClockText();
+
+            try
+            {
+                await _weeklyBonusesService.GrantMostRecentCompletedWeekAsync();
+            }
+            catch
+            {
+                // Keep the rest of the refresh usable even if weekly bonus evaluation fails.
+            }
 
             int selectedDayCoins = 0;
             int selectedDayTickets = 0;
@@ -2324,7 +2593,7 @@ WHERE Id = 1;",
                 foreach (var e in entries)
                 {
                     if (e.RewardType == RewardType.FocusCoins) selectedDayCoins += e.Amount;
-                    else if (e.RewardType == RewardType.HabitTicketCheckbox) selectedDayTickets += e.Amount;
+                    else if (IsTicketRewardType(e.RewardType)) selectedDayTickets += e.Amount;
                     else if (e.RewardType == RewardType.TrainerXp) selectedDayTrainerXp += e.Amount;
                 }
 
@@ -2349,6 +2618,11 @@ WHERE Id = 1;",
 
                 SetTextBoxIfIdle(_focusXpPerMinuteBox, FormatDoubleForBox(gamiSettings.FocusXpPerMinute));
                 SetTextBoxIfIdle(_focusXpIncompleteMultiplierBox, FormatDoubleForBox(gamiSettings.FocusXpIncompleteMultiplier));
+                SetTextBoxIfIdle(_weeklySleepTrackingBonusBox, gamiSettings.WeeklySleepTrackingBonus.ToString(CultureInfo.InvariantCulture));
+                SetTextBoxIfIdle(_weeklyHabitTrackingBonusBox, gamiSettings.WeeklyHabitTrackingBonus.ToString(CultureInfo.InvariantCulture));
+                SetTextBoxIfIdle(_dailyStepsGoalBox, gamiSettings.DailyStepsGoal.ToString(CultureInfo.InvariantCulture));
+                SetTextBoxIfIdle(_dailyStepsGoalQuotaBox, gamiSettings.DailyStepsGoalQuota.ToString(CultureInfo.InvariantCulture));
+                SetTextBoxIfIdle(_weeklyStepsTrackingBonusBox, gamiSettings.WeeklyStepsTrackingBonus.ToString(CultureInfo.InvariantCulture));
             }
             catch (Exception ex)
             {
@@ -2456,88 +2730,68 @@ WHERE Id = 1;",
                 if (OddsOneInBox != null && !OddsOneInBox.IsKeyboardFocusWithin)
                     OddsOneInBox.Text = settings.ItemRollOneInN.ToString();
 
+                if (DropChanceText != null)
+                    DropChanceText.Text = $"Drop chance per roll: 1 in {oneInN} ({(100.0 / oneInN):0.##}%)";
+
+                if (ItemDropsSummaryText != null)
+                {
+                    string lastDrop = string.IsNullOrWhiteSpace(state.LastDropSummary)
+                        ? "none yet"
+                        : state.LastDropSummary!;
+
+                    ItemDropsSummaryText.Text =
+                        $"Steps remainder: {remainder}/{stepsPerRoll} | Steps to next roll: {toNext} | Rolls: {state.TotalRolls} | Successes: {state.TotalSuccesses} | Last drop: {lastDrop}";
+                }
+
+                _inventoryItems = new ObservableCollection<InventoryItem>(items.OrderBy(x => x.ItemKey));
+                if (InventoryGrid != null)
+                    InventoryGrid.ItemsSource = _inventoryItems;
+
+                _itemDefinitions = new ObservableCollection<ItemDefinition>(itemDefinitions
+                    .OrderBy(x => x.Tier)
+                    .ThenBy(x => x.Name));
+
+                if (ItemDefinitionsGrid != null)
+                    ItemDefinitionsGrid.ItemsSource = _itemDefinitions;
+
                 if (CommonWeightBox != null && !CommonWeightBox.IsKeyboardFocusWithin)
-                    CommonWeightBox.Text = settings.CommonTierWeight.ToString();
+                    CommonWeightBox.Text = settings.CommonTierWeight.ToString(CultureInfo.InvariantCulture);
 
                 if (UncommonWeightBox != null && !UncommonWeightBox.IsKeyboardFocusWithin)
-                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString();
+                    UncommonWeightBox.Text = settings.UncommonTierWeight.ToString(CultureInfo.InvariantCulture);
 
                 if (RareWeightBox != null && !RareWeightBox.IsKeyboardFocusWithin)
-                    RareWeightBox.Text = settings.RareTierWeight.ToString();
+                    RareWeightBox.Text = settings.RareTierWeight.ToString(CultureInfo.InvariantCulture);
 
-                if (NewItemTierCombo != null)
+                if (CommonPoolBox != null && !CommonPoolBox.IsKeyboardFocusWithin)
+                    CommonPoolBox.Text = settings.CommonPoolText ?? "";
+
+                if (UncommonPoolBox != null && !UncommonPoolBox.IsKeyboardFocusWithin)
+                    UncommonPoolBox.Text = settings.UncommonPoolText ?? "";
+
+                if (RarePoolBox != null && !RarePoolBox.IsKeyboardFocusWithin)
+                    RarePoolBox.Text = settings.RarePoolText ?? "";
+
+                if (TierWeightsSummaryText != null)
                 {
-                    if (NewItemTierCombo.ItemsSource == null)
-                        NewItemTierCombo.ItemsSource = ItemTierChoices;
+                    int totalWeight = settings.CommonTierWeight + settings.UncommonTierWeight + settings.RareTierWeight;
+                    double commonPct = totalWeight > 0 ? (settings.CommonTierWeight * 100.0 / totalWeight) : 0;
+                    double uncommonPct = totalWeight > 0 ? (settings.UncommonTierWeight * 100.0 / totalWeight) : 0;
+                    double rarePct = totalWeight > 0 ? (settings.RareTierWeight * 100.0 / totalWeight) : 0;
 
-                    if (NewItemTierCombo.SelectedIndex < 0 && ItemTierChoices.Count > 0)
-                        NewItemTierCombo.SelectedIndex = 0;
+                    TierWeightsSummaryText.Text =
+                        $"Tier split: Common {commonPct:0.#}% | Uncommon {uncommonPct:0.#}% | Rare {rarePct:0.#}%";
                 }
 
-                if (ItemDropsProgressText != null)
-                {
-                    ItemDropsProgressText.Text =
-                        $"Item roll progress: {remainder:#,0}/{stepsPerRoll:#,0} steps (next roll in {toNext:#,0})";
-                }
-
-                if (ItemDropsStatsText != null)
-                {
-                    ItemDropsStatsText.Text =
-                        $"Total rolls: {state.TotalRolls:#,0} | Total drops: {state.TotalSuccesses:#,0} | Odds: 1/{oneInN}";
-                }
-
-                if (ItemDropsLastText != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(state.LastDropSummary)
-                        && !string.IsNullOrWhiteSpace(state.LastDropUtc)
-                        && DateTimeOffset.TryParse(state.LastDropUtc, out var dto))
-                    {
-                        ItemDropsLastText.Text =
-                            $"Last drop: {state.LastDropSummary} @ {dto.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
-                    }
-                    else if (!string.IsNullOrWhiteSpace(state.LastDropSummary))
-                    {
-                        ItemDropsLastText.Text = $"Last drop: {state.LastDropSummary}";
-                    }
-                    else
-                    {
-                        ItemDropsLastText.Text = "Last drop: (none yet)";
-                    }
-                }
-
-                _itemDefinitions = new ObservableCollection<ItemDefinition>(itemDefinitions);
-                if (ItemDefinitionsGrid != null)
-                {
-                    ItemDefinitionsGrid.ItemsSource = _itemDefinitions;
-                    AutoSizeGridColumns(ItemDefinitionsGrid);
-                }
-
-                if (InventoryCountText != null)
-                    InventoryCountText.Text = items.Count == 0
-                        ? "Inventory: (empty)"
-                        : $"Inventory: {items.Count} item types";
-
-                _inventoryItems = new ObservableCollection<InventoryItem>(items);
-
-                if (InventoryGrid != null)
-                {
-                    InventoryGrid.ItemsSource = _inventoryItems;
-                    AutoSizeGridColumns(InventoryGrid);
-                }
+                AutoSizeGridColumns(InventoryGrid);
+                AutoSizeGridColumns(ItemDefinitionsGrid);
             }
-            catch
+            catch (Exception ex)
             {
-                if (ItemDropsProgressText != null)
-                    ItemDropsProgressText.Text = "Item roll progress: (error loading)";
-                if (ItemDropsStatsText != null)
-                    ItemDropsStatsText.Text = "";
-                if (ItemDropsLastText != null)
-                    ItemDropsLastText.Text = "";
-                if (InventoryCountText != null)
-                    InventoryCountText.Text = "Inventory: (error loading)";
+                if (ItemDropsSummaryText != null)
+                    ItemDropsSummaryText.Text = $"Item drops: (error loading) {ex.Message}";
             }
         }
-
         #endregion // SECTION E4 — Gamification + Item Drop Debug Refresh
 
         #region SECTION F — Food Actions

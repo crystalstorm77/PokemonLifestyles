@@ -96,6 +96,51 @@ namespace LifestyleCore.Data
             return rows == 1;
         }
 
+        public Task<bool> TryGrantWeeklyHabitTrackingBonusAsync(long habitId, DateOnly weekStart, DateOnly awardGameDay, int amount)
+            => TryGrantWeeklyTicketRewardAsync(RewardType.HabitTicketWeeklyBonus, habitId, weekStart, awardGameDay, amount);
+
+        public Task<bool> TryGrantWeeklySleepTrackingBonusAsync(DateOnly weekStart, DateOnly awardGameDay, int amount)
+            => TryGrantWeeklyTicketRewardAsync(RewardType.SleepTicketWeeklyBonus, 0, weekStart, awardGameDay, amount);
+
+        public Task<bool> TryGrantWeeklyStepsTrackingBonusAsync(DateOnly weekStart, DateOnly awardGameDay, int amount)
+            => TryGrantWeeklyTicketRewardAsync(RewardType.StepsTicketWeeklyBonus, 0, weekStart, awardGameDay, amount);
+
+        private async Task<bool> TryGrantWeeklyTicketRewardAsync(
+            RewardType rewardType,
+            long claimKeyHabitId,
+            DateOnly weekStart,
+            DateOnly awardGameDay,
+            int amount)
+        {
+            if (amount <= 0)
+                return false;
+
+            RewardsSchema.EnsureCreated();
+
+            using var conn = Db.OpenConnection();
+
+            string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+            string forGameDay = awardGameDay.ToString("yyyy-MM-dd");
+            string weekStartText = weekStart.ToString("yyyy-MM-dd");
+
+            int rows = await conn.ExecuteAsync(@"
+        INSERT OR IGNORE INTO RewardsLedger
+            (ForGameDay, AwardedAtUtc, RewardType, Amount, HabitId, HabitDate)
+        VALUES
+            (@ForGameDay, @AwardedAtUtc, @RewardType, @Amount, @HabitId, @HabitDate);",
+                new
+                {
+                    ForGameDay = forGameDay,
+                    AwardedAtUtc = nowUtc,
+                    RewardType = (int)rewardType,
+                    Amount = amount,
+                    HabitId = claimKeyHabitId,
+                    HabitDate = weekStartText
+                });
+
+            return rows == 1;
+        }
+
         public async Task<bool> TryGrantFocusCoinsAsync(long focusSessionId, DateOnly forGameDay, int amount)
         {
             if (amount <= 0)

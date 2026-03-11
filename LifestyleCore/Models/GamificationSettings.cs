@@ -24,6 +24,13 @@
         public double FocusXpPerMinute { get; set; } = 100.0;
         public double FocusXpIncompleteMultiplier { get; set; } = 0.25;
 
+        // Weekly bonuses
+        public int WeeklySleepTrackingBonus { get; set; } = 7;
+        public int WeeklyHabitTrackingBonus { get; set; } = 3;
+        public int DailyStepsGoal { get; set; } = 10000;
+        public int DailyStepsGoalQuota { get; set; } = 5;
+        public int WeeklyStepsTrackingBonus { get; set; } = 5;
+
         // One item per line.
         // Notes:
         // - Duplicates weight within that tier.

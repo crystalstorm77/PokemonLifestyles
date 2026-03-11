@@ -38,6 +38,11 @@ CREATE TABLE IF NOT EXISTS GamificationSettings (
  SleepRewardMinimumMinutes INTEGER NULL,
  FocusXpPerMinute REAL NULL,
  FocusXpIncompleteMultiplier REAL NULL,
+ WeeklySleepTrackingBonus INTEGER NULL,
+ WeeklyHabitTrackingBonus INTEGER NULL,
+ DailyStepsGoal INTEGER NULL,
+ DailyStepsGoalQuota INTEGER NULL,
+ WeeklyStepsTrackingBonus INTEGER NULL,
  UpdatedAtUtc TEXT NOT NULL
 );
 
@@ -97,6 +102,11 @@ ON ItemDefinitions (IsActive, Tier);
 
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN FocusXpPerMinute REAL NULL;");
             TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN FocusXpIncompleteMultiplier REAL NULL;");
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN WeeklyStepsTrackingBonus INTEGER NULL;");
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN DailyStepsGoalQuota INTEGER NULL;");
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN DailyStepsGoal INTEGER NULL;");
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN WeeklyHabitTrackingBonus INTEGER NULL;");
+            TryAddColumn(@"ALTER TABLE GamificationSettings ADD COLUMN WeeklySleepTrackingBonus INTEGER NULL;");
 
             TryAddColumn(@"ALTER TABLE ItemDefinitions ADD COLUMN Category TEXT NULL;");
             TryAddColumn(@"ALTER TABLE ItemDefinitions ADD COLUMN CreatedAtUtc TEXT NULL;");
@@ -132,6 +142,11 @@ SET
  SleepRewardMinimumMinutes = COALESCE(SleepRewardMinimumMinutes, 60),
  FocusXpPerMinute = COALESCE(FocusXpPerMinute, 100.0),
  FocusXpIncompleteMultiplier = COALESCE(FocusXpIncompleteMultiplier, 0.25),
+ WeeklySleepTrackingBonus = COALESCE(WeeklySleepTrackingBonus, 7),
+ WeeklyHabitTrackingBonus = COALESCE(WeeklyHabitTrackingBonus, 3),
+ DailyStepsGoal = COALESCE(DailyStepsGoal, 10000),
+ DailyStepsGoalQuota = COALESCE(DailyStepsGoalQuota, 5),
+ WeeklyStepsTrackingBonus = COALESCE(WeeklyStepsTrackingBonus, 5),
  UpdatedAtUtc = COALESCE(UpdatedAtUtc, @NowUtc)
 WHERE Id = 1;",
                 new { NowUtc = nowUtc });
