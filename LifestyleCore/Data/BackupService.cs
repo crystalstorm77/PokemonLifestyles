@@ -25,7 +25,7 @@ namespace LifestyleCore.Data
         {
             EnsureSchemas();
 
-            string sourceDbPath = Db.GetDatabasePath();
+            string sourceDbPath = Db.GetDbPath();
             if (!File.Exists(sourceDbPath))
                 throw new FileNotFoundException("Database file not found.", sourceDbPath);
 
@@ -54,7 +54,7 @@ namespace LifestyleCore.Data
             if (!File.Exists(sourceDbPath))
                 throw new FileNotFoundException("Snapshot database file not found.", sourceDbPath);
 
-            string dest = Db.GetDatabasePath();
+            string dest = Db.GetDbPath();
             string? destDir = Path.GetDirectoryName(dest);
             if (!string.IsNullOrWhiteSpace(destDir))
                 Directory.CreateDirectory(destDir);
@@ -209,7 +209,8 @@ namespace LifestyleCore.Data
             if (File.Exists(habitsPath))
             {
                 var habits = await ReadJsonAsync<List<HabitExport>>(habitsPath) ?? new();
-                habitByExternalId = await UpsertHabitsAsync(habits);
+                await UpsertHabitsAsync(habits);
+                habitByExternalId = await GetHabitMapAsync();
             }
 
             string focusLabelsPath = Path.Combine(rootFolder, "FocusLabels.json");
@@ -222,7 +223,7 @@ namespace LifestyleCore.Data
             string pendingSleepPath = Path.Combine(rootFolder, "PendingSleep.json");
             if (File.Exists(pendingSleepPath))
             {
-                var pending = await ReadJsonAsync<PendingSleep>(pendingSleepPath) ?? new PendingSleep();
+                var pending = await ReadJsonAsync<PendingSleepExport>(pendingSleepPath) ?? new PendingSleepExport();
                 await ReplacePendingSleepAsync(pending);
             }
 
@@ -237,7 +238,7 @@ namespace LifestyleCore.Data
                 tx.Commit();
             }
 
-            foreach (var file in EnumerateDayJsonFiles(rootFolder))
+            foreach (var file in EnumerateDayFiles(rootFolder))
             {
                 string relative = Path.GetRelativePath(rootFolder, file);
                 string[] parts = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -868,7 +869,7 @@ namespace LifestyleCore.Data
         #endregion // SECTION C3 — Import helpers (habit map)
 
         #region SECTION C4 — Import helpers (gamification resets)
-        private static async Task EnsureTrainerProgressLifetimeColumnAsync(System.Data.IDbConnection conn, System.Data.IDbTransaction tx)
+        private static async Task EnsureTrainerProgressLifetimeColumnAsync(System.Data.IDbConnection conn, System.Data.IDbTransaction? tx = null)
         {
             var cols = await conn.QueryAsync("PRAGMA table_info(TrainerProgress);", transaction: tx);
             bool has = false;
@@ -990,6 +991,77 @@ VALUES
  ('Nugget', 'Currency', 2, 1, 1, @NowUtc, NULL);",
                 new { NowUtc = nowUtc },
                 tx);
+        }
+
+        private static async Task ResetDatabaseDataInternalAsync(
+            System.Data.IDbConnection conn,
+            System.Data.IDbTransaction tx,
+            bool seedDefaultFocusLabels)
+        {
+            await conn.ExecuteAsync("DELETE FROM HabitEntries;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM Habits;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM StepBuckets;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM StepsDaily;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM StepsSyncState;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM SleepSessions;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM PendingSleep;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM FoodEntries;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM FoodItems;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM FocusSessions;", transaction: tx);
+            await conn.ExecuteAsync("DELETE FROM FocusLabels;", transaction: tx);
+
+            if (seedDefaultFocusLabels)
+            {
+                string nowUtc = DateTimeOffset.UtcNow.ToString("O");
+                await conn.ExecuteAsync(@"
+INSERT INTO FocusLabels (ExternalId, Name, IsActive, CreatedAtUtc, DeletedAtUtc)
+VALUES
+    (@DrawExternalId, 'Draw', 1, @NowUtc, NULL),
+    (@MusicExternalId, 'Music', 1, @NowUtc, NULL);",
+                    new
+                    {
+                        DrawExternalId = LowerHex16(),
+                        MusicExternalId = LowerHex16(),
+                        NowUtc = nowUtc
+                    },
+                    tx);
+            }
+        }
+
+        private static async Task ReplacePendingSleepAsync(PendingSleepExport pending)
+        {
+            using var conn = Db.OpenConnection();
+            using var tx = conn.BeginTransaction();
+
+            await conn.ExecuteAsync("DELETE FROM PendingSleep;", transaction: tx);
+
+            if (!string.IsNullOrWhiteSpace(pending.StartUtc))
+            {
+                await conn.ExecuteAsync(@"
+INSERT INTO PendingSleep (Id, StartUtc)
+VALUES (1, @StartUtc);",
+                    new { StartUtc = pending.StartUtc },
+                    tx);
+            }
+
+            tx.Commit();
+        }
+
+        private static async Task DeleteDateRangeAsync(
+            System.Data.IDbConnection conn,
+            System.Data.IDbTransaction tx,
+            DateOnly rangeStartInclusive,
+            DateOnly rangeEndInclusive)
+        {
+            string start = rangeStartInclusive.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            string end = rangeEndInclusive.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            await conn.ExecuteAsync("DELETE FROM FocusSessions WHERE LogDate >= @StartDate AND LogDate <= @EndDate;", new { StartDate = start, EndDate = end }, tx);
+            await conn.ExecuteAsync("DELETE FROM FoodEntries WHERE LogDate >= @StartDate AND LogDate <= @EndDate;", new { StartDate = start, EndDate = end }, tx);
+            await conn.ExecuteAsync("DELETE FROM SleepSessions WHERE WakeLogDate >= @StartDate AND WakeLogDate <= @EndDate;", new { StartDate = start, EndDate = end }, tx);
+            await conn.ExecuteAsync("DELETE FROM StepsDaily WHERE Date >= @StartDate AND Date <= @EndDate;", new { StartDate = start, EndDate = end }, tx);
+            await conn.ExecuteAsync("DELETE FROM StepBuckets WHERE BucketLocalDate >= @StartDate AND BucketLocalDate <= @EndDate;", new { StartDate = start, EndDate = end }, tx);
+            await conn.ExecuteAsync("DELETE FROM HabitEntries WHERE Date >= @StartDate AND Date <= @EndDate;", new { StartDate = start, EndDate = end }, tx);
         }
         #endregion // SECTION C4 — Import helpers (gamification resets)
 
