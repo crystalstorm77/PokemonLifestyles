@@ -316,12 +316,18 @@ SECTION C — Focus Session Input
                         <TextBlock Text="remaining whole minutes" Foreground="Gray" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <Border BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                    <Border Width="250"
+            HorizontalAlignment="Left"
+            BorderBrush="#FFBFBFBF"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="8"
+            Margin="0,0,0,8">
                         <TextBlock x:Name="FocusTimerDisplayText"
                    Text="00:25:00"
-                   FontSize="28"
+                   FontSize="24"
                    TextAlignment="Center"
-                   HorizontalAlignment="Stretch"/>
+                   HorizontalAlignment="Center"/>
                     </Border>
 
                     <TextBlock x:Name="FocusTimerStatusText"
@@ -333,15 +339,15 @@ SECTION C — Focus Session Input
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Button x:Name="StartFocusTimerButton"
                 Content="Start Focus"
-                Width="120"
+                Width="110"
                 Click="StartFocusTimerButton_Click"/>
-                        <Button x:Name="ResumeFocusTimerButton"
-                Content="Resume"
+                        <Button x:Name="PauseFocusTimerButton"
+                Content="Pause"
                 Width="100"
                 Margin="10,0,0,0"
-                Click="ResumeFocusTimerButton_Click"
-                IsEnabled="False"
-                Visibility="Collapsed"/>
+                Click="PauseFocusTimerButton_Click"
+                Visibility="Collapsed"
+                IsEnabled="False"/>
                         <Button x:Name="StopFocusTimerButton"
                 Content="Stop Focusing"
                 Width="120"
