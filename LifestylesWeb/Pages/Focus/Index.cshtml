@@ -15,8 +15,8 @@
 
             <h1 class="pl-title">Focus</h1>
             <p class="pl-subtitle">
-                This first web version is a simple manual focus entry screen.
-                We will build the live timer flow after this foundation works.
+                This still uses manual entry for now, but it now stores exact duration in hours, minutes, and seconds.
+                The live timer screen will come next.
             </p>
 
             <div class="pl-info-note">
@@ -40,9 +40,16 @@
 
                 <label class="pl-field">
                     <span class="pl-field-label">Minutes</span>
-                    <input asp-for="Input.Minutes" class="pl-input" type="number" min="5" max="120" step="5" />
-                    <span class="pl-field-hint">Start simple: 5 to 120 minutes.</span>
+                    <input asp-for="Input.Minutes" class="pl-input" type="number" min="5" max="120" step="1" />
+                    <span class="pl-field-hint">For now, enter 5 to 120 minutes.</span>
                     <span asp-validation-for="Input.Minutes" class="pl-field-error"></span>
+                </label>
+
+                <label class="pl-field">
+                    <span class="pl-field-label">Seconds</span>
+                    <input asp-for="Input.Seconds" class="pl-input" type="number" min="0" max="59" step="1" />
+                    <span class="pl-field-hint">Exact seconds are now stored too.</span>
+                    <span asp-validation-for="Input.Seconds" class="pl-field-error"></span>
                 </label>
 
                 <label class="pl-field">
@@ -67,7 +74,7 @@
         <section class="pl-card">
             <h2 class="pl-section-title">Sessions for this game day</h2>
             <p class="pl-section-note">
-                This proves the new web app is already saving and loading focus sessions.
+                Stored durations below now include exact hours, minutes, and seconds.
             </p>
 
             @if (Model.Sessions.Count == 0)
@@ -82,7 +89,7 @@
                         <article class="pl-session-item">
                             <div class="pl-session-top">
                                 <strong class="pl-session-type">@session.FocusType</strong>
-                                <span class="pl-session-minutes">@session.Minutes min</span>
+                                <span class="pl-session-minutes">@Model.FormatDuration(session.DurationSeconds)</span>
                             </div>
 
                             <div class="pl-session-meta">

@@ -22,12 +22,9 @@ namespace LifestyleCore.Data
             var nextDay = logDate.AddDays(1);
 
             DateTime cutoffLocalUnspec = new DateTime(
-                nextDay.Year, nextDay.Month, nextDay.Day,
-                3, 0, 0,
-                DateTimeKind.Unspecified);
+                nextDay.Year, nextDay.Month, nextDay.Day, 3, 0, 0, DateTimeKind.Unspecified);
 
             DateTime probe = cutoffLocalUnspec;
-
             for (int i = 0; i < 6; i++)
             {
                 try
@@ -67,8 +64,7 @@ namespace LifestyleCore.Data
 
         private static int CalculateFocusCoins(int minutes, bool completed, double sleepMultiplier)
         {
-            if (minutes <= 0)
-                return 0;
+            if (minutes <= 0) return 0;
 
             double normalizedSleepMultiplier = Math.Max(1.0, sleepMultiplier);
             double completionMultiplier = completed ? 1.0 : 0.25;
@@ -83,8 +79,7 @@ namespace LifestyleCore.Data
             double focusXpIncompleteMultiplier,
             double sleepMultiplier)
         {
-            if (minutes <= 0)
-                return 0;
+            if (minutes <= 0) return 0;
 
             double normalizedXpPerMinute = Math.Max(0.0, focusXpPerMinute);
             double normalizedIncompleteMultiplier = Math.Clamp(focusXpIncompleteMultiplier, 0.0, 1.0);
@@ -94,7 +89,34 @@ namespace LifestyleCore.Data
             return (int)Math.Floor(minutes * normalizedXpPerMinute * completionMultiplier * normalizedSleepMultiplier);
         }
 
-        public Task<long> AddAsync(FocusSession session)
+        private static int NormalizeDurationSeconds(FocusSession session)
+        {
+            if (session == null) throw new ArgumentNullException(nameof(session));
+
+            if (session.DurationSeconds > 0)
+            {
+                return session.DurationSeconds;
+            }
+
+            if (session.Minutes > 0)
+            {
+                return session.Minutes * 60;
+            }
+
+            return 0;
+        }
+
+        private static int GetRewardMinutes(int durationSeconds)
+        {
+            if (durationSeconds <= 0)
+            {
+                return 0;
+            }
+
+            return durationSeconds / 60;
+        }
+
+        public Task AddAsync(FocusSession session)
         {
             return AddAsync(session, grantRewards: true);
         }
@@ -103,17 +125,22 @@ namespace LifestyleCore.Data
         {
             Db.EnsureCreated();
 
-            if (session == null)
-                throw new ArgumentNullException(nameof(session));
+            if (session == null) throw new ArgumentNullException(nameof(session));
 
-            if (session.Minutes <= 0)
-                throw new InvalidOperationException("Focus session minutes must be > 0.");
+            int durationSeconds = NormalizeDurationSeconds(session);
+            if (durationSeconds <= 0)
+                throw new InvalidOperationException("Focus session duration seconds must be > 0.");
+
+            int rewardMinutes = GetRewardMinutes(durationSeconds);
+
+            session.DurationSeconds = durationSeconds;
+            session.Minutes = rewardMinutes;
 
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-INSERT INTO FocusSessions (LoggedAtUtc, LogDate, FocusType, Minutes, Completed)
-VALUES (@LoggedAtUtc, @LogDate, @FocusType, @Minutes, @Completed);
+INSERT INTO FocusSessions (LoggedAtUtc, LogDate, FocusType, Minutes, DurationSeconds, Completed)
+VALUES (@LoggedAtUtc, @LogDate, @FocusType, @Minutes, @DurationSeconds, @Completed);
 SELECT last_insert_rowid();
 ";
 
@@ -123,6 +150,7 @@ SELECT last_insert_rowid();
                 LogDate = session.LogDate.ToString("yyyy-MM-dd"),
                 FocusType = session.FocusType,
                 Minutes = session.Minutes,
+                DurationSeconds = session.DurationSeconds,
                 Completed = session.Completed ? 1 : 0
             };
 
@@ -134,7 +162,7 @@ SELECT last_insert_rowid();
                 double sleepMultiplier = await GetSleepRewardMultiplierAsync(session.LogDate, gami);
 
                 int trainerXp = CalculateFocusTrainerXp(
-                    session.Minutes,
+                    rewardMinutes,
                     session.Completed,
                     gami.FocusXpPerMinute,
                     gami.FocusXpIncompleteMultiplier,
@@ -143,7 +171,7 @@ SELECT last_insert_rowid();
                 if (trainerXp > 0)
                     await _rewards.TryGrantFocusTrainerXpAsync(id, session.LogDate, trainerXp);
 
-                int coins = CalculateFocusCoins(session.Minutes, session.Completed, sleepMultiplier);
+                int coins = CalculateFocusCoins(rewardMinutes, session.Completed, sleepMultiplier);
 
                 if (coins > 0)
                     await _rewards.TryGrantFocusCoinsAsync(id, session.LogDate, coins);
@@ -154,37 +182,38 @@ SELECT last_insert_rowid();
         #endregion // SECTION B — Add
 
         #region SECTION C — Query
-        public async Task<IReadOnlyList<FocusSession>> GetForDateAsync(DateOnly logDate)
+        public async Task<List<FocusSession>> GetForDateAsync(DateOnly logDate)
         {
             Db.EnsureCreated();
 
             using var conn = Db.OpenConnection();
 
             const string sql = @"
-SELECT
-    Id,
-    LoggedAtUtc,
-    LogDate,
-    FocusType,
-    Minutes,
-    Completed
+SELECT Id, LoggedAtUtc, LogDate, FocusType, Minutes, DurationSeconds, Completed
 FROM FocusSessions
 WHERE LogDate = @LogDate
 ORDER BY Id DESC;
 ";
 
-            var rows = await conn.QueryAsync<dynamic>(
+            var rows = await conn.QueryAsync(
                 sql,
                 new { LogDate = logDate.ToString("yyyy-MM-dd") });
 
-            var list = rows.Select(r => new FocusSession
+            var list = rows.Select(r =>
             {
-                Id = (long)r.Id,
-                LoggedAtUtc = DateTimeOffset.Parse((string)r.LoggedAtUtc),
-                LogDate = DateOnly.Parse((string)r.LogDate),
-                FocusType = (string)r.FocusType,
-                Minutes = (int)r.Minutes,
-                Completed = ((long)r.Completed) == 1
+                int durationSeconds = r.DurationSeconds is null
+                    ? (int)r.Minutes * 60
+                    : Convert.ToInt32(r.DurationSeconds);
+
+                return new FocusSession
+                {
+                    Id = (long)r.Id,
+                    LoggedAtUtc = DateTimeOffset.Parse((string)r.LoggedAtUtc),
+                    LogDate = DateOnly.Parse((string)r.LogDate),
+                    FocusType = (string)r.FocusType,
+                    DurationSeconds = durationSeconds,
+                    Completed = ((long)r.Completed) == 1
+                };
             }).ToList();
 
             return list;

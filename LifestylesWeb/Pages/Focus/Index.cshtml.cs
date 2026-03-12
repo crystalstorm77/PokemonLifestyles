@@ -40,6 +40,18 @@ public class IndexModel : PageModel
             ModelState.AddModelError("Input.FocusType", "Please enter a focus type.");
         }
 
+        int totalDurationSeconds = (Input.Minutes * 60) + Input.Seconds;
+
+        if (totalDurationSeconds < 300)
+        {
+            ModelState.AddModelError("Input.Minutes", "Please enter at least 5 minutes.");
+        }
+
+        if (totalDurationSeconds > 7200)
+        {
+            ModelState.AddModelError("Input.Minutes", "Please keep the total duration at 2 hours or less.");
+        }
+
         if (!ModelState.IsValid)
         {
             await LoadSessionsAsync(GetGameDayForLocal(EnsureLocalDateTime(Input.LoggedAtLocal)));
@@ -54,13 +66,13 @@ public class IndexModel : PageModel
             LoggedAtUtc = LocalDateTimeToLocalOffset(localDateTime).ToUniversalTime(),
             LogDate = logDate,
             FocusType = focusType,
-            Minutes = Input.Minutes,
+            DurationSeconds = totalDurationSeconds,
             Completed = Input.Completed
         };
 
         await _focusRepo.AddAsync(session);
 
-        StatusMessage = $"Saved {session.Minutes} minute {session.FocusType} session.";
+        StatusMessage = $"Saved {session.FocusType} session for {FormatDuration(session.DurationSeconds)}.";
         Input = CreateDefaultInput(focusType);
         await LoadSessionsAsync(logDate);
 
@@ -75,6 +87,7 @@ public class IndexModel : PageModel
         {
             FocusType = focusType,
             Minutes = 25,
+            Seconds = 0,
             Completed = true,
             LoggedAtLocal = DateTime.Now
         };
@@ -85,6 +98,14 @@ public class IndexModel : PageModel
         Sessions = (await _focusRepo.GetForDateAsync(gameDay)).ToList();
         CurrentGameDayText = gameDay.ToString("yyyy-MM-dd");
         DataFilePath = Db.GetDbPath();
+    }
+
+    public string FormatDuration(int totalSeconds)
+    {
+        totalSeconds = Math.Max(0, totalSeconds);
+        TimeSpan duration = TimeSpan.FromSeconds(totalSeconds);
+        int totalHours = (int)duration.TotalHours;
+        return $"{totalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 
     private static DateTime EnsureLocalDateTime(DateTime value)
@@ -121,6 +142,9 @@ public class IndexModel : PageModel
 
         [Range(5, 120)]
         public int Minutes { get; set; } = 25;
+
+        [Range(0, 59)]
+        public int Seconds { get; set; } = 0;
 
         public bool Completed { get; set; } = true;
 

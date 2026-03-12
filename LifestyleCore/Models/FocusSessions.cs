@@ -9,10 +9,35 @@ namespace LifestyleCore.Models
         public DateTimeOffset LoggedAtUtc { get; set; }
         public DateOnly LogDate { get; set; }
         public string FocusType { get; set; } = "Draw"; // "Draw" or "Music"
-        public int Minutes { get; set; }
-        public bool Completed { get; set; }
 
+        private int _durationSeconds;
+
+        public int DurationSeconds
+        {
+            get => _durationSeconds;
+            set => _durationSeconds = Math.Max(0, value);
+        }
+
+        public int Minutes
+        {
+            get => DurationSeconds / 60;
+            set => DurationSeconds = Math.Max(0, value) * 60;
+        }
+
+        public int SecondsPart => DurationSeconds % 60;
+
+        public bool Completed { get; set; }
         public DateTimeOffset LoggedAtLocal => LoggedAtUtc.ToLocalTime();
+
+        public string DurationDisplay
+        {
+            get
+            {
+                TimeSpan duration = TimeSpan.FromSeconds(DurationSeconds);
+                int totalHours = (int)duration.TotalHours;
+                return $"{totalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
+            }
+        }
         #endregion // SECTION A — Focus session model
 
         #region SECTION B — Editable fields for UI (local time + date)
