@@ -6612,7 +6612,7 @@ namespace LifestylesDesktop
         #endregion // SECTION I3 — Steps + Habits Refresh
 
         #region SECTION I4 — Steps + Habits Actions
-        private void HabitMinusClick(object sender, RoutedEventArgs e)
+        private void CounterMinus_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button btn || btn.DataContext is not HabitRow row)
                 return;
@@ -6624,7 +6624,7 @@ namespace LifestylesDesktop
             HabitsGrid.Items.Refresh();
         }
 
-        private void HabitPlusClick(object sender, RoutedEventArgs e)
+        private void CounterPlus_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button btn || btn.DataContext is not HabitRow row)
                 return;

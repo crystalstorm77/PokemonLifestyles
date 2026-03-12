@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="../LifestyleCore/LifestyleCore.csproj" />
+  <Project Path="../LifestylesWeb/LifestylesWeb.csproj" Id="299308eb-4291-4588-95aa-c844c348fc0c" />
   <Project Path="LifestylesDesktop.csproj" />
 </Solution>
