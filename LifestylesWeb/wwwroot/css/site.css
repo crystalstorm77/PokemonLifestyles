@@ -345,6 +345,46 @@ body {
 /* SECTION D END — Responsive Tweaks */
 
 /* SECTION E START — Focus Setup + Run */
+.pl-home-screen {
+    padding-bottom: 7.5rem;
+}
+
+.pl-home-card,
+.pl-dev-card {
+    margin-bottom: 1rem;
+}
+
+.pl-focus-overlay[hidden],
+.pl-run-overlay[hidden] {
+    display: none;
+}
+
+.pl-focus-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: grid;
+    place-items: end center;
+    padding: 1rem;
+}
+
+.pl-focus-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.pl-focus-shell {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 430px);
+}
+
+.pl-focus-panel {
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+}
+
 .pl-mode-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -414,12 +454,6 @@ body {
     margin-top: 0.55rem;
     font-size: 0.82rem;
     color: #64748b;
-}
-
-.pl-run-card {
-    position: relative;
-    overflow: hidden;
-    padding-bottom: 1.4rem;
 }
 
 .pl-run-meta-grid {
@@ -522,10 +556,6 @@ body {
         background: #fecaca;
         color: #991b1b;
     }
-
-.pl-run-overlay[hidden] {
-    display: none;
-}
 
 .pl-run-overlay {
     position: fixed;

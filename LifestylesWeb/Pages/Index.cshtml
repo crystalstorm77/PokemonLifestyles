@@ -4,14 +4,26 @@
     ViewData["Title"] = "Home";
 }
 
-<!-- SECTION A START — Home Screen -->
-<div class="pl-screen pl-screen-home">
-    <section class="pl-card pl-hero-card">
+<!-- SECTION A START — Home Screen + Focus Overlay -->
+<div class="pl-screen pl-home-screen">
+    <section class="pl-card pl-home-card">
         <p class="pl-eyebrow">Pokemon Lifestyles</p>
-        <h1 class="pl-title">Web MVP</h1>
+        <h1 class="pl-title">Home</h1>
         <p class="pl-subtitle">
-            This first phone-friendly version is only for Focus sessions.
-            Sleep, food, steps, habits, eggs, shop, and analytics stay out for now.
+            Focus now opens as an overlay on this screen instead of navigating away to a separate page.
+            We are still building functionality first and art second.
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="pl-success-banner">@Model.StatusMessage</div>
+        }
+    </section>
+
+    <section class="pl-card pl-dev-card">
+        <h2 class="pl-section-title">Saved sessions for this game day</h2>
+        <p class="pl-section-note">
+            Temporary debug view while we build the real overlay flow.
         </p>
 
         <div class="pl-info-note">
@@ -19,18 +31,579 @@
             <span class="pl-code-path">@Model.DataFilePath</span>
         </div>
 
-        <a class="pl-primary-button" asp-page="/Focus/Index">Open Focus</a>
+        @if (Model.Sessions.Count == 0)
+        {
+            <p class="pl-empty-state">No sessions saved yet for this game day.</p>
+        }
+        else
+        {
+            <div class="pl-session-list">
+                @foreach (var session in Model.Sessions)
+                {
+                    <article class="pl-session-item">
+                        <div class="pl-session-top">
+                            <strong class="pl-session-type">@session.FocusType</strong>
+                            <span class="pl-session-minutes">@Model.FormatDuration(session.DurationSeconds)</span>
+                        </div>
+
+                        <div class="pl-session-meta">
+                            <span>@session.LoggedAtUtc.ToLocalTime().ToString("ddd d MMM, h:mm tt")</span>
+                            <span>@(session.Completed ? "Completed" : "Incomplete")</span>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
     </section>
 
     <nav class="pl-bottom-dock" aria-label="Main actions">
-        <a class="pl-dock-button pl-dock-button-active" asp-page="/Focus/Index">
+        <button class="pl-dock-button pl-dock-button-active" type="button" id="pl-open-focus-button">
             <span class="pl-dock-label">Focus</span>
-        </a>
+        </button>
 
         <button class="pl-dock-button" type="button" disabled>
             <span class="pl-dock-label">Sleep</span>
             <span class="pl-dock-note">Later</span>
         </button>
     </nav>
+
+    <div class="pl-focus-overlay" id="pl-focus-overlay" hidden aria-hidden="true">
+        <div class="pl-focus-overlay-backdrop"></div>
+
+        <div class="pl-focus-shell">
+            <section class="pl-card pl-focus-panel" id="pl-focus-setup-panel">
+                <div class="pl-card-header">
+                    <button type="button" class="pl-link-button" id="pl-focus-back-button">← Back</button>
+                    <span class="pl-badge">Countdown</span>
+                </div>
+
+                <p class="pl-eyebrow">Focus Session</p>
+                <h2 class="pl-title">Stay with it</h2>
+                <p class="pl-subtitle">
+                    This opens over the home screen instead of as a separate page.
+                    For now, this pass is countdown only.
+                </p>
+
+                <div class="pl-mode-grid">
+                    <button class="pl-mode-chip pl-mode-chip-active" type="button">
+                        <span>Countdown</span>
+                        <small>Ready now</small>
+                    </button>
+
+                    <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
+                        <span>Count Up</span>
+                        <small>Later</small>
+                    </button>
+                </div>
+
+                <label class="pl-field">
+                    <span class="pl-field-label">Focus type</span>
+                    <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
+                </label>
+
+                <div class="pl-field">
+                    <span class="pl-field-label">Countdown length</span>
+
+                    <div class="pl-duration-card">
+                        <strong class="pl-duration-readout" id="pl-duration-readout">5 minutes</strong>
+
+                        <input class="pl-slider"
+                               id="pl-duration-slider"
+                               type="range"
+                               min="5"
+                               max="120"
+                               step="1"
+                               value="5" />
+
+                        <div class="pl-slider-scale">
+                            <span>5 min</span>
+                            <span>2 hr</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pl-button-stack">
+                    <button type="button" class="pl-primary-button" id="pl-start-focus-button">Start</button>
+                    <button type="button" class="pl-secondary-button" id="pl-close-focus-button">Back</button>
+                </div>
+            </section>
+
+            <section class="pl-card pl-focus-panel" id="pl-focus-run-panel" hidden>
+                <div class="pl-card-header">
+                    <button type="button" class="pl-link-button" id="pl-run-home-button">← Home</button>
+                    <span class="pl-badge">Countdown</span>
+                </div>
+
+                <p class="pl-eyebrow">Focus Session</p>
+                <h2 class="pl-title">Stay with it</h2>
+                <p class="pl-subtitle">
+                    Settings are locked while the session is active.
+                </p>
+
+                <div class="pl-run-meta-grid">
+                    <div class="pl-run-meta-card">
+                        <span class="pl-run-label">Focus type</span>
+                        <strong class="pl-run-value" id="pl-run-focus-type">Focus</strong>
+                    </div>
+
+                    <div class="pl-run-meta-card">
+                        <span class="pl-run-label">Target</span>
+                        <strong class="pl-run-value" id="pl-run-target">5 minutes</strong>
+                    </div>
+                </div>
+
+                <div class="pl-run-timer-shell">
+                    <div class="pl-run-timer-caption" id="pl-run-state-label">Time remaining</div>
+                    <div class="pl-run-timer" id="pl-run-readout">00:05:00</div>
+                    <div class="pl-run-support">
+                        Elapsed:
+                        <span id="pl-run-elapsed">00:00:00</span>
+                    </div>
+                </div>
+
+                <div class="pl-progress-track" aria-hidden="true">
+                    <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
+                </div>
+
+                <div class="pl-run-actions pl-run-actions-two">
+                    <button type="button" class="pl-primary-button" id="pl-pause-button">Pause</button>
+                    <button type="button" class="pl-secondary-button" id="pl-exit-button">Cancel</button>
+                </div>
+
+                <p class="pl-field-hint" id="pl-run-note">
+                    Cancel before 1 minute to discard this session with no save.
+                </p>
+            </section>
+
+            <div class="pl-run-overlay" id="pl-confirm-overlay" hidden aria-hidden="true">
+                <div class="pl-run-overlay-backdrop"></div>
+
+                <div class="pl-run-overlay-card" role="dialog" aria-modal="true" aria-labelledby="pl-confirm-title">
+                    <p class="pl-eyebrow">Stop Focusing</p>
+                    <h2 class="pl-section-title" id="pl-confirm-title">Are you sure?</h2>
+                    <p class="pl-subtitle pl-overlay-subtitle">
+                        Session will be marked <strong>incomplete</strong>.
+                    </p>
+
+                    <div class="pl-run-meta-grid">
+                        <div class="pl-run-meta-card">
+                            <span class="pl-run-label">Current elapsed</span>
+                            <strong class="pl-run-value" id="pl-confirm-current-time">00:00:00</strong>
+                        </div>
+
+                        <div class="pl-run-meta-card">
+                            <span class="pl-run-label">Timer status</span>
+                            <strong class="pl-run-value" id="pl-confirm-timer-status">Still counting down</strong>
+                        </div>
+                    </div>
+
+                    <p class="pl-field-hint">
+                        Rewards comparison and the reward screen come in the next pass.
+                    </p>
+
+                    <div class="pl-run-actions pl-run-actions-two">
+                        <button type="button" class="pl-secondary-button" id="pl-confirm-keep-going">Keep Going</button>
+                        <button type="button" class="pl-primary-button" id="pl-confirm-stop">Stop Focusing</button>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" asp-page-handler="SaveFocus" id="pl-save-form">
+                <input type="hidden" asp-for="Input.FocusType" id="pl-save-focus-type" value="Focus" />
+                <input type="hidden" asp-for="Input.PlannedDurationSeconds" id="pl-save-planned-seconds" value="300" />
+                <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-save-elapsed-seconds" value="0" />
+                <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
+            </form>
+        </div>
+    </div>
 </div>
-<!-- SECTION A END — Home Screen -->
+<!-- SECTION A END — Home Screen + Focus Overlay -->
+@section Scripts {
+    <!-- SECTION B START — Home Screen Scripts -->
+    <script>
+        (function () {
+            const overlay = document.getElementById("pl-focus-overlay");
+            const openFocusButton = document.getElementById("pl-open-focus-button");
+            const focusBackButton = document.getElementById("pl-focus-back-button");
+            const closeFocusButton = document.getElementById("pl-close-focus-button");
+            const runHomeButton = document.getElementById("pl-run-home-button");
+
+            const setupPanel = document.getElementById("pl-focus-setup-panel");
+            const runPanel = document.getElementById("pl-focus-run-panel");
+
+            const focusTypeInput = document.getElementById("pl-focus-type-input");
+            const durationSlider = document.getElementById("pl-duration-slider");
+            const durationReadout = document.getElementById("pl-duration-readout");
+            const startFocusButton = document.getElementById("pl-start-focus-button");
+
+            const runFocusType = document.getElementById("pl-run-focus-type");
+            const runTarget = document.getElementById("pl-run-target");
+            const runStateLabel = document.getElementById("pl-run-state-label");
+            const runReadout = document.getElementById("pl-run-readout");
+            const runElapsed = document.getElementById("pl-run-elapsed");
+            const progressFill = document.getElementById("pl-progress-fill");
+            const pauseButton = document.getElementById("pl-pause-button");
+            const exitButton = document.getElementById("pl-exit-button");
+            const runNote = document.getElementById("pl-run-note");
+
+            const confirmOverlay = document.getElementById("pl-confirm-overlay");
+            const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
+            const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
+            const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
+            const confirmStopButton = document.getElementById("pl-confirm-stop");
+
+            const saveForm = document.getElementById("pl-save-form");
+            const saveFocusType = document.getElementById("pl-save-focus-type");
+            const savePlannedSeconds = document.getElementById("pl-save-planned-seconds");
+            const saveElapsedSeconds = document.getElementById("pl-save-elapsed-seconds");
+            const saveMode = document.getElementById("pl-save-mode");
+
+            if (!overlay || !openFocusButton || !focusBackButton || !closeFocusButton || !runHomeButton ||
+                !setupPanel || !runPanel || !focusTypeInput || !durationSlider || !durationReadout ||
+                !startFocusButton || !runFocusType || !runTarget || !runStateLabel || !runReadout ||
+                !runElapsed || !progressFill || !pauseButton || !exitButton || !runNote ||
+                !confirmOverlay || !confirmCurrentTime || !confirmTimerStatus ||
+                !confirmKeepGoingButton || !confirmStopButton || !saveForm || !saveFocusType ||
+                !savePlannedSeconds || !saveElapsedSeconds || !saveMode) {
+                return;
+            }
+
+            const stopThresholdSeconds = 60;
+            let plannedSeconds = 300;
+            let startedAtMs = 0;
+            let pausedElapsedSeconds = 0;
+            let isRunning = false;
+            let isPaused = false;
+            let isSubmitting = false;
+            let isConfirmOpen = false;
+            let completionTonePlayed = false;
+
+            function formatClock(totalSeconds) {
+                totalSeconds = Math.max(0, Math.floor(totalSeconds));
+
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+            }
+
+            function formatDurationSelection(totalMinutes) {
+                totalMinutes = Math.max(5, Math.min(120, totalMinutes));
+
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+
+                if (hours === 0) {
+                    return `${totalMinutes} minutes`;
+                }
+
+                if (minutes === 0) {
+                    return hours === 1 ? "1 hour" : `${hours} hours`;
+                }
+
+                return hours === 1
+                    ? `1 hour ${minutes} minutes`
+                    : `${hours} hours ${minutes} minutes`;
+            }
+
+            function updateDurationReadout() {
+                const totalMinutes = parseInt(durationSlider.value || "5", 10);
+                durationReadout.textContent = formatDurationSelection(totalMinutes);
+            }
+
+            function showSetupPanel() {
+                setupPanel.hidden = false;
+                runPanel.hidden = true;
+            }
+
+            function showRunPanel() {
+                setupPanel.hidden = true;
+                runPanel.hidden = false;
+            }
+
+            function openOverlay() {
+                overlay.hidden = false;
+                overlay.setAttribute("aria-hidden", "false");
+                closeConfirmOverlay();
+                showSetupPanel();
+                updateDurationReadout();
+            }
+
+            function closeOverlay() {
+                overlay.hidden = true;
+                overlay.setAttribute("aria-hidden", "true");
+                closeConfirmOverlay();
+                resetRunState();
+            }
+
+            function resetRunState() {
+                isRunning = false;
+                isPaused = false;
+                isSubmitting = false;
+                isConfirmOpen = false;
+                completionTonePlayed = false;
+                pausedElapsedSeconds = 0;
+                startedAtMs = 0;
+
+                pauseButton.textContent = "Pause";
+                exitButton.textContent = "Cancel";
+                exitButton.classList.remove("pl-stop-button-armed");
+                runStateLabel.textContent = "Time remaining";
+                runReadout.textContent = "00:05:00";
+                runElapsed.textContent = "00:00:00";
+                progressFill.style.width = "0%";
+                runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
+                showSetupPanel();
+            }
+
+            function getElapsedSeconds() {
+                if (!isRunning) {
+                    return 0;
+                }
+
+                if (isPaused) {
+                    return Math.min(plannedSeconds, pausedElapsedSeconds);
+                }
+
+                const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+                return Math.min(plannedSeconds, Math.max(0, liveElapsed));
+            }
+
+            function setButtonsDisabled(isDisabled) {
+                pauseButton.disabled = isDisabled;
+                exitButton.disabled = isDisabled;
+                confirmKeepGoingButton.disabled = isDisabled;
+                confirmStopButton.disabled = isDisabled;
+                startFocusButton.disabled = isDisabled;
+            }
+
+            function openConfirmOverlay() {
+                isConfirmOpen = true;
+                confirmOverlay.hidden = false;
+                confirmOverlay.setAttribute("aria-hidden", "false");
+                updateConfirmOverlay(getElapsedSeconds());
+            }
+
+            function closeConfirmOverlay() {
+                isConfirmOpen = false;
+                confirmOverlay.hidden = true;
+                confirmOverlay.setAttribute("aria-hidden", "true");
+            }
+
+            function updateConfirmOverlay(elapsedSeconds) {
+                confirmCurrentTime.textContent = formatClock(elapsedSeconds);
+                confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
+            }
+
+            function playCompletionTone() {
+                if (completionTonePlayed) {
+                    return;
+                }
+
+                completionTonePlayed = true;
+
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+                    if (!AudioContextClass) {
+                        return;
+                    }
+
+                    const audioContext = new AudioContextClass();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.type = "sine";
+                    oscillator.frequency.value = 880;
+
+                    gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.36);
+                } catch {
+                }
+            }
+
+            function submitSave(mode) {
+                if (isSubmitting) {
+                    return;
+                }
+
+                const elapsedSeconds = mode === "complete"
+                    ? plannedSeconds
+                    : getElapsedSeconds();
+
+                if (elapsedSeconds <= 0) {
+                    return;
+                }
+
+                isSubmitting = true;
+                saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
+                savePlannedSeconds.value = String(plannedSeconds);
+                saveElapsedSeconds.value = String(elapsedSeconds);
+                saveMode.value = mode;
+                closeConfirmOverlay();
+                setButtonsDisabled(true);
+                saveForm.submit();
+            }
+
+            function updateExitButton(elapsedSeconds) {
+                if (elapsedSeconds >= stopThresholdSeconds) {
+                    exitButton.textContent = "Stop Focusing";
+                    exitButton.classList.add("pl-stop-button-armed");
+                    return;
+                }
+
+                exitButton.textContent = "Cancel";
+                exitButton.classList.remove("pl-stop-button-armed");
+            }
+
+            function updateUi() {
+                if (!isRunning) {
+                    return;
+                }
+
+                const elapsedSeconds = getElapsedSeconds();
+                const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+                const progressPercent = plannedSeconds <= 0
+                    ? 0
+                    : (elapsedSeconds / plannedSeconds) * 100;
+
+                runReadout.textContent = formatClock(remainingSeconds);
+                runElapsed.textContent = formatClock(elapsedSeconds);
+                progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
+
+                updateExitButton(elapsedSeconds);
+
+                if (isConfirmOpen) {
+                    updateConfirmOverlay(elapsedSeconds);
+                }
+
+                if (isPaused) {
+                    runStateLabel.textContent = "Paused";
+                    pauseButton.textContent = "Keep Going?";
+                    runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                        ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
+                        : "Session paused. Cancel before 1 minute to discard this session with no save.";
+                } else {
+                    runStateLabel.textContent = "Time remaining";
+                    pauseButton.textContent = "Pause";
+                    runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                        ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
+                        : "Cancel before 1 minute to discard this session with no save.";
+                }
+
+                if (remainingSeconds <= 0 && !isSubmitting) {
+                    playCompletionTone();
+                    submitSave("complete");
+                }
+            }
+
+            openFocusButton.addEventListener("click", function () {
+                openOverlay();
+            });
+
+            focusBackButton.addEventListener("click", function () {
+                closeOverlay();
+            });
+
+            closeFocusButton.addEventListener("click", function () {
+                closeOverlay();
+            });
+
+            runHomeButton.addEventListener("click", function () {
+                closeOverlay();
+            });
+
+            durationSlider.addEventListener("input", updateDurationReadout);
+
+            startFocusButton.addEventListener("click", function () {
+                if (isSubmitting) {
+                    return;
+                }
+
+                const focusType = (focusTypeInput.value || "").trim() || "Focus";
+                const durationMinutes = parseInt(durationSlider.value || "5", 10);
+
+                plannedSeconds = Math.max(300, Math.min(7200, durationMinutes * 60));
+                startedAtMs = Date.now();
+                pausedElapsedSeconds = 0;
+                isRunning = true;
+                isPaused = false;
+                isSubmitting = false;
+                isConfirmOpen = false;
+                completionTonePlayed = false;
+
+                runFocusType.textContent = focusType;
+                runTarget.textContent = formatDurationSelection(durationMinutes);
+
+                showRunPanel();
+                updateUi();
+            });
+
+            pauseButton.addEventListener("click", function () {
+                if (!isRunning || isSubmitting || isConfirmOpen) {
+                    return;
+                }
+
+                if (!isPaused) {
+                    pausedElapsedSeconds = getElapsedSeconds();
+                    isPaused = true;
+                    updateUi();
+                    return;
+                }
+
+                startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+                isPaused = false;
+                updateUi();
+            });
+
+            exitButton.addEventListener("click", function () {
+                if (!isRunning || isSubmitting) {
+                    return;
+                }
+
+                const elapsedSeconds = getElapsedSeconds();
+
+                if (elapsedSeconds < stopThresholdSeconds) {
+                    closeOverlay();
+                    return;
+                }
+
+                openConfirmOverlay();
+            });
+
+            confirmKeepGoingButton.addEventListener("click", function () {
+                if (isSubmitting) {
+                    return;
+                }
+
+                closeConfirmOverlay();
+            });
+
+            confirmStopButton.addEventListener("click", function () {
+                if (isSubmitting) {
+                    return;
+                }
+
+                submitSave("stop");
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && isConfirmOpen && !isSubmitting) {
+                    closeConfirmOverlay();
+                }
+            });
+
+            updateDurationReadout();
+            window.setInterval(updateUi, 250);
+        })();
+    </script>
+    <!-- SECTION B END — Home Screen Scripts -->
+}
