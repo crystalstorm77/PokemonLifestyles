@@ -450,13 +450,15 @@ namespace LifestyleCore.Data
                 var rewardType = (RewardType)row.RewardType;
                 int amount = (int)row.TotalAmount;
 
-                if (rewardType == RewardType.FocusCoins)
+                if (rewardType == RewardType.FocusCoins ||
+                    rewardType == RewardType.ShopItemCoinSpend)
                     coins += amount;
                 else if (rewardType == RewardType.HabitTicketCheckbox ||
                          rewardType == RewardType.HabitTicketWeeklyBonus ||
                          rewardType == RewardType.SleepTicketWeeklyBonus ||
                          rewardType == RewardType.StepsTicketWeeklyBonus ||
-                         rewardType == RewardType.WeeklyCrateTicketSpend)
+                         rewardType == RewardType.WeeklyCrateTicketSpend ||
+                         rewardType == RewardType.ShopEggTicketSpend)
                     tickets += amount;
             }
 

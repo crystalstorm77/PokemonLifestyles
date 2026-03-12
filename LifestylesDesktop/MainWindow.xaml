@@ -1092,8 +1092,8 @@
                     </StackPanel>
                 </TabItem>
                 <!-- SECTION N END — Tracking Sidebar + Analytics Tab -->
-                
-                
+
+
 
 
 
@@ -1228,7 +1228,7 @@
                                 Click="ResetTierWeights_Click"/>
                                 </StackPanel>
 
-                                <TextBlock Text="Drop items list:"
+                                <TextBlock Text="Items list:"
                                FontWeight="Bold"
                                Margin="0,10,0,4"/>
 
@@ -1379,6 +1379,100 @@
                     </StackPanel>
                 </TabItem>
                 <!-- SECTION O END — Gamification Tab -->
+
+                <!-- SECTION O2 START — Shop Tab -->
+                <TabItem Header="Shop">
+                    <StackPanel Margin="12">
+                        <GroupBox Header="Wallet" Margin="0,0,0,12">
+                            <StackPanel Margin="10">
+                                <TextBlock x:Name="ShopWalletText"
+                                           FontWeight="Bold"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="Coins buy items. Tickets buy eggs and weekly crates."
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Items" Margin="0,0,0,12">
+                            <StackPanel Margin="10">
+                                <TextBlock x:Name="ShopItemPriceRulesText"
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,8"/>
+
+                                <ListBox x:Name="ShopItemsListBox"
+                                         Height="170"
+                                         DisplayMemberPath="Display"
+                                         SelectionChanged="ShopItemsListBox_SelectionChanged"/>
+
+                                <TextBlock x:Name="ShopSelectedItemText"
+                                           Margin="0,8,0,8"
+                                           TextWrapping="Wrap"/>
+
+                                <Button x:Name="ShopBuySelectedItemButton"
+                                        Content="Buy Selected Item"
+                                        Width="150"
+                                        HorizontalAlignment="Left"
+                                        Click="ShopBuySelectedItemButton_Click"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Eggs" Margin="0,0,0,12">
+                            <StackPanel Margin="10">
+                                <TextBlock x:Name="ShopEggPricesText"
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,8"/>
+
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Left">
+                                    <Button x:Name="ShopBuyCommonEggButton"
+                                            Content="Buy Common Egg"
+                                            Width="130"
+                                            Margin="0,0,8,0"
+                                            Click="ShopBuyCommonEggButton_Click"/>
+
+                                    <Button x:Name="ShopBuyUncommonEggButton"
+                                            Content="Buy Uncommon Egg"
+                                            Width="140"
+                                            Margin="0,0,8,0"
+                                            Click="ShopBuyUncommonEggButton_Click"/>
+
+                                    <Button x:Name="ShopBuyRareEggButton"
+                                            Content="Buy Rare Egg"
+                                            Width="120"
+                                            Click="ShopBuyRareEggButton_Click"/>
+                                </StackPanel>
+
+                                <TextBlock Text="Bought eggs go into your egg inventory. Activating an egg is still handled in Gamification."
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Weekly Crate">
+                            <StackPanel Margin="10">
+                                <TextBlock x:Name="ShopWeeklyCrateStatusText"
+                                           FontWeight="Bold"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock x:Name="ShopWeeklyCrateLastResultText"
+                                           Foreground="Gray"
+                                           Margin="0,4,0,8"
+                                           TextWrapping="Wrap"/>
+
+                                <Button x:Name="ShopOpenWeeklyCrateButton"
+                                        Content="Open Weekly Crate"
+                                        Width="160"
+                                        HorizontalAlignment="Left"
+                                        Click="OpenWeeklyCrateButton_Click"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+                <!-- SECTION O2 END — Shop Tab -->
 
                 <!-- SECTION P START — Window Close -->
             </TabControl>

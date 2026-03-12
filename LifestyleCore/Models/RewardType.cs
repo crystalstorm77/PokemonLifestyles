@@ -8,11 +8,13 @@
         SleepTicketWeeklyBonus = 120,
         StepsTicketWeeklyBonus = 130,
         WeeklyCrateTicketSpend = 140,
+        ShopEggTicketSpend = 150,
         #endregion // SECTION B — Tickets
 
         #region SECTION C — Coins / Focus
         FocusCoins = 200,
         TrainerXp = 210,
+        ShopItemCoinSpend = 220,
         #endregion // SECTION C — Coins / Focus
 
         #region SECTION D — Sleep / Steps (Reserved)

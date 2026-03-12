@@ -46,6 +46,7 @@ namespace LifestylesDesktop
         private readonly WeeklyBonusesService _weeklyBonusesService = new();
         private readonly WeeklyCrateService _weeklyCrateService = new();
         private readonly EggService _eggService = new();
+        private readonly ShopService _shopService = new();
 
         // Focus labels (tracking only; no gamification impact)
         private readonly FocusLabelRepository _focusLabelRepo = new();
@@ -161,6 +162,15 @@ namespace LifestylesDesktop
         private Button? _eggAddRareButton;
         private System.Windows.Controls.ProgressBar? _eggProgressBar;
 
+        // Shop controls/settings (injected at runtime into the debug area)
+        private bool _shopUiBuilt = false;
+        private TextBox? _shopCommonItemCostBox;
+        private TextBox? _shopUncommonItemCostBox;
+        private TextBox? _shopRareItemCostBox;
+        private TextBox? _shopCommonEggCostBox;
+        private TextBox? _shopUncommonEggCostBox;
+        private TextBox? _shopRareEggCostBox;
+
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
         private bool _autoFitFocusDone = false;
         private bool _autoFitFoodDone = false;
@@ -209,7 +219,9 @@ namespace LifestylesDesktop
             EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
             EnsureWeeklyBonusesDebugUiBuilt();
+            EnsureWeeklyCrateDebugUiBuilt();
             EnsureEggDebugUiBuilt();
+            EnsureShopSettingsDebugUiBuilt();
             UpdateLiveClockText();
             UpdateTimeTravelStatusText();
             UpdateFocusTimerUi();
@@ -3740,6 +3752,442 @@ WHERE Id = 1;",
         }
         #endregion // SECTION E2H — Egg Settings + Actions
 
+        #region SECTION E2I — Shop Debug UI
+        private void EnsureShopSettingsDebugUiBuilt()
+        {
+            if (_shopUiBuilt)
+                return;
+
+            if (StepItemDropsHeaderText?.Parent is not StackPanel root)
+                return;
+
+            int stepItemDropsHeaderIndex = root.Children.IndexOf(StepItemDropsHeaderText);
+            if (stepItemDropsHeaderIndex < 0)
+                return;
+
+            int insertAt = stepItemDropsHeaderIndex;
+
+            var header = new TextBlock
+            {
+                Text = "Shop Settings",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
+            };
+
+            var settingsColumn = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 6, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            StackPanel BuildRow(string label, out TextBox box, string suffix, string toolTip)
+            {
+                var row = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 0, 6),
+                    HorizontalAlignment = HorizontalAlignment.Left
+                };
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = label,
+                    Width = 220,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap,
+                    TextAlignment = TextAlignment.Left,
+                    ToolTip = toolTip
+                });
+
+                box = new TextBox
+                {
+                    Width = 80,
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+                row.Children.Add(box);
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = suffix,
+                    Foreground = System.Windows.Media.Brushes.Gray,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextAlignment = TextAlignment.Left
+                });
+
+                return row;
+            }
+
+            settingsColumn.Children.Add(BuildRow(
+                "Common Item Cost:",
+                out var commonItemCostBox,
+                "coins",
+                "Coins needed to buy a Common-tier item from the Shop tab."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Uncommon Item Cost:",
+                out var uncommonItemCostBox,
+                "coins",
+                "Coins needed to buy an Uncommon-tier item from the Shop tab."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Rare Item Cost:",
+                out var rareItemCostBox,
+                "coins",
+                "Coins needed to buy a Rare-tier item from the Shop tab."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Common Egg Cost:",
+                out var commonEggCostBox,
+                "tickets",
+                "Tickets needed to buy a Common egg from the Shop tab."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Uncommon Egg Cost:",
+                out var uncommonEggCostBox,
+                "tickets",
+                "Tickets needed to buy an Uncommon egg from the Shop tab."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Rare Egg Cost:",
+                out var rareEggCostBox,
+                "tickets",
+                "Tickets needed to buy a Rare egg from the Shop tab."));
+
+            _shopCommonItemCostBox = commonItemCostBox;
+            _shopUncommonItemCostBox = uncommonItemCostBox;
+            _shopRareItemCostBox = rareItemCostBox;
+            _shopCommonEggCostBox = commonEggCostBox;
+            _shopUncommonEggCostBox = uncommonEggCostBox;
+            _shopRareEggCostBox = rareEggCostBox;
+
+            var buttonRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            var saveButton = new Button
+            {
+                Content = "Save Shop Settings",
+                Width = 150,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            saveButton.Click += SaveShopSettingsButton_Click;
+
+            var resetButton = new Button
+            {
+                Content = "Reset Shop Settings",
+                Width = 150,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetButton.Click += ResetShopSettingsButton_Click;
+
+            buttonRow.Children.Add(saveButton);
+            buttonRow.Children.Add(resetButton);
+
+            var note = new TextBlock
+            {
+                Text = "Foundation: coins buy items, while tickets buy eggs and weekly crates. Shop prices are editable here for testing and balancing.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 6, 0, 0),
+                MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left,
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            root.Children.Insert(insertAt++, header);
+            root.Children.Insert(insertAt++, settingsColumn);
+            root.Children.Insert(insertAt++, buttonRow);
+            root.Children.Insert(insertAt++, note);
+
+            _shopUiBuilt = true;
+        }
+        #endregion // SECTION E2I — Shop Debug UI
+
+        #region SECTION E2J — Shop Actions + Refresh
+        private static string BuildShopWalletText(int coins, int tickets)
+        {
+            return $"Current total coins: {coins:#,0} | Current total tickets: {tickets:#,0}";
+        }
+
+        private static string BuildShopItemPriceRulesText(ShopSettings settings)
+        {
+            return $"Common items: {settings.CommonItemCoinCost:#,0} coins | Uncommon: {settings.UncommonItemCoinCost:#,0} | Rare: {settings.RareItemCoinCost:#,0}";
+        }
+
+        private static string BuildShopEggPricesText(ShopSettings settings)
+        {
+            return $"Common egg: {settings.CommonEggTicketCost:#,0} tickets | Uncommon egg: {settings.UncommonEggTicketCost:#,0} | Rare egg: {settings.RareEggTicketCost:#,0}";
+        }
+
+        private void ShopItemsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateShopActionButtons();
+            UpdateShopSelectedItemText();
+        }
+
+        private void UpdateShopSelectedItemText()
+        {
+            if (ShopSelectedItemText == null)
+                return;
+
+            if (ShopItemsListBox?.SelectedItem is not ShopItemOffer selected)
+            {
+                ShopSelectedItemText.Text = "Select an item to buy it with coins.";
+                return;
+            }
+
+            string categoryText = string.IsNullOrWhiteSpace(selected.Category) ? "Uncategorised" : selected.Category;
+            ShopSelectedItemText.Text =
+                $"Selected item: {selected.Name} | Tier: {selected.Tier} | Category: {categoryText} | Price: {selected.CoinPrice:#,0} coins | In bag: {selected.InventoryCount:#,0}";
+        }
+
+        private void UpdateShopActionButtons()
+        {
+            int currentCoins = 0;
+            int currentTickets = 0;
+
+            if (ShopItemsListBox?.Tag is ShopDashboardStatus status)
+            {
+                currentCoins = status.CurrentCoins;
+                currentTickets = status.CurrentTickets;
+            }
+
+            if (ShopBuySelectedItemButton != null)
+            {
+                bool canBuySelectedItem = ShopItemsListBox?.SelectedItem is ShopItemOffer selected && currentCoins >= selected.CoinPrice;
+                ShopBuySelectedItemButton.IsEnabled = canBuySelectedItem;
+            }
+
+            if (ShopItemsListBox?.Tag is ShopDashboardStatus dashboard)
+            {
+                if (ShopBuyCommonEggButton != null)
+                    ShopBuyCommonEggButton.IsEnabled = currentTickets >= dashboard.Settings.CommonEggTicketCost;
+
+                if (ShopBuyUncommonEggButton != null)
+                    ShopBuyUncommonEggButton.IsEnabled = currentTickets >= dashboard.Settings.UncommonEggTicketCost;
+
+                if (ShopBuyRareEggButton != null)
+                    ShopBuyRareEggButton.IsEnabled = currentTickets >= dashboard.Settings.RareEggTicketCost;
+
+                if (ShopOpenWeeklyCrateButton != null)
+                    ShopOpenWeeklyCrateButton.IsEnabled = dashboard.WeeklyCrateStatus?.CanOpen == true;
+            }
+            else
+            {
+                if (ShopBuyCommonEggButton != null) ShopBuyCommonEggButton.IsEnabled = false;
+                if (ShopBuyUncommonEggButton != null) ShopBuyUncommonEggButton.IsEnabled = false;
+                if (ShopBuyRareEggButton != null) ShopBuyRareEggButton.IsEnabled = false;
+                if (ShopOpenWeeklyCrateButton != null) ShopOpenWeeklyCrateButton.IsEnabled = false;
+            }
+        }
+
+        private async Task RefreshShopAsync()
+        {
+            EnsureShopSettingsDebugUiBuilt();
+
+            var status = await _shopService.GetDashboardStatusAsync(GetEffectiveCurrentLocalTime());
+
+            SetTextBoxIfIdle(_shopCommonItemCostBox, status.Settings.CommonItemCoinCost.ToString(CultureInfo.InvariantCulture));
+            SetTextBoxIfIdle(_shopUncommonItemCostBox, status.Settings.UncommonItemCoinCost.ToString(CultureInfo.InvariantCulture));
+            SetTextBoxIfIdle(_shopRareItemCostBox, status.Settings.RareItemCoinCost.ToString(CultureInfo.InvariantCulture));
+            SetTextBoxIfIdle(_shopCommonEggCostBox, status.Settings.CommonEggTicketCost.ToString(CultureInfo.InvariantCulture));
+            SetTextBoxIfIdle(_shopUncommonEggCostBox, status.Settings.UncommonEggTicketCost.ToString(CultureInfo.InvariantCulture));
+            SetTextBoxIfIdle(_shopRareEggCostBox, status.Settings.RareEggTicketCost.ToString(CultureInfo.InvariantCulture));
+
+            if (ShopWalletText != null)
+                ShopWalletText.Text = BuildShopWalletText(status.CurrentCoins, status.CurrentTickets);
+
+            if (ShopItemPriceRulesText != null)
+                ShopItemPriceRulesText.Text = BuildShopItemPriceRulesText(status.Settings);
+
+            if (ShopEggPricesText != null)
+                ShopEggPricesText.Text = BuildShopEggPricesText(status.Settings);
+
+            if (ShopWeeklyCrateStatusText != null)
+                ShopWeeklyCrateStatusText.Text = status.WeeklyCrateStatus == null
+                    ? "Weekly crate: unavailable"
+                    : BuildWeeklyCrateStatusText(status.WeeklyCrateStatus);
+
+            if (ShopWeeklyCrateLastResultText != null)
+            {
+                string resultText = status.WeeklyCrateStatus == null || string.IsNullOrWhiteSpace(status.WeeklyCrateStatus.RewardSummary)
+                    ? "Last weekly crate result: none yet"
+                    : $"Last weekly crate result: {status.WeeklyCrateStatus.RewardSummary}";
+                ShopWeeklyCrateLastResultText.Text = resultText;
+            }
+
+            if (ShopItemsListBox != null)
+            {
+                string? selectedName = (ShopItemsListBox.SelectedItem as ShopItemOffer)?.Name;
+                ShopItemsListBox.ItemsSource = status.ItemOffers;
+                ShopItemsListBox.Tag = status;
+
+                if (!string.IsNullOrWhiteSpace(selectedName))
+                {
+                    var match = status.ItemOffers.FirstOrDefault(x => string.Equals(x.Name, selectedName, StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                        ShopItemsListBox.SelectedItem = match;
+                }
+            }
+
+            UpdateShopSelectedItemText();
+            UpdateShopActionButtons();
+        }
+
+        private async void SaveShopSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_shopCommonItemCostBox == null ||
+                    _shopUncommonItemCostBox == null ||
+                    _shopRareItemCostBox == null ||
+                    _shopCommonEggCostBox == null ||
+                    _shopUncommonEggCostBox == null ||
+                    _shopRareEggCostBox == null)
+                {
+                    MessageBox.Show("Shop controls are not ready yet.");
+                    return;
+                }
+
+                if (!int.TryParse((_shopCommonItemCostBox.Text ?? "").Trim(), out int commonItemCost) || commonItemCost < 0)
+                {
+                    MessageBox.Show("Common Item Cost must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_shopUncommonItemCostBox.Text ?? "").Trim(), out int uncommonItemCost) || uncommonItemCost < 0)
+                {
+                    MessageBox.Show("Uncommon Item Cost must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_shopRareItemCostBox.Text ?? "").Trim(), out int rareItemCost) || rareItemCost < 0)
+                {
+                    MessageBox.Show("Rare Item Cost must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_shopCommonEggCostBox.Text ?? "").Trim(), out int commonEggCost) || commonEggCost < 0)
+                {
+                    MessageBox.Show("Common Egg Cost must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_shopUncommonEggCostBox.Text ?? "").Trim(), out int uncommonEggCost) || uncommonEggCost < 0)
+                {
+                    MessageBox.Show("Uncommon Egg Cost must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_shopRareEggCostBox.Text ?? "").Trim(), out int rareEggCost) || rareEggCost < 0)
+                {
+                    MessageBox.Show("Rare Egg Cost must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                await _shopService.SaveSettingsAsync(new ShopSettings
+                {
+                    CommonItemCoinCost = commonItemCost,
+                    UncommonItemCoinCost = uncommonItemCost,
+                    RareItemCoinCost = rareItemCost,
+                    CommonEggTicketCost = commonEggCost,
+                    UncommonEggTicketCost = uncommonEggCost,
+                    RareEggTicketCost = rareEggCost
+                });
+
+                await RefreshForSelectedDateAsync();
+                MessageBox.Show("Saved shop settings.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save shop settings");
+            }
+        }
+
+        private async void ResetShopSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await _shopService.ResetSettingsAsync();
+                await RefreshForSelectedDateAsync();
+                MessageBox.Show("Reset shop settings to defaults.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset shop settings");
+            }
+        }
+
+        private async void ShopBuySelectedItemButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (ShopItemsListBox?.SelectedItem is not ShopItemOffer selected)
+                {
+                    MessageBox.Show("Choose an item first.");
+                    return;
+                }
+
+                await _shopService.BuyItemAsync(selected.Name, GetEffectiveCurrentLocalTime());
+                await RefreshForSelectedDateAsync();
+                MessageBox.Show($"Bought {selected.Name} for {selected.CoinPrice:#,0} coins.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not buy item");
+            }
+        }
+
+        private async Task BuyEggFromShopAsync(EggRarity rarity)
+        {
+            await _shopService.BuyEggAsync(rarity, GetEffectiveCurrentLocalTime());
+            await RefreshForSelectedDateAsync();
+        }
+
+        private async void ShopBuyCommonEggButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await BuyEggFromShopAsync(EggRarity.Common);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not buy Common egg");
+            }
+        }
+
+        private async void ShopBuyUncommonEggButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await BuyEggFromShopAsync(EggRarity.Uncommon);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not buy Uncommon egg");
+            }
+        }
+
+        private async void ShopBuyRareEggButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await BuyEggFromShopAsync(EggRarity.Rare);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not buy Rare egg");
+            }
+        }
+        #endregion // SECTION E2J — Shop Actions + Refresh
+
         #region SECTION E3A — Analytics Range Helpers
         private void InitializeAnalyticsRangeUi()
         {
@@ -4294,6 +4742,7 @@ GROUP BY RewardType;",
             EnsureWeeklyBonusesDebugUiBuilt();
             EnsureWeeklyCrateDebugUiBuilt();
             EnsureEggDebugUiBuilt();
+            EnsureShopSettingsDebugUiBuilt();
 
             UpdateLiveClockText();
             UpdateTimeTravelStatusText();
@@ -4317,7 +4766,7 @@ GROUP BY RewardType;",
 
                 foreach (var e in entries)
                 {
-                    if (e.RewardType == RewardType.FocusCoins) selectedDayCoins += e.Amount;
+                    if (e.RewardType == RewardType.FocusCoins || e.RewardType == RewardType.ShopItemCoinSpend) selectedDayCoins += e.Amount;
                     else if (IsTicketRewardType(e.RewardType)) selectedDayTickets += e.Amount;
                     else if (e.RewardType == RewardType.TrainerXp) selectedDayTrainerXp += e.Amount;
                 }
@@ -4406,6 +4855,28 @@ GROUP BY RewardType;",
 
                 if (ActiveEggTrackingText != null)
                     ActiveEggTrackingText.Text = "Active Egg: (error loading)";
+            }
+
+            try
+            {
+                await RefreshShopAsync();
+            }
+            catch (Exception ex)
+            {
+                if (ShopWalletText != null)
+                    ShopWalletText.Text = $"Shop: (error loading) {ex.Message}";
+
+                if (ShopItemPriceRulesText != null)
+                    ShopItemPriceRulesText.Text = "";
+
+                if (ShopEggPricesText != null)
+                    ShopEggPricesText.Text = "";
+
+                if (ShopWeeklyCrateStatusText != null)
+                    ShopWeeklyCrateStatusText.Text = "";
+
+                if (ShopWeeklyCrateLastResultText != null)
+                    ShopWeeklyCrateLastResultText.Text = "";
             }
 
             try
@@ -5003,12 +5474,13 @@ GROUP BY RewardType;",
 
                 if (!PromptDelayedDangerousConfirmation(
                         "Final confirmation — Delete All Data",
-                        "This action permanently deletes everything: tracked database data, trainer progress, gamification settings, inventory, rewards ledger, weekly crates, eggs, and hatched Pokémon history.",
+                        "This action permanently deletes everything: tracked database data, trainer progress, gamification settings, inventory, rewards ledger, weekly crates, eggs, hatched Pokémon history, and shop settings.",
                         "Yes, Delete All Data"))
                     return;
 
                 await BackupService.DeleteAllDataAsync();
                 await _eggService.DeleteAllEggDataAsync();
+                await _shopService.ResetSettingsAsync();
                 await InitializeAndRefreshAsync();
 
                 MessageBox.Show("All data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -5064,12 +5536,13 @@ GROUP BY RewardType;",
 
                 if (!PromptDelayedDangerousConfirmation(
                         "Final confirmation — Delete All Gamification Data",
-                        "This action permanently deletes trainer progress, rewards, inventory, item-roll state, weekly crates, eggs, hatched Pokémon history, and gamification settings only. Tracked database data and item definitions in the drop items list will remain untouched.",
+                        "This action permanently deletes trainer progress, rewards, inventory, item-roll state, weekly crates, eggs, hatched Pokémon history, shop settings, and gamification settings only. Tracked database data and item definitions in the drop items list will remain untouched.",
                         "Yes, Delete All Gamification Data"))
                     return;
 
                 await BackupService.DeleteAllGamificationDataAsync();
                 await _eggService.DeleteAllEggDataAsync();
+                await _shopService.ResetSettingsAsync();
                 await InitializeAndRefreshAsync();
 
                 MessageBox.Show("All gamification data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -5377,6 +5850,7 @@ GROUP BY RewardType;",
             RegisterNestedDataGrid(FoodEntriesGrid);
             RegisterNestedDataGrid(SleepSessionsGrid);
             RegisterNestedDataGrid(HabitsGrid);
+            RegisterNestedListBox(ShopItemsListBox);
         }
 
         private static void RegisterNestedDataGrid(DataGrid? grid)
