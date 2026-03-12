@@ -799,7 +799,8 @@ namespace LifestylesDesktop
             return rewardType == RewardType.HabitTicketCheckbox ||
                    rewardType == RewardType.HabitTicketWeeklyBonus ||
                    rewardType == RewardType.SleepTicketWeeklyBonus ||
-                   rewardType == RewardType.StepsTicketWeeklyBonus;
+                   rewardType == RewardType.StepsTicketWeeklyBonus ||
+                   rewardType == RewardType.WeeklyCrateTicketSpend;
         }
 
         private static bool TryParseLocalDateTimeFallback(string text, out DateTime localDateTime)

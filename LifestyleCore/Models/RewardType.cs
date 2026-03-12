@@ -7,6 +7,7 @@
         HabitTicketWeeklyBonus = 110,
         SleepTicketWeeklyBonus = 120,
         StepsTicketWeeklyBonus = 130,
+        WeeklyCrateTicketSpend = 140,
         #endregion // SECTION B — Tickets
 
         #region SECTION C — Coins / Focus

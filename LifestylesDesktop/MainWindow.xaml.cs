@@ -44,6 +44,7 @@ namespace LifestylesDesktop
         private readonly HabitRepository _habitRepo = new();
         private readonly RewardsLedgerRepository _rewardsRepo = new();
         private readonly WeeklyBonusesService _weeklyBonusesService = new();
+        private readonly WeeklyCrateService _weeklyCrateService = new();
 
         // Focus labels (tracking only; no gamification impact)
         private readonly FocusLabelRepository _focusLabelRepo = new();
@@ -132,6 +133,15 @@ namespace LifestylesDesktop
         private TextBox? _dailyStepsGoalBox;
         private TextBox? _dailyStepsGoalQuotaBox;
         private TextBox? _weeklyStepsTrackingBonusBox;
+
+        // Weekly crate controls (injected at runtime into the debug area)
+        private bool _weeklyCrateUiBuilt = false;
+        private CheckBox? _weeklyCrateEnabledCheckBox;
+        private TextBox? _weeklyCrateTicketCostBox;
+        private TextBox? _weeklyCrateRollCountBox;
+        private TextBlock? _weeklyCrateStatusText;
+        private TextBlock? _weeklyCrateLastResultText;
+        private Button? _weeklyCrateOpenButton;
 
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
         private bool _autoFitFocusDone = false;
@@ -2784,6 +2794,327 @@ WHERE Id = 1;",
         }
         #endregion // SECTION E2D — Weekly Bonus Settings Helpers
 
+        #region SECTION E2E — Weekly Crate Debug UI
+        private void EnsureWeeklyCrateDebugUiBuilt()
+        {
+            if (_weeklyCrateUiBuilt)
+                return;
+
+            if (StepItemDropsHeaderText?.Parent is not StackPanel root)
+                return;
+
+            int stepItemDropsHeaderIndex = root.Children.IndexOf(StepItemDropsHeaderText);
+            if (stepItemDropsHeaderIndex < 0)
+                return;
+
+            int insertAt = stepItemDropsHeaderIndex;
+
+            var header = new TextBlock
+            {
+                Text = "Weekly Crate",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var settingsColumn = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            var enabledRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+
+            enabledRow.Children.Add(new TextBlock
+            {
+                Text = "Enabled:",
+                Width = 220,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                ToolTip = "Turn the weekly crate system on or off without changing the rest of the gamification systems."
+            });
+
+            var enabledCheckBox = new CheckBox
+            {
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            enabledRow.Children.Add(enabledCheckBox);
+
+            settingsColumn.Children.Add(enabledRow);
+
+            StackPanel BuildRow(string label, out TextBox box, string suffix, string toolTip)
+            {
+                var row = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 0, 6)
+                };
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = label,
+                    Width = 220,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap,
+                    ToolTip = toolTip
+                });
+
+                box = new TextBox
+                {
+                    Width = 70,
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+                row.Children.Add(box);
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = suffix,
+                    Foreground = System.Windows.Media.Brushes.Gray,
+                    VerticalAlignment = VerticalAlignment.Center
+                });
+
+                return row;
+            }
+
+            settingsColumn.Children.Add(BuildRow(
+                "Weekly Crate Ticket Cost:",
+                out var ticketCostBox,
+                "tickets",
+                "How many tickets the player must spend to open the current week's crate."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Weekly Crate Reward Rolls:",
+                out var rollCountBox,
+                "items",
+                "How many item rolls the crate grants when it is opened."));
+
+            _weeklyCrateEnabledCheckBox = enabledCheckBox;
+            _weeklyCrateTicketCostBox = ticketCostBox;
+            _weeklyCrateRollCountBox = rollCountBox;
+
+            var buttonRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var saveButton = new Button
+            {
+                Content = "Save weekly crate",
+                Width = 140,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            saveButton.Click += SaveWeeklyCrateSettingsButton_Click;
+
+            var resetButton = new Button
+            {
+                Content = "Reset weekly crate",
+                Width = 140,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetButton.Click += ResetWeeklyCrateSettingsButton_Click;
+
+            var openButton = new Button
+            {
+                Content = "Open Weekly Crate",
+                Width = 160,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            openButton.Click += OpenWeeklyCrateButton_Click;
+
+            _weeklyCrateOpenButton = openButton;
+
+            buttonRow.Children.Add(saveButton);
+            buttonRow.Children.Add(resetButton);
+            buttonRow.Children.Add(openButton);
+
+            var statusText = new TextBlock
+            {
+                Margin = new Thickness(0, 8, 0, 0),
+                FontWeight = FontWeights.Bold,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 520
+            };
+
+            var lastResultText = new TextBlock
+            {
+                Margin = new Thickness(0, 4, 0, 0),
+                Foreground = System.Windows.Media.Brushes.Gray,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 520
+            };
+
+            _weeklyCrateStatusText = statusText;
+            _weeklyCrateLastResultText = lastResultText;
+
+            var note = new TextBlock
+            {
+                Text = "Foundation: one crate per Monday-based game week. It spends tickets, uses the existing active item list, and follows the current common/uncommon/rare tier weights.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 6, 0, 0),
+                MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left,
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            root.Children.Insert(insertAt++, header);
+            root.Children.Insert(insertAt++, settingsColumn);
+            root.Children.Insert(insertAt++, buttonRow);
+            root.Children.Insert(insertAt++, statusText);
+            root.Children.Insert(insertAt++, lastResultText);
+            root.Children.Insert(insertAt++, note);
+
+            _weeklyCrateUiBuilt = true;
+        }
+        #endregion // SECTION E2E — Weekly Crate Debug UI
+
+        #region SECTION E2F — Weekly Crate Settings + Actions
+        private sealed class WeeklyCrateUiSettings
+        {
+            public bool IsEnabled { get; set; } = true;
+            public int TicketCost { get; set; } = 5;
+            public int RollCount { get; set; } = 3;
+        }
+
+        private static WeeklyCrateUiSettings BuildDefaultWeeklyCrateUiSettings()
+        {
+            return new WeeklyCrateUiSettings
+            {
+                IsEnabled = true,
+                TicketCost = 5,
+                RollCount = 3
+            };
+        }
+
+        private static WeeklyCrateUiSettings NormalizeWeeklyCrateUiSettings(WeeklyCrateUiSettings settings)
+        {
+            return new WeeklyCrateUiSettings
+            {
+                IsEnabled = settings.IsEnabled,
+                TicketCost = Math.Max(0, settings.TicketCost),
+                RollCount = Math.Clamp(settings.RollCount, 1, 10)
+            };
+        }
+
+        private async Task SaveWeeklyCrateUiSettingsAsync(WeeklyCrateUiSettings settings)
+        {
+            settings = NormalizeWeeklyCrateUiSettings(settings);
+
+            await _weeklyCrateService.SaveSettingsAsync(
+                settings.IsEnabled,
+                settings.TicketCost,
+                settings.RollCount);
+        }
+
+        private static string BuildWeeklyCrateStatusText(WeeklyCrateStatus status)
+        {
+            string baseText =
+                $"Current week: {status.WeekStart:yyyy-MM-dd} → {status.WeekEnd:yyyy-MM-dd} | " +
+                $"Tickets: {status.CurrentTickets:#,0} | Cost: {status.TicketCost:#,0} | Rolls: {status.RollCount}";
+
+            if (status.IsOpened)
+            {
+                string openedDay = status.OpenedGameDay?.ToString("yyyy-MM-dd") ?? status.CurrentGameDay.ToString("yyyy-MM-dd");
+                return baseText + $" | Status: opened on {openedDay}";
+            }
+
+            if (!status.IsEnabled)
+                return baseText + " | Status: disabled";
+
+            if (status.CanAfford)
+                return baseText + " | Status: available";
+
+            int shortfall = Math.Max(0, status.TicketCost - status.CurrentTickets);
+            return baseText + $" | Status: need {shortfall:#,0} more ticket{(shortfall == 1 ? "" : "s")}";
+        }
+
+        private async void SaveWeeklyCrateSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_weeklyCrateEnabledCheckBox == null ||
+                    _weeklyCrateTicketCostBox == null ||
+                    _weeklyCrateRollCountBox == null)
+                {
+                    MessageBox.Show("Weekly crate controls are not ready yet.");
+                    return;
+                }
+
+                if (!int.TryParse((_weeklyCrateTicketCostBox.Text ?? "").Trim(), out int ticketCost) || ticketCost < 0)
+                {
+                    MessageBox.Show("Weekly Crate Ticket Cost must be a whole number greater than or equal to 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_weeklyCrateRollCountBox.Text ?? "").Trim(), out int rollCount) || rollCount < 1 || rollCount > 10)
+                {
+                    MessageBox.Show("Weekly Crate Reward Rolls must be a whole number between 1 and 10.");
+                    return;
+                }
+
+                await SaveWeeklyCrateUiSettingsAsync(new WeeklyCrateUiSettings
+                {
+                    IsEnabled = _weeklyCrateEnabledCheckBox.IsChecked == true,
+                    TicketCost = ticketCost,
+                    RollCount = rollCount
+                });
+
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Saved weekly crate settings.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save weekly crate settings");
+            }
+        }
+
+        private async void ResetWeeklyCrateSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var defaults = BuildDefaultWeeklyCrateUiSettings();
+
+                await SaveWeeklyCrateUiSettingsAsync(defaults);
+                await RefreshForSelectedDateAsync();
+
+                MessageBox.Show("Reset weekly crate settings to defaults.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset weekly crate settings");
+            }
+        }
+
+        private async void OpenWeeklyCrateButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var status = await _weeklyCrateService.OpenCurrentWeekAsync(GetEffectiveCurrentLocalTime());
+
+                await RefreshForSelectedDateAsync();
+
+                string rewardSummary = string.IsNullOrWhiteSpace(status.RewardSummary)
+                    ? "(no items)"
+                    : status.RewardSummary;
+
+                MessageBox.Show(
+                    $"Opened this week's crate.\n\nItems: {rewardSummary}",
+                    "Weekly crate opened");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not open weekly crate");
+            }
+        }
+        #endregion // SECTION E2F — Weekly Crate Settings + Actions
+
         #region SECTION E3A — Analytics Range Helpers
         private void InitializeAnalyticsRangeUi()
         {
@@ -3123,6 +3454,7 @@ GROUP BY RewardType;",
                     case RewardType.HabitTicketWeeklyBonus:
                     case RewardType.SleepTicketWeeklyBonus:
                     case RewardType.StepsTicketWeeklyBonus:
+                    case RewardType.WeeklyCrateTicketSpend:
                         snapshot.RewardTickets += amount;
                         break;
                 }
@@ -3242,7 +3574,7 @@ GROUP BY RewardType;",
             if (AnalyticsOverviewRewardsText != null)
                 AnalyticsOverviewRewardsText.Text =
                     $"Coins gained: {snapshot.RewardCoins:#,0}\n" +
-                    $"Tickets gained: {snapshot.RewardTickets:#,0}\n" +
+                    $"Net tickets: {snapshot.RewardTickets:#,0}\n" +
                     $"Trainer XP gained: {snapshot.RewardTrainerXp:#,0}";
         }
         #endregion // SECTION E3B — Analytics Summary Refresh
@@ -3335,6 +3667,7 @@ GROUP BY RewardType;",
             EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
             EnsureWeeklyBonusesDebugUiBuilt();
+            EnsureWeeklyCrateDebugUiBuilt();
 
             UpdateLiveClockText();
             UpdateTimeTravelStatusText();
@@ -3395,6 +3728,42 @@ GROUP BY RewardType;",
             {
                 if (_trainerProgressText != null && string.IsNullOrWhiteSpace(_trainerProgressText.Text))
                     _trainerProgressText.Text = $"XP settings load failed: {ex.Message}";
+            }
+
+            try
+            {
+                var weeklyCrateSettings = await _weeklyCrateService.GetSettingsAsync();
+                var weeklyCrateStatus = await _weeklyCrateService.GetStatusAsync(GetEffectiveCurrentLocalTime());
+
+                if (_weeklyCrateEnabledCheckBox != null)
+                    _weeklyCrateEnabledCheckBox.IsChecked = weeklyCrateSettings.IsEnabled;
+
+                SetTextBoxIfIdle(_weeklyCrateTicketCostBox, weeklyCrateSettings.TicketCost.ToString(CultureInfo.InvariantCulture));
+                SetTextBoxIfIdle(_weeklyCrateRollCountBox, weeklyCrateSettings.RollCount.ToString(CultureInfo.InvariantCulture));
+
+                if (_weeklyCrateStatusText != null)
+                    _weeklyCrateStatusText.Text = BuildWeeklyCrateStatusText(weeklyCrateStatus);
+
+                if (_weeklyCrateLastResultText != null)
+                {
+                    _weeklyCrateLastResultText.Text = string.IsNullOrWhiteSpace(weeklyCrateStatus.RewardSummary)
+                        ? "Last weekly crate result: none yet"
+                        : $"Last weekly crate result: {weeklyCrateStatus.RewardSummary}";
+                }
+
+                if (_weeklyCrateOpenButton != null)
+                    _weeklyCrateOpenButton.IsEnabled = weeklyCrateStatus.CanOpen;
+            }
+            catch (Exception ex)
+            {
+                if (_weeklyCrateStatusText != null)
+                    _weeklyCrateStatusText.Text = $"Weekly crate: (error loading) {ex.Message}";
+
+                if (_weeklyCrateLastResultText != null)
+                    _weeklyCrateLastResultText.Text = "";
+
+                if (_weeklyCrateOpenButton != null)
+                    _weeklyCrateOpenButton.IsEnabled = false;
             }
 
             try

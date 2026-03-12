@@ -455,7 +455,8 @@ namespace LifestyleCore.Data
                 else if (rewardType == RewardType.HabitTicketCheckbox ||
                          rewardType == RewardType.HabitTicketWeeklyBonus ||
                          rewardType == RewardType.SleepTicketWeeklyBonus ||
-                         rewardType == RewardType.StepsTicketWeeklyBonus)
+                         rewardType == RewardType.StepsTicketWeeklyBonus ||
+                         rewardType == RewardType.WeeklyCrateTicketSpend)
                     tickets += amount;
             }
 
