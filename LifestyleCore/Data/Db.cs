@@ -126,10 +126,6 @@ namespace LifestyleCore.Data
             using var conn = OpenConnection();
             using var cmd = conn.CreateCommand();
 
-            // IMPORTANT:
-            // - CREATE TABLE IF NOT EXISTS won't modify an existing table.
-            // - So we create the "base" table + safe index first,
-            //   then run a migration to add ExternalId + unique index.
             cmd.CommandText = @"
 PRAGMA foreign_keys = ON;
 
@@ -139,6 +135,7 @@ CREATE TABLE IF NOT EXISTS FocusSessions (
     LogDate TEXT NOT NULL,
     FocusType TEXT NOT NULL,
     Minutes INTEGER NOT NULL,
+    DurationSeconds INTEGER NOT NULL,
     Completed INTEGER NOT NULL
 );
 
@@ -147,7 +144,7 @@ ON FocusSessions(LogDate);
 ";
             cmd.ExecuteNonQuery();
 
-            // Ensure ExternalId exists & is populated even for older DBs
+            DbMigrations.EnsureFocusSessionDurationSecondsSupport(conn);
             DbMigrations.EnsureExternalIdSupport(conn, "FocusSessions");
         }
         #endregion // SECTION A — Database path + initialization
