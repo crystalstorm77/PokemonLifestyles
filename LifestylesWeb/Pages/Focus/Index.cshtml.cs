@@ -16,7 +16,7 @@ public class IndexModel : PageModel
 
     #region SECTION A — Bound Input + Display State
     [BindProperty]
-    public FocusEntryInput Input { get; set; } = CreateDefaultInput();
+    public FocusSetupInput Input { get; set; } = CreateDefaultInput();
 
     public List<FocusSession> Sessions { get; private set; } = new();
     public string? StatusMessage { get; private set; }
@@ -25,13 +25,18 @@ public class IndexModel : PageModel
     #endregion // SECTION A — Bound Input + Display State
 
     #region SECTION B — Page Actions
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(string? savedFocusType = null, int? savedDurationSeconds = null)
     {
-        Input = CreateDefaultInput();
+        Input = CreateDefaultInput(savedFocusType ?? "Focus");
         await LoadSessionsAsync(GetGameDayForLocal(DateTime.Now));
+
+        if (!string.IsNullOrWhiteSpace(savedFocusType) && savedDurationSeconds.HasValue && savedDurationSeconds.Value > 0)
+        {
+            StatusMessage = $"Saved {savedFocusType} session for {FormatDuration(savedDurationSeconds.Value)}.";
+        }
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostStartAsync()
     {
         string focusType = (Input.FocusType ?? "").Trim();
 
@@ -40,56 +45,27 @@ public class IndexModel : PageModel
             ModelState.AddModelError("Input.FocusType", "Please enter a focus type.");
         }
 
-        int totalDurationSeconds = (Input.Minutes * 60) + Input.Seconds;
-
-        if (totalDurationSeconds < 300)
-        {
-            ModelState.AddModelError("Input.Minutes", "Please enter at least 5 minutes.");
-        }
-
-        if (totalDurationSeconds > 7200)
-        {
-            ModelState.AddModelError("Input.Minutes", "Please keep the total duration at 2 hours or less.");
-        }
-
         if (!ModelState.IsValid)
         {
-            await LoadSessionsAsync(GetGameDayForLocal(EnsureLocalDateTime(Input.LoggedAtLocal)));
+            await LoadSessionsAsync(GetGameDayForLocal(DateTime.Now));
             return Page();
         }
 
-        DateTime localDateTime = EnsureLocalDateTime(Input.LoggedAtLocal);
-        DateOnly logDate = GetGameDayForLocal(localDateTime);
-
-        var session = new FocusSession
+        return RedirectToPage("/Focus/Run", new
         {
-            LoggedAtUtc = LocalDateTimeToLocalOffset(localDateTime).ToUniversalTime(),
-            LogDate = logDate,
-            FocusType = focusType,
-            DurationSeconds = totalDurationSeconds,
-            Completed = Input.Completed
-        };
-
-        await _focusRepo.AddAsync(session);
-
-        StatusMessage = $"Saved {session.FocusType} session for {FormatDuration(session.DurationSeconds)}.";
-        Input = CreateDefaultInput(focusType);
-        await LoadSessionsAsync(logDate);
-
-        return Page();
+            focusType,
+            durationMinutes = Input.DurationMinutes
+        });
     }
     #endregion // SECTION B — Page Actions
 
     #region SECTION C — Helpers
-    private static FocusEntryInput CreateDefaultInput(string focusType = "Focus")
+    private static FocusSetupInput CreateDefaultInput(string focusType = "Focus")
     {
-        return new FocusEntryInput
+        return new FocusSetupInput
         {
             FocusType = focusType,
-            Minutes = 25,
-            Seconds = 0,
-            Completed = true,
-            LoggedAtLocal = DateTime.Now
+            DurationMinutes = 25
         };
     }
 
@@ -103,53 +79,50 @@ public class IndexModel : PageModel
     public string FormatDuration(int totalSeconds)
     {
         totalSeconds = Math.Max(0, totalSeconds);
+
         TimeSpan duration = TimeSpan.FromSeconds(totalSeconds);
         int totalHours = (int)duration.TotalHours;
+
         return $"{totalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 
-    private static DateTime EnsureLocalDateTime(DateTime value)
+    public string FormatDurationSelection(int totalMinutes)
     {
-        if (value == default)
+        totalMinutes = Math.Clamp(totalMinutes, 5, 120);
+
+        int hours = totalMinutes / 60;
+        int minutes = totalMinutes % 60;
+
+        if (hours == 0)
         {
-            return DateTime.Now;
+            return $"{totalMinutes} minutes";
         }
 
-        return value.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(value, DateTimeKind.Local)
-            : value.ToLocalTime();
+        if (minutes == 0)
+        {
+            return hours == 1 ? "1 hour" : $"{hours} hours";
+        }
+
+        return hours == 1
+            ? $"1 hour {minutes} minutes"
+            : $"{hours} hours {minutes} minutes";
     }
 
     private static DateOnly GetGameDayForLocal(DateTime localDateTime)
     {
         return DateOnly.FromDateTime(localDateTime.AddHours(-3));
     }
-
-    private static DateTimeOffset LocalDateTimeToLocalOffset(DateTime localDateTime)
-    {
-        DateTime unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
-        TimeSpan offset = TimeZoneInfo.Local.GetUtcOffset(unspecified);
-        return new DateTimeOffset(unspecified, offset);
-    }
     #endregion // SECTION C — Helpers
 
     #region SECTION D — Input Model
-    public sealed class FocusEntryInput
+    public sealed class FocusSetupInput
     {
         [Required]
         [StringLength(40)]
         public string FocusType { get; set; } = "Focus";
 
         [Range(5, 120)]
-        public int Minutes { get; set; } = 25;
-
-        [Range(0, 59)]
-        public int Seconds { get; set; } = 0;
-
-        public bool Completed { get; set; } = true;
-
-        [Display(Name = "Logged at")]
-        public DateTime LoggedAtLocal { get; set; } = DateTime.Now;
+        public int DurationMinutes { get; set; } = 25;
     }
     #endregion // SECTION D — Input Model
 }

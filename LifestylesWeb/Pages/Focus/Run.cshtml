@@ -1,0 +1,263 @@
+﻿@page
+@model LifestylesWeb.Pages.Focus.RunModel
+@{
+    ViewData["Title"] = "Focus Timer";
+}
+
+<!-- SECTION A START — Countdown Run Screen -->
+<div class="pl-screen">
+    <div class="pl-stack">
+        <section class="pl-card pl-run-card" id="pl-run-root" data-planned-seconds="@Model.PlannedDurationSeconds">
+            <div class="pl-card-header">
+                <a class="pl-link-button" asp-page="/Focus/Index">← Setup</a>
+                <span class="pl-badge">Countdown</span>
+            </div>
+
+            <p class="pl-eyebrow">Focus Session</p>
+            <h1 class="pl-title">Stay with it</h1>
+            <p class="pl-subtitle">
+                This first timer screen saves the duration from the live timer itself.
+                If you stop early, it saves exactly what the timer was showing at that moment.
+            </p>
+
+            <div class="pl-run-meta-grid">
+                <div class="pl-run-meta-card">
+                    <span class="pl-run-label">Focus type</span>
+                    <strong class="pl-run-value">@Model.FocusType</strong>
+                </div>
+
+                <div class="pl-run-meta-card">
+                    <span class="pl-run-label">Target</span>
+                    <strong class="pl-run-value">@Model.TargetDurationText</strong>
+                </div>
+            </div>
+
+            <div class="pl-run-timer-shell">
+                <div class="pl-run-timer-caption" id="pl-run-state-label">Time remaining</div>
+                <div class="pl-run-timer" id="pl-run-readout">@Model.InitialRemainingText</div>
+                <div class="pl-run-support">
+                    Elapsed:
+                    <span id="pl-run-elapsed">@Model.InitialElapsedText</span>
+                </div>
+            </div>
+
+            <div class="pl-progress-track" aria-hidden="true">
+                <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <div class="pl-run-actions">
+                <button type="button" class="pl-primary-button" id="pl-pause-button">Pause</button>
+                <button type="button" class="pl-secondary-button" id="pl-stop-button">End &amp; Save</button>
+                <button type="button" class="pl-danger-button" id="pl-cancel-button">Discard</button>
+            </div>
+
+            <p class="pl-field-hint" id="pl-run-note">
+                When the timer reaches zero, it will save automatically as a completed session.
+            </p>
+
+            <form method="post" asp-page-handler="Save" id="pl-save-form">
+                <input type="hidden" asp-for="Input.FocusType" value="@Model.FocusType" />
+                <input type="hidden" asp-for="Input.PlannedDurationSeconds" value="@Model.PlannedDurationSeconds" />
+                <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-elapsed-seconds" value="0" />
+                <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
+            </form>
+        </section>
+    </div>
+</div>
+<!-- SECTION A END — Countdown Run Screen -->
+@section Scripts {
+    <!-- SECTION B START — Countdown Timer Script -->
+    <script>
+        (function () {
+            const root = document.getElementById("pl-run-root");
+            const readout = document.getElementById("pl-run-readout");
+            const elapsedText = document.getElementById("pl-run-elapsed");
+            const stateLabel = document.getElementById("pl-run-state-label");
+            const note = document.getElementById("pl-run-note");
+            const progressFill = document.getElementById("pl-progress-fill");
+            const pauseButton = document.getElementById("pl-pause-button");
+            const stopButton = document.getElementById("pl-stop-button");
+            const cancelButton = document.getElementById("pl-cancel-button");
+            const saveForm = document.getElementById("pl-save-form");
+            const elapsedField = document.getElementById("pl-elapsed-seconds");
+            const saveModeField = document.getElementById("pl-save-mode");
+
+            if (!root || !readout || !elapsedText || !stateLabel || !note || !progressFill ||
+                !pauseButton || !stopButton || !cancelButton || !saveForm || !elapsedField || !saveModeField) {
+                return;
+            }
+
+            const plannedSeconds = parseInt(root.dataset.plannedSeconds || "1500", 10);
+            let startedAtMs = Date.now();
+            let pausedElapsedSeconds = 0;
+            let isPaused = false;
+            let isSubmitting = false;
+            let completionTonePlayed = false;
+
+            function formatClock(totalSeconds) {
+                totalSeconds = Math.max(0, Math.floor(totalSeconds));
+
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+            }
+
+            function getElapsedSeconds() {
+                if (isPaused) {
+                    return Math.min(plannedSeconds, pausedElapsedSeconds);
+                }
+
+                const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+                return Math.min(plannedSeconds, liveElapsed);
+            }
+
+            function setButtonsDisabled(isDisabled) {
+                pauseButton.disabled = isDisabled;
+                stopButton.disabled = isDisabled;
+                cancelButton.disabled = isDisabled;
+            }
+
+            function playCompletionTone() {
+                if (completionTonePlayed) {
+                    return;
+                }
+
+                completionTonePlayed = true;
+
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+                    if (!AudioContextClass) {
+                        return;
+                    }
+
+                    const audioContext = new AudioContextClass();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.type = "sine";
+                    oscillator.frequency.value = 880;
+
+                    gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.36);
+                } catch {
+                }
+            }
+
+            function submitSave(mode) {
+                if (isSubmitting) {
+                    return;
+                }
+
+                const elapsedSeconds = mode === "complete"
+                    ? plannedSeconds
+                    : getElapsedSeconds();
+
+                if (elapsedSeconds <= 0) {
+                    alert("Let the timer run a little longer before saving.");
+                    return;
+                }
+
+                isSubmitting = true;
+                elapsedField.value = String(elapsedSeconds);
+                saveModeField.value = mode;
+                setButtonsDisabled(true);
+                saveForm.submit();
+            }
+
+            function updateUi() {
+                const elapsedSeconds = getElapsedSeconds();
+                const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+                const progressPercent = plannedSeconds <= 0
+                    ? 0
+                    : (elapsedSeconds / plannedSeconds) * 100;
+
+                readout.textContent = formatClock(remainingSeconds);
+                elapsedText.textContent = formatClock(elapsedSeconds);
+                progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
+
+                if (isPaused) {
+                    stateLabel.textContent = "Paused";
+                    note.textContent = "Timer paused. Resume to continue, or end and save what is currently shown.";
+                    pauseButton.textContent = "Resume";
+                    return;
+                }
+
+                stateLabel.textContent = "Time remaining";
+                note.textContent = "When the timer reaches zero, it will save automatically as a completed session.";
+                pauseButton.textContent = "Pause";
+
+                if (remainingSeconds <= 0 && !isSubmitting) {
+                    playCompletionTone();
+                    submitSave("complete");
+                }
+            }
+
+            pauseButton.addEventListener("click", function () {
+                if (isSubmitting) {
+                    return;
+                }
+
+                if (!isPaused) {
+                    pausedElapsedSeconds = getElapsedSeconds();
+                    isPaused = true;
+                    updateUi();
+                    return;
+                }
+
+                startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+                isPaused = false;
+                updateUi();
+            });
+
+            stopButton.addEventListener("click", function () {
+                if (isSubmitting) {
+                    return;
+                }
+
+                const elapsedSeconds = getElapsedSeconds();
+
+                if (elapsedSeconds <= 0) {
+                    alert("Let the timer run a little longer before saving.");
+                    return;
+                }
+
+                const elapsedTextValue = formatClock(elapsedSeconds);
+                const shouldSave = window.confirm(`End this session and save ${elapsedTextValue}?`);
+
+                if (!shouldSave) {
+                    return;
+                }
+
+                const mode = elapsedSeconds >= plannedSeconds ? "complete" : "stop";
+                submitSave(mode);
+            });
+
+            cancelButton.addEventListener("click", function () {
+                if (isSubmitting) {
+                    return;
+                }
+
+                const shouldDiscard = window.confirm("Discard this countdown without saving it?");
+                if (!shouldDiscard) {
+                    return;
+                }
+
+                window.location.href = "/Focus/Index";
+            });
+
+            updateUi();
+            window.setInterval(updateUi, 250);
+        })();
+    </script>
+    <!-- SECTION B END — Countdown Timer Script -->
+}

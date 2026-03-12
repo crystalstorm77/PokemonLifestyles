@@ -10,13 +10,13 @@
         <section class="pl-card">
             <div class="pl-card-header">
                 <a class="pl-link-button" asp-page="/Index">← Home</a>
-                <span class="pl-badge">Game day: @Model.CurrentGameDayText</span>
+                <span class="pl-badge">Countdown first</span>
             </div>
 
-            <h1 class="pl-title">Focus</h1>
+            <h1 class="pl-title">Focus Setup</h1>
             <p class="pl-subtitle">
-                This still uses manual entry for now, but it now stores exact duration in hours, minutes, and seconds.
-                The live timer screen will come next.
+                This is the first real timer flow for the web app.
+                For this step, we are doing countdown only. Count up comes next.
             </p>
 
             <div class="pl-info-note">
@@ -29,8 +29,20 @@
                 <div class="pl-success-banner">@Model.StatusMessage</div>
             }
 
-            <form method="post" class="pl-form-stack">
+            <form method="post" asp-page-handler="Start" class="pl-form-stack">
                 <div asp-validation-summary="ModelOnly" class="pl-validation-summary"></div>
+
+                <div class="pl-mode-grid">
+                    <button class="pl-mode-chip pl-mode-chip-active" type="button">
+                        <span>Countdown</span>
+                        <small>Ready now</small>
+                    </button>
+
+                    <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
+                        <span>Count Up</span>
+                        <small>Later</small>
+                    </button>
+                </div>
 
                 <label class="pl-field">
                     <span class="pl-field-label">Focus type</span>
@@ -38,34 +50,36 @@
                     <span asp-validation-for="Input.FocusType" class="pl-field-error"></span>
                 </label>
 
-                <label class="pl-field">
-                    <span class="pl-field-label">Minutes</span>
-                    <input asp-for="Input.Minutes" class="pl-input" type="number" min="5" max="120" step="1" />
-                    <span class="pl-field-hint">For now, enter 5 to 120 minutes.</span>
-                    <span asp-validation-for="Input.Minutes" class="pl-field-error"></span>
-                </label>
+                <div class="pl-field">
+                    <span class="pl-field-label">Countdown length</span>
 
-                <label class="pl-field">
-                    <span class="pl-field-label">Seconds</span>
-                    <input asp-for="Input.Seconds" class="pl-input" type="number" min="0" max="59" step="1" />
-                    <span class="pl-field-hint">Exact seconds are now stored too.</span>
-                    <span asp-validation-for="Input.Seconds" class="pl-field-error"></span>
-                </label>
+                    <div class="pl-duration-card">
+                        <strong class="pl-duration-readout" id="pl-duration-readout">
+                            @Model.FormatDurationSelection(Model.Input.DurationMinutes)
+                        </strong>
 
-                <label class="pl-field">
-                    <span class="pl-field-label">Logged at</span>
-                    <input asp-for="Input.LoggedAtLocal" class="pl-input" type="datetime-local" />
-                    <span class="pl-field-hint">Game day rolls over at 3:00 am.</span>
-                    <span asp-validation-for="Input.LoggedAtLocal" class="pl-field-error"></span>
-                </label>
+                        <input asp-for="Input.DurationMinutes"
+                               class="pl-slider"
+                               id="pl-duration-slider"
+                               type="range"
+                               min="5"
+                               max="120"
+                               step="1" />
 
-                <label class="pl-checkbox-row">
-                    <input asp-for="Input.Completed" class="pl-checkbox" />
-                    <span>Session completed</span>
-                </label>
+                        <div class="pl-slider-scale">
+                            <span>5 min</span>
+                            <span>2 hr</span>
+                        </div>
+                    </div>
+
+                    <span class="pl-field-hint">
+                        The live timer will save the duration from the actual running session, not from a manual seconds box.
+                    </span>
+                    <span asp-validation-for="Input.DurationMinutes" class="pl-field-error"></span>
+                </div>
 
                 <div class="pl-button-stack">
-                    <button type="submit" class="pl-primary-button">Save Focus Session</button>
+                    <button type="submit" class="pl-primary-button">Start Focus</button>
                     <a class="pl-secondary-button" asp-page="/Index">Back</a>
                 </div>
             </form>
@@ -74,7 +88,7 @@
         <section class="pl-card">
             <h2 class="pl-section-title">Sessions for this game day</h2>
             <p class="pl-section-note">
-                Stored durations below now include exact hours, minutes, and seconds.
+                Completed countdowns and early stops will both appear here.
             </p>
 
             @if (Model.Sessions.Count == 0)
@@ -107,5 +121,44 @@
 @section Scripts {
     <!-- SECTION B START — Validation Scripts -->
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function () {
+            const slider = document.getElementById("pl-duration-slider");
+            const readout = document.getElementById("pl-duration-readout");
+
+            if (!slider || !readout) {
+                return;
+            }
+
+            function formatDuration(totalMinutes) {
+                totalMinutes = Math.max(5, Math.min(120, totalMinutes));
+
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+
+                if (hours === 0) {
+                    return `${totalMinutes} minutes`;
+                }
+
+                if (minutes === 0) {
+                    return hours === 1 ? "1 hour" : `${hours} hours`;
+                }
+
+                return hours === 1
+                    ? `1 hour ${minutes} minutes`
+                    : `${hours} hours ${minutes} minutes`;
+            }
+
+            function updateReadout() {
+                const totalMinutes = parseInt(slider.value || "25", 10);
+                readout.textContent = formatDuration(totalMinutes);
+            }
+
+            slider.addEventListener("input", updateReadout);
+            updateReadout();
+        })();
+    </script>
     <!-- SECTION B END — Validation Scripts -->
+}
 }
