@@ -356,43 +356,51 @@
                                 </StackPanel>
                             </GroupBox>
                             <!-- SECTION F END — Sleep Tracking Card -->
+
+
                             <!-- SECTION G START — Steps Tracking Card -->
                             <!-- Steps (testing-only on desktop) -->
                             <GroupBox Header="Steps (Testing)" Margin="0,0,0,12">
                                 <StackPanel Margin="10">
 
                                     <TextBlock x:Name="StepsDayText" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock x:Name="ActiveEggTrackingText"
+                               Foreground="Gray"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                         <TextBlock Text="Add steps:" Width="90" VerticalAlignment="Center"/>
                                         <TextBox x:Name="StepsAddBox" Width="120" Margin="0,0,10,0"/>
 
                                         <Button x:Name="AddStepsButton"
-              Content="Add Steps"
-              Width="110"
-              Click="AddStepsButton_Click"/>
+                                Content="Add Steps"
+                                Width="110"
+                                Click="AddStepsButton_Click"/>
 
                                         <Button x:Name="ViewStepsBucketsButton"
-              Content="View buckets..."
-              Width="120"
-              Margin="10,0,0,0"
-              Click="ViewStepsBucketsButton_Click"/>
+                                Content="View buckets..."
+                                Width="120"
+                                Margin="10,0,0,0"
+                                Click="ViewStepsBucketsButton_Click"/>
                                     </StackPanel>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
                                         <TextBlock Text="At (optional):" Width="90" VerticalAlignment="Center"
                                    ToolTip="Leave blank to use the current effective date and time. If simulated time is enabled, blank uses the simulated date and time."/>
                                         <TextBox x:Name="StepsAtBox" Width="240"
-               ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss. Leave blank to use the current effective date and time."/>
+                                 ToolTip="Local time: yyyy-MM-dd HH:mm or yyyy-MM-dd HH:mm:ss. Leave blank to use the current effective date and time."/>
                                     </StackPanel>
 
                                     <TextBlock Text="Steps are stored in 15-minute buckets."
-               Foreground="Gray"
-               FontStyle="Italic"
-               Margin="0,8,0,0"/>
+                               Foreground="Gray"
+                               FontStyle="Italic"
+                               Margin="0,8,0,0"/>
                                 </StackPanel>
                             </GroupBox>
                             <!-- SECTION G END — Steps Tracking Card -->
+                            
+                            
 
                             <!-- SECTION H START — Data Admin Card -->
                             <!-- Data -->
@@ -891,6 +899,9 @@
                         </StackPanel>
                         <!-- SECTION M END — Habits Tab + Sessions Tab Close -->
 
+
+
+
                         <!-- SECTION N START — Tracking Sidebar + Analytics Tab -->
                         <StackPanel Grid.Column="1"
             Margin="16,0,0,0">
@@ -912,6 +923,9 @@
                        TextWrapping="Wrap"
                        Margin="0,0,0,4"/>
                                     <TextBlock Text="{Binding ElementName=StepsDayText, Path=Text}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding ElementName=ActiveEggTrackingText, Path=Text}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,4"/>
                                     <TextBlock Text="{Binding ElementName=HabitsWeekText, Path=Text}"
@@ -1080,7 +1094,9 @@
                 <!-- SECTION N END — Tracking Sidebar + Analytics Tab -->
                 
                 
-                
+
+
+
                 <!-- SECTION O START — Gamification Tab -->
                 <TabItem Header="Gamification">
                     <StackPanel Margin="12">

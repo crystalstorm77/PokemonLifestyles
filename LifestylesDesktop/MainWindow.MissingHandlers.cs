@@ -34,6 +34,7 @@ namespace LifestylesDesktop
 
                 DateTime localWhen;
                 DateOnly archiveViewDateAfterSave;
+
                 string whenText = (StepsAtBox.Text ?? "").Trim();
 
                 if (string.IsNullOrWhiteSpace(whenText))
@@ -58,6 +59,15 @@ namespace LifestylesDesktop
                 // Steps → Item drops (global; separate from tickets)
                 await _stepItemDrops.ProcessStepsAddedAsync(steps);
 
+                // Steps → Egg progress (honest raw steps, live sleep-adjusted hatch threshold)
+                DateOnly eggGameDay = SleepRewardCalculator.GetGameDayForWakeLocal(localWhen);
+                double eggSleepMultiplier = await GetSleepMultiplierForGameDayAsync(eggGameDay);
+
+                var eggResult = await _eggService.ProcessStepsAddedAsync(
+                    rawStepsAdded: steps,
+                    effectiveNowLocal: LocalDateTimeToLocalOffset(localWhen),
+                    sleepMultiplier: eggSleepMultiplier);
+
                 StepsAddBox.Text = "";
                 StepsAtBox.Text = "";
 
@@ -65,6 +75,14 @@ namespace LifestylesDesktop
                     await SwitchArchiveViewToDateAsync(archiveViewDateAfterSave);
                 else
                     await RefreshForSelectedDateAsync();
+
+                if (eggResult.Hatched)
+                {
+                    string rarityText = eggResult.Rarity?.ToString() ?? "Unknown";
+                    MessageBox.Show(
+                        $"Your {rarityText} egg hatched!\n\nPokémon: {eggResult.Species}",
+                        "Egg hatched");
+                }
             }
             catch (Exception ex)
             {
@@ -133,6 +151,7 @@ namespace LifestylesDesktop
                 };
 
                 close.Click += (_, __) => win.Close();
+
                 root.Children.Add(close);
 
                 win.Content = root;
@@ -855,6 +874,28 @@ namespace LifestylesDesktop
             await conn.ExecuteAsync(
                 @"UPDATE Habits SET ArchivedAtUtc = NULL WHERE Id = @Id;",
                 new { Id = habitId });
+        }
+
+        private async Task<double> GetSleepMultiplierForGameDayAsync(DateOnly gameDay)
+        {
+            var gami = await _gamiSettingsRepo.GetAsync();
+            var sleepSessions = await _sleepRepo.GetForWakeDateAsync(gameDay);
+
+            var orderedDurations = sleepSessions
+                .OrderBy(x => x.EndUtc)
+                .ThenBy(x => x.Id)
+                .Select(x => Math.Max(0, x.DurationMinutes));
+
+            var summary = SleepRewardCalculator.Calculate(
+                orderedDurations,
+                gami.SleepHealthyMinHours,
+                gami.SleepHealthyMaxHours,
+                gami.SleepHealthyMultiplier,
+                gami.SleepPenaltyPer15Min,
+                gami.SleepTrackedMinimumMultiplier,
+                gami.SleepRewardMinimumMinutes);
+
+            return Math.Max(1.0, summary.Multiplier);
         }
         #endregion // SECTION G — Small helpers (local to this file)
     }

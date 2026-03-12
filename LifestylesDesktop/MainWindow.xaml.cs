@@ -45,6 +45,7 @@ namespace LifestylesDesktop
         private readonly RewardsLedgerRepository _rewardsRepo = new();
         private readonly WeeklyBonusesService _weeklyBonusesService = new();
         private readonly WeeklyCrateService _weeklyCrateService = new();
+        private readonly EggService _eggService = new();
 
         // Focus labels (tracking only; no gamification impact)
         private readonly FocusLabelRepository _focusLabelRepo = new();
@@ -143,6 +144,23 @@ namespace LifestylesDesktop
         private TextBlock? _weeklyCrateLastResultText;
         private Button? _weeklyCrateOpenButton;
 
+        // Egg controls (injected at runtime into the debug area)
+        private bool _eggUiBuilt = false;
+        private bool _eggHasActiveEgg = false;
+        private TextBox? _eggCommonStepsBox;
+        private TextBox? _eggUncommonStepsBox;
+        private TextBox? _eggRareStepsBox;
+        private ListBox? _eggInventoryListBox;
+        private ListBox? _eggOwnedPokemonListBox;
+        private TextBlock? _eggActiveEggText;
+        private TextBlock? _eggLastHatchText;
+        private Button? _eggActivateButton;
+        private Button? _eggReturnToInventoryButton;
+        private Button? _eggAddCommonButton;
+        private Button? _eggAddUncommonButton;
+        private Button? _eggAddRareButton;
+        private System.Windows.Controls.ProgressBar? _eggProgressBar;
+
         // Auto-fit should run once PER grid, the first time that grid is actually loaded/measured.
         private bool _autoFitFocusDone = false;
         private bool _autoFitFoodDone = false;
@@ -191,6 +209,7 @@ namespace LifestylesDesktop
             EnsureTrainerXpDebugUiBuilt();
             EnsureSleepSettingsDebugUiBuilt();
             EnsureWeeklyBonusesDebugUiBuilt();
+            EnsureEggDebugUiBuilt();
             UpdateLiveClockText();
             UpdateTimeTravelStatusText();
             UpdateFocusTimerUi();
@@ -3139,6 +3158,588 @@ WHERE Id = 1;",
         }
         #endregion // SECTION E2F — Weekly Crate Settings + Actions
 
+        #region SECTION E2G — Egg Debug UI
+        private void EnsureEggDebugUiBuilt()
+        {
+            if (_eggUiBuilt)
+                return;
+
+            if (StepItemDropsHeaderText?.Parent is not StackPanel root)
+                return;
+
+            int stepItemDropsHeaderIndex = root.Children.IndexOf(StepItemDropsHeaderText);
+            if (stepItemDropsHeaderIndex < 0)
+                return;
+
+            int insertAt = stepItemDropsHeaderIndex;
+
+            var header = new TextBlock
+            {
+                Text = "Egg System",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
+            };
+
+            var settingsColumn = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 6, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            StackPanel BuildRow(string label, out TextBox box, string suffix, string toolTip)
+            {
+                var row = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 0, 6),
+                    HorizontalAlignment = HorizontalAlignment.Left
+                };
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = label,
+                    Width = 220,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap,
+                    TextAlignment = TextAlignment.Left,
+                    ToolTip = toolTip
+                });
+
+                box = new TextBox
+                {
+                    Width = 80,
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+                row.Children.Add(box);
+
+                row.Children.Add(new TextBlock
+                {
+                    Text = suffix,
+                    Foreground = System.Windows.Media.Brushes.Gray,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextAlignment = TextAlignment.Left
+                });
+
+                return row;
+            }
+
+            settingsColumn.Children.Add(BuildRow(
+                "Common Egg Steps:",
+                out var commonStepsBox,
+                "raw steps",
+                "Base raw step requirement used when a new Common egg is created. This value is snapshotted into the egg when the egg is added."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Uncommon Egg Steps:",
+                out var uncommonStepsBox,
+                "raw steps",
+                "Base raw step requirement used when a new Uncommon egg is created. This value is snapshotted into the egg when the egg is added."));
+
+            settingsColumn.Children.Add(BuildRow(
+                "Rare Egg Steps:",
+                out var rareStepsBox,
+                "raw steps",
+                "Base raw step requirement used when a new Rare egg is created. This value is snapshotted into the egg when the egg is added."));
+
+            _eggCommonStepsBox = commonStepsBox;
+            _eggUncommonStepsBox = uncommonStepsBox;
+            _eggRareStepsBox = rareStepsBox;
+
+            var settingsButtonsRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            var saveSettingsButton = new Button
+            {
+                Content = "Save Egg Settings",
+                Width = 150,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            saveSettingsButton.Click += SaveEggSettingsButton_Click;
+
+            var resetSettingsButton = new Button
+            {
+                Content = "Reset Egg Settings",
+                Width = 150,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            resetSettingsButton.Click += ResetEggSettingsButton_Click;
+
+            settingsButtonsRow.Children.Add(saveSettingsButton);
+            settingsButtonsRow.Children.Add(resetSettingsButton);
+
+            var addEggButtonsRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            var addCommonButton = new Button
+            {
+                Content = "Add Common Egg",
+                Width = 130,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            addCommonButton.Click += AddCommonEggButton_Click;
+
+            var addUncommonButton = new Button
+            {
+                Content = "Add Uncommon Egg",
+                Width = 140,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            addUncommonButton.Click += AddUncommonEggButton_Click;
+
+            var addRareButton = new Button
+            {
+                Content = "Add Rare Egg",
+                Width = 120,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            addRareButton.Click += AddRareEggButton_Click;
+
+            _eggAddCommonButton = addCommonButton;
+            _eggAddUncommonButton = addUncommonButton;
+            _eggAddRareButton = addRareButton;
+
+            addEggButtonsRow.Children.Add(addCommonButton);
+            addEggButtonsRow.Children.Add(addUncommonButton);
+            addEggButtonsRow.Children.Add(addRareButton);
+
+            var inventoryHeader = new TextBlock
+            {
+                Text = "Egg Inventory",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 4),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
+            };
+
+            var inventoryList = new ListBox
+            {
+                Width = 520,
+                Height = 120,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                DisplayMemberPath = nameof(EggInventoryListRow.Display)
+            };
+            inventoryList.SelectionChanged += EggInventoryListBox_SelectionChanged;
+            RegisterNestedListBox(inventoryList);
+
+            _eggInventoryListBox = inventoryList;
+
+            var inventoryButtonsRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 8, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            var activateButton = new Button
+            {
+                Content = "Activate Selected Egg",
+                Width = 160,
+                Margin = new Thickness(0, 0, 8, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            activateButton.Click += ActivateSelectedEggButton_Click;
+
+            var returnButton = new Button
+            {
+                Content = "Return Active Egg to Inventory (Admin)",
+                Width = 240,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            returnButton.Click += ReturnActiveEggToInventoryButton_Click;
+
+            _eggActivateButton = activateButton;
+            _eggReturnToInventoryButton = returnButton;
+
+            inventoryButtonsRow.Children.Add(activateButton);
+            inventoryButtonsRow.Children.Add(returnButton);
+
+            var activeEggHeader = new TextBlock
+            {
+                Text = "Active Egg",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 4),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
+            };
+
+            var activeEggText = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
+            };
+
+            var progressBar = new System.Windows.Controls.ProgressBar
+            {
+                Width = 520,
+                Height = 18,
+                Margin = new Thickness(0, 8, 0, 0),
+                Minimum = 0,
+                Maximum = 1,
+                Value = 0,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            var lastHatchText = new TextBlock
+            {
+                Margin = new Thickness(0, 8, 0, 0),
+                Foreground = System.Windows.Media.Brushes.Gray,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
+            };
+
+            _eggActiveEggText = activeEggText;
+            _eggProgressBar = progressBar;
+            _eggLastHatchText = lastHatchText;
+
+            var hatchedHeader = new TextBlock
+            {
+                Text = "Owned Pokémon (Egg Hatches)",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 4),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
+            };
+
+            var hatchedList = new ListBox
+            {
+                Width = 520,
+                Height = 120,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                DisplayMemberPath = nameof(HatchedPokemonListRow.Display)
+            };
+            RegisterNestedListBox(hatchedList);
+
+            _eggOwnedPokemonListBox = hatchedList;
+
+            var note = new TextBlock
+            {
+                Text = "Foundation: one active egg at a time. Raw walked steps stay honest, while the current sleep multiplier reduces the live hatch threshold.",
+                Foreground = System.Windows.Media.Brushes.Gray,
+                Margin = new Thickness(0, 6, 0, 0),
+                MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left,
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            root.Children.Insert(insertAt++, header);
+            root.Children.Insert(insertAt++, settingsColumn);
+            root.Children.Insert(insertAt++, settingsButtonsRow);
+            root.Children.Insert(insertAt++, addEggButtonsRow);
+            root.Children.Insert(insertAt++, inventoryHeader);
+            root.Children.Insert(insertAt++, inventoryList);
+            root.Children.Insert(insertAt++, inventoryButtonsRow);
+            root.Children.Insert(insertAt++, activeEggHeader);
+            root.Children.Insert(insertAt++, activeEggText);
+            root.Children.Insert(insertAt++, progressBar);
+            root.Children.Insert(insertAt++, lastHatchText);
+            root.Children.Insert(insertAt++, hatchedHeader);
+            root.Children.Insert(insertAt++, hatchedList);
+            root.Children.Insert(insertAt++, note);
+
+            _eggUiBuilt = true;
+        }
+        #endregion // SECTION E2G — Egg Debug UI
+
+        #region SECTION E2H — Egg Settings + Actions
+        private sealed class EggInventoryListRow
+        {
+            public long EggId { get; set; }
+            public string Display { get; set; } = "";
+        }
+
+        private sealed class HatchedPokemonListRow
+        {
+            public string Display { get; set; } = "";
+        }
+
+        private static string BuildEggInventoryDisplay(EggInventoryEntry egg)
+        {
+            return $"#{egg.Id} — {egg.Rarity} egg — raw walked {egg.RawStepsWalked:#,0} / {egg.BaseStepsRequired:#,0}";
+        }
+
+        private static string BuildHatchedPokemonDisplay(HatchedPokemonEntry row)
+        {
+            return $"{row.Species} — hatched from {row.SourceEggRarity} egg on {row.HatchedGameDay:yyyy-MM-dd}";
+        }
+
+        private static string BuildActiveEggStatusText(EggDashboardStatus status)
+        {
+            if (status.ActiveEgg == null)
+                return "Active egg: none";
+
+            var egg = status.ActiveEgg;
+
+            return
+                $"Active egg: {egg.Rarity} egg\n" +
+                $"Raw walked: {egg.RawStepsWalked:#,0} / {egg.BaseStepsRequired:#,0}\n" +
+                $"Sleep multiplier: x{status.CurrentSleepMultiplier:0.00}\n" +
+                $"Current hatch threshold: {status.CurrentHatchThreshold:#,0}\n" +
+                $"Remaining raw steps: {status.RemainingRawSteps:#,0}";
+        }
+
+        private static string BuildTrackingEggLine(EggDashboardStatus status)
+        {
+            if (status.ActiveEgg == null)
+                return "Active Egg: none";
+
+            var egg = status.ActiveEgg;
+
+            return
+                $"Active Egg: {egg.Rarity} — raw walked {egg.RawStepsWalked:#,0} / {egg.BaseStepsRequired:#,0} | " +
+                $"threshold {status.CurrentHatchThreshold:#,0} | sleep x{status.CurrentSleepMultiplier:0.00}";
+        }
+
+        private void UpdateEggButtonStates()
+        {
+            bool hasActiveEgg = _eggHasActiveEgg;
+            bool hasInventorySelection = _eggInventoryListBox?.SelectedItem is EggInventoryListRow;
+
+            if (_eggAddCommonButton != null) _eggAddCommonButton.IsEnabled = !hasActiveEgg;
+            if (_eggAddUncommonButton != null) _eggAddUncommonButton.IsEnabled = !hasActiveEgg;
+            if (_eggAddRareButton != null) _eggAddRareButton.IsEnabled = !hasActiveEgg;
+            if (_eggActivateButton != null) _eggActivateButton.IsEnabled = !hasActiveEgg && hasInventorySelection;
+            if (_eggReturnToInventoryButton != null) _eggReturnToInventoryButton.IsEnabled = hasActiveEgg;
+        }
+
+        private void EggInventoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateEggButtonStates();
+        }
+
+        private async Task RefreshEggDebugAsync()
+        {
+            EnsureEggDebugUiBuilt();
+
+            double currentSleepMultiplier = await GetSleepMultiplierForGameDayAsync(GetEffectiveCurrentGameDay());
+
+            await _eggService.EvaluateActiveEggAgainstSleepAsync(
+                GetEffectiveCurrentLocalTime(),
+                currentSleepMultiplier);
+
+            var status = await _eggService.GetDashboardStatusAsync(
+                GetEffectiveCurrentLocalTime(),
+                currentSleepMultiplier);
+
+            _eggHasActiveEgg = status.HasActiveEgg;
+
+            if (_eggCommonStepsBox != null && !_eggCommonStepsBox.IsKeyboardFocusWithin)
+                _eggCommonStepsBox.Text = status.Settings.CommonStepsRequired.ToString(CultureInfo.InvariantCulture);
+
+            if (_eggUncommonStepsBox != null && !_eggUncommonStepsBox.IsKeyboardFocusWithin)
+                _eggUncommonStepsBox.Text = status.Settings.UncommonStepsRequired.ToString(CultureInfo.InvariantCulture);
+
+            if (_eggRareStepsBox != null && !_eggRareStepsBox.IsKeyboardFocusWithin)
+                _eggRareStepsBox.Text = status.Settings.RareStepsRequired.ToString(CultureInfo.InvariantCulture);
+
+            if (_eggInventoryListBox != null)
+            {
+                long? selectedEggId = (_eggInventoryListBox.SelectedItem as EggInventoryListRow)?.EggId;
+
+                var rows = status.InventoryEggs
+                    .Select(x => new EggInventoryListRow
+                    {
+                        EggId = x.Id,
+                        Display = BuildEggInventoryDisplay(x)
+                    })
+                    .ToList();
+
+                _eggInventoryListBox.ItemsSource = rows;
+
+                if (selectedEggId.HasValue)
+                {
+                    var match = rows.FirstOrDefault(x => x.EggId == selectedEggId.Value);
+                    if (match != null)
+                        _eggInventoryListBox.SelectedItem = match;
+                }
+            }
+
+            if (_eggOwnedPokemonListBox != null)
+            {
+                _eggOwnedPokemonListBox.ItemsSource = status.HatchedPokemon
+                    .Select(BuildHatchedPokemonDisplay)
+                    .Select(x => new HatchedPokemonListRow { Display = x })
+                    .ToList();
+            }
+
+            if (_eggActiveEggText != null)
+                _eggActiveEggText.Text = BuildActiveEggStatusText(status);
+
+            if (_eggProgressBar != null)
+            {
+                if (status.ActiveEgg == null)
+                {
+                    _eggProgressBar.Maximum = 1;
+                    _eggProgressBar.Value = 0;
+                }
+                else
+                {
+                    _eggProgressBar.Maximum = Math.Max(1, status.ActiveEgg.BaseStepsRequired);
+                    _eggProgressBar.Value = Math.Min(status.ActiveEgg.BaseStepsRequired, Math.Max(0, status.ActiveEgg.RawStepsWalked));
+                }
+            }
+
+            if (_eggLastHatchText != null)
+                _eggLastHatchText.Text = $"Last hatch result: {status.LastHatchSummary}";
+
+            if (ActiveEggTrackingText != null)
+                ActiveEggTrackingText.Text = BuildTrackingEggLine(status);
+
+            UpdateEggButtonStates();
+        }
+
+        private async void SaveEggSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_eggCommonStepsBox == null || _eggUncommonStepsBox == null || _eggRareStepsBox == null)
+                {
+                    MessageBox.Show("Egg controls are not ready yet.");
+                    return;
+                }
+
+                if (!int.TryParse((_eggCommonStepsBox.Text ?? "").Trim(), out int commonSteps) || commonSteps <= 0)
+                {
+                    MessageBox.Show("Common Egg Steps must be a whole number greater than 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_eggUncommonStepsBox.Text ?? "").Trim(), out int uncommonSteps) || uncommonSteps <= 0)
+                {
+                    MessageBox.Show("Uncommon Egg Steps must be a whole number greater than 0.");
+                    return;
+                }
+
+                if (!int.TryParse((_eggRareStepsBox.Text ?? "").Trim(), out int rareSteps) || rareSteps <= 0)
+                {
+                    MessageBox.Show("Rare Egg Steps must be a whole number greater than 0.");
+                    return;
+                }
+
+                await _eggService.SaveSettingsAsync(new EggSettings
+                {
+                    CommonStepsRequired = commonSteps,
+                    UncommonStepsRequired = uncommonSteps,
+                    RareStepsRequired = rareSteps
+                });
+
+                await RefreshForSelectedDateAsync();
+                MessageBox.Show("Saved egg settings.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not save egg settings");
+            }
+        }
+
+        private async void ResetEggSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await _eggService.ResetSettingsAsync();
+                await RefreshForSelectedDateAsync();
+                MessageBox.Show("Reset egg settings to defaults.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reset egg settings");
+            }
+        }
+
+        private async Task AddEggAsync(EggRarity rarity)
+        {
+            await _eggService.AddEggAsync(rarity, GetEffectiveCurrentLocalTime());
+            await RefreshForSelectedDateAsync();
+        }
+
+        private async void AddCommonEggButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await AddEggAsync(EggRarity.Common);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not add Common egg");
+            }
+        }
+
+        private async void AddUncommonEggButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await AddEggAsync(EggRarity.Uncommon);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not add Uncommon egg");
+            }
+        }
+
+        private async void AddRareEggButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await AddEggAsync(EggRarity.Rare);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not add Rare egg");
+            }
+        }
+
+        private async void ActivateSelectedEggButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_eggInventoryListBox?.SelectedItem is not EggInventoryListRow selected)
+                {
+                    MessageBox.Show("Choose an egg from inventory first.");
+                    return;
+                }
+
+                await _eggService.ActivateEggAsync(selected.EggId, GetEffectiveCurrentLocalTime());
+                await RefreshForSelectedDateAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not activate egg");
+            }
+        }
+
+        private async void ReturnActiveEggToInventoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await _eggService.ReturnActiveEggToInventoryAsync(GetEffectiveCurrentLocalTime());
+                await RefreshForSelectedDateAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not return active egg to inventory");
+            }
+        }
+        #endregion // SECTION E2H — Egg Settings + Actions
+
         #region SECTION E3A — Analytics Range Helpers
         private void InitializeAnalyticsRangeUi()
         {
@@ -3692,6 +4293,7 @@ GROUP BY RewardType;",
             EnsureSleepSettingsDebugUiBuilt();
             EnsureWeeklyBonusesDebugUiBuilt();
             EnsureWeeklyCrateDebugUiBuilt();
+            EnsureEggDebugUiBuilt();
 
             UpdateLiveClockText();
             UpdateTimeTravelStatusText();
@@ -3788,6 +4390,22 @@ GROUP BY RewardType;",
 
                 if (_weeklyCrateOpenButton != null)
                     _weeklyCrateOpenButton.IsEnabled = false;
+            }
+
+            try
+            {
+                await RefreshEggDebugAsync();
+            }
+            catch (Exception ex)
+            {
+                if (_eggActiveEggText != null)
+                    _eggActiveEggText.Text = $"Egg system: (error loading) {ex.Message}";
+
+                if (_eggLastHatchText != null)
+                    _eggLastHatchText.Text = "";
+
+                if (ActiveEggTrackingText != null)
+                    ActiveEggTrackingText.Text = "Active Egg: (error loading)";
             }
 
             try
@@ -4385,11 +5003,12 @@ GROUP BY RewardType;",
 
                 if (!PromptDelayedDangerousConfirmation(
                         "Final confirmation — Delete All Data",
-                        "This action permanently deletes everything: tracked database data, trainer progress, gamification settings, inventory, and rewards ledger.",
+                        "This action permanently deletes everything: tracked database data, trainer progress, gamification settings, inventory, rewards ledger, weekly crates, eggs, and hatched Pokémon history.",
                         "Yes, Delete All Data"))
                     return;
 
                 await BackupService.DeleteAllDataAsync();
+                await _eggService.DeleteAllEggDataAsync();
                 await InitializeAndRefreshAsync();
 
                 MessageBox.Show("All data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -4445,11 +5064,12 @@ GROUP BY RewardType;",
 
                 if (!PromptDelayedDangerousConfirmation(
                         "Final confirmation — Delete All Gamification Data",
-                        "This action permanently deletes trainer progress, rewards, inventory, item-roll state, and gamification settings only. Tracked database data and item definitions in the drop items list will remain untouched.",
+                        "This action permanently deletes trainer progress, rewards, inventory, item-roll state, weekly crates, eggs, hatched Pokémon history, and gamification settings only. Tracked database data and item definitions in the drop items list will remain untouched.",
                         "Yes, Delete All Gamification Data"))
                     return;
 
                 await BackupService.DeleteAllGamificationDataAsync();
+                await _eggService.DeleteAllEggDataAsync();
                 await InitializeAndRefreshAsync();
 
                 MessageBox.Show("All gamification data deleted.", "Delete complete", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -4468,93 +5088,7 @@ GROUP BY RewardType;",
                 Multiselect = false
             };
 
-            if (dlg.ShowDialog() != true)
-                return null;
-
-            return dlg.FolderName;
-        }
-
-        private static (DateOnly Start, DateOnly End)? PromptDateRange()
-        {
-            var win = new Window
-            {
-                Title = "Choose date range (yyyy-MM-dd)",
-                Width = 360,
-                Height = 190,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                ResizeMode = ResizeMode.NoResize
-            };
-
-            var root = new StackPanel { Margin = new Thickness(12) };
-
-            root.Children.Add(new TextBlock
-            {
-                Text = "Start date (yyyy-MM-dd):",
-                Margin = new Thickness(0, 0, 0, 4)
-            });
-
-            var startBox = new TextBox { Text = DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd") };
-            root.Children.Add(startBox);
-
-            root.Children.Add(new TextBlock
-            {
-                Text = "End date (yyyy-MM-dd):",
-                Margin = new Thickness(0, 10, 0, 4)
-            });
-
-            var endBox = new TextBox { Text = DateTime.Now.ToString("yyyy-MM-dd") };
-            root.Children.Add(endBox);
-
-            var buttons = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 12, 0, 0)
-            };
-
-            var ok = new Button { Content = "OK", Width = 80, Margin = new Thickness(0, 0, 8, 0) };
-            var cancel = new Button { Content = "Cancel", Width = 80 };
-
-            buttons.Children.Add(ok);
-            buttons.Children.Add(cancel);
-            root.Children.Add(buttons);
-            win.Content = root;
-
-            (DateOnly Start, DateOnly End)? result = null;
-
-            ok.Click += (_, __) =>
-            {
-                if (!DateOnly.TryParseExact(startBox.Text.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var s))
-                {
-                    MessageBox.Show("Start date must be yyyy-MM-dd");
-                    return;
-                }
-
-                if (!DateOnly.TryParseExact(endBox.Text.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var e))
-                {
-                    MessageBox.Show("End date must be yyyy-MM-dd");
-                    return;
-                }
-
-                if (e < s)
-                {
-                    MessageBox.Show("End date must be on/after start date.");
-                    return;
-                }
-
-                result = (s, e);
-                win.DialogResult = true;
-                win.Close();
-            };
-
-            cancel.Click += (_, __) =>
-            {
-                win.DialogResult = false;
-                win.Close();
-            };
-
-            win.ShowDialog();
-            return result;
+            return dlg.ShowDialog(this) == true ? dlg.FolderName : null;
         }
 
         private bool PromptDelayedDangerousConfirmation(string title, string body, string confirmButtonText)
@@ -4562,28 +5096,33 @@ GROUP BY RewardType;",
             var win = new Window
             {
                 Title = title,
-                Width = 470,
-                Height = 230,
+                Owner = this,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ResizeMode = ResizeMode.NoResize,
-                Owner = this
+                Width = 430,
+                Height = 230,
+                ShowInTaskbar = false
             };
 
-            var root = new StackPanel { Margin = new Thickness(12) };
+            var root = new Grid { Margin = new Thickness(14) };
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            root.Children.Add(new TextBlock
+            var bodyText = new TextBlock
             {
-                Text = body,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 10)
-            });
+                Text = body + "\n\nThe confirm button will unlock after 5 seconds.",
+                TextWrapping = TextWrapping.Wrap
+            };
+            Grid.SetRow(bodyText, 0);
+            root.Children.Add(bodyText);
 
             var countdownText = new TextBlock
             {
-                Text = "You can confirm in 3 seconds.",
-                Foreground = System.Windows.Media.Brushes.Gray,
-                Margin = new Thickness(0, 0, 0, 12)
+                Margin = new Thickness(0, 10, 0, 0),
+                Foreground = System.Windows.Media.Brushes.Gray
             };
+            Grid.SetRow(countdownText, 1);
             root.Children.Add(countdownText);
 
             var buttons = new StackPanel
@@ -4592,28 +5131,34 @@ GROUP BY RewardType;",
                 HorizontalAlignment = HorizontalAlignment.Right
             };
 
-            var confirmButton = new Button
-            {
-                Content = confirmButtonText,
-                Width = 190,
-                IsEnabled = false,
-                Margin = new Thickness(0, 0, 8, 0)
-            };
-
-            var cancelButton = new Button
+            var cancelBtn = new Button
             {
                 Content = "Cancel",
-                Width = 100
+                Width = 100,
+                Margin = new Thickness(0, 12, 8, 0),
+                IsCancel = true
             };
 
-            buttons.Children.Add(confirmButton);
-            buttons.Children.Add(cancelButton);
+            var confirmBtn = new Button
+            {
+                Content = confirmButtonText,
+                Width = 180,
+                Margin = new Thickness(0, 12, 0, 0),
+                IsEnabled = false,
+                IsDefault = false
+            };
+
+            buttons.Children.Add(cancelBtn);
+            buttons.Children.Add(confirmBtn);
+            Grid.SetRow(buttons, 2);
             root.Children.Add(buttons);
 
             win.Content = root;
 
+            int remaining = 5;
             bool confirmed = false;
-            int remaining = 3;
+
+            countdownText.Text = $"Please wait {remaining} seconds…";
 
             var timer = new DispatcherTimer
             {
@@ -4626,26 +5171,26 @@ GROUP BY RewardType;",
 
                 if (remaining > 0)
                 {
-                    countdownText.Text = $"You can confirm in {remaining} second{(remaining == 1 ? "" : "s")}.";
+                    countdownText.Text = $"Please wait {remaining} seconds…";
                     return;
                 }
 
                 timer.Stop();
-                confirmButton.IsEnabled = true;
-                countdownText.Text = "You may now confirm or cancel.";
+                countdownText.Text = "You may now confirm.";
+                confirmBtn.IsEnabled = true;
+                confirmBtn.IsDefault = true;
             };
 
-            confirmButton.Click += (_, __) =>
+            cancelBtn.Click += (_, __) =>
             {
-                confirmed = true;
-                win.DialogResult = true;
+                win.DialogResult = false;
                 win.Close();
             };
 
-            cancelButton.Click += (_, __) =>
+            confirmBtn.Click += (_, __) =>
             {
-                confirmed = false;
-                win.DialogResult = false;
+                confirmed = true;
+                win.DialogResult = true;
                 win.Close();
             };
 
@@ -4699,23 +5244,43 @@ GROUP BY RewardType;",
             grid.PreviewMouseWheel += NestedDataGrid_PreviewMouseWheel;
         }
 
+        private static void RegisterNestedListBox(ListBox? listBox)
+        {
+            if (listBox == null)
+                return;
+
+            listBox.PreviewMouseWheel -= NestedListBox_PreviewMouseWheel;
+            listBox.PreviewMouseWheel += NestedListBox_PreviewMouseWheel;
+        }
+
         private static void NestedDataGrid_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             if (sender is not DataGrid grid)
                 return;
 
-            var outerScrollViewer = FindAncestorScrollViewer(grid);
+            BubbleWheelWhenInnerCanNoLongerScroll(grid, e);
+        }
+
+        private static void NestedListBox_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (sender is not ListBox listBox)
+                return;
+
+            BubbleWheelWhenInnerCanNoLongerScroll(listBox, e);
+        }
+
+        private static void BubbleWheelWhenInnerCanNoLongerScroll(System.Windows.Controls.Control control, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            var outerScrollViewer = FindAncestorScrollViewer(control);
             if (outerScrollViewer == null)
                 return;
 
-            var innerScrollViewer = FindDescendantScrollViewer(grid);
+            var innerScrollViewer = FindDescendantScrollViewer(control);
 
             bool shouldBubbleToOuter;
 
             if (innerScrollViewer == null || innerScrollViewer.ScrollableHeight <= 0)
             {
-                // Grid has no usable internal scrolling (empty list / too few rows / no scrollbar),
-                // so let the main app continue scrolling.
                 shouldBubbleToOuter = true;
             }
             else
@@ -4736,7 +5301,7 @@ GROUP BY RewardType;",
             var forwardedEvent = new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
             {
                 RoutedEvent = System.Windows.UIElement.MouseWheelEvent,
-                Source = grid
+                Source = control
             };
 
             outerScrollViewer.RaiseEvent(forwardedEvent);
@@ -4843,7 +5408,7 @@ GROUP BY RewardType;",
             //  - yyyy-MM-dd HH:mm:ss
             var input = (text ?? "").Trim();
 
-            string[] formats = new[]
+            string[] formats =
             {
                 "yyyy-MM-dd HH:mm",
                 "yyyy-MM-dd HH:mm:ss"
@@ -4856,88 +5421,6 @@ GROUP BY RewardType;",
                 DateTimeStyles.AllowWhiteSpaces,
                 out localDateTime);
         }
-
-        private static DateTimeOffset LocalDateTimeToUtc(DateTime localDateTime)
-        {
-            // Convert local "wall clock" time -> UTC using timezone rules (safe around DST).
-            var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
-            var utc = TimeZoneInfo.ConvertTimeToUtc(unspecified, TimeZoneInfo.Local);
-            return new DateTimeOffset(utc, TimeSpan.Zero);
-        }
-
-        private static DateTimeOffset LocalDateTimeToUtcForSleep(DateTime localDateTime, bool preferLaterInstantIfAmbiguous)
-        {
-            // For DST “fall back” (ambiguous times), the same wall-clock time can map to two UTC instants.
-            // For sleep we want:
-            //  - start: earlier instant
-            //  - end: later instant
-            var tz = TimeZoneInfo.Local;
-            var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
-
-            if (tz.IsInvalidTime(unspecified))
-                throw new InvalidOperationException("That local time does not exist (daylight savings shift). Please choose a different time.");
-
-            if (tz.IsAmbiguousTime(unspecified))
-            {
-                var offsets = tz.GetAmbiguousTimeOffsets(unspecified);
-                // Example (Sydney DST end): +11 and +10 for the same local time.
-                // Later UTC instant corresponds to the SMALLER offset.
-                var chosen = preferLaterInstantIfAmbiguous ? Min(offsets) : Max(offsets);
-                return new DateTimeOffset(unspecified, chosen).ToUniversalTime();
-            }
-
-            return LocalDateTimeToUtc(localDateTime);
-
-            static TimeSpan Min(TimeSpan[] arr)
-            {
-                TimeSpan m = arr[0];
-                for (int i = 1; i < arr.Length; i++) if (arr[i] < m) m = arr[i];
-                return m;
-            }
-
-            static TimeSpan Max(TimeSpan[] arr)
-            {
-                TimeSpan m = arr[0];
-                for (int i = 1; i < arr.Length; i++) if (arr[i] > m) m = arr[i];
-                return m;
-            }
-        }
-
-        private void AutoFitGridColumns(DataGrid grid)
-        {
-            if (grid == null || grid.Columns == null || grid.Columns.Count == 0)
-                return;
-
-            if (!grid.IsVisible || grid.ActualWidth <= 0)
-                return;
-
-            grid.UpdateLayout();
-
-            // Measure cells
-            foreach (var col in grid.Columns)
-                col.Width = new DataGridLength(1, DataGridLengthUnitType.SizeToCells);
-
-            grid.UpdateLayout();
-
-            var cellWidths = new double[grid.Columns.Count];
-            for (int i = 0; i < grid.Columns.Count; i++)
-                cellWidths[i] = grid.Columns[i].ActualWidth;
-
-            // Measure headers
-            for (int i = 0; i < grid.Columns.Count; i++)
-                grid.Columns[i].Width = new DataGridLength(1, DataGridLengthUnitType.SizeToHeader);
-
-            grid.UpdateLayout();
-
-            // Lock to max(header, cells)
-            for (int i = 0; i < grid.Columns.Count; i++)
-            {
-                double headerWidth = grid.Columns[i].ActualWidth;
-                double finalWidth = Math.Max(cellWidths[i], headerWidth);
-                grid.Columns[i].Width = new DataGridLength(finalWidth);
-            }
-        }
-
         #endregion // SECTION H1 — Tab + Grid Helpers
 
         #region SECTION H2 — Focus Session Edit/Delete
