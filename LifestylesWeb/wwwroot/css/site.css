@@ -386,8 +386,13 @@ body {
 }
 
     .pl-focus-panel .pl-button-stack {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+        .pl-focus-panel .pl-button-stack > *,
+        .pl-run-actions-two > * {
+            min-width: 0;
+        }
 
 .pl-mode-grid {
     display: grid;
@@ -462,7 +467,7 @@ body {
 
 .pl-run-meta-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
     margin-top: 1rem;
 }
@@ -548,7 +553,8 @@ body {
 }
 
 .pl-run-actions-two {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
 }
 
 .pl-stop-button-armed {
@@ -589,5 +595,49 @@ body {
 
 .pl-overlay-subtitle {
     margin-top: 0.5rem;
+}
+
+.pl-reward-compare-grid,
+.pl-reward-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.pl-reward-compare-card,
+.pl-reward-summary-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+    background: #fafafa;
+}
+
+.pl-reward-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.55rem;
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+    .pl-reward-row strong {
+        font-size: 1.05rem;
+        color: #111827;
+    }
+
+.pl-reward-overlay-card .pl-button-stack {
+    grid-template-columns: 1fr;
+}
+
+.pl-reward-value-large {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 1.8rem;
+    line-height: 1;
+    font-weight: 900;
+    color: #111827;
 }
 /* SECTION E END — Focus Setup + Run */

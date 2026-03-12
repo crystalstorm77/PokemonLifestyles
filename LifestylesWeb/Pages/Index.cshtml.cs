@@ -21,20 +21,44 @@ public class IndexModel : PageModel
     public string DataFilePath { get; private set; } = "";
     public string? StatusMessage { get; private set; }
     public List<FocusSession> Sessions { get; private set; } = new();
+
+    public double RewardPreviewFocusXpPerMinute { get; private set; }
+    public double RewardPreviewIncompleteMultiplier { get; private set; } = 0.25;
+    public double RewardPreviewSleepMultiplier { get; private set; } = 1.0;
+    public bool RewardWindowEligible { get; private set; } = true;
+
+    public bool ShowRewardOverlay { get; private set; }
+    public string RewardFocusType { get; private set; } = "Focus";
+    public int RewardDurationSeconds { get; private set; }
+    public bool RewardCompleted { get; private set; }
+    public int RewardXp { get; private set; }
+    public int RewardCoins { get; private set; }
     #endregion // SECTION A — Bound Input + Display State
 
     #region SECTION B — Page Actions
     public async Task OnGetAsync(
-        string? savedFocusType = null,
-        int? savedDurationSeconds = null,
-        bool? savedCompleted = null)
+        string? rewardFocusType = null,
+        int? rewardDurationSeconds = null,
+        bool? rewardCompleted = null,
+        int? rewardXp = null,
+        int? rewardCoins = null)
     {
         await LoadAsync();
 
-        if (!string.IsNullOrWhiteSpace(savedFocusType) && savedDurationSeconds.HasValue && savedDurationSeconds.Value > 0)
+        if (!string.IsNullOrWhiteSpace(rewardFocusType) &&
+            rewardDurationSeconds.HasValue &&
+            rewardXp.HasValue &&
+            rewardCoins.HasValue)
         {
-            string completionText = savedCompleted == true ? "completed" : "incomplete";
-            StatusMessage = $"Saved {completionText} {savedFocusType} session for {FormatDuration(savedDurationSeconds.Value)}.";
+            ShowRewardOverlay = true;
+            RewardFocusType = rewardFocusType.Trim();
+            RewardDurationSeconds = Math.Max(0, rewardDurationSeconds.Value);
+            RewardCompleted = rewardCompleted == true;
+            RewardXp = Math.Max(0, rewardXp.Value);
+            RewardCoins = Math.Max(0, rewardCoins.Value);
+
+            string completionText = RewardCompleted ? "completed" : "incomplete";
+            StatusMessage = $"Saved {completionText} {RewardFocusType} session for {FormatDuration(RewardDurationSeconds)}.";
         }
     }
 
@@ -61,6 +85,9 @@ public class IndexModel : PageModel
         DateTime localDateTime = DateTime.Now;
         DateOnly logDate = GetGameDayForLocal(localDateTime);
 
+        await LoadRewardPreviewSettingsAsync(localDateTime);
+        (int xp, int coins) = CalculateFocusRewardPreview(elapsedSeconds, completed);
+
         var session = new FocusSession
         {
             LoggedAtUtc = LocalDateTimeToLocalOffset(localDateTime).ToUniversalTime(),
@@ -74,9 +101,11 @@ public class IndexModel : PageModel
 
         return RedirectToPage(new
         {
-            savedFocusType = session.FocusType,
-            savedDurationSeconds = session.DurationSeconds,
-            savedCompleted = session.Completed
+            rewardFocusType = session.FocusType,
+            rewardDurationSeconds = session.DurationSeconds,
+            rewardCompleted = session.Completed,
+            rewardXp = xp,
+            rewardCoins = coins
         });
     }
     #endregion // SECTION B — Page Actions
@@ -86,6 +115,98 @@ public class IndexModel : PageModel
     {
         DataFilePath = Db.GetDbPath();
         Sessions = (await _focusRepo.GetForDateAsync(GetGameDayForLocal(DateTime.Now))).ToList();
+        await LoadRewardPreviewSettingsAsync(DateTime.Now);
+    }
+
+    private async Task LoadRewardPreviewSettingsAsync(DateTime localDateTime)
+    {
+        var gamificationSettings = await new GamificationSettingsRepository().GetAsync();
+        DateOnly logDate = GetGameDayForLocal(localDateTime);
+
+        RewardPreviewFocusXpPerMinute = Math.Max(0.0, gamificationSettings.FocusXpPerMinute);
+        RewardPreviewIncompleteMultiplier = Math.Clamp(gamificationSettings.FocusXpIncompleteMultiplier, 0.0, 1.0);
+        RewardPreviewSleepMultiplier = await GetSleepRewardMultiplierAsync(logDate, gamificationSettings);
+        RewardWindowEligible = IsWithinRewardWindow(logDate, LocalDateTimeToLocalOffset(localDateTime));
+    }
+
+    private async Task<double> GetSleepRewardMultiplierAsync(DateOnly gameDay, GamificationSettings settings)
+    {
+        var sleepSessions = await new SleepSessionRepository().GetForWakeDateAsync(gameDay);
+
+        var orderedDurations = sleepSessions
+            .OrderBy(x => x.EndUtc)
+            .ThenBy(x => x.Id)
+            .Select(x => Math.Max(0, x.DurationMinutes));
+
+        var summary = SleepRewardCalculator.Calculate(
+            orderedDurations,
+            settings.SleepHealthyMinHours,
+            settings.SleepHealthyMaxHours,
+            settings.SleepHealthyMultiplier,
+            settings.SleepPenaltyPer15Min,
+            settings.SleepTrackedMinimumMultiplier,
+            settings.SleepRewardMinimumMinutes);
+
+        return Math.Max(1.0, summary.Multiplier);
+    }
+
+    private static bool IsWithinRewardWindow(DateOnly logDate, DateTimeOffset loggedAtLocal)
+    {
+        var timeZone = TimeZoneInfo.Local;
+        var nextDay = logDate.AddDays(1);
+
+        DateTime cutoffLocalUnspecified = new DateTime(
+            nextDay.Year,
+            nextDay.Month,
+            nextDay.Day,
+            3,
+            0,
+            0,
+            DateTimeKind.Unspecified);
+
+        DateTime probe = cutoffLocalUnspecified;
+
+        for (int i = 0; i < 6; i++)
+        {
+            try
+            {
+                DateTime cutoffUtc = TimeZoneInfo.ConvertTimeToUtc(probe, timeZone);
+                return loggedAtLocal.UtcDateTime < cutoffUtc;
+            }
+            catch
+            {
+                probe = probe.AddHours(1);
+            }
+        }
+
+        return false;
+    }
+
+    private (int xp, int coins) CalculateFocusRewardPreview(int durationSeconds, bool completed)
+    {
+        int rewardMinutes = Math.Max(0, durationSeconds) / 60;
+
+        if (!RewardWindowEligible || rewardMinutes <= 0)
+        {
+            return (0, 0);
+        }
+
+        double normalizedSleepMultiplier = Math.Max(1.0, RewardPreviewSleepMultiplier);
+        double xpCompletionMultiplier = completed ? 1.0 : RewardPreviewIncompleteMultiplier;
+        double coinCompletionMultiplier = completed ? 1.0 : 0.25;
+
+        int xp = (int)Math.Floor(
+            rewardMinutes *
+            RewardPreviewFocusXpPerMinute *
+            xpCompletionMultiplier *
+            normalizedSleepMultiplier);
+
+        int coins = (int)Math.Floor(
+            rewardMinutes *
+            coinCompletionMultiplier *
+            normalizedSleepMultiplier);
+
+        return (xp, coins);
     }
 
     public string FormatDuration(int totalSeconds)
