@@ -52,7 +52,8 @@ namespace LifestyleCore.Data
                    rewardType == RewardType.HabitTicketWeeklyBonus ||
                    rewardType == RewardType.SleepTicketWeeklyBonus ||
                    rewardType == RewardType.StepsTicketWeeklyBonus ||
-                   rewardType == RewardType.WeeklyCrateTicketSpend;
+                   rewardType == RewardType.WeeklyCrateTicketSpend ||
+                   rewardType == RewardType.ShopEggTicketSpend;
         }
 
         private static int PickTierIndex(int commonW, int uncommonW, int rareW)
@@ -241,6 +242,37 @@ WHERE WeekStart = @WeekStart;",
         #endregion // SECTION B — Settings + Status
 
         #region SECTION C — Open Crate
+        public async Task DeleteAllWeeklyCrateDataAsync()
+        {
+            WeeklyCrateSchema.EnsureCreated();
+
+            var defaults = BuildDefaultSettings();
+
+            using var conn = Db.OpenConnection();
+            using var tx = conn.BeginTransaction();
+
+            await conn.ExecuteAsync("DELETE FROM WeeklyCrateClaims;", transaction: tx);
+
+            await conn.ExecuteAsync(@"
+UPDATE WeeklyCrateSettings
+SET
+    IsEnabled = @IsEnabled,
+    TicketCost = @TicketCost,
+    RollCount = @RollCount,
+    UpdatedAtUtc = @UpdatedAtUtc
+WHERE Id = 1;",
+                new
+                {
+                    IsEnabled = defaults.IsEnabled ? 1 : 0,
+                    TicketCost = defaults.TicketCost,
+                    RollCount = defaults.RollCount,
+                    UpdatedAtUtc = DateTimeOffset.UtcNow.ToString("O")
+                },
+                transaction: tx);
+
+            tx.Commit();
+        }
+
         public async Task<WeeklyCrateStatus> OpenCurrentWeekAsync(DateTimeOffset effectiveNowLocal)
         {
             WeeklyCrateSchema.EnsureCreated();

@@ -5479,6 +5479,7 @@ GROUP BY RewardType;",
                     return;
 
                 await BackupService.DeleteAllDataAsync();
+                await _weeklyCrateService.DeleteAllWeeklyCrateDataAsync();
                 await _eggService.DeleteAllEggDataAsync();
                 await _shopService.ResetSettingsAsync();
                 await InitializeAndRefreshAsync();
@@ -5541,6 +5542,7 @@ GROUP BY RewardType;",
                     return;
 
                 await BackupService.DeleteAllGamificationDataAsync();
+                await _weeklyCrateService.DeleteAllWeeklyCrateDataAsync();
                 await _eggService.DeleteAllEggDataAsync();
                 await _shopService.ResetSettingsAsync();
                 await InitializeAndRefreshAsync();
