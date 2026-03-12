@@ -131,10 +131,10 @@ namespace LifestyleCore.Data
             if (durationSeconds <= 0)
                 throw new InvalidOperationException("Focus session duration seconds must be > 0.");
 
+            int storedMinutes = durationSeconds / 60;
             int rewardMinutes = GetRewardMinutes(durationSeconds);
 
             session.DurationSeconds = durationSeconds;
-            session.Minutes = rewardMinutes;
 
             using var conn = Db.OpenConnection();
 
@@ -149,7 +149,7 @@ SELECT last_insert_rowid();
                 LoggedAtUtc = session.LoggedAtUtc.ToString("O"),
                 LogDate = session.LogDate.ToString("yyyy-MM-dd"),
                 FocusType = session.FocusType,
-                Minutes = session.Minutes,
+                Minutes = storedMinutes,
                 DurationSeconds = session.DurationSeconds,
                 Completed = session.Completed ? 1 : 0
             };
