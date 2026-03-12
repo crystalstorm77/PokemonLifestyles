@@ -5091,6 +5091,150 @@ GROUP BY RewardType;",
             return dlg.ShowDialog(this) == true ? dlg.FolderName : null;
         }
 
+        private (DateOnly Start, DateOnly End)? PromptDateRange()
+        {
+            var win = new Window
+            {
+                Title = "Choose Date Range",
+                Owner = this,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ResizeMode = ResizeMode.NoResize,
+                Width = 420,
+                Height = 220,
+                ShowInTaskbar = false
+            };
+
+            var root = new Grid { Margin = new Thickness(14) };
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var intro = new TextBlock
+            {
+                Text = "Choose the inclusive date range to replace from the imported Database Archive.",
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            Grid.SetRow(intro, 0);
+            Grid.SetColumnSpan(intro, 2);
+            root.Children.Add(intro);
+
+            var startLabel = new TextBlock
+            {
+                Text = "Start Date:",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 8)
+            };
+            Grid.SetRow(startLabel, 1);
+            Grid.SetColumn(startLabel, 0);
+            root.Children.Add(startLabel);
+
+            var startPicker = new DatePicker
+            {
+                SelectedDate = SelectedLogDate.ToDateTime(TimeOnly.MinValue),
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            Grid.SetRow(startPicker, 1);
+            Grid.SetColumn(startPicker, 1);
+            root.Children.Add(startPicker);
+
+            var endLabel = new TextBlock
+            {
+                Text = "End Date:",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 8)
+            };
+            Grid.SetRow(endLabel, 2);
+            Grid.SetColumn(endLabel, 0);
+            root.Children.Add(endLabel);
+
+            var endPicker = new DatePicker
+            {
+                SelectedDate = SelectedLogDate.ToDateTime(TimeOnly.MinValue),
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            Grid.SetRow(endPicker, 2);
+            Grid.SetColumn(endPicker, 1);
+            root.Children.Add(endPicker);
+
+            var errorText = new TextBlock
+            {
+                Foreground = System.Windows.Media.Brushes.DarkRed,
+                TextWrapping = TextWrapping.Wrap
+            };
+            Grid.SetRow(errorText, 3);
+            Grid.SetColumnSpan(errorText, 2);
+            root.Children.Add(errorText);
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var cancelBtn = new Button
+            {
+                Content = "Cancel",
+                Width = 100,
+                Margin = new Thickness(0, 12, 8, 0),
+                IsCancel = true
+            };
+
+            var okBtn = new Button
+            {
+                Content = "Use Range",
+                Width = 120,
+                Margin = new Thickness(0, 12, 0, 0),
+                IsDefault = true
+            };
+
+            buttons.Children.Add(cancelBtn);
+            buttons.Children.Add(okBtn);
+            Grid.SetRow(buttons, 4);
+            Grid.SetColumnSpan(buttons, 2);
+            root.Children.Add(buttons);
+
+            win.Content = root;
+
+            (DateOnly Start, DateOnly End)? result = null;
+
+            cancelBtn.Click += (_, __) =>
+            {
+                win.DialogResult = false;
+                win.Close();
+            };
+
+            okBtn.Click += (_, __) =>
+            {
+                if (startPicker.SelectedDate == null || endPicker.SelectedDate == null)
+                {
+                    errorText.Text = "Choose both a start and end date.";
+                    return;
+                }
+
+                var start = DateOnly.FromDateTime(startPicker.SelectedDate.Value);
+                var end = DateOnly.FromDateTime(endPicker.SelectedDate.Value);
+
+                if (end < start)
+                {
+                    errorText.Text = "End date must be on or after the start date.";
+                    return;
+                }
+
+                result = (start, end);
+                win.DialogResult = true;
+                win.Close();
+            };
+
+            win.ShowDialog();
+            return result;
+        }
+
         private bool PromptDelayedDangerousConfirmation(string title, string body, string confirmButtonText)
         {
             var win = new Window
@@ -5339,6 +5483,48 @@ GROUP BY RewardType;",
             }
 
             return null;
+        }
+
+        private static void AutoFitGridColumns(DataGrid grid)
+        {
+            if (grid == null)
+                return;
+
+            grid.UpdateLayout();
+
+            foreach (var column in grid.Columns)
+                column.Width = new DataGridLength(1, DataGridLengthUnitType.Auto);
+
+            grid.UpdateLayout();
+        }
+
+        private static DateTimeOffset LocalDateTimeToUtc(DateTime localDateTime)
+        {
+            return LocalDateTimeToLocalOffset(localDateTime).ToUniversalTime();
+        }
+
+        private static DateTimeOffset LocalDateTimeToUtcForSleep(DateTime localDateTime, bool preferLaterInstantIfAmbiguous)
+        {
+            var tz = TimeZoneInfo.Local;
+            var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
+
+            if (tz.IsInvalidTime(unspecified))
+            {
+                throw new InvalidOperationException(
+                    $"The local sleep time {localDateTime:yyyy-MM-dd HH:mm:ss} does not exist in the local timezone because of a daylight-saving transition.");
+            }
+
+            if (tz.IsAmbiguousTime(unspecified))
+            {
+                var offsets = tz.GetAmbiguousTimeOffsets(unspecified);
+                var chosenOffset = preferLaterInstantIfAmbiguous
+                    ? offsets.Min()
+                    : offsets.Max();
+
+                return new DateTimeOffset(unspecified, chosenOffset).ToUniversalTime();
+            }
+
+            return new DateTimeOffset(unspecified, tz.GetUtcOffset(unspecified)).ToUniversalTime();
         }
 
         private void ScheduleAutoFitFocus()
