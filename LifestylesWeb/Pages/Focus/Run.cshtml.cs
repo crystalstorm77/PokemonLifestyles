@@ -18,6 +18,8 @@ public class RunModel : PageModel
 
     public string FocusType { get; private set; } = "Focus";
     public int PlannedDurationSeconds { get; private set; } = 25 * 60;
+    public int StopThresholdSeconds { get; private set; } = 60;
+    public string StopThresholdText { get; private set; } = "1 minute";
     public string TargetDurationText { get; private set; } = "25 minutes";
     public string InitialRemainingText { get; private set; } = "00:25:00";
     public string InitialElapsedText { get; private set; } = "00:00:00";
@@ -52,7 +54,7 @@ public class RunModel : PageModel
 
         if (elapsedSeconds <= 0)
         {
-            return RedirectToPage("/Focus/Index");
+            return RedirectToPage("/Index");
         }
 
         bool completed = saveMode == "complete" && elapsedSeconds >= plannedDurationSeconds;
@@ -84,6 +86,8 @@ public class RunModel : PageModel
     {
         FocusType = focusType;
         PlannedDurationSeconds = Math.Clamp(plannedDurationSeconds, 300, 7200);
+        StopThresholdSeconds = GetIncompleteSaveThresholdSeconds();
+        StopThresholdText = FormatThresholdText(StopThresholdSeconds);
         TargetDurationText = FormatDurationSelection(PlannedDurationSeconds / 60);
         InitialRemainingText = FormatClock(PlannedDurationSeconds);
         InitialElapsedText = FormatClock(0);
@@ -95,6 +99,11 @@ public class RunModel : PageModel
             ElapsedSeconds = 0,
             SaveMode = ""
         };
+    }
+
+    private static int GetIncompleteSaveThresholdSeconds()
+    {
+        return 60;
     }
 
     private static string NormalizeFocusType(string? focusType)
@@ -119,6 +128,22 @@ public class RunModel : PageModel
         return $"{totalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 
+    private static string FormatThresholdText(int totalSeconds)
+    {
+        if (totalSeconds <= 0)
+        {
+            return "0 seconds";
+        }
+
+        if (totalSeconds % 60 == 0)
+        {
+            int wholeMinutes = totalSeconds / 60;
+            return wholeMinutes == 1 ? "1 minute" : $"{wholeMinutes} minutes";
+        }
+
+        return FormatClock(totalSeconds);
+    }
+
     private static string FormatDurationSelection(int totalMinutes)
     {
         totalMinutes = Math.Clamp(totalMinutes, 5, 120);
@@ -128,17 +153,18 @@ public class RunModel : PageModel
 
         if (hours == 0)
         {
-            return $"{totalMinutes} minutes";
+            return totalMinutes == 1 ? "1 minute" : $"{totalMinutes} minutes";
         }
+
+        string hourText = hours == 1 ? "1 hour" : $"{hours} hours";
 
         if (minutes == 0)
         {
-            return hours == 1 ? "1 hour" : $"{hours} hours";
+            return hourText;
         }
 
-        return hours == 1
-            ? $"1 hour {minutes} minutes"
-            : $"{hours} hours {minutes} minutes";
+        string minuteText = minutes == 1 ? "1 minute" : $"{minutes} minutes";
+        return $"{hourText} {minuteText}";
     }
 
     private static DateOnly GetGameDayForLocal(DateTime localDateTime)

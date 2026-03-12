@@ -64,6 +64,102 @@
         </section>
     </div>
 </div>
+<!-- SECTION A START — Countdown Run Screen -->
+<div class="pl-screen">
+    <div class="pl-stack">
+        <section class="pl-card pl-run-card"
+                 id="pl-run-root"
+                 data-planned-seconds="@Model.PlannedDurationSeconds"
+                 data-stop-threshold-seconds="@Model.StopThresholdSeconds"
+                 data-stop-threshold-text="@Model.StopThresholdText">
+            <div class="pl-card-header">
+                <a class="pl-link-button" asp-page="/Focus/Index">← Setup</a>
+                <span class="pl-badge">Countdown</span>
+            </div>
+
+            <p class="pl-eyebrow">Focus Session</p>
+            <h1 class="pl-title">Stay with it</h1>
+            <p class="pl-subtitle">
+                This pass focuses on the real countdown behaviour:
+                pause, keep going, cancel, stop focusing, and the custom confirm overlay.
+            </p>
+
+            <div class="pl-run-meta-grid">
+                <div class="pl-run-meta-card">
+                    <span class="pl-run-label">Focus type</span>
+                    <strong class="pl-run-value">@Model.FocusType</strong>
+                </div>
+
+                <div class="pl-run-meta-card">
+                    <span class="pl-run-label">Target</span>
+                    <strong class="pl-run-value">@Model.TargetDurationText</strong>
+                </div>
+            </div>
+
+            <div class="pl-run-timer-shell">
+                <div class="pl-run-timer-caption" id="pl-run-state-label">Time remaining</div>
+                <div class="pl-run-timer" id="pl-run-readout">@Model.InitialRemainingText</div>
+                <div class="pl-run-support">
+                    Elapsed:
+                    <span id="pl-run-elapsed">@Model.InitialElapsedText</span>
+                </div>
+            </div>
+
+            <div class="pl-progress-track" aria-hidden="true">
+                <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <div class="pl-run-actions pl-run-actions-two">
+                <button type="button" class="pl-primary-button" id="pl-pause-button">Pause</button>
+                <button type="button" class="pl-secondary-button" id="pl-exit-button">Cancel</button>
+            </div>
+
+            <p class="pl-field-hint" id="pl-run-note">
+                Cancel before @Model.StopThresholdText to discard this session with no save.
+            </p>
+
+            <div class="pl-run-overlay" id="pl-confirm-overlay" hidden aria-hidden="true">
+                <div class="pl-run-overlay-backdrop"></div>
+
+                <div class="pl-run-overlay-card" role="dialog" aria-modal="true" aria-labelledby="pl-confirm-title">
+                    <p class="pl-eyebrow">Stop Focusing</p>
+                    <h2 class="pl-section-title" id="pl-confirm-title">Are you sure?</h2>
+                    <p class="pl-subtitle pl-overlay-subtitle">
+                        Session will be marked <strong>incomplete</strong>.
+                    </p>
+
+                    <div class="pl-run-meta-grid">
+                        <div class="pl-run-meta-card">
+                            <span class="pl-run-label">Current elapsed</span>
+                            <strong class="pl-run-value" id="pl-confirm-current-time">00:00:00</strong>
+                        </div>
+
+                        <div class="pl-run-meta-card">
+                            <span class="pl-run-label">Timer status</span>
+                            <strong class="pl-run-value" id="pl-confirm-timer-status">Still counting down</strong>
+                        </div>
+                    </div>
+
+                    <p class="pl-field-hint">
+                        Rewards preview and the dedicated rewards screen come in the next pass.
+                    </p>
+
+                    <div class="pl-run-actions pl-run-actions-two">
+                        <button type="button" class="pl-secondary-button" id="pl-confirm-keep-going">Keep Going</button>
+                        <button type="button" class="pl-primary-button" id="pl-confirm-stop">Stop Focusing</button>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" asp-page-handler="Save" id="pl-save-form">
+                <input type="hidden" asp-for="Input.FocusType" value="@Model.FocusType" />
+                <input type="hidden" asp-for="Input.PlannedDurationSeconds" value="@Model.PlannedDurationSeconds" />
+                <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-elapsed-seconds" value="0" />
+                <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
+            </form>
+        </section>
+    </div>
+</div>
 <!-- SECTION A END — Countdown Run Screen -->
 @section Scripts {
     <!-- SECTION B START — Countdown Timer Script -->
@@ -76,22 +172,34 @@
             const note = document.getElementById("pl-run-note");
             const progressFill = document.getElementById("pl-progress-fill");
             const pauseButton = document.getElementById("pl-pause-button");
-            const stopButton = document.getElementById("pl-stop-button");
-            const cancelButton = document.getElementById("pl-cancel-button");
+            const exitButton = document.getElementById("pl-exit-button");
+
+            const confirmOverlay = document.getElementById("pl-confirm-overlay");
+            const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
+            const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
+            const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
+            const confirmStopButton = document.getElementById("pl-confirm-stop");
+
             const saveForm = document.getElementById("pl-save-form");
             const elapsedField = document.getElementById("pl-elapsed-seconds");
             const saveModeField = document.getElementById("pl-save-mode");
 
             if (!root || !readout || !elapsedText || !stateLabel || !note || !progressFill ||
-                !pauseButton || !stopButton || !cancelButton || !saveForm || !elapsedField || !saveModeField) {
+                !pauseButton || !exitButton || !confirmOverlay || !confirmCurrentTime ||
+                !confirmTimerStatus || !confirmKeepGoingButton || !confirmStopButton ||
+                !saveForm || !elapsedField || !saveModeField) {
                 return;
             }
 
             const plannedSeconds = parseInt(root.dataset.plannedSeconds || "1500", 10);
+            const stopThresholdSeconds = parseInt(root.dataset.stopThresholdSeconds || "60", 10);
+            const stopThresholdText = root.dataset.stopThresholdText || "1 minute";
+
             let startedAtMs = Date.now();
             let pausedElapsedSeconds = 0;
             let isPaused = false;
             let isSubmitting = false;
+            let isConfirmOpen = false;
             let completionTonePlayed = false;
 
             function formatClock(totalSeconds) {
@@ -110,13 +218,32 @@
                 }
 
                 const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
-                return Math.min(plannedSeconds, liveElapsed);
+                return Math.min(plannedSeconds, Math.max(0, liveElapsed));
             }
 
             function setButtonsDisabled(isDisabled) {
                 pauseButton.disabled = isDisabled;
-                stopButton.disabled = isDisabled;
-                cancelButton.disabled = isDisabled;
+                exitButton.disabled = isDisabled;
+                confirmKeepGoingButton.disabled = isDisabled;
+                confirmStopButton.disabled = isDisabled;
+            }
+
+            function openConfirmOverlay() {
+                isConfirmOpen = true;
+                confirmOverlay.hidden = false;
+                confirmOverlay.setAttribute("aria-hidden", "false");
+                updateConfirmOverlay(getElapsedSeconds());
+            }
+
+            function closeConfirmOverlay() {
+                isConfirmOpen = false;
+                confirmOverlay.hidden = true;
+                confirmOverlay.setAttribute("aria-hidden", "true");
+            }
+
+            function updateConfirmOverlay(elapsedSeconds) {
+                confirmCurrentTime.textContent = formatClock(elapsedSeconds);
+                confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
             }
 
             function playCompletionTone() {
@@ -163,15 +290,28 @@
                     : getElapsedSeconds();
 
                 if (elapsedSeconds <= 0) {
-                    alert("Let the timer run a little longer before saving.");
                     return;
                 }
 
                 isSubmitting = true;
                 elapsedField.value = String(elapsedSeconds);
                 saveModeField.value = mode;
+                closeConfirmOverlay();
                 setButtonsDisabled(true);
                 saveForm.submit();
+            }
+
+            function updateExitButton(elapsedSeconds) {
+                const canStop = elapsedSeconds >= stopThresholdSeconds;
+
+                if (canStop) {
+                    exitButton.textContent = "Stop Focusing";
+                    exitButton.classList.add("pl-stop-button-armed");
+                    return;
+                }
+
+                exitButton.textContent = "Cancel";
+                exitButton.classList.remove("pl-stop-button-armed");
             }
 
             function updateUi() {
@@ -185,16 +325,25 @@
                 elapsedText.textContent = formatClock(elapsedSeconds);
                 progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
 
-                if (isPaused) {
-                    stateLabel.textContent = "Paused";
-                    note.textContent = "Timer paused. Resume to continue, or end and save what is currently shown.";
-                    pauseButton.textContent = "Resume";
-                    return;
+                updateExitButton(elapsedSeconds);
+
+                if (isConfirmOpen) {
+                    updateConfirmOverlay(elapsedSeconds);
                 }
 
-                stateLabel.textContent = "Time remaining";
-                note.textContent = "When the timer reaches zero, it will save automatically as a completed session.";
-                pauseButton.textContent = "Pause";
+                if (isPaused) {
+                    stateLabel.textContent = "Paused";
+                    pauseButton.textContent = "Keep Going?";
+                    note.textContent = elapsedSeconds >= stopThresholdSeconds
+                        ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
+                        : `Session paused. Cancel before ${stopThresholdText} to discard this session with no save.`;
+                } else {
+                    stateLabel.textContent = "Time remaining";
+                    pauseButton.textContent = "Pause";
+                    note.textContent = elapsedSeconds >= stopThresholdSeconds
+                        ? `You have reached ${stopThresholdText}. Stopping now will save the current session as incomplete.`
+                        : `Cancel before ${stopThresholdText} to discard this session with no save.`;
+                }
 
                 if (remainingSeconds <= 0 && !isSubmitting) {
                     playCompletionTone();
@@ -203,7 +352,7 @@
             }
 
             pauseButton.addEventListener("click", function () {
-                if (isSubmitting) {
+                if (isSubmitting || isConfirmOpen) {
                     return;
                 }
 
@@ -219,40 +368,41 @@
                 updateUi();
             });
 
-            stopButton.addEventListener("click", function () {
+            exitButton.addEventListener("click", function () {
                 if (isSubmitting) {
                     return;
                 }
 
                 const elapsedSeconds = getElapsedSeconds();
 
-                if (elapsedSeconds <= 0) {
-                    alert("Let the timer run a little longer before saving.");
+                if (elapsedSeconds < stopThresholdSeconds) {
+                    window.location.href = "/Index";
                     return;
                 }
 
-                const elapsedTextValue = formatClock(elapsedSeconds);
-                const shouldSave = window.confirm(`End this session and save ${elapsedTextValue}?`);
-
-                if (!shouldSave) {
-                    return;
-                }
-
-                const mode = elapsedSeconds >= plannedSeconds ? "complete" : "stop";
-                submitSave(mode);
+                openConfirmOverlay();
             });
 
-            cancelButton.addEventListener("click", function () {
+            confirmKeepGoingButton.addEventListener("click", function () {
                 if (isSubmitting) {
                     return;
                 }
 
-                const shouldDiscard = window.confirm("Discard this countdown without saving it?");
-                if (!shouldDiscard) {
+                closeConfirmOverlay();
+            });
+
+            confirmStopButton.addEventListener("click", function () {
+                if (isSubmitting) {
                     return;
                 }
 
-                window.location.href = "/Focus/Index";
+                submitSave("stop");
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && isConfirmOpen && !isSubmitting) {
+                    closeConfirmOverlay();
+                }
             });
 
             updateUi();
@@ -260,4 +410,5 @@
         })();
     </script>
     <!-- SECTION B END — Countdown Timer Script -->
+}
 }
