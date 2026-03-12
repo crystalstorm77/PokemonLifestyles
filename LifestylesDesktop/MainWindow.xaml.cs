@@ -2938,12 +2938,15 @@ WHERE Id = 1;",
 
             public double FoodTotalKj { get; set; }
             public int FoodEntryCount { get; set; }
+            public double BestFoodDayKj { get; set; }
+            public DateOnly? BestFoodDayDate { get; set; }
 
             public int SleepTotalMinutes { get; set; }
             public int SleepSessionCount { get; set; }
 
             public int StepsTotal { get; set; }
             public int StepsBestDay { get; set; }
+            public DateOnly? StepsBestDayDate { get; set; }
             public int DaysWithSteps { get; set; }
             public int DaysMeetingStepsGoal { get; set; }
             public int DailyStepsGoal { get; set; }
@@ -2996,6 +2999,26 @@ WHERE LogDate >= @StartDate AND LogDate <= @EndDate;",
             snapshot.FoodTotalKj = Convert.ToDouble(foodRow.TotalKj);
             snapshot.FoodEntryCount = Convert.ToInt32(foodRow.EntryCount);
 
+            var bestFoodDayRow = await conn.QueryFirstOrDefaultAsync(@"
+SELECT
+    LogDate,
+    COALESCE(SUM(KjComputed), 0) AS TotalKj
+FROM FoodEntries
+WHERE LogDate >= @StartDate AND LogDate <= @EndDate
+GROUP BY LogDate
+ORDER BY TotalKj DESC, LogDate ASC
+LIMIT 1;",
+                new { StartDate = startText, EndDate = endText });
+
+            if (bestFoodDayRow != null)
+            {
+                snapshot.BestFoodDayKj = Convert.ToDouble(bestFoodDayRow.TotalKj);
+
+                string? bestFoodDayText = Convert.ToString(bestFoodDayRow.LogDate, CultureInfo.InvariantCulture);
+                if (DateOnly.TryParse(bestFoodDayText, out var bestFoodDay))
+                    snapshot.BestFoodDayDate = bestFoodDay;
+            }
+
             var sleepRow = await conn.QuerySingleAsync(@"
 SELECT
     COALESCE(SUM(DurationMinutes), 0) AS TotalMinutes,
@@ -3024,6 +3047,23 @@ WHERE Date >= @StartDate AND Date <= @EndDate;",
             snapshot.StepsBestDay = Convert.ToInt32(stepsRow.BestDaySteps);
             snapshot.DaysWithSteps = Convert.ToInt32(stepsRow.DaysWithSteps);
             snapshot.DaysMeetingStepsGoal = Convert.ToInt32(stepsRow.DaysMeetingGoal);
+
+            var bestStepsDayRow = await conn.QueryFirstOrDefaultAsync(@"
+SELECT
+    Date,
+    Steps
+FROM StepsDaily
+WHERE Date >= @StartDate AND Date <= @EndDate
+ORDER BY Steps DESC, Date ASC
+LIMIT 1;",
+                new { StartDate = startText, EndDate = endText });
+
+            if (bestStepsDayRow != null)
+            {
+                string? bestStepsDayText = Convert.ToString(bestStepsDayRow.Date, CultureInfo.InvariantCulture);
+                if (DateOnly.TryParse(bestStepsDayText, out var bestStepsDay))
+                    snapshot.StepsBestDayDate = bestStepsDay;
+            }
 
             var habitTypeRows = await conn.QueryAsync(@"
 SELECT
@@ -3091,6 +3131,39 @@ GROUP BY RewardType;",
             return snapshot;
         }
 
+        private static bool IsCalendarYearRange(DateOnly start, DateOnly end)
+        {
+            return start.Year == end.Year
+                && start.Month == 1
+                && start.Day == 1
+                && end.Month == 12
+                && end.Day == 31;
+        }
+
+        private static string BuildCalendarYearNote(DateOnly start, DateOnly end)
+        {
+            if (!IsCalendarYearRange(start, end))
+                return string.Empty;
+
+            return $"This range is the {start.Year} calendar year, not the previous 12 months.";
+        }
+
+        private static string BuildBestFoodDayText(AnalyticsSnapshot snapshot)
+        {
+            if (!snapshot.BestFoodDayDate.HasValue || snapshot.BestFoodDayKj <= 0)
+                return "Highest day: none";
+
+            return $"Highest day: {snapshot.BestFoodDayKj:#,0} kJ on {snapshot.BestFoodDayDate.Value:yyyy-MM-dd}";
+        }
+
+        private static string BuildBestStepsDayText(AnalyticsSnapshot snapshot)
+        {
+            if (!snapshot.StepsBestDayDate.HasValue || snapshot.StepsBestDay <= 0)
+                return "Best day: none";
+
+            return $"Best day: {snapshot.StepsBestDay:#,0} on {snapshot.StepsBestDayDate.Value:yyyy-MM-dd}";
+        }
+
         private async Task RefreshAnalyticsAsync()
         {
             if (AnalyticsAnchorText != null)
@@ -3118,20 +3191,33 @@ GROUP BY RewardType;",
                 AnalyticsRangeSummaryText.Text = $"Selected range: {start:yyyy-MM-dd} → {end:yyyy-MM-dd} ({dayCount} day{(dayCount == 1 ? "" : "s")})";
 
             if (AnalyticsRangeDetailText != null)
-                AnalyticsRangeDetailText.Text =
-                    $"Archive View Date: {SelectedLogDate:yyyy-MM-dd}. Preset buttons anchor to that day, while the overview below totals the full selected range.";
+            {
+                var detailLines = new List<string>
+                {
+                    $"Archive View Date: {SelectedLogDate:yyyy-MM-dd}. Preset buttons anchor to that day, while the overview below totals the full selected range.",
+                    $"Completed focus sessions: {snapshot.FocusCompletedCount}/{snapshot.FocusSessionCount} | Food entries: {snapshot.FoodEntryCount} | Sleep sessions: {snapshot.SleepSessionCount}",
+                    $"Days with steps: {snapshot.DaysWithSteps}/{dayCount} | Days with habit activity: {snapshot.HabitDaysWithAnyActivity}/{dayCount}"
+                };
+
+                string calendarYearNote = BuildCalendarYearNote(start, end);
+                if (!string.IsNullOrWhiteSpace(calendarYearNote))
+                    detailLines.Add(calendarYearNote);
+
+                AnalyticsRangeDetailText.Text = string.Join("\n", detailLines);
+            }
 
             if (AnalyticsOverviewFocusText != null)
                 AnalyticsOverviewFocusText.Text =
                     $"Total focus: {FormatMinutes(snapshot.FocusTotalMinutes)}\n" +
-                    $"Sessions: {snapshot.FocusSessionCount} ({snapshot.FocusCompletedCount} completed)\n" +
+                    $"Completed sessions: {snapshot.FocusCompletedCount}/{snapshot.FocusSessionCount}\n" +
                     $"Average per day: {FormatMinutes(averageFocusMinutes)}";
 
             if (AnalyticsOverviewFoodText != null)
                 AnalyticsOverviewFoodText.Text =
                     $"Total food: {snapshot.FoodTotalKj:#,0} kJ\n" +
                     $"Entries: {snapshot.FoodEntryCount}\n" +
-                    $"Average per day: {averageFoodKj:#,0} kJ";
+                    $"Average per day: {averageFoodKj:#,0} kJ\n" +
+                    $"{BuildBestFoodDayText(snapshot)}";
 
             if (AnalyticsOverviewSleepText != null)
                 AnalyticsOverviewSleepText.Text =
@@ -3143,15 +3229,15 @@ GROUP BY RewardType;",
                 AnalyticsOverviewStepsText.Text =
                     $"Total steps: {snapshot.StepsTotal:#,0}\n" +
                     $"Average per day: {averageSteps:#,0}\n" +
-                    $"Best day: {snapshot.StepsBestDay:#,0}\n" +
+                    $"{BuildBestStepsDayText(snapshot)}\n" +
                     $"Met daily goal ({snapshot.DailyStepsGoal:#,0}): {snapshot.DaysMeetingStepsGoal}/{dayCount}";
 
             if (AnalyticsOverviewHabitsText != null)
                 AnalyticsOverviewHabitsText.Text =
                     $"Checkbox days completed: {snapshot.CheckboxCompletionCount:#,0}\n" +
                     $"Counter units logged: {snapshot.CounterUnitsLogged:#,0}\n" +
-                    $"Days with habit activity: {snapshot.HabitDaysWithAnyActivity}\n" +
-                    $"Habits with activity: {snapshot.UniqueHabitsWithActivity}";
+                    $"Days with habit activity: {snapshot.HabitDaysWithAnyActivity}/{dayCount}\n" +
+                    $"Active habits in range: {snapshot.UniqueHabitsWithActivity}";
 
             if (AnalyticsOverviewRewardsText != null)
                 AnalyticsOverviewRewardsText.Text =
