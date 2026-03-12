@@ -1,10 +1,31 @@
 ﻿@page
-@model IndexModel
+@model LifestylesWeb.Pages.IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- SECTION A START — Home Screen -->
+<div class="pl-screen pl-screen-home">
+    <section class="pl-card pl-hero-card">
+        <p class="pl-eyebrow">Pokemon Lifestyles</p>
+        <h1 class="pl-title">Web MVP</h1>
+        <p class="pl-subtitle">
+            This first phone-friendly version is only for Focus sessions.
+            Sleep, food, steps, habits, eggs, shop, and analytics stay out for now.
+        </p>
+
+        <a class="pl-primary-button" asp-page="/Focus/Index">Open Focus</a>
+    </section>
+
+    <nav class="pl-bottom-dock" aria-label="Main actions">
+        <a class="pl-dock-button pl-dock-button-active" asp-page="/Focus/Index">
+            <span class="pl-dock-label">Focus</span>
+        </a>
+
+        <button class="pl-dock-button" type="button" disabled>
+            <span class="pl-dock-label">Sleep</span>
+            <span class="pl-dock-note">Later</span>
+        </button>
+    </nav>
 </div>
+<!-- SECTION A END — Home Screen -->

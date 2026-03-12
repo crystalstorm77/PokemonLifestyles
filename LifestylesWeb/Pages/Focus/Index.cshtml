@@ -1,0 +1,99 @@
+﻿@page
+@model LifestylesWeb.Pages.Focus.IndexModel
+@{
+    ViewData["Title"] = "Focus";
+}
+
+<!-- SECTION A START — Focus Entry Screen -->
+<div class="pl-screen">
+    <div class="pl-stack">
+        <section class="pl-card">
+            <div class="pl-card-header">
+                <a class="pl-link-button" asp-page="/Index">← Home</a>
+                <span class="pl-badge">Game day: @Model.CurrentGameDayText</span>
+            </div>
+
+            <h1 class="pl-title">Focus</h1>
+            <p class="pl-subtitle">
+                This first web version is a simple manual focus entry screen.
+                We will build the live timer flow after this foundation works.
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+            {
+                <div class="pl-success-banner">@Model.StatusMessage</div>
+            }
+
+            <form method="post" class="pl-form-stack">
+                <div asp-validation-summary="ModelOnly" class="pl-validation-summary"></div>
+
+                <label class="pl-field">
+                    <span class="pl-field-label">Focus type</span>
+                    <input asp-for="Input.FocusType" class="pl-input" placeholder="Draw, Music, Study..." />
+                    <span asp-validation-for="Input.FocusType" class="pl-field-error"></span>
+                </label>
+
+                <label class="pl-field">
+                    <span class="pl-field-label">Minutes</span>
+                    <input asp-for="Input.Minutes" class="pl-input" type="number" min="5" max="120" step="5" />
+                    <span class="pl-field-hint">Start simple: 5 to 120 minutes.</span>
+                    <span asp-validation-for="Input.Minutes" class="pl-field-error"></span>
+                </label>
+
+                <label class="pl-field">
+                    <span class="pl-field-label">Logged at</span>
+                    <input asp-for="Input.LoggedAtLocal" class="pl-input" type="datetime-local" />
+                    <span class="pl-field-hint">Game day rolls over at 3:00 am.</span>
+                    <span asp-validation-for="Input.LoggedAtLocal" class="pl-field-error"></span>
+                </label>
+
+                <label class="pl-checkbox-row">
+                    <input asp-for="Input.Completed" class="pl-checkbox" />
+                    <span>Session completed</span>
+                </label>
+
+                <div class="pl-button-stack">
+                    <button type="submit" class="pl-primary-button">Save Focus Session</button>
+                    <a class="pl-secondary-button" asp-page="/Index">Back</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="pl-card">
+            <h2 class="pl-section-title">Sessions for this game day</h2>
+            <p class="pl-section-note">
+                This proves the new web app is already saving and loading focus sessions.
+            </p>
+
+            @if (Model.Sessions.Count == 0)
+            {
+                <p class="pl-empty-state">No sessions saved yet for this game day.</p>
+            }
+            else
+            {
+                <div class="pl-session-list">
+                    @foreach (var session in Model.Sessions)
+                    {
+                        <article class="pl-session-item">
+                            <div class="pl-session-top">
+                                <strong class="pl-session-type">@session.FocusType</strong>
+                                <span class="pl-session-minutes">@session.Minutes min</span>
+                            </div>
+
+                            <div class="pl-session-meta">
+                                <span>@session.LoggedAtUtc.ToLocalTime().ToString("ddd d MMM, h:mm tt")</span>
+                                <span>@(session.Completed ? "Completed" : "Incomplete")</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+</div>
+<!-- SECTION A END — Focus Entry Screen -->
+@section Scripts {
+    <!-- SECTION B START — Validation Scripts -->
+    <partial name="_ValidationScriptsPartial" />
+    <!-- SECTION B END — Validation Scripts -->
+}

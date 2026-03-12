@@ -1,31 +1,326 @@
+/* SECTION A START — App Shell + Base */
 html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
     font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    min-height: 100vh;
+    background: #f4f6fb;
+    color: #1d2433;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+.pl-page-shell {
+    min-height: 100vh;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.pl-screen {
+    min-height: 100vh;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1rem 1rem 6rem 1rem;
 }
+
+.pl-screen-home {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pl-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.pl-hero-card {
+    text-align: left;
+}
+
+.pl-eyebrow {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.pl-title {
+    margin: 0;
+    font-size: 2rem;
+    line-height: 1.1;
+    font-weight: 800;
+}
+
+.pl-subtitle {
+    margin: 0.75rem 0 0 0;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: #4b5563;
+}
+
+.pl-section-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.pl-section-note {
+    margin: 0.35rem 0 0 0;
+    font-size: 0.92rem;
+    color: #6b7280;
+}
+
+.pl-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.pl-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: #eef2ff;
+    color: #3730a3;
+}
+/* SECTION A END — App Shell + Base */
+
+/* SECTION B START — Buttons + Inputs */
+.pl-primary-button,
+.pl-secondary-button,
+.pl-link-button,
+.pl-dock-button {
+    appearance: none;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    font: inherit;
+}
+
+.pl-primary-button,
+.pl-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 3rem;
+    border-radius: 0.95rem;
+    padding: 0.9rem 1rem;
+    font-weight: 700;
+}
+
+.pl-primary-button {
+    margin-top: 1.25rem;
+    background: #2563eb;
+    color: #ffffff;
+}
+
+    .pl-primary-button:hover {
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+
+.pl-secondary-button {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+    .pl-secondary-button:hover {
+        background: #d1d5db;
+        color: #111827;
+    }
+
+.pl-link-button {
+    color: #2563eb;
+    background: transparent;
+    padding: 0;
+    font-weight: 700;
+}
+
+.pl-form-stack {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.pl-field {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.pl-field-label {
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.pl-input {
+    width: 100%;
+    min-height: 3rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.95rem;
+    padding: 0.8rem 0.95rem;
+    background: #ffffff;
+    color: #111827;
+}
+
+    .pl-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+.pl-field-hint {
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+
+.pl-field-error,
+.pl-validation-summary {
+    font-size: 0.85rem;
+    color: #b91c1c;
+}
+
+.pl-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.pl-checkbox {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.pl-button-stack {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.pl-success-banner {
+    margin-top: 1rem;
+    border-radius: 0.95rem;
+    padding: 0.85rem 0.95rem;
+    background: #ecfdf5;
+    color: #166534;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+/* SECTION B END — Buttons + Inputs */
+
+/* SECTION C START — Home Dock + Session List */
+.pl-bottom-dock {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%);
+    width: min(640px, calc(100% - 2rem));
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.pl-dock-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.25rem;
+    border-radius: 1.1rem;
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.10);
+}
+
+    .pl-dock-button:disabled {
+        opacity: 0.65;
+        cursor: default;
+    }
+
+.pl-dock-button-active {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.pl-dock-label {
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.pl-dock-note {
+    margin-top: 0.15rem;
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+.pl-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.pl-session-list {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.pl-session-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+    background: #fafafa;
+}
+
+.pl-session-top,
+.pl-session-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.pl-session-type {
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.pl-session-minutes {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
+.pl-session-meta {
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.pl-empty-state {
+    margin: 1rem 0 0 0;
+    color: #6b7280;
+}
+/* SECTION C END — Home Dock + Session List */
+
+/* SECTION D START — Responsive Tweaks */
+@media (min-width: 768px) {
+    .pl-screen {
+        padding-top: 2rem;
+    }
+
+    .pl-title {
+        font-size: 2.35rem;
+    }
+}
+/* SECTION D END — Responsive Tweaks */
