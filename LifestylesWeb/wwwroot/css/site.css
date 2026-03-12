@@ -18,7 +18,7 @@ body {
 
 .pl-screen {
     min-height: 100vh;
-    max-width: 640px;
+    max-width: 430px;
     margin: 0 auto;
     padding: 1rem 1rem 6rem 1rem;
 }
@@ -92,6 +92,25 @@ body {
     font-weight: 700;
     background: #eef2ff;
     color: #3730a3;
+}
+
+.pl-info-note {
+    margin-top: 1rem;
+    border-radius: 0.95rem;
+    padding: 0.85rem 0.95rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 0.9rem;
+}
+
+.pl-code-path {
+    display: block;
+    margin-top: 0.35rem;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
 }
 /* SECTION A END — App Shell + Base */
 

@@ -21,6 +21,7 @@ public class IndexModel : PageModel
     public List<FocusSession> Sessions { get; private set; } = new();
     public string? StatusMessage { get; private set; }
     public string CurrentGameDayText { get; private set; } = "";
+    public string DataFilePath { get; private set; } = "";
     #endregion // SECTION A — Bound Input + Display State
 
     #region SECTION B — Page Actions
@@ -83,6 +84,7 @@ public class IndexModel : PageModel
     {
         Sessions = (await _focusRepo.GetForDateAsync(gameDay)).ToList();
         CurrentGameDayText = gameDay.ToString("yyyy-MM-dd");
+        DataFilePath = Db.GetDbPath();
     }
 
     private static DateTime EnsureLocalDateTime(DateTime value)

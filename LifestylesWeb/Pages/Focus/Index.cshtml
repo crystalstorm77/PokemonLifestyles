@@ -19,6 +19,11 @@
                 We will build the live timer flow after this foundation works.
             </p>
 
+            <div class="pl-info-note">
+                <strong>Shared data file</strong>
+                <span class="pl-code-path">@Model.DataFilePath</span>
+            </div>
+
             @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
             {
                 <div class="pl-success-banner">@Model.StatusMessage</div>
