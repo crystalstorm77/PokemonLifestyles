@@ -68,8 +68,35 @@ namespace LifestyleCore.Data
             };
 
             await GrantWeeklySleepTrackingBonusAsync(settings, weekStart, currentGameDay, result);
-            await GrantWeeklyHabitTrackingBonusesAsync(settings, weekStart, weekEnd, currentGameDay, result);
             await GrantWeeklyStepsTrackingBonusAsync(settings, weekStart, currentGameDay, result);
+
+            return result;
+        }
+
+        public Task<WeeklyBonusesGrantResult> GrantCurrentWeekHabitBonusesAsync()
+        {
+            return GrantCurrentWeekHabitBonusesAsync(DateTimeOffset.Now);
+        }
+
+        public async Task<WeeklyBonusesGrantResult> GrantCurrentWeekHabitBonusesAsync(DateTimeOffset currentLocalNow)
+        {
+            ItemDropsSchema.EnsureCreated();
+            HabitsSchema.EnsureCreated();
+            RewardsSchema.EnsureCreated();
+
+            var currentGameDay = SleepRewardCalculator.GetGameDayForWakeLocal(currentLocalNow.LocalDateTime);
+            var weekStart = GetWeekStartMonday(currentGameDay);
+            var weekEnd = weekStart.AddDays(6);
+
+            var settings = NormalizeWeeklyBonusSettings(await _settingsRepo.GetAsync());
+            var result = new WeeklyBonusesGrantResult
+            {
+                AwardGameDay = currentGameDay,
+                WeekStart = weekStart,
+                WeekEnd = weekEnd
+            };
+
+            await GrantWeeklyHabitTrackingBonusesAsync(settings, weekStart, weekEnd, currentGameDay, result);
 
             return result;
         }

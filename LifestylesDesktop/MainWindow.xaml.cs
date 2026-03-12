@@ -6612,24 +6612,27 @@ namespace LifestylesDesktop
         #endregion // SECTION I3 — Steps + Habits Refresh
 
         #region SECTION I4 — Steps + Habits Actions
-        private void CounterMinus_Click(object sender, RoutedEventArgs e)
+        private void HabitMinusClick(object sender, RoutedEventArgs e)
         {
-            if (sender is not System.Windows.Controls.Button b || b.DataContext is not HabitRow row)
+            if (sender is not Button btn || btn.DataContext is not HabitRow row)
+                return;
+
+            if (!row.IsCounter)
                 return;
 
             row.TodayValue = Math.Max(0, row.TodayValue - 1);
-
-            // HabitRow doesn't implement INotifyPropertyChanged (debug UI), so force a refresh.
             HabitsGrid.Items.Refresh();
         }
 
-        private void CounterPlus_Click(object sender, RoutedEventArgs e)
+        private void HabitPlusClick(object sender, RoutedEventArgs e)
         {
-            if (sender is not System.Windows.Controls.Button b || b.DataContext is not HabitRow row)
+            if (sender is not Button btn || btn.DataContext is not HabitRow row)
                 return;
 
-            row.TodayValue = row.TodayValue + 1;
+            if (!row.IsCounter)
+                return;
 
+            row.TodayValue = Math.Max(0, row.TodayValue + 1);
             HabitsGrid.Items.Refresh();
         }
 
@@ -6638,15 +6641,16 @@ namespace LifestylesDesktop
             try
             {
                 string title = (HabitTitleBox.Text ?? "").Trim();
+
                 if (string.IsNullOrWhiteSpace(title))
                 {
-                    MessageBox.Show("Habit title can’t be blank.");
+                    MessageBox.Show("Habit title required.");
                     return;
                 }
 
-                if (!int.TryParse((HabitTargetBox.Text ?? "").Trim(), out int target) || target <= 0)
+                if (!int.TryParse((HabitTargetBox.Text ?? "").Trim(), out int target) || target < 1)
                 {
-                    MessageBox.Show("Target/wk must be a whole number greater than 0.");
+                    MessageBox.Show("Target/week must be a whole number ≥ 1.");
                     return;
                 }
 
@@ -6683,7 +6687,6 @@ namespace LifestylesDesktop
 
                 var effectiveNowLocal = GetEffectiveCurrentLocalTime();
                 DateOnly rewardDay = GetCurrentGameDayLocal(effectiveNowLocal);
-                bool canAwardRewards = true;
 
                 var renamedHabits = new List<string>();
                 var newlyGranted = new List<string>();
@@ -6709,14 +6712,14 @@ namespace LifestylesDesktop
                     if (row.Kind == HabitKind.CheckboxDaily)
                     {
                         int value = row.TodayChecked ? 1 : 0;
-                        bool tryAward = canAwardRewards && value > 0;
+                        bool tryAward = value > 0;
 
                         var result = await _habitRepo.SetDailyValueAsync(row.HabitId, rewardDay, value, tryAward, effectiveNowLocal);
                         if (tryAward)
                         {
                             if (result.RewardGranted)
                                 newlyGranted.Add($"{row.Title} (HabitId {row.HabitId})");
-                            else if (value > 0)
+                            else
                                 alreadyGranted.Add($"{row.Title} (HabitId {row.HabitId})");
                         }
                     }
@@ -6731,21 +6734,26 @@ namespace LifestylesDesktop
                     }
                 }
 
+                var weeklyHabitResult = await _weeklyBonusesService.GrantCurrentWeekHabitBonusesAsync(effectiveNowLocal);
+
                 if (SelectedLogDate != rewardDay)
                     await SwitchArchiveViewToDateAsync(rewardDay);
                 else
-                    await RefreshStepsAndHabitsAsync();
+                    await RefreshForSelectedDateAsync();
 
                 string msg =
                     "Saved habit changes.\n\n" +
                     $"Habits renamed: {renamedHabits.Count}\n" +
                     (renamedHabits.Count == 0 ? "" : string.Join("\n", renamedHabits)) +
                     "\n\n" +
-                    $"Tickets newly granted: {newlyGranted.Count}\n" +
+                    $"Daily checkbox tickets newly granted: {newlyGranted.Count}\n" +
                     (newlyGranted.Count == 0 ? "" : string.Join("\n", newlyGranted)) +
                     "\n\n" +
-                    $"Tickets already granted (unchanged): {alreadyGranted.Count}\n" +
-                    (alreadyGranted.Count == 0 ? "" : string.Join("\n", alreadyGranted));
+                    $"Daily checkbox tickets already granted (unchanged): {alreadyGranted.Count}\n" +
+                    (alreadyGranted.Count == 0 ? "" : string.Join("\n", alreadyGranted)) +
+                    "\n\n" +
+                    $"Weekly habit bonuses newly granted: {weeklyHabitResult.GrantedHabitBonusCount}\n" +
+                    $"Weekly habit bonus tickets granted now: {weeklyHabitResult.TotalTicketsGranted}";
 
                 MessageBox.Show(msg);
             }
