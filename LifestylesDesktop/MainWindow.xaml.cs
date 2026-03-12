@@ -2813,19 +2813,23 @@ WHERE Id = 1;",
             {
                 Text = "Weekly Crate",
                 FontWeight = FontWeights.Bold,
-                Margin = new Thickness(0, 10, 0, 0)
+                Margin = new Thickness(0, 10, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
             };
 
             var settingsColumn = new StackPanel
             {
                 Orientation = Orientation.Vertical,
-                Margin = new Thickness(0, 6, 0, 0)
+                Margin = new Thickness(0, 6, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
             };
 
             var enabledRow = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 0, 0, 6)
+                Margin = new Thickness(0, 0, 0, 6),
+                HorizontalAlignment = HorizontalAlignment.Left
             };
 
             enabledRow.Children.Add(new TextBlock
@@ -2834,6 +2838,7 @@ WHERE Id = 1;",
                 Width = 220,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Left,
                 ToolTip = "Turn the weekly crate system on or off without changing the rest of the gamification systems."
             });
 
@@ -2850,7 +2855,8 @@ WHERE Id = 1;",
                 var row = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    Margin = new Thickness(0, 0, 0, 6)
+                    Margin = new Thickness(0, 0, 0, 6),
+                    HorizontalAlignment = HorizontalAlignment.Left
                 };
 
                 row.Children.Add(new TextBlock
@@ -2859,6 +2865,7 @@ WHERE Id = 1;",
                     Width = 220,
                     VerticalAlignment = VerticalAlignment.Center,
                     TextWrapping = TextWrapping.Wrap,
+                    TextAlignment = TextAlignment.Left,
                     ToolTip = toolTip
                 });
 
@@ -2873,7 +2880,8 @@ WHERE Id = 1;",
                 {
                     Text = suffix,
                     Foreground = System.Windows.Media.Brushes.Gray,
-                    VerticalAlignment = VerticalAlignment.Center
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextAlignment = TextAlignment.Left
                 });
 
                 return row;
@@ -2898,13 +2906,14 @@ WHERE Id = 1;",
             var buttonRow = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 8, 0, 0)
+                Margin = new Thickness(0, 8, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
             };
 
             var saveButton = new Button
             {
-                Content = "Save weekly crate",
-                Width = 140,
+                Content = "Save Crate Settings",
+                Width = 150,
                 Margin = new Thickness(0, 0, 8, 0),
                 HorizontalAlignment = HorizontalAlignment.Left
             };
@@ -2912,8 +2921,8 @@ WHERE Id = 1;",
 
             var resetButton = new Button
             {
-                Content = "Reset weekly crate",
-                Width = 140,
+                Content = "Reset Crate Settings",
+                Width = 150,
                 Margin = new Thickness(0, 0, 8, 0),
                 HorizontalAlignment = HorizontalAlignment.Left
             };
@@ -2933,12 +2942,21 @@ WHERE Id = 1;",
             buttonRow.Children.Add(resetButton);
             buttonRow.Children.Add(openButton);
 
+            var detailsColumn = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 8, 0, 0),
+                Width = 520,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
             var statusText = new TextBlock
             {
-                Margin = new Thickness(0, 8, 0, 0),
+                Margin = new Thickness(0, 0, 0, 0),
                 FontWeight = FontWeights.Bold,
                 TextWrapping = TextWrapping.Wrap,
-                MaxWidth = 520
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
             };
 
             var lastResultText = new TextBlock
@@ -2946,7 +2964,8 @@ WHERE Id = 1;",
                 Margin = new Thickness(0, 4, 0, 0),
                 Foreground = System.Windows.Media.Brushes.Gray,
                 TextWrapping = TextWrapping.Wrap,
-                MaxWidth = 520
+                HorizontalAlignment = HorizontalAlignment.Left,
+                TextAlignment = TextAlignment.Left
             };
 
             _weeklyCrateStatusText = statusText;
@@ -2957,18 +2976,19 @@ WHERE Id = 1;",
                 Text = "Foundation: one crate per Monday-based game week. It spends tickets, uses the existing active item list, and follows the current common/uncommon/rare tier weights.",
                 Foreground = System.Windows.Media.Brushes.Gray,
                 Margin = new Thickness(0, 6, 0, 0),
-                MaxWidth = 520,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 TextAlignment = TextAlignment.Left,
                 TextWrapping = TextWrapping.Wrap
             };
 
+            detailsColumn.Children.Add(statusText);
+            detailsColumn.Children.Add(lastResultText);
+            detailsColumn.Children.Add(note);
+
             root.Children.Insert(insertAt++, header);
             root.Children.Insert(insertAt++, settingsColumn);
             root.Children.Insert(insertAt++, buttonRow);
-            root.Children.Insert(insertAt++, statusText);
-            root.Children.Insert(insertAt++, lastResultText);
-            root.Children.Insert(insertAt++, note);
+            root.Children.Insert(insertAt++, detailsColumn);
 
             _weeklyCrateUiBuilt = true;
         }
