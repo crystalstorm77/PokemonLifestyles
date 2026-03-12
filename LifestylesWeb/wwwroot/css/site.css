@@ -385,6 +385,10 @@ body {
     overflow-y: auto;
 }
 
+    .pl-focus-panel .pl-button-stack {
+        grid-template-columns: 1fr 1fr;
+    }
+
 .pl-mode-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -544,7 +548,7 @@ body {
 }
 
 .pl-run-actions-two {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
 }
 
 .pl-stop-button-armed {
@@ -585,11 +589,5 @@ body {
 
 .pl-overlay-subtitle {
     margin-top: 0.5rem;
-}
-
-@media (min-width: 480px) {
-    .pl-run-actions-two {
-        grid-template-columns: 1fr 1fr;
-    }
 }
 /* SECTION E END — Focus Setup + Run */
