@@ -968,7 +968,7 @@
                                     <Button Content="Month" Width="80" Margin="0,0,6,6" Tag="Month" Click="AnalyticsPresetButton_Click"/>
                                     <Button Content="3 Months" Width="90" Margin="0,0,6,6" Tag="3Months" Click="AnalyticsPresetButton_Click"/>
                                     <Button Content="6 Months" Width="90" Margin="0,0,6,6" Tag="6Months" Click="AnalyticsPresetButton_Click"/>
-                                    <Button Content="Year" Width="80" Margin="0,0,6,6" Tag="Year" Click="AnalyticsPresetButton_Click"/>
+                                    <Button Content="Current Year" Width="100" Margin="0,0,6,6" Tag="Year" Click="AnalyticsPresetButton_Click"/>
                                     <Button Content="Custom" Width="90" Margin="0,0,6,6" Tag="Custom" Click="AnalyticsPresetButton_Click"/>
                                 </WrapPanel>
 
@@ -1008,49 +1008,49 @@
                         </GroupBox>
 
                         <GroupBox Header="Overview" Margin="0,0,0,12">
-                            <WrapPanel Margin="10">
-                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                            <UniformGrid Columns="3" Margin="10">
+                                <Border Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
                                     <StackPanel>
                                         <TextBlock Text="Focus" FontWeight="Bold" Margin="0,0,0,6"/>
                                         <TextBlock x:Name="AnalyticsOverviewFocusText" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                <Border Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
                                     <StackPanel>
                                         <TextBlock Text="Food" FontWeight="Bold" Margin="0,0,0,6"/>
                                         <TextBlock x:Name="AnalyticsOverviewFoodText" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                <Border Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
                                     <StackPanel>
                                         <TextBlock Text="Sleep" FontWeight="Bold" Margin="0,0,0,6"/>
                                         <TextBlock x:Name="AnalyticsOverviewSleepText" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                <Border Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
                                     <StackPanel>
                                         <TextBlock Text="Steps" FontWeight="Bold" Margin="0,0,0,6"/>
                                         <TextBlock x:Name="AnalyticsOverviewStepsText" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                <Border Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
                                     <StackPanel>
                                         <TextBlock Text="Habits" FontWeight="Bold" Margin="0,0,0,6"/>
                                         <TextBlock x:Name="AnalyticsOverviewHabitsText" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border Width="250" Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
+                                <Border Margin="0,0,12,12" Padding="10" BorderBrush="#FFBFBFBF" BorderThickness="1" CornerRadius="4">
                                     <StackPanel>
                                         <TextBlock Text="Rewards" FontWeight="Bold" Margin="0,0,0,6"/>
                                         <TextBlock x:Name="AnalyticsOverviewRewardsText" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
-                            </WrapPanel>
+                            </UniformGrid>
                         </GroupBox>
 
                         <GroupBox Header="Current Archive Snapshot">
