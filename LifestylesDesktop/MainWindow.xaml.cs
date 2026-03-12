@@ -136,7 +136,7 @@ namespace LifestylesDesktop
 
         // Weekly crate controls (injected at runtime into the debug area)
         private bool _weeklyCrateUiBuilt = false;
-        private CheckBox? _weeklyCrateEnabledCheckBox;
+        private System.Windows.Controls.CheckBox? _weeklyCrateEnabledCheckBox;
         private TextBox? _weeklyCrateTicketCostBox;
         private TextBox? _weeklyCrateRollCountBox;
         private TextBlock? _weeklyCrateStatusText;
@@ -2837,7 +2837,7 @@ WHERE Id = 1;",
                 ToolTip = "Turn the weekly crate system on or off without changing the rest of the gamification systems."
             });
 
-            var enabledCheckBox = new CheckBox
+            var enabledCheckBox = new System.Windows.Controls.CheckBox
             {
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -3038,21 +3038,25 @@ WHERE Id = 1;",
         {
             try
             {
-                if (_weeklyCrateEnabledCheckBox == null ||
-                    _weeklyCrateTicketCostBox == null ||
-                    _weeklyCrateRollCountBox == null)
+                var enabledCheckBox = _weeklyCrateEnabledCheckBox;
+                var ticketCostBox = _weeklyCrateTicketCostBox;
+                var rollCountBox = _weeklyCrateRollCountBox;
+
+                if (enabledCheckBox == null ||
+                    ticketCostBox == null ||
+                    rollCountBox == null)
                 {
                     MessageBox.Show("Weekly crate controls are not ready yet.");
                     return;
                 }
 
-                if (!int.TryParse((_weeklyCrateTicketCostBox.Text ?? "").Trim(), out int ticketCost) || ticketCost < 0)
+                if (!int.TryParse((ticketCostBox.Text ?? "").Trim(), out int ticketCost) || ticketCost < 0)
                 {
                     MessageBox.Show("Weekly Crate Ticket Cost must be a whole number greater than or equal to 0.");
                     return;
                 }
 
-                if (!int.TryParse((_weeklyCrateRollCountBox.Text ?? "").Trim(), out int rollCount) || rollCount < 1 || rollCount > 10)
+                if (!int.TryParse((rollCountBox.Text ?? "").Trim(), out int rollCount) || rollCount < 1 || rollCount > 10)
                 {
                     MessageBox.Show("Weekly Crate Reward Rolls must be a whole number between 1 and 10.");
                     return;
@@ -3060,7 +3064,7 @@ WHERE Id = 1;",
 
                 await SaveWeeklyCrateUiSettingsAsync(new WeeklyCrateUiSettings
                 {
-                    IsEnabled = _weeklyCrateEnabledCheckBox.IsChecked == true,
+                    IsEnabled = enabledCheckBox.IsChecked == true,
                     TicketCost = ticketCost,
                     RollCount = rollCount
                 });
