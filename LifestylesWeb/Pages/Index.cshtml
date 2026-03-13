@@ -387,6 +387,7 @@
                     const runNote = document.getElementById("pl-run-note");
 
                     const confirmOverlay = document.getElementById("pl-confirm-overlay");
+                    const confirmCard = confirmOverlay.querySelector(".pl-run-overlay-card");
                     const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
                     const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
                     const confirmCompleteXp = document.getElementById("pl-confirm-complete-xp");
@@ -402,6 +403,7 @@
                     const rewardXp = document.getElementById("pl-reward-xp");
                     const rewardCoins = document.getElementById("pl-reward-coins");
                     const rewardCloseButton = document.getElementById("pl-reward-close-button");
+                    const rewardCard = rewardOverlay.querySelector(".pl-run-overlay-card");
 
                     const saveForm = document.getElementById("pl-save-form");
                     const saveFocusType = document.getElementById("pl-save-focus-type");
@@ -425,14 +427,14 @@
                         !closeFocusButton || !runHomeButton || !setupPanel || !runPanel || !focusTypeInput ||
                         !durationSlider || !durationReadout || !startFocusButton || !runFocusType || !runTarget ||
                         !runStateLabel || !runReadout || !runElapsed || !progressFill || !pauseButton ||
-                        !exitButton || !runNote || !confirmOverlay || !confirmCurrentTime || !confirmTimerStatus ||
-                        !confirmCompleteXp || !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
-                        !confirmKeepGoingButton || !confirmStopButton || !rewardStatusText || !rewardFocusType ||
-                        !rewardDurationText || !rewardXp || !rewardCoins || !rewardCloseButton || !saveForm ||
-                        !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds || !saveMode ||
-                        !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX || !layoutY ||
-                        !layoutScaleValue || !layoutXValue || !layoutYValue || !layoutResetSelected ||
-                        !layoutResetAll || !layoutCode) {
+                        !exitButton || !runNote || !confirmOverlay || !confirmCard || !confirmCurrentTime ||
+                        !confirmTimerStatus || !confirmCompleteXp || !confirmCompleteCoins || !confirmCurrentXp ||
+                        !confirmCurrentCoins || !confirmKeepGoingButton || !confirmStopButton ||
+                        !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
+                        !rewardCoins || !rewardCloseButton || !rewardCard || !saveForm || !saveFocusType ||
+                        !savePlannedSeconds || !saveElapsedSeconds || !saveMode || !layoutPanel ||
+                        !layoutAssetSelect || !layoutScale || !layoutX || !layoutY || !layoutScaleValue ||
+                        !layoutXValue || !layoutYValue || !layoutResetSelected || !layoutResetAll || !layoutCode) {
                         return;
                     }
 
@@ -444,16 +446,16 @@
                     const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
 
                     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-                    const layoutStorageKey = "pl-layout-mode-v1";
+                    const layoutStorageKey = "pl-layout-mode-v2";
 
                     const layoutAssets = {
-                        "start": "--pl-btn-start",
-                        "back": "--pl-btn-back",
-                        "pause": "--pl-btn-pause",
-                        "exit": "--pl-btn-exit",
-                        "keep-going": "--pl-btn-keep-going",
-                        "stop": "--pl-btn-stop",
-                        "gotcha": "--pl-btn-gotcha"
+                        "start": { button: startFocusButton, container: setupPanel },
+                        "back": { button: closeFocusButton, container: setupPanel },
+                        "pause": { button: pauseButton, container: runPanel },
+                        "exit": { button: exitButton, container: runPanel },
+                        "keep-going": { button: confirmKeepGoingButton, container: confirmCard },
+                        "stop": { button: confirmStopButton, container: confirmCard },
+                        "gotcha": { button: rewardCloseButton, container: rewardCard }
                     };
 
                     let plannedSeconds = 300;
@@ -534,11 +536,13 @@
                     function showSetupPanel() {
                         setupPanel.hidden = false;
                         runPanel.hidden = true;
+                        applyStoredAbsoluteLayouts();
                     }
 
                     function showRunPanel() {
                         setupPanel.hidden = true;
                         runPanel.hidden = false;
+                        applyStoredAbsoluteLayouts();
                     }
 
                     function openFocusOverlay() {
@@ -547,6 +551,7 @@
                         closeConfirmOverlay();
                         showSetupPanel();
                         updateDurationReadout();
+                        applyStoredAbsoluteLayouts();
                     }
 
                     function closeFocusOverlay() {
@@ -559,6 +564,7 @@
                     function openRewardOverlay() {
                         rewardOverlay.hidden = false;
                         rewardOverlay.setAttribute("aria-hidden", "false");
+                        applyStoredAbsoluteLayouts();
                     }
 
                     function closeRewardOverlay() {
@@ -623,6 +629,7 @@
                         confirmOverlay.hidden = false;
                         confirmOverlay.setAttribute("aria-hidden", "false");
                         updateConfirmOverlay(getElapsedSeconds());
+                        applyStoredAbsoluteLayouts();
                     }
 
                     function closeConfirmOverlay() {
@@ -752,25 +759,6 @@
                         }
                     }
 
-                    function getLayoutVarName(assetKey, suffix) {
-                        return `${layoutAssets[assetKey]}-${suffix}`;
-                    }
-
-                    function readPercentVar(assetKey, suffix, fallbackValue) {
-                        const style = getComputedStyle(homeRoot);
-                        const raw = style.getPropertyValue(getLayoutVarName(assetKey, suffix)).trim();
-
-                        if (!raw) {
-                            return fallbackValue;
-                        }
-
-                        return parseFloat(raw.replace("%", "")) || fallbackValue;
-                    }
-
-                    function writePercentVar(assetKey, suffix, value) {
-                        homeRoot.style.setProperty(getLayoutVarName(assetKey, suffix), `${value}%`);
-                    }
-
                     function getStoredLayoutState() {
                         try {
                             const raw = localStorage.getItem(layoutStorageKey);
@@ -787,89 +775,173 @@
                         }
                     }
 
-                    function applyStoredLayoutState() {
+                    function getAssetConfig(assetKey) {
+                        return layoutAssets[assetKey] || null;
+                    }
+
+                    function getFallbackBaseMetrics(config) {
+                        const containerRect = config.container.getBoundingClientRect();
+                        const fallbackWidth = containerRect.width > 0
+                            ? Math.min(Math.max(containerRect.width * 0.42, 140), 260)
+                            : 180;
+
+                        return {
+                            baseWidth: Math.round(fallbackWidth),
+                            baseHeight: 56
+                        };
+                    }
+
+                    function measureBaseMetrics(assetKey) {
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return { baseWidth: 180, baseHeight: 56 };
+                        }
+
+                        const rect = config.button.getBoundingClientRect();
+
+                        if (rect.width > 0 && rect.height > 0) {
+                            return {
+                                baseWidth: Math.round(rect.width),
+                                baseHeight: Math.round(rect.height)
+                            };
+                        }
+
+                        return getFallbackBaseMetrics(config);
+                    }
+
+                    function clearAbsoluteLayout(assetKey) {
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const button = config.button;
+
+                        button.style.position = "";
+                        button.style.left = "";
+                        button.style.top = "";
+                        button.style.width = "";
+                        button.style.height = "";
+                        button.style.transform = "";
+                        button.style.zIndex = "";
+                        button.style.margin = "";
+                        button.style.inset = "";
+                    }
+
+                    function applyAbsoluteLayout(assetKey, state) {
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const button = config.button;
+                        const container = config.container;
+
+                        container.style.overflow = "visible";
+
+                        const baseWidth = state.baseWidth || 180;
+                        const baseHeight = state.baseHeight || 56;
+                        const scale = state.scale || 100;
+                        const x = state.x ?? 50;
+                        const y = state.y ?? 50;
+
+                        button.style.position = "absolute";
+                        button.style.left = `${x}%`;
+                        button.style.top = `${y}%`;
+                        button.style.width = `${baseWidth}px`;
+                        button.style.height = `${baseHeight}px`;
+                        button.style.margin = "0";
+                        button.style.inset = "auto";
+                        button.style.transform = `translate(-50%, -50%) scale(${scale / 100})`;
+                        button.style.zIndex = "25";
+                    }
+
+                    function applyStoredAbsoluteLayouts() {
                         const state = getStoredLayoutState();
 
                         Object.keys(layoutAssets).forEach(assetKey => {
                             const assetState = state[assetKey];
                             if (!assetState) {
+                                clearAbsoluteLayout(assetKey);
                                 return;
                             }
 
-                            writePercentVar(assetKey, "scale", assetState.scale);
-                            writePercentVar(assetKey, "x", assetState.x);
-                            writePercentVar(assetKey, "y", assetState.y);
+                            applyAbsoluteLayout(assetKey, assetState);
                         });
                     }
 
-                    function updateLayoutCodePreview(assetKey, scale, x, y) {
-                        const prefix = layoutAssets[assetKey];
+                    function updateLayoutCodePreview(assetKey, state) {
                         layoutCode.value =
-        `${prefix}-scale: ${scale}%;
-        ${prefix}-x: ${x}%;
-        ${prefix}-y: ${y}%;`;
+        `${assetKey}: {
+          x: ${state.x}%
+          y: ${state.y}%
+          scale: ${state.scale}%
+          baseWidth: ${state.baseWidth}px
+          baseHeight: ${state.baseHeight}px
+        }`;
                     }
 
                     function hydrateLayoutControls() {
                         const assetKey = layoutAssetSelect.value;
-                        const scale = Math.round(readPercentVar(assetKey, "scale", 100));
-                        const x = Math.round(readPercentVar(assetKey, "x", 50));
-                        const y = Math.round(readPercentVar(assetKey, "y", 50));
+                        const state = getStoredLayoutState();
+                        const assetState = state[assetKey] || { scale: 100, x: 50, y: 50, ...measureBaseMetrics(assetKey) };
 
-                        layoutScale.value = String(scale);
-                        layoutX.value = String(x);
-                        layoutY.value = String(y);
+                        layoutScale.value = String(assetState.scale);
+                        layoutX.value = String(assetState.x);
+                        layoutY.value = String(assetState.y);
 
-                        layoutScaleValue.textContent = `${scale}%`;
-                        layoutXValue.textContent = `${x}%`;
-                        layoutYValue.textContent = `${y}%`;
+                        layoutScaleValue.textContent = `${assetState.scale}%`;
+                        layoutXValue.textContent = `${assetState.x}%`;
+                        layoutYValue.textContent = `${assetState.y}%`;
 
-                        updateLayoutCodePreview(assetKey, scale, x, y);
+                        updateLayoutCodePreview(assetKey, assetState);
                     }
 
                     function pushLayoutControlValues() {
                         const assetKey = layoutAssetSelect.value;
-                        const scale = parseInt(layoutScale.value || "100", 10);
-                        const x = parseInt(layoutX.value || "50", 10);
-                        const y = parseInt(layoutY.value || "50", 10);
-
-                        writePercentVar(assetKey, "scale", scale);
-                        writePercentVar(assetKey, "x", x);
-                        writePercentVar(assetKey, "y", y);
-
                         const state = getStoredLayoutState();
-                        state[assetKey] = { scale, x, y };
+
+                        const existing = state[assetKey] || {};
+                        const measured = existing.baseWidth && existing.baseHeight
+                            ? existing
+                            : measureBaseMetrics(assetKey);
+
+                        const nextState = {
+                            baseWidth: measured.baseWidth,
+                            baseHeight: measured.baseHeight,
+                            scale: parseInt(layoutScale.value || "100", 10),
+                            x: parseInt(layoutX.value || "50", 10),
+                            y: parseInt(layoutY.value || "50", 10)
+                        };
+
+                        state[assetKey] = nextState;
                         saveLayoutState(state);
+                        applyAbsoluteLayout(assetKey, nextState);
 
-                        layoutScaleValue.textContent = `${scale}%`;
-                        layoutXValue.textContent = `${x}%`;
-                        layoutYValue.textContent = `${y}%`;
+                        layoutScaleValue.textContent = `${nextState.scale}%`;
+                        layoutXValue.textContent = `${nextState.x}%`;
+                        layoutYValue.textContent = `${nextState.y}%`;
 
-                        updateLayoutCodePreview(assetKey, scale, x, y);
+                        updateLayoutCodePreview(assetKey, nextState);
                     }
 
                     function resetSelectedLayoutAsset() {
                         const assetKey = layoutAssetSelect.value;
-
-                        writePercentVar(assetKey, "scale", 100);
-                        writePercentVar(assetKey, "x", 50);
-                        writePercentVar(assetKey, "y", 50);
-
                         const state = getStoredLayoutState();
-                        state[assetKey] = { scale: 100, x: 50, y: 50 };
-                        saveLayoutState(state);
 
+                        delete state[assetKey];
+                        saveLayoutState(state);
+                        clearAbsoluteLayout(assetKey);
                         hydrateLayoutControls();
                     }
 
                     function resetAllLayoutAssets() {
+                        saveLayoutState({});
+
                         Object.keys(layoutAssets).forEach(assetKey => {
-                            writePercentVar(assetKey, "scale", 100);
-                            writePercentVar(assetKey, "x", 50);
-                            writePercentVar(assetKey, "y", 50);
+                            clearAbsoluteLayout(assetKey);
                         });
 
-                        saveLayoutState({});
                         hydrateLayoutControls();
                     }
 
@@ -974,8 +1046,9 @@
                         }
                     });
 
+                    applyStoredAbsoluteLayouts();
+
                     if (layoutModeEnabled) {
-                        applyStoredLayoutState();
                         layoutPanel.hidden = false;
 
                         layoutAssetSelect.addEventListener("change", hydrateLayoutControls);
