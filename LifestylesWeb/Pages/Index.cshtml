@@ -305,6 +305,54 @@
         <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-save-elapsed-seconds" value="0" />
         <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
     </form>
+
+    <aside class="pl-layout-panel" id="pl-layout-panel" hidden aria-label="Layout mode panel">
+        <div class="pl-layout-panel-header">
+            <strong>Layout Mode</strong>
+            <span>Buttons only</span>
+        </div>
+
+        <label class="pl-field">
+            <span class="pl-field-label">Asset</span>
+            <select class="pl-input" id="pl-layout-asset-select">
+                <option value="start">start</option>
+                <option value="back">back</option>
+                <option value="pause">pause</option>
+                <option value="exit">exit</option>
+                <option value="keep-going">keep-going</option>
+                <option value="stop">stop</option>
+                <option value="gotcha">gotcha</option>
+            </select>
+        </label>
+
+        <label class="pl-field">
+            <span class="pl-field-label">Scale</span>
+            <input class="pl-input" id="pl-layout-scale" type="range" min="40" max="160" step="1" value="100" />
+            <span class="pl-field-hint" id="pl-layout-scale-value">100%</span>
+        </label>
+
+        <label class="pl-field">
+            <span class="pl-field-label">X</span>
+            <input class="pl-input" id="pl-layout-x" type="range" min="0" max="100" step="1" value="50" />
+            <span class="pl-field-hint" id="pl-layout-x-value">50%</span>
+        </label>
+
+        <label class="pl-field">
+            <span class="pl-field-label">Y</span>
+            <input class="pl-input" id="pl-layout-y" type="range" min="0" max="100" step="1" value="50" />
+            <span class="pl-field-hint" id="pl-layout-y-value">50%</span>
+        </label>
+
+        <div class="pl-layout-actions">
+            <button type="button" class="pl-secondary-button" id="pl-layout-reset-selected">Reset Selected</button>
+            <button type="button" class="pl-secondary-button" id="pl-layout-reset-all">Reset All</button>
+        </div>
+
+        <label class="pl-field">
+            <span class="pl-field-label">Copy back into site.css</span>
+            <textarea class="pl-input pl-layout-code" id="pl-layout-code" readonly></textarea>
+        </label>
+    </aside>
 </div>
 <!-- SECTION A END — Home Screen + Focus Overlay -->
 

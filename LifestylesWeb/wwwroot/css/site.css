@@ -353,34 +353,41 @@ body {
     --pl-focus-confirm-panel-image: none;
     --pl-focus-reward-panel-image: none;
     --pl-art-button-radius: 0.95rem;
-    --pl-btn-start-image: url('/assets/ui/buttons/start.png');
-    --pl-btn-start-fallback: none;
-    --pl-btn-start-size: 100% 100%;
-    --pl-btn-start-pos: center center;
+    --pl-btn-start-image: none;
+    --pl-btn-start-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-start-scale: 100%;
+    --pl-btn-start-x: 50%;
+    --pl-btn-start-y: 50%;
     --pl-btn-back-image: none;
     --pl-btn-back-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
-    --pl-btn-back-size: 100% 100%;
-    --pl-btn-back-pos: center center;
+    --pl-btn-back-scale: 100%;
+    --pl-btn-back-x: 50%;
+    --pl-btn-back-y: 50%;
     --pl-btn-pause-image: none;
     --pl-btn-pause-fallback: linear-gradient(180deg, #2563eb, #2563eb);
-    --pl-btn-pause-size: 100% 100%;
-    --pl-btn-pause-pos: center center;
+    --pl-btn-pause-scale: 100%;
+    --pl-btn-pause-x: 50%;
+    --pl-btn-pause-y: 50%;
     --pl-btn-exit-image: none;
     --pl-btn-exit-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
-    --pl-btn-exit-size: 100% 100%;
-    --pl-btn-exit-pos: center center;
+    --pl-btn-exit-scale: 100%;
+    --pl-btn-exit-x: 50%;
+    --pl-btn-exit-y: 50%;
     --pl-btn-keep-going-image: none;
     --pl-btn-keep-going-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
-    --pl-btn-keep-going-size: 100% 100%;
-    --pl-btn-keep-going-pos: center center;
+    --pl-btn-keep-going-scale: 100%;
+    --pl-btn-keep-going-x: 50%;
+    --pl-btn-keep-going-y: 50%;
     --pl-btn-stop-image: none;
     --pl-btn-stop-fallback: linear-gradient(180deg, #2563eb, #2563eb);
-    --pl-btn-stop-size: 100% 100%;
-    --pl-btn-stop-pos: center center;
+    --pl-btn-stop-scale: 100%;
+    --pl-btn-stop-x: 50%;
+    --pl-btn-stop-y: 50%;
     --pl-btn-gotcha-image: none;
     --pl-btn-gotcha-fallback: linear-gradient(180deg, #2563eb, #2563eb);
-    --pl-btn-gotcha-size: 100% 100%;
-    --pl-btn-gotcha-pos: center center;
+    --pl-btn-gotcha-scale: 100%;
+    --pl-btn-gotcha-x: 50%;
+    --pl-btn-gotcha-y: 50%;
     padding-bottom: 7.5rem;
     position: relative;
     overflow: hidden;
@@ -723,50 +730,50 @@ body {
 .pl-button-start {
     background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-start-size), 100% 100% !important;
-    background-position: var(--pl-btn-start-pos), center center !important;
+    background-size: var(--pl-btn-start-scale) var(--pl-btn-start-scale), 100% 100% !important;
+    background-position: var(--pl-btn-start-x) var(--pl-btn-start-y), center center !important;
 }
 
 .pl-button-back {
     background-image: var(--pl-btn-back-image), var(--pl-btn-back-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-back-size), 100% 100% !important;
-    background-position: var(--pl-btn-back-pos), center center !important;
+    background-size: var(--pl-btn-back-scale) var(--pl-btn-back-scale), 100% 100% !important;
+    background-position: var(--pl-btn-back-x) var(--pl-btn-back-y), center center !important;
 }
 
 .pl-button-pause {
     background-image: var(--pl-btn-pause-image), var(--pl-btn-pause-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-pause-size), 100% 100% !important;
-    background-position: var(--pl-btn-pause-pos), center center !important;
+    background-size: var(--pl-btn-pause-scale) var(--pl-btn-pause-scale), 100% 100% !important;
+    background-position: var(--pl-btn-pause-x) var(--pl-btn-pause-y), center center !important;
 }
 
 .pl-button-exit {
     background-image: var(--pl-btn-exit-image), var(--pl-btn-exit-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-exit-size), 100% 100% !important;
-    background-position: var(--pl-btn-exit-pos), center center !important;
+    background-size: var(--pl-btn-exit-scale) var(--pl-btn-exit-scale), 100% 100% !important;
+    background-position: var(--pl-btn-exit-x) var(--pl-btn-exit-y), center center !important;
 }
 
 .pl-button-keep-going {
     background-image: var(--pl-btn-keep-going-image), var(--pl-btn-keep-going-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-keep-going-size), 100% 100% !important;
-    background-position: var(--pl-btn-keep-going-pos), center center !important;
+    background-size: var(--pl-btn-keep-going-scale) var(--pl-btn-keep-going-scale), 100% 100% !important;
+    background-position: var(--pl-btn-keep-going-x) var(--pl-btn-keep-going-y), center center !important;
 }
 
 .pl-button-stop {
     background-image: var(--pl-btn-stop-image), var(--pl-btn-stop-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-stop-size), 100% 100% !important;
-    background-position: var(--pl-btn-stop-pos), center center !important;
+    background-size: var(--pl-btn-stop-scale) var(--pl-btn-stop-scale), 100% 100% !important;
+    background-position: var(--pl-btn-stop-x) var(--pl-btn-stop-y), center center !important;
 }
 
 .pl-button-gotcha {
     background-image: var(--pl-btn-gotcha-image), var(--pl-btn-gotcha-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-gotcha-size), 100% 100% !important;
-    background-position: var(--pl-btn-gotcha-pos), center center !important;
+    background-size: var(--pl-btn-gotcha-scale) var(--pl-btn-gotcha-scale), 100% 100% !important;
+    background-position: var(--pl-btn-gotcha-x) var(--pl-btn-gotcha-y), center center !important;
 }
 
 .pl-reward-compare-grid,
@@ -819,5 +826,56 @@ body {
     line-height: 1;
     font-weight: 900;
     color: #111827;
+}
+
+.pl-layout-panel {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 80;
+    width: min(92vw, 320px);
+    border-radius: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(8px);
+}
+
+.pl-layout-panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+    .pl-layout-panel-header span {
+        font-size: 0.82rem;
+        color: #64748b;
+    }
+
+.pl-layout-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.pl-layout-code {
+    min-height: 7rem;
+    resize: vertical;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+    .pl-layout-panel {
+        top: auto;
+        bottom: 6.5rem;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: min(94vw, 360px);
+    }
 }
 /* SECTION E END — Focus Setup + Run */
