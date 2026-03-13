@@ -26,6 +26,7 @@ body {
     background-repeat: no-repeat;
     background-position: center center;
     background-size: 100% 100%;
+    pointer-events: none;
 }
 
 .pl-status-toast {
@@ -159,13 +160,13 @@ body {
 }
 
 .pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-setup-copy,
-.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-mode-grid,
-.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-field-label {
+.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-mode-grid {
     display: none;
 }
 
-.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-field {
-    margin-top: 0.7rem;
+.pl-canvas-panel-setup.pl-canvas-panel-has-art {
+    padding: 0;
+    box-shadow: none;
 }
 
 .pl-panel-dim {
@@ -177,6 +178,12 @@ body {
 }
 
 .pl-setup-panel-locked .pl-setup-controls {
+    opacity: 0.45;
+    filter: saturate(0.75);
+    pointer-events: none;
+}
+
+.pl-setup-child-locked {
     opacity: 0.45;
     filter: saturate(0.75);
     pointer-events: none;
@@ -295,6 +302,96 @@ body {
     background: #f8fafc;
     color: #64748b;
 }
+
+.pl-canvas-form-field {
+    z-index: 14;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0.35rem;
+}
+
+    .pl-canvas-form-field .pl-field-label {
+        margin: 0;
+    }
+
+.pl-canvas-duration-text {
+    z-index: 14;
+    display: flex;
+    align-items: center;
+    font-size: 1.45rem;
+    line-height: 1.1;
+    font-weight: 900;
+    color: #111827;
+    pointer-events: none;
+}
+
+.pl-slider-track-shell {
+    z-index: 14;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.pl-slider-track-empty-art {
+    position: absolute;
+    inset: 0;
+    background-image: var(--pl-slider-track-empty-image), var(--pl-slider-track-empty-fallback);
+    background-repeat: no-repeat, no-repeat;
+    background-position: left center, left center;
+    background-size: 100% 100%, 100% 100%;
+}
+
+.pl-slider-fill-shell {
+    z-index: 15;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.pl-slider-fill-art {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-image: var(--pl-slider-track-fill-image), var(--pl-slider-track-fill-fallback);
+    background-repeat: no-repeat, no-repeat;
+    background-position: left center, left center;
+    background-size: 100% 100%, 100% 100%;
+}
+
+.pl-slider-nib-button {
+    z-index: 16;
+    border: none;
+    border-radius: 999px;
+    background-color: transparent;
+    background-image: var(--pl-slider-nib-image), var(--pl-slider-nib-fallback);
+    background-repeat: no-repeat, no-repeat;
+    background-position: center center, center center;
+    background-size: 100% 100%, 100% 100%;
+    box-shadow: none;
+}
+
+.pl-slider-input-overlay {
+    z-index: 17;
+    opacity: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+
+    .pl-slider-input-overlay::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 44px;
+        height: 44px;
+        border: none;
+        background: transparent;
+    }
+
+    .pl-slider-input-overlay::-moz-range-thumb {
+        width: 44px;
+        height: 44px;
+        border: none;
+        background: transparent;
+    }
 
 .pl-duration-card,
 .pl-run-card,
@@ -501,13 +598,3 @@ body {
     }
 }
 /* SEGMENT A END — Home Canvas Styles */
-
-"""
-print(len(canvas_seg.splitlines()))
-Japgollypython.exec to=container.exec code ￣奇米影视assistant to=container.exec analysis 彩神争霸大发快json {
-    "cmd":["bash","-lc","cat >/mnt/data/focus_canvas_check.css <<'EOF'\n/* dummy */\nEOF"]
-}
-
-::contentReference[oaicite:1] {
-    index =1
-}

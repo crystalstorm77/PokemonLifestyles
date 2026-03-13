@@ -1,6 +1,5 @@
 ﻿/* SEGMENT A START — Asset Paths */
 .pl-home-screen {
-    /* Replace `none` with your own image path when the asset is ready. */
     --pl-home-scene-image: url('/assets/ui/backgrounds/home-scene.png');
     --pl-art-button-radius: 0.95rem;
     --pl-btn-home-focus-image: url('/assets/ui/buttons/focus-start.png');
@@ -25,6 +24,12 @@
     --pl-btn-stop-fallback: linear-gradient(180deg, #2563eb, #2563eb);
     --pl-btn-gotcha-image: url('/assets/ui/buttons/gotcha.png');
     --pl-btn-gotcha-fallback: none;
+    --pl-slider-track-empty-image: url('/assets/ui/buttons/slider-empty.png');
+    --pl-slider-track-empty-fallback: none;
+    --pl-slider-track-fill-image: url('/assets/ui/buttons/slider-fill.png');
+    --pl-slider-track-fill-fallback: none;
+    --pl-slider-nib-image: url('/assets/ui/buttons/slider-nib.png');
+    --pl-slider-nib-fallback: none;
 }
 /* SEGMENT A END — Asset Paths */
 
@@ -50,6 +55,31 @@
     --pl-layout-setup-panel-width: 396px;
     --pl-layout-setup-panel-height: 620px;
     --pl-layout-setup-panel-scale: 100;
+    --pl-layout-focus-type-field-x: 40px;
+    --pl-layout-focus-type-field-y: 402px;
+    --pl-layout-focus-type-field-width: 348px;
+    --pl-layout-focus-type-field-height: 74px;
+    --pl-layout-focus-type-field-scale: 100;
+    --pl-layout-duration-text-x: 40px;
+    --pl-layout-duration-text-y: 500px;
+    --pl-layout-duration-text-width: 348px;
+    --pl-layout-duration-text-height: 40px;
+    --pl-layout-duration-text-scale: 100;
+    --pl-layout-slider-track-x: 40px;
+    --pl-layout-slider-track-y: 568px;
+    --pl-layout-slider-track-width: 348px;
+    --pl-layout-slider-track-height: 18px;
+    --pl-layout-slider-track-scale: 100;
+    --pl-layout-slider-fill-x: 40px;
+    --pl-layout-slider-fill-y: 568px;
+    --pl-layout-slider-fill-width: 348px;
+    --pl-layout-slider-fill-height: 18px;
+    --pl-layout-slider-fill-scale: 100;
+    --pl-layout-slider-nib-x: 24px;
+    --pl-layout-slider-nib-y: 553px;
+    --pl-layout-slider-nib-width: 34px;
+    --pl-layout-slider-nib-height: 34px;
+    --pl-layout-slider-nib-scale: 100;
     --pl-layout-start-x: 24px;
     --pl-layout-start-y: 792px;
     --pl-layout-start-width: 170px;

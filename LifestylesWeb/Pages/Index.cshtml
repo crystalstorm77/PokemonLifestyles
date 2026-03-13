@@ -62,34 +62,39 @@
                     <small>Later</small>
                 </button>
             </div>
-
-            <label class="pl-field">
-                <span class="pl-field-label">Focus type</span>
-                <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
-            </label>
-
-            <div class="pl-field">
-                <span class="pl-field-label">Countdown length</span>
-
-                <div class="pl-duration-card">
-                    <strong class="pl-duration-readout" id="pl-duration-readout">5 minutes</strong>
-
-                    <input class="pl-slider"
-                           id="pl-duration-slider"
-                           type="range"
-                           min="5"
-                           max="120"
-                           step="1"
-                           value="5" />
-
-                    <div class="pl-slider-scale">
-                        <span>5 min</span>
-                        <span>2 hr</span>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
+
+    <label class="pl-canvas-item pl-canvas-form-field" id="pl-focus-type-field" hidden>
+        <span class="pl-field-label">Focus type</span>
+        <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
+    </label>
+
+    <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>5 minutes</div>
+
+    <div class="pl-canvas-item pl-slider-track-shell" id="pl-slider-track" hidden>
+        <div class="pl-slider-track-empty-art" id="pl-slider-track-empty-art" aria-hidden="true"></div>
+    </div>
+
+    <div class="pl-canvas-item pl-slider-fill-shell" id="pl-slider-fill" hidden>
+        <div class="pl-slider-fill-art" id="pl-slider-fill-art" aria-hidden="true"></div>
+    </div>
+
+    <button type="button"
+            class="pl-canvas-item pl-slider-nib-button"
+            id="pl-slider-nib"
+            hidden
+            aria-label="Adjust countdown"></button>
+
+    <input class="pl-canvas-item pl-slider-input-overlay"
+           id="pl-duration-slider"
+           type="range"
+           min="5"
+           max="120"
+           step="1"
+           value="5"
+           hidden
+           aria-label="Countdown length" />
 
     <button type="button"
             class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
@@ -249,6 +254,11 @@
                 <option value="home-focus">home-focus</option>
                 <option value="home-sleep">home-sleep</option>
                 <option value="setup-panel">setup-panel</option>
+                <option value="focus-type-field">focus-type-field</option>
+                <option value="duration-text">duration-text</option>
+                <option value="slider-track">slider-track</option>
+                <option value="slider-fill">slider-fill</option>
+                <option value="slider-nib">slider-nib</option>
                 <option value="start">start</option>
                 <option value="back">back</option>
                 <option value="run-panel">run-panel</option>
@@ -322,6 +332,13 @@
 
                     const setupPanel = document.getElementById("pl-setup-panel");
                     const setupControls = document.getElementById("pl-setup-controls");
+                    const focusTypeField = document.getElementById("pl-focus-type-field");
+                    const durationText = document.getElementById("pl-duration-text");
+                    const sliderTrack = document.getElementById("pl-slider-track");
+                    const sliderTrackEmptyArt = document.getElementById("pl-slider-track-empty-art");
+                    const sliderFill = document.getElementById("pl-slider-fill");
+                    const sliderFillArt = document.getElementById("pl-slider-fill-art");
+                    const sliderNib = document.getElementById("pl-slider-nib");
                     const startFocusButton = document.getElementById("pl-start-focus-button");
                     const closeFocusButton = document.getElementById("pl-close-focus-button");
 
@@ -340,7 +357,6 @@
 
                     const focusTypeInput = document.getElementById("pl-focus-type-input");
                     const durationSlider = document.getElementById("pl-duration-slider");
-                    const durationReadout = document.getElementById("pl-duration-readout");
 
                     const runStateLabel = document.getElementById("pl-run-state-label");
                     const runReadout = document.getElementById("pl-run-readout");
@@ -384,25 +400,26 @@
                     const layoutCode = document.getElementById("pl-layout-code");
 
                     if (!homeRoot || !homeSceneArt || !homeFocusButton || !homeSleepButton || !setupPanel ||
-                        !setupControls || !startFocusButton || !closeFocusButton || !runPanel ||
-                        !pauseButton || !exitButton || !confirmDim || !confirmPanel ||
+                        !setupControls || !focusTypeField || !durationText || !sliderTrack || !sliderTrackEmptyArt ||
+                        !sliderFill || !sliderFillArt || !sliderNib || !startFocusButton || !closeFocusButton ||
+                        !runPanel || !pauseButton || !exitButton || !confirmDim || !confirmPanel ||
                         !confirmKeepGoingButton || !confirmStopButton || !rewardDim || !rewardPanel ||
-                        !rewardCloseButton || !focusTypeInput || !durationSlider || !durationReadout ||
-                        !runStateLabel || !runReadout || !runElapsed || !runNote || !progressFill ||
-                        !confirmCurrentTime || !confirmTimerStatus || !confirmCompleteXp ||
-                        !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
-                        !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
-                        !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
-                        !saveElapsedSeconds || !saveMode || !layoutPanel || !layoutAssetSelect ||
-                        !layoutScale || !layoutX || !layoutY || !layoutWidth || !layoutHeight ||
-                        !layoutScaleValue || !layoutXValue || !layoutYValue || !layoutHeightLabel ||
-                        !layoutHeightHint || !layoutResetSelected || !layoutResetAll || !layoutCode) {
+                        !rewardCloseButton || !focusTypeInput || !durationSlider || !runStateLabel ||
+                        !runReadout || !runElapsed || !runNote || !progressFill || !confirmCurrentTime ||
+                        !confirmTimerStatus || !confirmCompleteXp || !confirmCompleteCoins ||
+                        !confirmCurrentXp || !confirmCurrentCoins || !rewardStatusText ||
+                        !rewardFocusType || !rewardDurationText || !rewardXp || !rewardCoins ||
+                        !saveForm || !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds ||
+                        !saveMode || !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX ||
+                        !layoutY || !layoutWidth || !layoutHeight || !layoutScaleValue || !layoutXValue ||
+                        !layoutYValue || !layoutHeightLabel || !layoutHeightHint || !layoutResetSelected ||
+                        !layoutResetAll || !layoutCode) {
                         return;
                     }
 
                     const stopThresholdSeconds = 60;
                     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-                    const layoutStorageKey = "pl-home-canvas-layout-v2";
+                    const layoutStorageKey = "pl-home-canvas-layout-v3";
 
                     const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
                     const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
@@ -424,7 +441,10 @@
                         "exit": "--pl-btn-exit-image",
                         "keep-going": "--pl-btn-keep-going-image",
                         "stop": "--pl-btn-stop-image",
-                        "gotcha": "--pl-btn-gotcha-image"
+                        "gotcha": "--pl-btn-gotcha-image",
+                        "slider-track": "--pl-slider-track-empty-image",
+                        "slider-fill": "--pl-slider-track-fill-image",
+                        "slider-nib": "--pl-slider-nib-image"
                     };
 
                     const layoutAssets = {
@@ -432,6 +452,11 @@
                         "home-focus": { element: homeFocusButton },
                         "home-sleep": { element: homeSleepButton },
                         "setup-panel": { element: setupPanel },
+                        "focus-type-field": { element: focusTypeField },
+                        "duration-text": { element: durationText },
+                        "slider-track": { element: sliderTrack },
+                        "slider-fill": { element: sliderFill },
+                        "slider-nib": { element: sliderNib },
                         "start": { element: startFocusButton },
                         "back": { element: closeFocusButton },
                         "run-panel": { element: runPanel },
@@ -443,6 +468,15 @@
                         "reward-panel": { element: rewardPanel },
                         "gotcha": { element: rewardCloseButton }
                     };
+
+                    const setupInteractiveElements = [
+                        focusTypeField,
+                        durationText,
+                        sliderTrack,
+                        sliderFill,
+                        sliderNib,
+                        durationSlider
+                    ];
 
                     const artRatios = {};
                     let plannedSeconds = 300;
@@ -608,7 +642,26 @@
                     }
 
                     function updateDurationReadout() {
-                        durationReadout.textContent = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
+                        durationText.textContent = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
+                        updateSliderVisuals();
+                    }
+
+                    function setSetupChildrenVisible(isVisible) {
+                        focusTypeField.hidden = !isVisible;
+                        durationText.hidden = !isVisible;
+                        sliderTrack.hidden = !isVisible;
+                        sliderFill.hidden = !isVisible;
+                        sliderNib.hidden = !isVisible;
+                        durationSlider.hidden = !isVisible;
+                    }
+
+                    function setSetupChildrenLocked(isLocked) {
+                        setupInteractiveElements.forEach(function (element) {
+                            element.classList.toggle("pl-setup-child-locked", isLocked);
+                        });
+
+                        focusTypeInput.disabled = isLocked;
+                        durationSlider.disabled = isLocked;
                     }
 
                     function setHomeButtonsVisible(isVisible) {
@@ -620,6 +673,7 @@
                         setupPanel.hidden = !isVisible;
                         startFocusButton.hidden = !isVisible;
                         closeFocusButton.hidden = !isVisible;
+                        setSetupChildrenVisible(isVisible);
                     }
 
                     function setRunVisible(isVisible) {
@@ -656,11 +710,14 @@
                         setConfirmVisible(false);
                         setRewardVisible(false);
                         setupPanel.classList.remove("pl-setup-panel-locked");
+                        setSetupChildrenLocked(false);
+                        updateDurationReadout();
                     }
 
                     function showRunStatePreview() {
                         showSetupState();
                         setupPanel.classList.add("pl-setup-panel-locked");
+                        setSetupChildrenLocked(true);
                         setRunVisible(true);
                         runStateLabel.textContent = "Time remaining";
                         runReadout.textContent = "00:25:00";
@@ -702,6 +759,11 @@
                                 showHomeState();
                                 break;
                             case "setup-panel":
+                            case "focus-type-field":
+                            case "duration-text":
+                            case "slider-track":
+                            case "slider-fill":
+                            case "slider-nib":
                             case "start":
                             case "back":
                                 showSetupState();
@@ -724,6 +786,16 @@
                                 showHomeState();
                                 break;
                         }
+
+                        if (assetKey === "slider-fill" || assetKey === "slider-track") {
+                            durationSlider.value = "60";
+                        }
+
+                        if (assetKey === "slider-nib") {
+                            durationSlider.value = durationSlider.min;
+                        }
+
+                        updateDurationReadout();
                     }
 
                     function openFocusSetup() {
@@ -744,6 +816,7 @@
                         startedAtMs = 0;
 
                         setupPanel.classList.remove("pl-setup-panel-locked");
+                        setSetupChildrenLocked(false);
                         setButtonLabel(pauseButton, "Pause");
                         setButtonLabel(exitButton, "Cancel");
                         runStateLabel.textContent = "Time remaining";
@@ -751,6 +824,7 @@
                         runElapsed.textContent = "00:00:00";
                         progressFill.style.width = "0%";
                         runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
+                        updateDurationReadout();
                     }
 
                     function getElapsedSeconds() {
@@ -773,6 +847,8 @@
                         confirmKeepGoingButton.disabled = isDisabled;
                         confirmStopButton.disabled = isDisabled;
                         rewardCloseButton.disabled = isDisabled;
+                        focusTypeInput.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
+                        durationSlider.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
                     }
 
                     function updateConfirmPanel(elapsedSeconds) {
@@ -966,6 +1042,56 @@
                         saveLayoutState(state);
                     }
 
+                    function updateSliderVisuals() {
+                        const trackState = getMergedLayoutState("slider-track");
+                        const fillState = getMergedLayoutState("slider-fill");
+                        const nibState = getMergedLayoutState("slider-nib");
+
+                        const trackHeight = getResolvedHeight("slider-track", trackState);
+                        const fillHeight = getResolvedHeight("slider-fill", fillState);
+                        const nibHeight = getResolvedHeight("slider-nib", nibState);
+
+                        const min = parseInt(durationSlider.min || "5", 10);
+                        const max = parseInt(durationSlider.max || "120", 10);
+                        const value = parseInt(durationSlider.value || "5", 10);
+                        const ratio = max <= min ? 0 : (value - min) / (max - min);
+
+                        const nibTravel = Math.max(0, trackState.width - nibState.width);
+                        const nibLeft = nibState.x + Math.round(ratio * nibTravel);
+                        const fillVisibleWidth = Math.max(0, Math.round(fillState.width * ratio));
+
+                        sliderTrack.style.left = `${trackState.x}px`;
+                        sliderTrack.style.top = `${trackState.y}px`;
+                        sliderTrack.style.width = `${trackState.width}px`;
+                        sliderTrack.style.height = `${trackHeight}px`;
+                        sliderTrack.style.transform = `scale(${trackState.scale / 100})`;
+
+                        sliderTrackEmptyArt.style.width = `${trackState.width}px`;
+                        sliderTrackEmptyArt.style.height = `${trackHeight}px`;
+
+                        sliderFill.style.left = `${fillState.x}px`;
+                        sliderFill.style.top = `${fillState.y}px`;
+                        sliderFill.style.width = `${fillVisibleWidth}px`;
+                        sliderFill.style.height = `${fillHeight}px`;
+                        sliderFill.style.transform = `scale(${fillState.scale / 100})`;
+
+                        sliderFillArt.style.width = `${fillState.width}px`;
+                        sliderFillArt.style.height = `${fillHeight}px`;
+
+                        sliderNib.style.left = `${nibLeft}px`;
+                        sliderNib.style.top = `${nibState.y}px`;
+                        sliderNib.style.width = `${nibState.width}px`;
+                        sliderNib.style.height = `${nibHeight}px`;
+                        sliderNib.style.transform = `scale(${nibState.scale / 100})`;
+
+                        durationSlider.style.left = `${trackState.x}px`;
+                        durationSlider.style.top = `${Math.min(trackState.y, nibState.y) - 10}px`;
+                        durationSlider.style.width = `${trackState.width}px`;
+                        durationSlider.style.height = `${Math.max(trackHeight, nibHeight) + 20}px`;
+                        durationSlider.style.transform = `scale(${trackState.scale / 100})`;
+                        durationSlider.style.transformOrigin = "top left";
+                    }
+
                     function applyAssetLayout(assetKey) {
                         const element = getAssetElement(assetKey);
                         if (!element) {
@@ -975,15 +1101,32 @@
                         const state = getMergedLayoutState(assetKey);
                         const resolvedHeight = getResolvedHeight(assetKey, state);
 
+                        if (assetKey === "slider-track" || assetKey === "slider-fill" || assetKey === "slider-nib") {
+                            updateSliderVisuals();
+                            return;
+                        }
+
                         element.style.left = `${state.x}px`;
                         element.style.top = `${state.y}px`;
                         element.style.width = `${state.width}px`;
                         element.style.height = `${resolvedHeight}px`;
                         element.style.transform = `scale(${state.scale / 100})`;
+
+                        if (assetKey === "home-scene") {
+                            element.style.pointerEvents = "none";
+                        }
                     }
 
                     function applyAllAssetLayouts() {
-                        Object.keys(layoutAssets).forEach(applyAssetLayout);
+                        Object.keys(layoutAssets).forEach(function (assetKey) {
+                            if (assetKey === "slider-fill" || assetKey === "slider-nib") {
+                                return;
+                            }
+
+                            applyAssetLayout(assetKey);
+                        });
+
+                        updateSliderVisuals();
                         refreshLayoutSelection();
                     }
 
@@ -1169,7 +1312,9 @@
                         returnToHome();
                     });
 
-                    durationSlider.addEventListener("input", updateDurationReadout);
+                    durationSlider.addEventListener("input", function () {
+                        updateDurationReadout();
+                    });
 
                     startFocusButton.addEventListener("click", function () {
                         if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "start")) {
@@ -1185,6 +1330,7 @@
                         completionTonePlayed = false;
 
                         setupPanel.classList.add("pl-setup-panel-locked");
+                        setSetupChildrenLocked(true);
                         runPanel.hidden = false;
                         pauseButton.hidden = false;
                         exitButton.hidden = false;
@@ -1228,7 +1374,7 @@
                         }
 
                         updateConfirmPanel(elapsedSeconds);
-                        showConfirmState();
+                        setConfirmVisible(true);
                     });
 
                     confirmKeepGoingButton.addEventListener("click", function () {
@@ -1301,7 +1447,7 @@
 
                     if (shouldShowRewardOverlay) {
                         hydrateRewardPanelFromDataset();
-                        showRewardState();
+                        showRewardStatePreview();
                     } else if (layoutModeEnabled) {
                         hydrateLayoutControls();
                     } else {
