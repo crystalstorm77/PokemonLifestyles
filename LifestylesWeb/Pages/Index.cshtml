@@ -355,488 +355,651 @@
     </aside>
 </div>
 <!-- SECTION A END — Home Screen + Focus Overlay -->
-
 @section Scripts {
     <!-- SECTION B START — Home Screen Scripts -->
     <script>
-        (function () {
-            const homeRoot = document.getElementById("pl-home-root");
-            const focusOverlay = document.getElementById("pl-focus-overlay");
-            const rewardOverlay = document.getElementById("pl-reward-overlay");
+                (function () {
+                    const homeRoot = document.getElementById("pl-home-root");
+                    const focusOverlay = document.getElementById("pl-focus-overlay");
+                    const rewardOverlay = document.getElementById("pl-reward-overlay");
 
-            const openFocusButton = document.getElementById("pl-open-focus-button");
-            const focusBackButton = document.getElementById("pl-focus-back-button");
-            const closeFocusButton = document.getElementById("pl-close-focus-button");
-            const runHomeButton = document.getElementById("pl-run-home-button");
+                    const openFocusButton = document.getElementById("pl-open-focus-button");
+                    const focusBackButton = document.getElementById("pl-focus-back-button");
+                    const closeFocusButton = document.getElementById("pl-close-focus-button");
+                    const runHomeButton = document.getElementById("pl-run-home-button");
 
-            const setupPanel = document.getElementById("pl-focus-setup-panel");
-            const runPanel = document.getElementById("pl-focus-run-panel");
+                    const setupPanel = document.getElementById("pl-focus-setup-panel");
+                    const runPanel = document.getElementById("pl-focus-run-panel");
 
-            const focusTypeInput = document.getElementById("pl-focus-type-input");
-            const durationSlider = document.getElementById("pl-duration-slider");
-            const durationReadout = document.getElementById("pl-duration-readout");
-            const startFocusButton = document.getElementById("pl-start-focus-button");
+                    const focusTypeInput = document.getElementById("pl-focus-type-input");
+                    const durationSlider = document.getElementById("pl-duration-slider");
+                    const durationReadout = document.getElementById("pl-duration-readout");
+                    const startFocusButton = document.getElementById("pl-start-focus-button");
 
-            const runFocusType = document.getElementById("pl-run-focus-type");
-            const runTarget = document.getElementById("pl-run-target");
-            const runStateLabel = document.getElementById("pl-run-state-label");
-            const runReadout = document.getElementById("pl-run-readout");
-            const runElapsed = document.getElementById("pl-run-elapsed");
-            const progressFill = document.getElementById("pl-progress-fill");
-            const pauseButton = document.getElementById("pl-pause-button");
-            const exitButton = document.getElementById("pl-exit-button");
-            const runNote = document.getElementById("pl-run-note");
+                    const runFocusType = document.getElementById("pl-run-focus-type");
+                    const runTarget = document.getElementById("pl-run-target");
+                    const runStateLabel = document.getElementById("pl-run-state-label");
+                    const runReadout = document.getElementById("pl-run-readout");
+                    const runElapsed = document.getElementById("pl-run-elapsed");
+                    const progressFill = document.getElementById("pl-progress-fill");
+                    const pauseButton = document.getElementById("pl-pause-button");
+                    const exitButton = document.getElementById("pl-exit-button");
+                    const runNote = document.getElementById("pl-run-note");
 
-            const confirmOverlay = document.getElementById("pl-confirm-overlay");
-            const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
-            const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
-            const confirmCompleteXp = document.getElementById("pl-confirm-complete-xp");
-            const confirmCompleteCoins = document.getElementById("pl-confirm-complete-coins");
-            const confirmCurrentXp = document.getElementById("pl-confirm-current-xp");
-            const confirmCurrentCoins = document.getElementById("pl-confirm-current-coins");
-            const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
-            const confirmStopButton = document.getElementById("pl-confirm-stop");
+                    const confirmOverlay = document.getElementById("pl-confirm-overlay");
+                    const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
+                    const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
+                    const confirmCompleteXp = document.getElementById("pl-confirm-complete-xp");
+                    const confirmCompleteCoins = document.getElementById("pl-confirm-complete-coins");
+                    const confirmCurrentXp = document.getElementById("pl-confirm-current-xp");
+                    const confirmCurrentCoins = document.getElementById("pl-confirm-current-coins");
+                    const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
+                    const confirmStopButton = document.getElementById("pl-confirm-stop");
 
-            const rewardStatusText = document.getElementById("pl-reward-status-text");
-            const rewardFocusType = document.getElementById("pl-reward-focus-type");
-            const rewardDurationText = document.getElementById("pl-reward-duration-text");
-            const rewardXp = document.getElementById("pl-reward-xp");
-            const rewardCoins = document.getElementById("pl-reward-coins");
-            const rewardCloseButton = document.getElementById("pl-reward-close-button");
+                    const rewardStatusText = document.getElementById("pl-reward-status-text");
+                    const rewardFocusType = document.getElementById("pl-reward-focus-type");
+                    const rewardDurationText = document.getElementById("pl-reward-duration-text");
+                    const rewardXp = document.getElementById("pl-reward-xp");
+                    const rewardCoins = document.getElementById("pl-reward-coins");
+                    const rewardCloseButton = document.getElementById("pl-reward-close-button");
 
-            const saveForm = document.getElementById("pl-save-form");
-            const saveFocusType = document.getElementById("pl-save-focus-type");
-            const savePlannedSeconds = document.getElementById("pl-save-planned-seconds");
-            const saveElapsedSeconds = document.getElementById("pl-save-elapsed-seconds");
-            const saveMode = document.getElementById("pl-save-mode");
+                    const saveForm = document.getElementById("pl-save-form");
+                    const saveFocusType = document.getElementById("pl-save-focus-type");
+                    const savePlannedSeconds = document.getElementById("pl-save-planned-seconds");
+                    const saveElapsedSeconds = document.getElementById("pl-save-elapsed-seconds");
+                    const saveMode = document.getElementById("pl-save-mode");
 
-            if (!homeRoot || !focusOverlay || !rewardOverlay || !openFocusButton || !focusBackButton ||
-                !closeFocusButton || !runHomeButton || !setupPanel || !runPanel || !focusTypeInput ||
-                !durationSlider || !durationReadout || !startFocusButton || !runFocusType || !runTarget ||
-                !runStateLabel || !runReadout || !runElapsed || !progressFill || !pauseButton ||
-                !exitButton || !runNote || !confirmOverlay || !confirmCurrentTime || !confirmTimerStatus ||
-                !confirmCompleteXp || !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
-                !confirmKeepGoingButton || !confirmStopButton || !rewardStatusText || !rewardFocusType ||
-                !rewardDurationText || !rewardXp || !rewardCoins || !rewardCloseButton || !saveForm ||
-                !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds || !saveMode) {
-                return;
-            }
+                    const layoutPanel = document.getElementById("pl-layout-panel");
+                    const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
+                    const layoutScale = document.getElementById("pl-layout-scale");
+                    const layoutX = document.getElementById("pl-layout-x");
+                    const layoutY = document.getElementById("pl-layout-y");
+                    const layoutScaleValue = document.getElementById("pl-layout-scale-value");
+                    const layoutXValue = document.getElementById("pl-layout-x-value");
+                    const layoutYValue = document.getElementById("pl-layout-y-value");
+                    const layoutResetSelected = document.getElementById("pl-layout-reset-selected");
+                    const layoutResetAll = document.getElementById("pl-layout-reset-all");
+                    const layoutCode = document.getElementById("pl-layout-code");
 
-            const stopThresholdSeconds = 60;
-            const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
-            const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
-            const rewardSleepMultiplier = Math.max(1, parseFloat(homeRoot.dataset.rewardSleepMultiplier || "1") || 1);
-            const rewardWindowEligible = String(homeRoot.dataset.rewardWindowEligible || "").toLowerCase() === "true";
-            const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
-
-            let plannedSeconds = 300;
-            let startedAtMs = 0;
-            let pausedElapsedSeconds = 0;
-            let isRunning = false;
-            let isPaused = false;
-            let isSubmitting = false;
-            let isConfirmOpen = false;
-            let completionTonePlayed = false;
-
-            function setButtonLabel(button, text) {
-                if (!button) {
-                    return;
-                }
-
-                let label = button.querySelector(".pl-button-label");
-
-                if (!label) {
-                    label = document.createElement("span");
-                    label.className = "pl-button-label";
-                    button.replaceChildren(label);
-                }
-
-                label.textContent = text;
-            }
-
-            function formatClock(totalSeconds) {
-                totalSeconds = Math.max(0, Math.floor(totalSeconds));
-
-                const hours = Math.floor(totalSeconds / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-
-                return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-            }
-
-            function formatDurationSelection(totalMinutes) {
-                totalMinutes = Math.max(5, Math.min(120, totalMinutes));
-
-                const hours = Math.floor(totalMinutes / 60);
-                const minutes = totalMinutes % 60;
-
-                if (hours === 0) {
-                    return `${totalMinutes} minutes`;
-                }
-
-                if (minutes === 0) {
-                    return hours === 1 ? "1 hour" : `${hours} hours`;
-                }
-
-                return hours === 1
-                    ? `1 hour ${minutes} minutes`
-                    : `${hours} hours ${minutes} minutes`;
-            }
-
-            function calculateRewardPreview(durationSeconds, completed) {
-                const rewardMinutes = Math.floor(Math.max(0, durationSeconds) / 60);
-
-                if (!rewardWindowEligible || rewardMinutes <= 0) {
-                    return { xp: 0, coins: 0 };
-                }
-
-                const xpCompletionMultiplier = completed ? 1.0 : rewardIncompleteMultiplier;
-                const coinCompletionMultiplier = completed ? 1.0 : 0.25;
-
-                return {
-                    xp: Math.floor(rewardMinutes * rewardXpPerMinute * xpCompletionMultiplier * rewardSleepMultiplier),
-                    coins: Math.floor(rewardMinutes * coinCompletionMultiplier * rewardSleepMultiplier)
-                };
-            }
-
-            function updateDurationReadout() {
-                const totalMinutes = parseInt(durationSlider.value || "5", 10);
-                durationReadout.textContent = formatDurationSelection(totalMinutes);
-            }
-
-            function showSetupPanel() {
-                setupPanel.hidden = false;
-                runPanel.hidden = true;
-            }
-
-            function showRunPanel() {
-                setupPanel.hidden = true;
-                runPanel.hidden = false;
-            }
-
-            function openFocusOverlay() {
-                focusOverlay.hidden = false;
-                focusOverlay.setAttribute("aria-hidden", "false");
-                closeConfirmOverlay();
-                showSetupPanel();
-                updateDurationReadout();
-            }
-
-            function closeFocusOverlay() {
-                focusOverlay.hidden = true;
-                focusOverlay.setAttribute("aria-hidden", "true");
-                closeConfirmOverlay();
-                resetRunState();
-            }
-
-            function openRewardOverlay() {
-                rewardOverlay.hidden = false;
-                rewardOverlay.setAttribute("aria-hidden", "false");
-            }
-
-            function closeRewardOverlay() {
-                rewardOverlay.hidden = true;
-                rewardOverlay.setAttribute("aria-hidden", "true");
-            }
-
-            function hydrateRewardOverlayFromDataset() {
-                rewardStatusText.textContent = String(homeRoot.dataset.rewardCompleted || "").toLowerCase() === "true"
-                    ? "Completed"
-                    : "Incomplete";
-
-                rewardFocusType.textContent = homeRoot.dataset.rewardFocusType || "Focus";
-                rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
-                rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
-                rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
-            }
-
-            function resetRunState() {
-                isRunning = false;
-                isPaused = false;
-                isSubmitting = false;
-                isConfirmOpen = false;
-                completionTonePlayed = false;
-                pausedElapsedSeconds = 0;
-                startedAtMs = 0;
-
-                setButtonLabel(pauseButton, "Pause");
-                setButtonLabel(exitButton, "Cancel");
-                exitButton.classList.remove("pl-stop-button-armed");
-                runStateLabel.textContent = "Time remaining";
-                runReadout.textContent = "00:05:00";
-                runElapsed.textContent = "00:00:00";
-                progressFill.style.width = "0%";
-                runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
-                showSetupPanel();
-            }
-
-            function getElapsedSeconds() {
-                if (!isRunning) {
-                    return 0;
-                }
-
-                if (isPaused) {
-                    return Math.min(plannedSeconds, pausedElapsedSeconds);
-                }
-
-                const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
-                return Math.min(plannedSeconds, Math.max(0, liveElapsed));
-            }
-
-            function setButtonsDisabled(isDisabled) {
-                pauseButton.disabled = isDisabled;
-                exitButton.disabled = isDisabled;
-                confirmKeepGoingButton.disabled = isDisabled;
-                confirmStopButton.disabled = isDisabled;
-                startFocusButton.disabled = isDisabled;
-            }
-
-            function openConfirmOverlay() {
-                isConfirmOpen = true;
-                confirmOverlay.hidden = false;
-                confirmOverlay.setAttribute("aria-hidden", "false");
-                updateConfirmOverlay(getElapsedSeconds());
-            }
-
-            function closeConfirmOverlay() {
-                isConfirmOpen = false;
-                confirmOverlay.hidden = true;
-                confirmOverlay.setAttribute("aria-hidden", "true");
-            }
-
-            function updateConfirmOverlay(elapsedSeconds) {
-                const completePreview = calculateRewardPreview(plannedSeconds, true);
-                const currentPreview = calculateRewardPreview(elapsedSeconds, false);
-
-                confirmCurrentTime.textContent = formatClock(elapsedSeconds);
-                confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
-                confirmCompleteXp.textContent = String(completePreview.xp);
-                confirmCompleteCoins.textContent = String(completePreview.coins);
-                confirmCurrentXp.textContent = String(currentPreview.xp);
-                confirmCurrentCoins.textContent = String(currentPreview.coins);
-            }
-
-            function playCompletionTone() {
-                if (completionTonePlayed) {
-                    return;
-                }
-
-                completionTonePlayed = true;
-
-                try {
-                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-
-                    if (!AudioContextClass) {
+                    if (!homeRoot || !focusOverlay || !rewardOverlay || !openFocusButton || !focusBackButton ||
+                        !closeFocusButton || !runHomeButton || !setupPanel || !runPanel || !focusTypeInput ||
+                        !durationSlider || !durationReadout || !startFocusButton || !runFocusType || !runTarget ||
+                        !runStateLabel || !runReadout || !runElapsed || !progressFill || !pauseButton ||
+                        !exitButton || !runNote || !confirmOverlay || !confirmCurrentTime || !confirmTimerStatus ||
+                        !confirmCompleteXp || !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
+                        !confirmKeepGoingButton || !confirmStopButton || !rewardStatusText || !rewardFocusType ||
+                        !rewardDurationText || !rewardXp || !rewardCoins || !rewardCloseButton || !saveForm ||
+                        !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds || !saveMode ||
+                        !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX || !layoutY ||
+                        !layoutScaleValue || !layoutXValue || !layoutYValue || !layoutResetSelected ||
+                        !layoutResetAll || !layoutCode) {
                         return;
                     }
 
-                    const audioContext = new AudioContextClass();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
+                    const stopThresholdSeconds = 60;
+                    const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
+                    const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
+                    const rewardSleepMultiplier = Math.max(1, parseFloat(homeRoot.dataset.rewardSleepMultiplier || "1") || 1);
+                    const rewardWindowEligible = String(homeRoot.dataset.rewardWindowEligible || "").toLowerCase() === "true";
+                    const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
 
-                    oscillator.type = "sine";
-                    oscillator.frequency.value = 880;
+                    const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
+                    const layoutStorageKey = "pl-layout-mode-v1";
 
-                    gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+                    const layoutAssets = {
+                        "start": "--pl-btn-start",
+                        "back": "--pl-btn-back",
+                        "pause": "--pl-btn-pause",
+                        "exit": "--pl-btn-exit",
+                        "keep-going": "--pl-btn-keep-going",
+                        "stop": "--pl-btn-stop",
+                        "gotcha": "--pl-btn-gotcha"
+                    };
 
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
+                    let plannedSeconds = 300;
+                    let startedAtMs = 0;
+                    let pausedElapsedSeconds = 0;
+                    let isRunning = false;
+                    let isPaused = false;
+                    let isSubmitting = false;
+                    let isConfirmOpen = false;
+                    let completionTonePlayed = false;
 
-                    oscillator.start();
-                    oscillator.stop(audioContext.currentTime + 0.36);
-                } catch {
-                }
-            }
+                    function setButtonLabel(button, text) {
+                        if (!button) {
+                            return;
+                        }
 
-            function submitSave(mode) {
-                if (isSubmitting) {
-                    return;
-                }
+                        let label = button.querySelector(".pl-button-label");
 
-                const elapsedSeconds = mode === "complete"
-                    ? plannedSeconds
-                    : getElapsedSeconds();
+                        if (!label) {
+                            label = document.createElement("span");
+                            label.className = "pl-button-label";
+                            button.replaceChildren(label);
+                        }
 
-                if (elapsedSeconds <= 0) {
-                    return;
-                }
+                        label.textContent = text;
+                    }
 
-                isSubmitting = true;
-                saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
-                savePlannedSeconds.value = String(plannedSeconds);
-                saveElapsedSeconds.value = String(elapsedSeconds);
-                saveMode.value = mode;
-                closeConfirmOverlay();
-                setButtonsDisabled(true);
-                saveForm.submit();
-            }
+                    function formatClock(totalSeconds) {
+                        totalSeconds = Math.max(0, Math.floor(totalSeconds));
 
-            function updateExitButton(elapsedSeconds) {
-                if (elapsedSeconds >= stopThresholdSeconds) {
-                    setButtonLabel(exitButton, "Stop Focusing");
-                    exitButton.classList.add("pl-stop-button-armed");
-                    return;
-                }
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
 
-                setButtonLabel(exitButton, "Cancel");
-                exitButton.classList.remove("pl-stop-button-armed");
-            }
+                        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+                    }
 
-            function updateUi() {
-                if (!isRunning) {
-                    return;
-                }
+                    function formatDurationSelection(totalMinutes) {
+                        totalMinutes = Math.max(5, Math.min(120, totalMinutes));
 
-                const elapsedSeconds = getElapsedSeconds();
-                const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
-                const progressPercent = plannedSeconds <= 0
-                    ? 0
-                    : (elapsedSeconds / plannedSeconds) * 100;
+                        const hours = Math.floor(totalMinutes / 60);
+                        const minutes = totalMinutes % 60;
 
-                runReadout.textContent = formatClock(remainingSeconds);
-                runElapsed.textContent = formatClock(elapsedSeconds);
-                progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
+                        if (hours === 0) {
+                            return `${totalMinutes} minutes`;
+                        }
 
-                updateExitButton(elapsedSeconds);
+                        if (minutes === 0) {
+                            return hours === 1 ? "1 hour" : `${hours} hours`;
+                        }
 
-                if (isConfirmOpen) {
-                    updateConfirmOverlay(elapsedSeconds);
-                }
+                        return hours === 1
+                            ? `1 hour ${minutes} minutes`
+                            : `${hours} hours ${minutes} minutes`;
+                    }
 
-                if (isPaused) {
-                    runStateLabel.textContent = "Paused";
-                    setButtonLabel(pauseButton, "Keep Going?");
-                    runNote.textContent = elapsedSeconds >= stopThresholdSeconds
-                        ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
-                        : "Session paused. Cancel before 1 minute to discard this session with no save.";
-                } else {
-                    runStateLabel.textContent = "Time remaining";
-                    setButtonLabel(pauseButton, "Pause");
-                    runNote.textContent = elapsedSeconds >= stopThresholdSeconds
-                        ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
-                        : "Cancel before 1 minute to discard this session with no save.";
-                }
+                    function calculateRewardPreview(durationSeconds, completed) {
+                        const rewardMinutes = Math.floor(Math.max(0, durationSeconds) / 60);
 
-                if (remainingSeconds <= 0 && !isSubmitting) {
-                    playCompletionTone();
-                    submitSave("complete");
-                }
-            }
+                        if (!rewardWindowEligible || rewardMinutes <= 0) {
+                            return { xp: 0, coins: 0 };
+                        }
 
-            openFocusButton.addEventListener("click", function () {
-                closeRewardOverlay();
-                openFocusOverlay();
-            });
+                        const xpCompletionMultiplier = completed ? 1.0 : rewardIncompleteMultiplier;
+                        const coinCompletionMultiplier = completed ? 1.0 : 0.25;
 
-            focusBackButton.addEventListener("click", function () {
-                closeFocusOverlay();
-            });
+                        return {
+                            xp: Math.floor(rewardMinutes * rewardXpPerMinute * xpCompletionMultiplier * rewardSleepMultiplier),
+                            coins: Math.floor(rewardMinutes * coinCompletionMultiplier * rewardSleepMultiplier)
+                        };
+                    }
 
-            closeFocusButton.addEventListener("click", function () {
-                closeFocusOverlay();
-            });
+                    function updateDurationReadout() {
+                        const totalMinutes = parseInt(durationSlider.value || "5", 10);
+                        durationReadout.textContent = formatDurationSelection(totalMinutes);
+                    }
 
-            runHomeButton.addEventListener("click", function () {
-                closeFocusOverlay();
-            });
+                    function showSetupPanel() {
+                        setupPanel.hidden = false;
+                        runPanel.hidden = true;
+                    }
 
-            durationSlider.addEventListener("input", updateDurationReadout);
+                    function showRunPanel() {
+                        setupPanel.hidden = true;
+                        runPanel.hidden = false;
+                    }
 
-            startFocusButton.addEventListener("click", function () {
-                if (isSubmitting) {
-                    return;
-                }
+                    function openFocusOverlay() {
+                        focusOverlay.hidden = false;
+                        focusOverlay.setAttribute("aria-hidden", "false");
+                        closeConfirmOverlay();
+                        showSetupPanel();
+                        updateDurationReadout();
+                    }
 
-                const focusType = (focusTypeInput.value || "").trim() || "Focus";
-                const durationMinutes = parseInt(durationSlider.value || "5", 10);
+                    function closeFocusOverlay() {
+                        focusOverlay.hidden = true;
+                        focusOverlay.setAttribute("aria-hidden", "true");
+                        closeConfirmOverlay();
+                        resetRunState();
+                    }
 
-                plannedSeconds = Math.max(300, Math.min(7200, durationMinutes * 60));
-                startedAtMs = Date.now();
-                pausedElapsedSeconds = 0;
-                isRunning = true;
-                isPaused = false;
-                isSubmitting = false;
-                isConfirmOpen = false;
-                completionTonePlayed = false;
+                    function openRewardOverlay() {
+                        rewardOverlay.hidden = false;
+                        rewardOverlay.setAttribute("aria-hidden", "false");
+                    }
 
-                runFocusType.textContent = focusType;
-                runTarget.textContent = formatDurationSelection(durationMinutes);
+                    function closeRewardOverlay() {
+                        rewardOverlay.hidden = true;
+                        rewardOverlay.setAttribute("aria-hidden", "true");
+                    }
 
-                showRunPanel();
-                updateUi();
-            });
+                    function hydrateRewardOverlayFromDataset() {
+                        rewardStatusText.textContent = String(homeRoot.dataset.rewardCompleted || "").toLowerCase() === "true"
+                            ? "Completed"
+                            : "Incomplete";
 
-            pauseButton.addEventListener("click", function () {
-                if (!isRunning || isSubmitting || isConfirmOpen) {
-                    return;
-                }
+                        rewardFocusType.textContent = homeRoot.dataset.rewardFocusType || "Focus";
+                        rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
+                        rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
+                        rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
+                    }
 
-                if (!isPaused) {
-                    pausedElapsedSeconds = getElapsedSeconds();
-                    isPaused = true;
-                    updateUi();
-                    return;
-                }
+                    function resetRunState() {
+                        isRunning = false;
+                        isPaused = false;
+                        isSubmitting = false;
+                        isConfirmOpen = false;
+                        completionTonePlayed = false;
+                        pausedElapsedSeconds = 0;
+                        startedAtMs = 0;
 
-                startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
-                isPaused = false;
-                updateUi();
-            });
+                        setButtonLabel(pauseButton, "Pause");
+                        setButtonLabel(exitButton, "Cancel");
+                        exitButton.classList.remove("pl-stop-button-armed");
+                        runStateLabel.textContent = "Time remaining";
+                        runReadout.textContent = "00:05:00";
+                        runElapsed.textContent = "00:00:00";
+                        progressFill.style.width = "0%";
+                        runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
+                        showSetupPanel();
+                    }
 
-            exitButton.addEventListener("click", function () {
-                if (!isRunning || isSubmitting) {
-                    return;
-                }
+                    function getElapsedSeconds() {
+                        if (!isRunning) {
+                            return 0;
+                        }
 
-                const elapsedSeconds = getElapsedSeconds();
+                        if (isPaused) {
+                            return Math.min(plannedSeconds, pausedElapsedSeconds);
+                        }
 
-                if (elapsedSeconds < stopThresholdSeconds) {
-                    closeFocusOverlay();
-                    return;
-                }
+                        const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+                        return Math.min(plannedSeconds, Math.max(0, liveElapsed));
+                    }
 
-                openConfirmOverlay();
-            });
+                    function setButtonsDisabled(isDisabled) {
+                        pauseButton.disabled = isDisabled;
+                        exitButton.disabled = isDisabled;
+                        confirmKeepGoingButton.disabled = isDisabled;
+                        confirmStopButton.disabled = isDisabled;
+                        startFocusButton.disabled = isDisabled;
+                    }
 
-            confirmKeepGoingButton.addEventListener("click", function () {
-                if (isSubmitting) {
-                    return;
-                }
+                    function openConfirmOverlay() {
+                        isConfirmOpen = true;
+                        confirmOverlay.hidden = false;
+                        confirmOverlay.setAttribute("aria-hidden", "false");
+                        updateConfirmOverlay(getElapsedSeconds());
+                    }
 
-                closeConfirmOverlay();
-            });
+                    function closeConfirmOverlay() {
+                        isConfirmOpen = false;
+                        confirmOverlay.hidden = true;
+                        confirmOverlay.setAttribute("aria-hidden", "true");
+                    }
 
-            confirmStopButton.addEventListener("click", function () {
-                if (isSubmitting) {
-                    return;
-                }
+                    function updateConfirmOverlay(elapsedSeconds) {
+                        const completePreview = calculateRewardPreview(plannedSeconds, true);
+                        const currentPreview = calculateRewardPreview(elapsedSeconds, false);
 
-                submitSave("stop");
-            });
+                        confirmCurrentTime.textContent = formatClock(elapsedSeconds);
+                        confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
+                        confirmCompleteXp.textContent = String(completePreview.xp);
+                        confirmCompleteCoins.textContent = String(completePreview.coins);
+                        confirmCurrentXp.textContent = String(currentPreview.xp);
+                        confirmCurrentCoins.textContent = String(currentPreview.coins);
+                    }
 
-            rewardCloseButton.addEventListener("click", function () {
-                window.location.href = "/Index";
-            });
+                    function playCompletionTone() {
+                        if (completionTonePlayed) {
+                            return;
+                        }
 
-            document.addEventListener("keydown", function (event) {
-                if (event.key === "Escape" && isConfirmOpen && !isSubmitting) {
-                    closeConfirmOverlay();
-                }
-            });
+                        completionTonePlayed = true;
 
-            updateDurationReadout();
+                        try {
+                            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 
-            if (shouldShowRewardOverlay) {
-                hydrateRewardOverlayFromDataset();
-                openRewardOverlay();
-            }
+                            if (!AudioContextClass) {
+                                return;
+                            }
 
-            window.setInterval(updateUi, 250);
-        })();
+                            const audioContext = new AudioContextClass();
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+
+                            oscillator.type = "sine";
+                            oscillator.frequency.value = 880;
+
+                            gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
+                            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+
+                            oscillator.start();
+                            oscillator.stop(audioContext.currentTime + 0.36);
+                        } catch {
+                        }
+                    }
+
+                    function submitSave(mode) {
+                        if (isSubmitting) {
+                            return;
+                        }
+
+                        const elapsedSeconds = mode === "complete"
+                            ? plannedSeconds
+                            : getElapsedSeconds();
+
+                        if (elapsedSeconds <= 0) {
+                            return;
+                        }
+
+                        isSubmitting = true;
+                        saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
+                        savePlannedSeconds.value = String(plannedSeconds);
+                        saveElapsedSeconds.value = String(elapsedSeconds);
+                        saveMode.value = mode;
+                        closeConfirmOverlay();
+                        setButtonsDisabled(true);
+                        saveForm.submit();
+                    }
+
+                    function updateExitButton(elapsedSeconds) {
+                        if (elapsedSeconds >= stopThresholdSeconds) {
+                            setButtonLabel(exitButton, "Stop Focusing");
+                            exitButton.classList.add("pl-stop-button-armed");
+                            return;
+                        }
+
+                        setButtonLabel(exitButton, "Cancel");
+                        exitButton.classList.remove("pl-stop-button-armed");
+                    }
+
+                    function updateUi() {
+                        if (!isRunning) {
+                            return;
+                        }
+
+                        const elapsedSeconds = getElapsedSeconds();
+                        const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+                        const progressPercent = plannedSeconds <= 0
+                            ? 0
+                            : (elapsedSeconds / plannedSeconds) * 100;
+
+                        runReadout.textContent = formatClock(remainingSeconds);
+                        runElapsed.textContent = formatClock(elapsedSeconds);
+                        progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
+
+                        updateExitButton(elapsedSeconds);
+
+                        if (isConfirmOpen) {
+                            updateConfirmOverlay(elapsedSeconds);
+                        }
+
+                        if (isPaused) {
+                            runStateLabel.textContent = "Paused";
+                            setButtonLabel(pauseButton, "Keep Going?");
+                            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                                ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
+                                : "Session paused. Cancel before 1 minute to discard this session with no save.";
+                        } else {
+                            runStateLabel.textContent = "Time remaining";
+                            setButtonLabel(pauseButton, "Pause");
+                            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                                ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
+                                : "Cancel before 1 minute to discard this session with no save.";
+                        }
+
+                        if (remainingSeconds <= 0 && !isSubmitting) {
+                            playCompletionTone();
+                            submitSave("complete");
+                        }
+                    }
+
+                    function getLayoutVarName(assetKey, suffix) {
+                        return `${layoutAssets[assetKey]}-${suffix}`;
+                    }
+
+                    function readPercentVar(assetKey, suffix, fallbackValue) {
+                        const style = getComputedStyle(homeRoot);
+                        const raw = style.getPropertyValue(getLayoutVarName(assetKey, suffix)).trim();
+
+                        if (!raw) {
+                            return fallbackValue;
+                        }
+
+                        return parseFloat(raw.replace("%", "")) || fallbackValue;
+                    }
+
+                    function writePercentVar(assetKey, suffix, value) {
+                        homeRoot.style.setProperty(getLayoutVarName(assetKey, suffix), `${value}%`);
+                    }
+
+                    function getStoredLayoutState() {
+                        try {
+                            const raw = localStorage.getItem(layoutStorageKey);
+                            return raw ? JSON.parse(raw) : {};
+                        } catch {
+                            return {};
+                        }
+                    }
+
+                    function saveLayoutState(state) {
+                        try {
+                            localStorage.setItem(layoutStorageKey, JSON.stringify(state));
+                        } catch {
+                        }
+                    }
+
+                    function applyStoredLayoutState() {
+                        const state = getStoredLayoutState();
+
+                        Object.keys(layoutAssets).forEach(assetKey => {
+                            const assetState = state[assetKey];
+                            if (!assetState) {
+                                return;
+                            }
+
+                            writePercentVar(assetKey, "scale", assetState.scale);
+                            writePercentVar(assetKey, "x", assetState.x);
+                            writePercentVar(assetKey, "y", assetState.y);
+                        });
+                    }
+
+                    function updateLayoutCodePreview(assetKey, scale, x, y) {
+                        const prefix = layoutAssets[assetKey];
+                        layoutCode.value =
+        `${prefix}-scale: ${scale}%;
+        ${prefix}-x: ${x}%;
+        ${prefix}-y: ${y}%;`;
+                    }
+
+                    function hydrateLayoutControls() {
+                        const assetKey = layoutAssetSelect.value;
+                        const scale = Math.round(readPercentVar(assetKey, "scale", 100));
+                        const x = Math.round(readPercentVar(assetKey, "x", 50));
+                        const y = Math.round(readPercentVar(assetKey, "y", 50));
+
+                        layoutScale.value = String(scale);
+                        layoutX.value = String(x);
+                        layoutY.value = String(y);
+
+                        layoutScaleValue.textContent = `${scale}%`;
+                        layoutXValue.textContent = `${x}%`;
+                        layoutYValue.textContent = `${y}%`;
+
+                        updateLayoutCodePreview(assetKey, scale, x, y);
+                    }
+
+                    function pushLayoutControlValues() {
+                        const assetKey = layoutAssetSelect.value;
+                        const scale = parseInt(layoutScale.value || "100", 10);
+                        const x = parseInt(layoutX.value || "50", 10);
+                        const y = parseInt(layoutY.value || "50", 10);
+
+                        writePercentVar(assetKey, "scale", scale);
+                        writePercentVar(assetKey, "x", x);
+                        writePercentVar(assetKey, "y", y);
+
+                        const state = getStoredLayoutState();
+                        state[assetKey] = { scale, x, y };
+                        saveLayoutState(state);
+
+                        layoutScaleValue.textContent = `${scale}%`;
+                        layoutXValue.textContent = `${x}%`;
+                        layoutYValue.textContent = `${y}%`;
+
+                        updateLayoutCodePreview(assetKey, scale, x, y);
+                    }
+
+                    function resetSelectedLayoutAsset() {
+                        const assetKey = layoutAssetSelect.value;
+
+                        writePercentVar(assetKey, "scale", 100);
+                        writePercentVar(assetKey, "x", 50);
+                        writePercentVar(assetKey, "y", 50);
+
+                        const state = getStoredLayoutState();
+                        state[assetKey] = { scale: 100, x: 50, y: 50 };
+                        saveLayoutState(state);
+
+                        hydrateLayoutControls();
+                    }
+
+                    function resetAllLayoutAssets() {
+                        Object.keys(layoutAssets).forEach(assetKey => {
+                            writePercentVar(assetKey, "scale", 100);
+                            writePercentVar(assetKey, "x", 50);
+                            writePercentVar(assetKey, "y", 50);
+                        });
+
+                        saveLayoutState({});
+                        hydrateLayoutControls();
+                    }
+
+                    openFocusButton.addEventListener("click", function () {
+                        closeRewardOverlay();
+                        openFocusOverlay();
+                    });
+
+                    focusBackButton.addEventListener("click", function () {
+                        closeFocusOverlay();
+                    });
+
+                    closeFocusButton.addEventListener("click", function () {
+                        closeFocusOverlay();
+                    });
+
+                    runHomeButton.addEventListener("click", function () {
+                        closeFocusOverlay();
+                    });
+
+                    durationSlider.addEventListener("input", updateDurationReadout);
+
+                    startFocusButton.addEventListener("click", function () {
+                        if (isSubmitting) {
+                            return;
+                        }
+
+                        const focusType = (focusTypeInput.value || "").trim() || "Focus";
+                        const durationMinutes = parseInt(durationSlider.value || "5", 10);
+
+                        plannedSeconds = Math.max(300, Math.min(7200, durationMinutes * 60));
+                        startedAtMs = Date.now();
+                        pausedElapsedSeconds = 0;
+                        isRunning = true;
+                        isPaused = false;
+                        isSubmitting = false;
+                        isConfirmOpen = false;
+                        completionTonePlayed = false;
+
+                        runFocusType.textContent = focusType;
+                        runTarget.textContent = formatDurationSelection(durationMinutes);
+
+                        showRunPanel();
+                        updateUi();
+                    });
+
+                    pauseButton.addEventListener("click", function () {
+                        if (!isRunning || isSubmitting || isConfirmOpen) {
+                            return;
+                        }
+
+                        if (!isPaused) {
+                            pausedElapsedSeconds = getElapsedSeconds();
+                            isPaused = true;
+                            updateUi();
+                            return;
+                        }
+
+                        startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+                        isPaused = false;
+                        updateUi();
+                    });
+
+                    exitButton.addEventListener("click", function () {
+                        if (!isRunning || isSubmitting) {
+                            return;
+                        }
+
+                        const elapsedSeconds = getElapsedSeconds();
+
+                        if (elapsedSeconds < stopThresholdSeconds) {
+                            closeFocusOverlay();
+                            return;
+                        }
+
+                        openConfirmOverlay();
+                    });
+
+                    confirmKeepGoingButton.addEventListener("click", function () {
+                        if (isSubmitting) {
+                            return;
+                        }
+
+                        closeConfirmOverlay();
+                    });
+
+                    confirmStopButton.addEventListener("click", function () {
+                        if (isSubmitting) {
+                            return;
+                        }
+
+                        submitSave("stop");
+                    });
+
+                    rewardCloseButton.addEventListener("click", function () {
+                        window.location.href = "/Index";
+                    });
+
+                    document.addEventListener("keydown", function (event) {
+                        if (event.key === "Escape" && isConfirmOpen && !isSubmitting) {
+                            closeConfirmOverlay();
+                        }
+                    });
+
+                    if (layoutModeEnabled) {
+                        applyStoredLayoutState();
+                        layoutPanel.hidden = false;
+
+                        layoutAssetSelect.addEventListener("change", hydrateLayoutControls);
+                        layoutScale.addEventListener("input", pushLayoutControlValues);
+                        layoutX.addEventListener("input", pushLayoutControlValues);
+                        layoutY.addEventListener("input", pushLayoutControlValues);
+                        layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
+                        layoutResetAll.addEventListener("click", resetAllLayoutAssets);
+
+                        hydrateLayoutControls();
+                    }
+
+                    updateDurationReadout();
+
+                    if (shouldShowRewardOverlay) {
+                        hydrateRewardOverlayFromDataset();
+                        openRewardOverlay();
+                    }
+
+                    window.setInterval(updateUi, 250);
+                })();
     </script>
     <!-- SECTION B END — Home Screen Scripts -->
+}
 }
 }
 }

@@ -353,8 +353,8 @@ body {
     --pl-focus-confirm-panel-image: none;
     --pl-focus-reward-panel-image: none;
     --pl-art-button-radius: 0.95rem;
-    --pl-btn-start-image: none;
-    --pl-btn-start-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-start-image: url('/assets/ui/buttons/start.png');
+    --pl-btn-start-fallback: none;
     --pl-btn-start-scale: 100%;
     --pl-btn-start-x: 50%;
     --pl-btn-start-y: 50%;
