@@ -72,29 +72,26 @@
 
     <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>5 minutes</div>
 
-    <div class="pl-canvas-item pl-slider-track-shell" id="pl-slider-track" hidden>
-        <div class="pl-slider-track-empty-art" id="pl-slider-track-empty-art" aria-hidden="true"></div>
+    <div class="pl-canvas-item pl-slider-group" id="pl-slider-group" hidden>
+        <div class="pl-slider-track-shell" id="pl-slider-track-shell">
+            <div class="pl-slider-track-empty-art" id="pl-slider-track-empty-art" aria-hidden="true"></div>
+        </div>
+
+        <div class="pl-slider-fill-shell" id="pl-slider-fill-shell">
+            <div class="pl-slider-fill-art" id="pl-slider-fill-art" aria-hidden="true"></div>
+        </div>
+
+        <div class="pl-slider-nib-visual" id="pl-slider-nib-visual" aria-hidden="true"></div>
+
+        <input class="pl-slider-input-overlay"
+               id="pl-duration-slider"
+               type="range"
+               min="5"
+               max="120"
+               step="1"
+               value="5"
+               aria-label="Countdown length" />
     </div>
-
-    <div class="pl-canvas-item pl-slider-fill-shell" id="pl-slider-fill" hidden>
-        <div class="pl-slider-fill-art" id="pl-slider-fill-art" aria-hidden="true"></div>
-    </div>
-
-    <button type="button"
-            class="pl-canvas-item pl-slider-nib-button"
-            id="pl-slider-nib"
-            hidden
-            aria-label="Adjust countdown"></button>
-
-    <input class="pl-canvas-item pl-slider-input-overlay"
-           id="pl-duration-slider"
-           type="range"
-           min="5"
-           max="120"
-           step="1"
-           value="5"
-           hidden
-           aria-label="Countdown length" />
 
     <button type="button"
             class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
@@ -256,9 +253,7 @@
                 <option value="setup-panel">setup-panel</option>
                 <option value="focus-type-field">focus-type-field</option>
                 <option value="duration-text">duration-text</option>
-                <option value="slider-track">slider-track</option>
-                <option value="slider-fill">slider-fill</option>
-                <option value="slider-nib">slider-nib</option>
+                <option value="slider">slider</option>
                 <option value="start">start</option>
                 <option value="back">back</option>
                 <option value="run-panel">run-panel</option>
@@ -334,11 +329,12 @@
                     const setupControls = document.getElementById("pl-setup-controls");
                     const focusTypeField = document.getElementById("pl-focus-type-field");
                     const durationText = document.getElementById("pl-duration-text");
-                    const sliderTrack = document.getElementById("pl-slider-track");
+                    const sliderGroup = document.getElementById("pl-slider-group");
+                    const sliderTrackShell = document.getElementById("pl-slider-track-shell");
                     const sliderTrackEmptyArt = document.getElementById("pl-slider-track-empty-art");
-                    const sliderFill = document.getElementById("pl-slider-fill");
+                    const sliderFillShell = document.getElementById("pl-slider-fill-shell");
                     const sliderFillArt = document.getElementById("pl-slider-fill-art");
-                    const sliderNib = document.getElementById("pl-slider-nib");
+                    const sliderNibVisual = document.getElementById("pl-slider-nib-visual");
                     const startFocusButton = document.getElementById("pl-start-focus-button");
                     const closeFocusButton = document.getElementById("pl-close-focus-button");
 
@@ -400,9 +396,10 @@
                     const layoutCode = document.getElementById("pl-layout-code");
 
                     if (!homeRoot || !homeSceneArt || !homeFocusButton || !homeSleepButton || !setupPanel ||
-                        !setupControls || !focusTypeField || !durationText || !sliderTrack || !sliderTrackEmptyArt ||
-                        !sliderFill || !sliderFillArt || !sliderNib || !startFocusButton || !closeFocusButton ||
-                        !runPanel || !pauseButton || !exitButton || !confirmDim || !confirmPanel ||
+                        !setupControls || !focusTypeField || !durationText || !sliderGroup ||
+                        !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell || !sliderFillArt ||
+                        !sliderNibVisual || !startFocusButton || !closeFocusButton || !runPanel ||
+                        !pauseButton || !exitButton || !confirmDim || !confirmPanel ||
                         !confirmKeepGoingButton || !confirmStopButton || !rewardDim || !rewardPanel ||
                         !rewardCloseButton || !focusTypeInput || !durationSlider || !runStateLabel ||
                         !runReadout || !runElapsed || !runNote || !progressFill || !confirmCurrentTime ||
@@ -419,7 +416,8 @@
 
                     const stopThresholdSeconds = 60;
                     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-                    const layoutStorageKey = "pl-home-canvas-layout-v3";
+                    const layoutSyncReadUrl = "/LayoutSync?handler=Read";
+                    const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
 
                     const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
                     const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
@@ -442,9 +440,7 @@
                         "keep-going": "--pl-btn-keep-going-image",
                         "stop": "--pl-btn-stop-image",
                         "gotcha": "--pl-btn-gotcha-image",
-                        "slider-track": "--pl-slider-track-empty-image",
-                        "slider-fill": "--pl-slider-track-fill-image",
-                        "slider-nib": "--pl-slider-nib-image"
+                        "slider-nib-art": "--pl-slider-nib-image"
                     };
 
                     const layoutAssets = {
@@ -454,9 +450,7 @@
                         "setup-panel": { element: setupPanel },
                         "focus-type-field": { element: focusTypeField },
                         "duration-text": { element: durationText },
-                        "slider-track": { element: sliderTrack },
-                        "slider-fill": { element: sliderFill },
-                        "slider-nib": { element: sliderNib },
+                        "slider": { element: sliderGroup },
                         "start": { element: startFocusButton },
                         "back": { element: closeFocusButton },
                         "run-panel": { element: runPanel },
@@ -472,13 +466,12 @@
                     const setupInteractiveElements = [
                         focusTypeField,
                         durationText,
-                        sliderTrack,
-                        sliderFill,
-                        sliderNib,
-                        durationSlider
+                        sliderGroup
                     ];
 
                     const artRatios = {};
+                    let sharedLayoutState = {};
+                    let pendingSaveTimer = 0;
                     let plannedSeconds = 300;
                     let startedAtMs = 0;
                     let pausedElapsedSeconds = 0;
@@ -532,6 +525,40 @@
                     function assetHasArt(assetKey) {
                         const varName = artImageVars[assetKey];
                         return !!(varName && readCssUrlVar(varName));
+                    }
+
+                    async function loadSharedLayoutState() {
+                        try {
+                            const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
+
+                            if (!response.ok) {
+                                sharedLayoutState = {};
+                                return;
+                            }
+
+                            const payload = await response.json();
+                            sharedLayoutState = payload?.items ?? {};
+                        } catch {
+                            sharedLayoutState = {};
+                        }
+                    }
+
+                    function scheduleSharedLayoutSave() {
+                        window.clearTimeout(pendingSaveTimer);
+                        pendingSaveTimer = window.setTimeout(saveSharedLayoutState, 200);
+                    }
+
+                    async function saveSharedLayoutState() {
+                        try {
+                            await fetch(layoutSyncWriteUrl, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ items: sharedLayoutState })
+                            });
+                        } catch {
+                        }
                     }
 
                     function loadArtRatio(assetKey) {
@@ -641,18 +668,196 @@
                         };
                     }
 
+                    function getCssLayoutDefaults(assetKey) {
+                        return {
+                            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 24),
+                            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 24),
+                            width: readCssPxVar(`--pl-layout-${assetKey}-width`, 170),
+                            height: readCssPxVar(`--pl-layout-${assetKey}-height`, 56),
+                            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
+                        };
+                    }
+
+                    function getMergedLayoutState(assetKey) {
+                        const defaults = getCssLayoutDefaults(assetKey);
+                        const stored = sharedLayoutState[assetKey] || {};
+
+                        return {
+                            x: stored.x ?? defaults.x,
+                            y: stored.y ?? defaults.y,
+                            width: stored.width ?? defaults.width,
+                            height: stored.height ?? defaults.height,
+                            scale: stored.scale ?? defaults.scale
+                        };
+                    }
+
+                    function getResolvedHeight(assetKey, state) {
+                        const ratio = artRatios[assetKey];
+
+                        if (ratio && ratio > 0) {
+                            return Math.max(1, Math.round(state.width / ratio));
+                        }
+
+                        return state.height;
+                    }
+
+                    function setMergedLayoutState(assetKey, partialState) {
+                        const current = getMergedLayoutState(assetKey);
+
+                        sharedLayoutState[assetKey] = {
+                            ...current,
+                            ...partialState
+                        };
+
+                        applyAssetLayout(assetKey);
+                        hydrateLayoutControls();
+                        scheduleSharedLayoutSave();
+                    }
+
+                    function clearStoredLayoutState(assetKey) {
+                        delete sharedLayoutState[assetKey];
+                        scheduleSharedLayoutSave();
+                    }
+
+                    function updateSliderVisuals() {
+                        const state = getMergedLayoutState("slider");
+                        const ratio = artRatios["slider-nib-art"] || 1;
+                        const groupWidth = Math.max(20, state.width);
+                        const groupHeight = Math.max(20, state.height);
+                        const trackHeight = Math.max(10, Math.round(groupHeight * 0.32));
+                        const trackTop = Math.round((groupHeight - trackHeight) / 2);
+                        const nibHeight = groupHeight;
+                        const nibWidth = Math.max(20, Math.round(nibHeight * ratio));
+
+                        const min = parseInt(durationSlider.min || "5", 10);
+                        const max = parseInt(durationSlider.max || "120", 10);
+                        const value = parseInt(durationSlider.value || "5", 10);
+                        const progressRatio = max <= min ? 0 : (value - min) / (max - min);
+
+                        const nibTravel = Math.max(0, groupWidth - nibWidth);
+                        const nibLeft = Math.round(progressRatio * nibTravel);
+                        const fillWidth = Math.max(0, Math.round(nibLeft + (nibWidth / 2)));
+
+                        sliderGroup.style.left = `${state.x}px`;
+                        sliderGroup.style.top = `${state.y}px`;
+                        sliderGroup.style.width = `${groupWidth}px`;
+                        sliderGroup.style.height = `${groupHeight}px`;
+                        sliderGroup.style.transform = `scale(${state.scale / 100})`;
+
+                        sliderTrackShell.style.left = "0px";
+                        sliderTrackShell.style.top = `${trackTop}px`;
+                        sliderTrackShell.style.width = `${groupWidth}px`;
+                        sliderTrackShell.style.height = `${trackHeight}px`;
+
+                        sliderTrackEmptyArt.style.width = `${groupWidth}px`;
+                        sliderTrackEmptyArt.style.height = `${trackHeight}px`;
+
+                        sliderFillShell.style.left = "0px";
+                        sliderFillShell.style.top = `${trackTop}px`;
+                        sliderFillShell.style.width = `${fillWidth}px`;
+                        sliderFillShell.style.height = `${trackHeight}px`;
+
+                        sliderFillArt.style.width = `${groupWidth}px`;
+                        sliderFillArt.style.height = `${trackHeight}px`;
+
+                        sliderNibVisual.style.left = `${nibLeft}px`;
+                        sliderNibVisual.style.top = "0px";
+                        sliderNibVisual.style.width = `${nibWidth}px`;
+                        sliderNibVisual.style.height = `${nibHeight}px`;
+
+                        durationSlider.style.pointerEvents = layoutModeEnabled ? "none" : "auto";
+                    }
+
                     function updateDurationReadout() {
                         durationText.textContent = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
                         updateSliderVisuals();
                     }
 
+                    function applyAssetLayout(assetKey) {
+                        const element = getAssetElement(assetKey);
+                        if (!element) {
+                            return;
+                        }
+
+                        if (assetKey === "slider") {
+                            updateSliderVisuals();
+                            return;
+                        }
+
+                        const state = getMergedLayoutState(assetKey);
+                        const resolvedHeight = getResolvedHeight(assetKey, state);
+
+                        element.style.left = `${state.x}px`;
+                        element.style.top = `${state.y}px`;
+                        element.style.width = `${state.width}px`;
+                        element.style.height = `${resolvedHeight}px`;
+                        element.style.transform = `scale(${state.scale / 100})`;
+
+                        if (assetKey === "home-scene") {
+                            element.style.pointerEvents = "none";
+                        }
+                    }
+
+                    function applyAllAssetLayouts() {
+                        Object.keys(layoutAssets).forEach(applyAssetLayout);
+                        refreshLayoutSelection();
+                    }
+
+                    function refreshLayoutSelection() {
+                        const selectedAssetKey = layoutAssetSelect.value;
+
+                        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+                            config.element.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
+                        });
+                    }
+
+                    function updateLayoutSliderBounds(assetKey) {
+                        const state = getMergedLayoutState(assetKey);
+                        const rect = getHomeRect();
+                        const resolvedHeight = getResolvedHeight(assetKey, state);
+
+                        layoutScale.min = "20";
+                        layoutScale.max = "250";
+
+                        layoutX.min = String(Math.round(-state.width));
+                        layoutX.max = String(Math.round(rect.width + state.width));
+
+                        layoutY.min = String(Math.round(-resolvedHeight));
+                        layoutY.max = String(Math.round(rect.height + resolvedHeight));
+                    }
+
+                    function updateLayoutCodePreview(assetKey) {
+                        const state = getMergedLayoutState(assetKey);
+                        const resolvedHeight = getResolvedHeight(assetKey, state);
+                        const ratioLocked = !!artRatios[assetKey];
+
+                        if (ratioLocked) {
+                            layoutCode.value =
+        `.pl-home-screen {
+            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+        }
+
+        /* Height auto from asset ratio: ${resolvedHeight}px */`;
+                            return;
+                        }
+
+                        layoutCode.value =
+        `.pl-home-screen {
+            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+            --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
+            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+        }`;
+                    }
+
                     function setSetupChildrenVisible(isVisible) {
                         focusTypeField.hidden = !isVisible;
                         durationText.hidden = !isVisible;
-                        sliderTrack.hidden = !isVisible;
-                        sliderFill.hidden = !isVisible;
-                        sliderNib.hidden = !isVisible;
-                        durationSlider.hidden = !isVisible;
+                        sliderGroup.hidden = !isVisible;
                     }
 
                     function setSetupChildrenLocked(isLocked) {
@@ -761,9 +966,7 @@
                             case "setup-panel":
                             case "focus-type-field":
                             case "duration-text":
-                            case "slider-track":
-                            case "slider-fill":
-                            case "slider-nib":
+                            case "slider":
                             case "start":
                             case "back":
                                 showSetupState();
@@ -785,14 +988,6 @@
                             default:
                                 showHomeState();
                                 break;
-                        }
-
-                        if (assetKey === "slider-fill" || assetKey === "slider-track") {
-                            durationSlider.value = "60";
-                        }
-
-                        if (assetKey === "slider-nib") {
-                            durationSlider.value = durationSlider.min;
                         }
 
                         updateDurationReadout();
@@ -973,171 +1168,6 @@
                         }
                     }
 
-                    function getStoredLayoutState() {
-                        try {
-                            const raw = localStorage.getItem(layoutStorageKey);
-                            return raw ? JSON.parse(raw) : {};
-                        } catch {
-                            return {};
-                        }
-                    }
-
-                    function saveLayoutState(state) {
-                        try {
-                            localStorage.setItem(layoutStorageKey, JSON.stringify(state));
-                        } catch {
-                        }
-                    }
-
-                    function getCssLayoutDefaults(assetKey) {
-                        return {
-                            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 24),
-                            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 24),
-                            width: readCssPxVar(`--pl-layout-${assetKey}-width`, 170),
-                            height: readCssPxVar(`--pl-layout-${assetKey}-height`, 56),
-                            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
-                        };
-                    }
-
-                    function getMergedLayoutState(assetKey) {
-                        const defaults = getCssLayoutDefaults(assetKey);
-                        const stored = getStoredLayoutState()[assetKey] || {};
-
-                        return {
-                            x: stored.x ?? defaults.x,
-                            y: stored.y ?? defaults.y,
-                            width: stored.width ?? defaults.width,
-                            height: stored.height ?? defaults.height,
-                            scale: stored.scale ?? defaults.scale
-                        };
-                    }
-
-                    function getResolvedHeight(assetKey, state) {
-                        const ratio = artRatios[assetKey];
-
-                        if (ratio && ratio > 0) {
-                            return Math.max(1, Math.round(state.width / ratio));
-                        }
-
-                        return state.height;
-                    }
-
-                    function setMergedLayoutState(assetKey, partialState) {
-                        const state = getStoredLayoutState();
-                        const current = getMergedLayoutState(assetKey);
-
-                        state[assetKey] = {
-                            ...current,
-                            ...partialState
-                        };
-
-                        saveLayoutState(state);
-                        applyAssetLayout(assetKey);
-                        hydrateLayoutControls();
-                    }
-
-                    function clearStoredLayoutState(assetKey) {
-                        const state = getStoredLayoutState();
-                        delete state[assetKey];
-                        saveLayoutState(state);
-                    }
-
-                    function updateSliderVisuals() {
-                        const trackState = getMergedLayoutState("slider-track");
-                        const fillState = getMergedLayoutState("slider-fill");
-                        const nibState = getMergedLayoutState("slider-nib");
-
-                        const trackHeight = getResolvedHeight("slider-track", trackState);
-                        const fillHeight = getResolvedHeight("slider-fill", fillState);
-                        const nibHeight = getResolvedHeight("slider-nib", nibState);
-
-                        const min = parseInt(durationSlider.min || "5", 10);
-                        const max = parseInt(durationSlider.max || "120", 10);
-                        const value = parseInt(durationSlider.value || "5", 10);
-                        const ratio = max <= min ? 0 : (value - min) / (max - min);
-
-                        const nibTravel = Math.max(0, trackState.width - nibState.width);
-                        const nibLeft = nibState.x + Math.round(ratio * nibTravel);
-                        const fillVisibleWidth = Math.max(0, Math.round(fillState.width * ratio));
-
-                        sliderTrack.style.left = `${trackState.x}px`;
-                        sliderTrack.style.top = `${trackState.y}px`;
-                        sliderTrack.style.width = `${trackState.width}px`;
-                        sliderTrack.style.height = `${trackHeight}px`;
-                        sliderTrack.style.transform = `scale(${trackState.scale / 100})`;
-
-                        sliderTrackEmptyArt.style.width = `${trackState.width}px`;
-                        sliderTrackEmptyArt.style.height = `${trackHeight}px`;
-
-                        sliderFill.style.left = `${fillState.x}px`;
-                        sliderFill.style.top = `${fillState.y}px`;
-                        sliderFill.style.width = `${fillVisibleWidth}px`;
-                        sliderFill.style.height = `${fillHeight}px`;
-                        sliderFill.style.transform = `scale(${fillState.scale / 100})`;
-
-                        sliderFillArt.style.width = `${fillState.width}px`;
-                        sliderFillArt.style.height = `${fillHeight}px`;
-
-                        sliderNib.style.left = `${nibLeft}px`;
-                        sliderNib.style.top = `${nibState.y}px`;
-                        sliderNib.style.width = `${nibState.width}px`;
-                        sliderNib.style.height = `${nibHeight}px`;
-                        sliderNib.style.transform = `scale(${nibState.scale / 100})`;
-
-                        durationSlider.style.left = `${trackState.x}px`;
-                        durationSlider.style.top = `${Math.min(trackState.y, nibState.y) - 10}px`;
-                        durationSlider.style.width = `${trackState.width}px`;
-                        durationSlider.style.height = `${Math.max(trackHeight, nibHeight) + 20}px`;
-                        durationSlider.style.transform = `scale(${trackState.scale / 100})`;
-                        durationSlider.style.transformOrigin = "top left";
-                    }
-
-                    function applyAssetLayout(assetKey) {
-                        const element = getAssetElement(assetKey);
-                        if (!element) {
-                            return;
-                        }
-
-                        const state = getMergedLayoutState(assetKey);
-                        const resolvedHeight = getResolvedHeight(assetKey, state);
-
-                        if (assetKey === "slider-track" || assetKey === "slider-fill" || assetKey === "slider-nib") {
-                            updateSliderVisuals();
-                            return;
-                        }
-
-                        element.style.left = `${state.x}px`;
-                        element.style.top = `${state.y}px`;
-                        element.style.width = `${state.width}px`;
-                        element.style.height = `${resolvedHeight}px`;
-                        element.style.transform = `scale(${state.scale / 100})`;
-
-                        if (assetKey === "home-scene") {
-                            element.style.pointerEvents = "none";
-                        }
-                    }
-
-                    function applyAllAssetLayouts() {
-                        Object.keys(layoutAssets).forEach(function (assetKey) {
-                            if (assetKey === "slider-fill" || assetKey === "slider-nib") {
-                                return;
-                            }
-
-                            applyAssetLayout(assetKey);
-                        });
-
-                        updateSliderVisuals();
-                        refreshLayoutSelection();
-                    }
-
-                    function refreshLayoutSelection() {
-                        const selectedAssetKey = layoutAssetSelect.value;
-
-                        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
-                            config.element.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
-                        });
-                    }
-
                     function updateLayoutSliderBounds(assetKey) {
                         const state = getMergedLayoutState(assetKey);
                         const rect = getHomeRect();
@@ -1228,6 +1258,14 @@
                         setMergedLayoutState(assetKey, partial);
                     }
 
+                    function refreshLayoutSelection() {
+                        const selectedAssetKey = layoutAssetSelect.value;
+
+                        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+                            config.element.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
+                        });
+                    }
+
                     function beginDrag(assetKey, event) {
                         if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey) {
                             return;
@@ -1291,9 +1329,10 @@
                     }
 
                     function resetAllLayoutAssets() {
-                        saveLayoutState({});
+                        sharedLayoutState = {};
                         applyAllAssetLayouts();
                         hydrateLayoutControls();
+                        scheduleSharedLayoutSave();
                     }
 
                     homeFocusButton.addEventListener("click", function () {
@@ -1428,31 +1467,37 @@
                         }, true);
                     });
 
-                    if (layoutModeEnabled) {
-                        layoutPanel.hidden = false;
-                        layoutAssetSelect.addEventListener("change", hydrateLayoutControls);
-                        layoutScale.addEventListener("input", pushLayoutControlValues);
-                        layoutX.addEventListener("input", pushLayoutControlValues);
-                        layoutY.addEventListener("input", pushLayoutControlValues);
-                        layoutWidth.addEventListener("input", pushLayoutControlValues);
-                        layoutHeight.addEventListener("input", pushLayoutControlValues);
-                        layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
-                        layoutResetAll.addEventListener("click", resetAllLayoutAssets);
+                    async function initializeAsync() {
+                        applyPanelArtStates();
+                        primeArtRatios();
+                        await loadSharedLayoutState();
+                        applyAllAssetLayouts();
+                        updateDurationReadout();
+
+                        if (layoutModeEnabled) {
+                            layoutPanel.hidden = false;
+                            layoutAssetSelect.addEventListener("change", hydrateLayoutControls);
+                            layoutScale.addEventListener("input", pushLayoutControlValues);
+                            layoutX.addEventListener("input", pushLayoutControlValues);
+                            layoutY.addEventListener("input", pushLayoutControlValues);
+                            layoutWidth.addEventListener("input", pushLayoutControlValues);
+                            layoutHeight.addEventListener("input", pushLayoutControlValues);
+                            layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
+                            layoutResetAll.addEventListener("click", resetAllLayoutAssets);
+                            hydrateLayoutControls();
+                            return;
+                        }
+
+                        if (shouldShowRewardOverlay) {
+                            hydrateRewardPanelFromDataset();
+                            showRewardStatePreview();
+                        } else {
+                            returnToHome();
+                        }
                     }
 
-                    applyPanelArtStates();
-                    primeArtRatios();
-                    applyAllAssetLayouts();
-                    updateDurationReadout();
-
-                    if (shouldShowRewardOverlay) {
-                        hydrateRewardPanelFromDataset();
-                        showRewardStatePreview();
-                    } else if (layoutModeEnabled) {
-                        hydrateLayoutControls();
-                    } else {
-                        returnToHome();
-                    }
+                    initializeAsync();
+                    window.setInterval(updateUi, 250);
                 })();
     </script>
 }
