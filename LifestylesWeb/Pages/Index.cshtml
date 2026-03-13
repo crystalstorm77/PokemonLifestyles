@@ -446,16 +446,16 @@
                     const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
 
                     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-                    const layoutStorageKey = "pl-layout-mode-v2";
+                    const layoutStorageKey = "pl-layout-mode-v3";
 
                     const layoutAssets = {
-                        "start": { button: startFocusButton, container: setupPanel },
-                        "back": { button: closeFocusButton, container: setupPanel },
-                        "pause": { button: pauseButton, container: runPanel },
-                        "exit": { button: exitButton, container: runPanel },
-                        "keep-going": { button: confirmKeepGoingButton, container: confirmCard },
-                        "stop": { button: confirmStopButton, container: confirmCard },
-                        "gotcha": { button: rewardCloseButton, container: rewardCard }
+                        "start": { button: startFocusButton, container: focusOverlay },
+                        "back": { button: closeFocusButton, container: focusOverlay },
+                        "pause": { button: pauseButton, container: focusOverlay },
+                        "exit": { button: exitButton, container: focusOverlay },
+                        "keep-going": { button: confirmKeepGoingButton, container: confirmOverlay },
+                        "stop": { button: confirmStopButton, container: confirmOverlay },
+                        "gotcha": { button: rewardCloseButton, container: rewardOverlay }
                     };
 
                     let plannedSeconds = 300;
@@ -466,6 +466,7 @@
                     let isSubmitting = false;
                     let isConfirmOpen = false;
                     let completionTonePlayed = false;
+                    let dragState = null;
 
                     function setButtonLabel(button, text) {
                         if (!button) {
@@ -536,13 +537,13 @@
                     function showSetupPanel() {
                         setupPanel.hidden = false;
                         runPanel.hidden = true;
-                        applyStoredAbsoluteLayouts();
+                        applyAllAbsoluteLayouts();
                     }
 
                     function showRunPanel() {
                         setupPanel.hidden = true;
                         runPanel.hidden = false;
-                        applyStoredAbsoluteLayouts();
+                        applyAllAbsoluteLayouts();
                     }
 
                     function openFocusOverlay() {
@@ -551,7 +552,7 @@
                         closeConfirmOverlay();
                         showSetupPanel();
                         updateDurationReadout();
-                        applyStoredAbsoluteLayouts();
+                        applyAllAbsoluteLayouts();
                     }
 
                     function closeFocusOverlay() {
@@ -564,7 +565,7 @@
                     function openRewardOverlay() {
                         rewardOverlay.hidden = false;
                         rewardOverlay.setAttribute("aria-hidden", "false");
-                        applyStoredAbsoluteLayouts();
+                        applyAllAbsoluteLayouts();
                     }
 
                     function closeRewardOverlay() {
@@ -629,7 +630,7 @@
                         confirmOverlay.hidden = false;
                         confirmOverlay.setAttribute("aria-hidden", "false");
                         updateConfirmOverlay(getElapsedSeconds());
-                        applyStoredAbsoluteLayouts();
+                        applyAllAbsoluteLayouts();
                     }
 
                     function closeConfirmOverlay() {
@@ -779,169 +780,258 @@
                         return layoutAssets[assetKey] || null;
                     }
 
-                    function getFallbackBaseMetrics(config) {
-                        const containerRect = config.container.getBoundingClientRect();
-                        const fallbackWidth = containerRect.width > 0
-                            ? Math.min(Math.max(containerRect.width * 0.42, 140), 260)
-                            : 180;
+                    function readCssPxVar(varName, fallbackValue) {
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+                        if (!raw) {
+                            return fallbackValue;
+                        }
 
+                        const parsed = parseFloat(raw.replace("px", ""));
+                        return Number.isFinite(parsed) ? parsed : fallbackValue;
+                    }
+
+                    function readCssNumberVar(varName, fallbackValue) {
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+                        if (!raw) {
+                            return fallbackValue;
+                        }
+
+                        const parsed = parseFloat(raw);
+                        return Number.isFinite(parsed) ? parsed : fallbackValue;
+                    }
+
+                    function getCssLayoutDefaults(assetKey) {
                         return {
-                            baseWidth: Math.round(fallbackWidth),
-                            baseHeight: 56
+                            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 24),
+                            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 24),
+                            width: readCssPxVar(`--pl-layout-${assetKey}-width`, 160),
+                            height: readCssPxVar(`--pl-layout-${assetKey}-height`, 56),
+                            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
                         };
                     }
 
-                    function measureBaseMetrics(assetKey) {
-                        const config = getAssetConfig(assetKey);
-                        if (!config) {
-                            return { baseWidth: 180, baseHeight: 56 };
-                        }
+                    function getMergedLayoutState(assetKey) {
+                        const defaults = getCssLayoutDefaults(assetKey);
+                        const stored = getStoredLayoutState()[assetKey] || {};
 
-                        const rect = config.button.getBoundingClientRect();
-
-                        if (rect.width > 0 && rect.height > 0) {
-                            return {
-                                baseWidth: Math.round(rect.width),
-                                baseHeight: Math.round(rect.height)
-                            };
-                        }
-
-                        return getFallbackBaseMetrics(config);
+                        return {
+                            x: stored.x ?? defaults.x,
+                            y: stored.y ?? defaults.y,
+                            width: stored.width ?? defaults.width,
+                            height: stored.height ?? defaults.height,
+                            scale: stored.scale ?? defaults.scale
+                        };
                     }
 
-                    function clearAbsoluteLayout(assetKey) {
+                    function setMergedLayoutState(assetKey, partialState) {
+                        const state = getStoredLayoutState();
+                        const current = getMergedLayoutState(assetKey);
+
+                        state[assetKey] = {
+                            ...current,
+                            ...partialState
+                        };
+
+                        saveLayoutState(state);
+                        applyAbsoluteLayout(assetKey);
+                        hydrateLayoutControls();
+                    }
+
+                    function clearStoredLayoutState(assetKey) {
+                        const state = getStoredLayoutState();
+                        delete state[assetKey];
+                        saveLayoutState(state);
+                    }
+
+                    function applyAbsoluteLayout(assetKey) {
                         const config = getAssetConfig(assetKey);
                         if (!config) {
                             return;
                         }
 
-                        const button = config.button;
-
-                        button.style.position = "";
-                        button.style.left = "";
-                        button.style.top = "";
-                        button.style.width = "";
-                        button.style.height = "";
-                        button.style.transform = "";
-                        button.style.zIndex = "";
-                        button.style.margin = "";
-                        button.style.inset = "";
-                    }
-
-                    function applyAbsoluteLayout(assetKey, state) {
-                        const config = getAssetConfig(assetKey);
-                        if (!config) {
-                            return;
-                        }
-
+                        const state = getMergedLayoutState(assetKey);
                         const button = config.button;
                         const container = config.container;
 
+                        if (getComputedStyle(container).position === "static") {
+                            container.style.position = "relative";
+                        }
+
                         container.style.overflow = "visible";
 
-                        const baseWidth = state.baseWidth || 180;
-                        const baseHeight = state.baseHeight || 56;
-                        const scale = state.scale || 100;
-                        const x = state.x ?? 50;
-                        const y = state.y ?? 50;
-
                         button.style.position = "absolute";
-                        button.style.left = `${x}%`;
-                        button.style.top = `${y}%`;
-                        button.style.width = `${baseWidth}px`;
-                        button.style.height = `${baseHeight}px`;
+                        button.style.left = `${state.x}px`;
+                        button.style.top = `${state.y}px`;
+                        button.style.width = `${state.width}px`;
+                        button.style.height = `${state.height}px`;
                         button.style.margin = "0";
-                        button.style.inset = "auto";
-                        button.style.transform = `translate(-50%, -50%) scale(${scale / 100})`;
-                        button.style.zIndex = "25";
+                        button.style.transform = `scale(${state.scale / 100})`;
+                        button.style.transformOrigin = "top left";
+                        button.style.zIndex = "30";
                     }
 
-                    function applyStoredAbsoluteLayouts() {
-                        const state = getStoredLayoutState();
+                    function applyAllAbsoluteLayouts() {
+                        Object.keys(layoutAssets).forEach(applyAbsoluteLayout);
+                        refreshLayoutSelection();
+                    }
 
-                        Object.keys(layoutAssets).forEach(assetKey => {
-                            const assetState = state[assetKey];
-                            if (!assetState) {
-                                clearAbsoluteLayout(assetKey);
-                                return;
-                            }
+                    function refreshLayoutSelection() {
+                        const selectedAssetKey = layoutAssetSelect.value;
 
-                            applyAbsoluteLayout(assetKey, assetState);
+                        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+                            config.button.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
+                            config.button.style.touchAction = layoutModeEnabled ? "none" : "auto";
                         });
                     }
 
-                    function updateLayoutCodePreview(assetKey, state) {
+                    function updateLayoutSliderBounds(assetKey) {
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const containerRect = config.container.getBoundingClientRect();
+                        const state = getMergedLayoutState(assetKey);
+
+                        layoutScale.min = "20";
+                        layoutScale.max = "250";
+
+                        layoutX.min = String(Math.round(-state.width));
+                        layoutX.max = String(Math.round(containerRect.width + state.width));
+
+                        layoutY.min = String(Math.round(-state.height));
+                        layoutY.max = String(Math.round(containerRect.height + state.height));
+                    }
+
+                    function updateLayoutCodePreview(assetKey) {
+                        const state = getMergedLayoutState(assetKey);
+
                         layoutCode.value =
-        `${assetKey}: {
-          x: ${state.x}%
-          y: ${state.y}%
-          scale: ${state.scale}%
-          baseWidth: ${state.baseWidth}px
-          baseHeight: ${state.baseHeight}px
+        `.pl-home-screen {
+            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+            --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
+            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
         }`;
                     }
 
                     function hydrateLayoutControls() {
                         const assetKey = layoutAssetSelect.value;
-                        const state = getStoredLayoutState();
-                        const assetState = state[assetKey] || { scale: 100, x: 50, y: 50, ...measureBaseMetrics(assetKey) };
+                        const state = getMergedLayoutState(assetKey);
 
-                        layoutScale.value = String(assetState.scale);
-                        layoutX.value = String(assetState.x);
-                        layoutY.value = String(assetState.y);
+                        updateLayoutSliderBounds(assetKey);
 
-                        layoutScaleValue.textContent = `${assetState.scale}%`;
-                        layoutXValue.textContent = `${assetState.x}%`;
-                        layoutYValue.textContent = `${assetState.y}%`;
+                        layoutScale.value = String(Math.round(state.scale));
+                        layoutX.value = String(Math.round(state.x));
+                        layoutY.value = String(Math.round(state.y));
 
-                        updateLayoutCodePreview(assetKey, assetState);
+                        layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
+                        layoutXValue.textContent = `${Math.round(state.x)} px`;
+                        layoutYValue.textContent = `${Math.round(state.y)} px`;
+
+                        updateLayoutCodePreview(assetKey);
+                        refreshLayoutSelection();
+
+                        const scaleLabel = layoutScale.closest(".pl-field")?.querySelector(".pl-field-label");
+                        const xLabel = layoutX.closest(".pl-field")?.querySelector(".pl-field-label");
+                        const yLabel = layoutY.closest(".pl-field")?.querySelector(".pl-field-label");
+                        const codeLabel = layoutCode.closest(".pl-field")?.querySelector(".pl-field-label");
+
+                        if (scaleLabel) scaleLabel.textContent = "Scale";
+                        if (xLabel) xLabel.textContent = "X (px)";
+                        if (yLabel) yLabel.textContent = "Y (px)";
+                        if (codeLabel) codeLabel.textContent = "Copy back into art-skin.css";
                     }
 
                     function pushLayoutControlValues() {
                         const assetKey = layoutAssetSelect.value;
-                        const state = getStoredLayoutState();
 
-                        const existing = state[assetKey] || {};
-                        const measured = existing.baseWidth && existing.baseHeight
-                            ? existing
-                            : measureBaseMetrics(assetKey);
-
-                        const nextState = {
-                            baseWidth: measured.baseWidth,
-                            baseHeight: measured.baseHeight,
+                        setMergedLayoutState(assetKey, {
                             scale: parseInt(layoutScale.value || "100", 10),
-                            x: parseInt(layoutX.value || "50", 10),
-                            y: parseInt(layoutY.value || "50", 10)
+                            x: parseInt(layoutX.value || "0", 10),
+                            y: parseInt(layoutY.value || "0", 10)
+                        });
+                    }
+
+                    function beginDrag(assetKey, event) {
+                        if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey) {
+                            return;
+                        }
+
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const state = getMergedLayoutState(assetKey);
+                        const containerRect = config.container.getBoundingClientRect();
+
+                        dragState = {
+                            assetKey,
+                            pointerId: event.pointerId,
+                            offsetX: event.clientX - containerRect.left - state.x,
+                            offsetY: event.clientY - containerRect.top - state.y
                         };
 
-                        state[assetKey] = nextState;
-                        saveLayoutState(state);
-                        applyAbsoluteLayout(assetKey, nextState);
+                        try {
+                            config.button.setPointerCapture(event.pointerId);
+                        } catch {
+                        }
 
-                        layoutScaleValue.textContent = `${nextState.scale}%`;
-                        layoutXValue.textContent = `${nextState.x}%`;
-                        layoutYValue.textContent = `${nextState.y}%`;
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
 
-                        updateLayoutCodePreview(assetKey, nextState);
+                    function handleDragMove(event) {
+                        if (!dragState) {
+                            return;
+                        }
+
+                        const { assetKey, offsetX, offsetY } = dragState;
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const containerRect = config.container.getBoundingClientRect();
+
+                        setMergedLayoutState(assetKey, {
+                            x: Math.round(event.clientX - containerRect.left - offsetX),
+                            y: Math.round(event.clientY - containerRect.top - offsetY)
+                        });
+
+                        event.preventDefault();
+                    }
+
+                    function endDrag(event) {
+                        if (!dragState) {
+                            return;
+                        }
+
+                        const { assetKey, pointerId } = dragState;
+                        const config = getAssetConfig(assetKey);
+
+                        if (config && pointerId === event.pointerId) {
+                            try {
+                                config.button.releasePointerCapture(pointerId);
+                            } catch {
+                            }
+                        }
+
+                        dragState = null;
                     }
 
                     function resetSelectedLayoutAsset() {
                         const assetKey = layoutAssetSelect.value;
-                        const state = getStoredLayoutState();
-
-                        delete state[assetKey];
-                        saveLayoutState(state);
-                        clearAbsoluteLayout(assetKey);
+                        clearStoredLayoutState(assetKey);
+                        applyAbsoluteLayout(assetKey);
                         hydrateLayoutControls();
                     }
 
                     function resetAllLayoutAssets() {
                         saveLayoutState({});
-
-                        Object.keys(layoutAssets).forEach(assetKey => {
-                            clearAbsoluteLayout(assetKey);
-                        });
-
+                        applyAllAbsoluteLayouts();
                         hydrateLayoutControls();
                     }
 
@@ -965,7 +1055,7 @@
                     durationSlider.addEventListener("input", updateDurationReadout);
 
                     startFocusButton.addEventListener("click", function () {
-                        if (isSubmitting) {
+                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "start")) {
                             return;
                         }
 
@@ -989,7 +1079,7 @@
                     });
 
                     pauseButton.addEventListener("click", function () {
-                        if (!isRunning || isSubmitting || isConfirmOpen) {
+                        if (!isRunning || isSubmitting || isConfirmOpen || (layoutModeEnabled && layoutAssetSelect.value === "pause")) {
                             return;
                         }
 
@@ -1006,7 +1096,7 @@
                     });
 
                     exitButton.addEventListener("click", function () {
-                        if (!isRunning || isSubmitting) {
+                        if (!isRunning || isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "exit")) {
                             return;
                         }
 
@@ -1021,7 +1111,7 @@
                     });
 
                     confirmKeepGoingButton.addEventListener("click", function () {
-                        if (isSubmitting) {
+                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "keep-going")) {
                             return;
                         }
 
@@ -1029,7 +1119,7 @@
                     });
 
                     confirmStopButton.addEventListener("click", function () {
-                        if (isSubmitting) {
+                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "stop")) {
                             return;
                         }
 
@@ -1037,6 +1127,10 @@
                     });
 
                     rewardCloseButton.addEventListener("click", function () {
+                        if (layoutModeEnabled && layoutAssetSelect.value === "gotcha") {
+                            return;
+                        }
+
                         window.location.href = "/Index";
                     });
 
@@ -1046,9 +1140,25 @@
                         }
                     });
 
-                    applyStoredAbsoluteLayouts();
+                    window.addEventListener("pointermove", handleDragMove);
+                    window.addEventListener("pointerup", endDrag);
+                    window.addEventListener("pointercancel", endDrag);
+
+                    Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+                        config.button.addEventListener("pointerdown", function (event) {
+                            beginDrag(assetKey, event);
+                        });
+
+                        config.button.addEventListener("click", function (event) {
+                            if (layoutModeEnabled && layoutAssetSelect.value === assetKey) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                        }, true);
+                    });
 
                     if (layoutModeEnabled) {
+                        homeRoot.classList.add("pl-layout-active");
                         layoutPanel.hidden = false;
 
                         layoutAssetSelect.addEventListener("change", hydrateLayoutControls);
@@ -1057,10 +1167,10 @@
                         layoutY.addEventListener("input", pushLayoutControlValues);
                         layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
                         layoutResetAll.addEventListener("click", resetAllLayoutAssets);
-
-                        hydrateLayoutControls();
                     }
 
+                    applyAllAbsoluteLayouts();
+                    hydrateLayoutControls();
                     updateDurationReadout();
 
                     if (shouldShowRewardOverlay) {
