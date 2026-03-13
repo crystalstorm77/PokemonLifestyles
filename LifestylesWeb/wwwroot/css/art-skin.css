@@ -5,13 +5,13 @@
     --pl-art-button-radius: 0.95rem;
     --pl-btn-home-focus-image: url('/assets/ui/buttons/focus-start.png');
     --pl-btn-home-focus-fallback: none;
-    --pl-btn-home-sleep-image: none;
-    --pl-btn-home-sleep-fallback: linear-gradient(180deg, #f8fafc, #f8fafc);
+    --pl-btn-home-sleep-image: url('/assets/ui/buttons/sleep.png');
+    --pl-btn-home-sleep-fallback: none;
     --pl-focus-setup-panel-image: url('/assets/ui/panels/timer-panel.png');
     --pl-focus-run-panel-image: none;
     --pl-focus-confirm-panel-image: none;
     --pl-focus-reward-panel-image: none;
-    --pl-btn-start-image: url('/assets/ui/buttons/start.png');
+    --pl-btn-start-image: url('/assets/ui/buttons/focus-start.png');
     --pl-btn-start-fallback: none;
     --pl-btn-back-image: url('/assets/ui/buttons/back.png');
     --pl-btn-back-fallback: none;
@@ -23,8 +23,8 @@
     --pl-btn-keep-going-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
     --pl-btn-stop-image: none;
     --pl-btn-stop-fallback: linear-gradient(180deg, #2563eb, #2563eb);
-    --pl-btn-gotcha-image: none;
-    --pl-btn-gotcha-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-gotcha-image: url('/assets/ui/buttons/gotcha.png');
+    --pl-btn-gotcha-fallback: none;
 }
 /* SEGMENT A END — Asset Paths */
 

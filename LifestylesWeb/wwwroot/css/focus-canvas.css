@@ -22,11 +22,10 @@ body {
 
 .pl-home-scene-art {
     z-index: 0;
-    pointer-events: none;
     background-image: var(--pl-home-scene-image);
     background-repeat: no-repeat;
     background-position: center center;
-    background-size: cover;
+    background-size: 100% 100%;
 }
 
 .pl-status-toast {
@@ -153,6 +152,20 @@ body {
 
 .pl-canvas-panel-reward {
     background-image: var(--pl-focus-reward-panel-image);
+}
+
+.pl-canvas-panel-has-art {
+    background-color: transparent;
+}
+
+.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-setup-copy,
+.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-mode-grid,
+.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-field-label {
+    display: none;
+}
+
+.pl-canvas-panel-setup.pl-canvas-panel-has-art .pl-field {
+    margin-top: 0.7rem;
 }
 
 .pl-panel-dim {
@@ -487,7 +500,9 @@ body {
         width: min(94vw, 360px);
     }
 }
-/* SEGMENT A END — Home Canvas Styles */ """
+/* SEGMENT A END — Home Canvas Styles */
+
+"""
 print(len(canvas_seg.splitlines()))
 Japgollypython.exec to=container.exec code ￣奇米影视assistant to=container.exec analysis 彩神争霸大发快json {
     "cmd":["bash","-lc","cat >/mnt/data/focus_canvas_check.css <<'EOF'\n/* dummy */\nEOF"]

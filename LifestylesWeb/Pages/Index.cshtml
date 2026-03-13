@@ -17,7 +17,7 @@
      data-reward-completed="@Model.RewardCompleted.ToString().ToLowerInvariant()"
      data-reward-xp="@Model.RewardXp"
      data-reward-coins="@Model.RewardCoins">
-    <div class="pl-home-scene-art" aria-hidden="true"></div>
+    <div class="pl-canvas-item pl-home-scene-art" id="pl-home-scene-art" aria-hidden="true"></div>
 
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
     {
@@ -38,15 +38,17 @@
     </button>
 
     <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-setup" id="pl-setup-panel" hidden>
-        <div class="pl-panel-header">
-            <span class="pl-eyebrow" style="margin:0;">Focus Session</span>
-            <span class="pl-badge">Countdown</span>
-        </div>
+        <div class="pl-setup-copy">
+            <div class="pl-panel-header">
+                <span class="pl-eyebrow" style="margin:0;">Focus Session</span>
+                <span class="pl-badge">Countdown</span>
+            </div>
 
-        <h2 class="pl-title" style="margin-top:0.55rem;">Stay with it</h2>
-        <p class="pl-subtitle">
-            This panel sits on the real home screen. It is not a second screen.
-        </p>
+            <h2 class="pl-title" style="margin-top:0.55rem;">Stay with it</h2>
+            <p class="pl-subtitle">
+                This panel sits on the real home screen. It is not a second screen.
+            </p>
+        </div>
 
         <div class="pl-setup-controls" id="pl-setup-controls">
             <div class="pl-mode-grid">
@@ -243,6 +245,7 @@
         <label class="pl-field">
             <span class="pl-field-label">Asset</span>
             <select class="pl-input" id="pl-layout-asset-select">
+                <option value="home-scene">home-scene</option>
                 <option value="home-focus">home-focus</option>
                 <option value="home-sleep">home-sleep</option>
                 <option value="setup-panel">setup-panel</option>
@@ -283,8 +286,9 @@
         </label>
 
         <label class="pl-field">
-            <span class="pl-field-label">Height (px)</span>
+            <span class="pl-field-label" id="pl-layout-height-label">Height (px)</span>
             <input class="pl-input" id="pl-layout-height" type="number" min="20" max="1200" step="1" value="56" />
+            <span class="pl-field-hint" id="pl-layout-height-hint"></span>
         </label>
 
         <div class="pl-layout-actions">
@@ -312,6 +316,7 @@
                 (function () {
                     const homeRoot = document.getElementById("pl-home-root");
 
+                    const homeSceneArt = document.getElementById("pl-home-scene-art");
                     const homeFocusButton = document.getElementById("pl-home-focus-button");
                     const homeSleepButton = document.getElementById("pl-home-sleep-button");
 
@@ -372,30 +377,32 @@
                     const layoutScaleValue = document.getElementById("pl-layout-scale-value");
                     const layoutXValue = document.getElementById("pl-layout-x-value");
                     const layoutYValue = document.getElementById("pl-layout-y-value");
+                    const layoutHeightLabel = document.getElementById("pl-layout-height-label");
+                    const layoutHeightHint = document.getElementById("pl-layout-height-hint");
                     const layoutResetSelected = document.getElementById("pl-layout-reset-selected");
                     const layoutResetAll = document.getElementById("pl-layout-reset-all");
                     const layoutCode = document.getElementById("pl-layout-code");
 
-                    if (!homeRoot || !homeFocusButton || !homeSleepButton || !setupPanel || !setupControls ||
-                        !startFocusButton || !closeFocusButton || !runPanel || !pauseButton || !exitButton ||
-                        !confirmDim || !confirmPanel || !confirmKeepGoingButton || !confirmStopButton ||
-                        !rewardDim || !rewardPanel || !rewardCloseButton || !focusTypeInput ||
-                        !durationSlider || !durationReadout || !runStateLabel || !runReadout ||
-                        !runElapsed || !runNote || !progressFill || !confirmCurrentTime ||
-                        !confirmTimerStatus || !confirmCompleteXp || !confirmCompleteCoins ||
-                        !confirmCurrentXp || !confirmCurrentCoins || !rewardStatusText ||
-                        !rewardFocusType || !rewardDurationText || !rewardXp || !rewardCoins ||
-                        !saveForm || !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds ||
-                        !saveMode || !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX ||
-                        !layoutY || !layoutWidth || !layoutHeight || !layoutScaleValue ||
-                        !layoutXValue || !layoutYValue || !layoutResetSelected || !layoutResetAll ||
-                        !layoutCode) {
+                    if (!homeRoot || !homeSceneArt || !homeFocusButton || !homeSleepButton || !setupPanel ||
+                        !setupControls || !startFocusButton || !closeFocusButton || !runPanel ||
+                        !pauseButton || !exitButton || !confirmDim || !confirmPanel ||
+                        !confirmKeepGoingButton || !confirmStopButton || !rewardDim || !rewardPanel ||
+                        !rewardCloseButton || !focusTypeInput || !durationSlider || !durationReadout ||
+                        !runStateLabel || !runReadout || !runElapsed || !runNote || !progressFill ||
+                        !confirmCurrentTime || !confirmTimerStatus || !confirmCompleteXp ||
+                        !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
+                        !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
+                        !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
+                        !saveElapsedSeconds || !saveMode || !layoutPanel || !layoutAssetSelect ||
+                        !layoutScale || !layoutX || !layoutY || !layoutWidth || !layoutHeight ||
+                        !layoutScaleValue || !layoutXValue || !layoutYValue || !layoutHeightLabel ||
+                        !layoutHeightHint || !layoutResetSelected || !layoutResetAll || !layoutCode) {
                         return;
                     }
 
                     const stopThresholdSeconds = 60;
                     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-                    const layoutStorageKey = "pl-home-canvas-layout-v1";
+                    const layoutStorageKey = "pl-home-canvas-layout-v2";
 
                     const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
                     const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
@@ -403,7 +410,25 @@
                     const rewardWindowEligible = String(homeRoot.dataset.rewardWindowEligible || "").toLowerCase() === "true";
                     const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
 
+                    const artImageVars = {
+                        "home-scene": "--pl-home-scene-image",
+                        "home-focus": "--pl-btn-home-focus-image",
+                        "home-sleep": "--pl-btn-home-sleep-image",
+                        "setup-panel": "--pl-focus-setup-panel-image",
+                        "run-panel": "--pl-focus-run-panel-image",
+                        "confirm-panel": "--pl-focus-confirm-panel-image",
+                        "reward-panel": "--pl-focus-reward-panel-image",
+                        "start": "--pl-btn-start-image",
+                        "back": "--pl-btn-back-image",
+                        "pause": "--pl-btn-pause-image",
+                        "exit": "--pl-btn-exit-image",
+                        "keep-going": "--pl-btn-keep-going-image",
+                        "stop": "--pl-btn-stop-image",
+                        "gotcha": "--pl-btn-gotcha-image"
+                    };
+
                     const layoutAssets = {
+                        "home-scene": { element: homeSceneArt },
                         "home-focus": { element: homeFocusButton },
                         "home-sleep": { element: homeSleepButton },
                         "setup-panel": { element: setupPanel },
@@ -419,6 +444,7 @@
                         "gotcha": { element: rewardCloseButton }
                     };
 
+                    const artRatios = {};
                     let plannedSeconds = 300;
                     let startedAtMs = 0;
                     let pausedElapsedSeconds = 0;
@@ -430,6 +456,98 @@
 
                     function getHomeRect() {
                         return homeRoot.getBoundingClientRect();
+                    }
+
+                    function readCssPxVar(varName, fallbackValue) {
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+
+                        if (!raw) {
+                            return fallbackValue;
+                        }
+
+                        const parsed = parseFloat(raw.replace("px", ""));
+                        return Number.isFinite(parsed) ? parsed : fallbackValue;
+                    }
+
+                    function readCssNumberVar(varName, fallbackValue) {
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+
+                        if (!raw) {
+                            return fallbackValue;
+                        }
+
+                        const parsed = parseFloat(raw);
+                        return Number.isFinite(parsed) ? parsed : fallbackValue;
+                    }
+
+                    function readCssUrlVar(varName) {
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+
+                        if (!raw || raw === "none") {
+                            return "";
+                        }
+
+                        const match = raw.match(/^url\((['"]?)(.*?)\1\)$/);
+                        return match ? match[2] : "";
+                    }
+
+                    function getAssetElement(assetKey) {
+                        return layoutAssets[assetKey]?.element || null;
+                    }
+
+                    function assetHasArt(assetKey) {
+                        const varName = artImageVars[assetKey];
+                        return !!(varName && readCssUrlVar(varName));
+                    }
+
+                    function loadArtRatio(assetKey) {
+                        const varName = artImageVars[assetKey];
+                        if (!varName) {
+                            return;
+                        }
+
+                        const url = readCssUrlVar(varName);
+
+                        if (!url) {
+                            delete artRatios[assetKey];
+                            applyPanelArtStates();
+                            applyAssetLayout(assetKey);
+                            return;
+                        }
+
+                        const image = new Image();
+
+                        image.onload = function () {
+                            if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+                                artRatios[assetKey] = image.naturalWidth / image.naturalHeight;
+                            } else {
+                                delete artRatios[assetKey];
+                            }
+
+                            applyPanelArtStates();
+                            applyAssetLayout(assetKey);
+                            hydrateLayoutControls();
+                        };
+
+                        image.onerror = function () {
+                            delete artRatios[assetKey];
+                            applyPanelArtStates();
+                            applyAssetLayout(assetKey);
+                            hydrateLayoutControls();
+                        };
+
+                        image.src = url;
+                    }
+
+                    function primeArtRatios() {
+                        Object.keys(artImageVars).forEach(loadArtRatio);
+                    }
+
+                    function applyPanelArtStates() {
+                        setupPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("setup-panel"));
+                        runPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("run-panel"));
+                        confirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("confirm-panel"));
+                        rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
                     }
 
                     function setButtonLabel(button, text) {
@@ -523,46 +641,98 @@
                         rewardCloseButton.hidden = !isVisible;
                     }
 
-                    function openFocusSetup() {
-                        setHomeButtonsVisible(false);
-                        setSetupVisible(true);
-                        setRunVisible(false);
-                        setConfirmVisible(false);
-                        setRewardVisible(false);
-                    }
-
-                    function returnToHome() {
+                    function showHomeState() {
                         setHomeButtonsVisible(true);
                         setSetupVisible(false);
                         setRunVisible(false);
                         setConfirmVisible(false);
                         setRewardVisible(false);
-                        resetRunState();
                     }
 
-                    function startRunState() {
+                    function showSetupState() {
                         setHomeButtonsVisible(false);
                         setSetupVisible(true);
-                        setRunVisible(true);
+                        setRunVisible(false);
                         setConfirmVisible(false);
                         setRewardVisible(false);
+                        setupPanel.classList.remove("pl-setup-panel-locked");
+                    }
+
+                    function showRunStatePreview() {
+                        showSetupState();
                         setupPanel.classList.add("pl-setup-panel-locked");
+                        setRunVisible(true);
+                        runStateLabel.textContent = "Time remaining";
+                        runReadout.textContent = "00:25:00";
+                        runElapsed.textContent = "00:10:00";
+                        progressFill.style.width = "40%";
+                        setButtonLabel(pauseButton, "Pause");
+                        setButtonLabel(exitButton, "Stop Focusing");
+                        runNote.textContent = "You have reached 1 minute. Stopping now will save the current session as incomplete.";
                     }
 
-                    function showConfirmState() {
+                    function showConfirmStatePreview() {
+                        showRunStatePreview();
                         setConfirmVisible(true);
+                        updateConfirmPanel(600);
                     }
 
-                    function hideConfirmState() {
-                        setConfirmVisible(false);
-                    }
-
-                    function showRewardState() {
+                    function showRewardStatePreview() {
                         setHomeButtonsVisible(false);
                         setSetupVisible(false);
                         setRunVisible(false);
                         setConfirmVisible(false);
                         setRewardVisible(true);
+                        rewardStatusText.textContent = "Completed";
+                        rewardFocusType.textContent = "Focus";
+                        rewardDurationText.textContent = "00:25:00";
+                        rewardXp.textContent = "2500";
+                        rewardCoins.textContent = "25";
+                    }
+
+                    function previewLayoutAsset(assetKey) {
+                        if (!layoutModeEnabled) {
+                            return;
+                        }
+
+                        switch (assetKey) {
+                            case "home-scene":
+                            case "home-focus":
+                            case "home-sleep":
+                                showHomeState();
+                                break;
+                            case "setup-panel":
+                            case "start":
+                            case "back":
+                                showSetupState();
+                                break;
+                            case "run-panel":
+                            case "pause":
+                            case "exit":
+                                showRunStatePreview();
+                                break;
+                            case "confirm-panel":
+                            case "keep-going":
+                            case "stop":
+                                showConfirmStatePreview();
+                                break;
+                            case "reward-panel":
+                            case "gotcha":
+                                showRewardStatePreview();
+                                break;
+                            default:
+                                showHomeState();
+                                break;
+                        }
+                    }
+
+                    function openFocusSetup() {
+                        showSetupState();
+                    }
+
+                    function returnToHome() {
+                        resetRunState();
+                        showHomeState();
                     }
 
                     function resetRunState() {
@@ -743,30 +913,6 @@
                         }
                     }
 
-                    function getAssetElement(assetKey) {
-                        return layoutAssets[assetKey]?.element || null;
-                    }
-
-                    function readCssPxVar(varName, fallbackValue) {
-                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
-                        if (!raw) {
-                            return fallbackValue;
-                        }
-
-                        const parsed = parseFloat(raw.replace("px", ""));
-                        return Number.isFinite(parsed) ? parsed : fallbackValue;
-                    }
-
-                    function readCssNumberVar(varName, fallbackValue) {
-                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
-                        if (!raw) {
-                            return fallbackValue;
-                        }
-
-                        const parsed = parseFloat(raw);
-                        return Number.isFinite(parsed) ? parsed : fallbackValue;
-                    }
-
                     function getCssLayoutDefaults(assetKey) {
                         return {
                             x: readCssPxVar(`--pl-layout-${assetKey}-x`, 24),
@@ -788,6 +934,16 @@
                             height: stored.height ?? defaults.height,
                             scale: stored.scale ?? defaults.scale
                         };
+                    }
+
+                    function getResolvedHeight(assetKey, state) {
+                        const ratio = artRatios[assetKey];
+
+                        if (ratio && ratio > 0) {
+                            return Math.max(1, Math.round(state.width / ratio));
+                        }
+
+                        return state.height;
                     }
 
                     function setMergedLayoutState(assetKey, partialState) {
@@ -817,11 +973,12 @@
                         }
 
                         const state = getMergedLayoutState(assetKey);
+                        const resolvedHeight = getResolvedHeight(assetKey, state);
 
                         element.style.left = `${state.x}px`;
                         element.style.top = `${state.y}px`;
                         element.style.width = `${state.width}px`;
-                        element.style.height = `${state.height}px`;
+                        element.style.height = `${resolvedHeight}px`;
                         element.style.transform = `scale(${state.scale / 100})`;
                     }
 
@@ -841,6 +998,7 @@
                     function updateLayoutSliderBounds(assetKey) {
                         const state = getMergedLayoutState(assetKey);
                         const rect = getHomeRect();
+                        const resolvedHeight = getResolvedHeight(assetKey, state);
 
                         layoutScale.min = "20";
                         layoutScale.max = "250";
@@ -848,12 +1006,27 @@
                         layoutX.min = String(Math.round(-state.width));
                         layoutX.max = String(Math.round(rect.width + state.width));
 
-                        layoutY.min = String(Math.round(-state.height));
-                        layoutY.max = String(Math.round(rect.height + state.height));
+                        layoutY.min = String(Math.round(-resolvedHeight));
+                        layoutY.max = String(Math.round(rect.height + resolvedHeight));
                     }
 
                     function updateLayoutCodePreview(assetKey) {
                         const state = getMergedLayoutState(assetKey);
+                        const resolvedHeight = getResolvedHeight(assetKey, state);
+                        const ratioLocked = !!artRatios[assetKey];
+
+                        if (ratioLocked) {
+                            layoutCode.value =
+        `.pl-home-screen {
+            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+        }
+
+        /* Height auto from asset ratio: ${resolvedHeight}px */`;
+                            return;
+                        }
 
                         layoutCode.value =
         `.pl-home-screen {
@@ -868,18 +1041,29 @@
                     function hydrateLayoutControls() {
                         const assetKey = layoutAssetSelect.value;
                         const state = getMergedLayoutState(assetKey);
+                        const resolvedHeight = getResolvedHeight(assetKey, state);
+                        const ratioLocked = !!artRatios[assetKey];
 
+                        previewLayoutAsset(assetKey);
                         updateLayoutSliderBounds(assetKey);
+                        applyAllAssetLayouts();
 
                         layoutScale.value = String(Math.round(state.scale));
                         layoutX.value = String(Math.round(state.x));
                         layoutY.value = String(Math.round(state.y));
                         layoutWidth.value = String(Math.round(state.width));
-                        layoutHeight.value = String(Math.round(state.height));
+                        layoutHeight.value = String(Math.round(resolvedHeight));
 
                         layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
                         layoutXValue.textContent = `${Math.round(state.x)} px`;
                         layoutYValue.textContent = `${Math.round(state.y)} px`;
+
+                        layoutHeight.disabled = ratioLocked;
+                        layoutHeight.readOnly = ratioLocked;
+                        layoutHeightLabel.textContent = ratioLocked ? "Height (auto)" : "Height (px)";
+                        layoutHeightHint.textContent = ratioLocked
+                            ? "Image-backed assets keep their natural aspect ratio automatically."
+                            : "";
 
                         updateLayoutCodePreview(assetKey);
                         refreshLayoutSelection();
@@ -887,14 +1071,18 @@
 
                     function pushLayoutControlValues() {
                         const assetKey = layoutAssetSelect.value;
-
-                        setMergedLayoutState(assetKey, {
+                        const partial = {
                             scale: parseInt(layoutScale.value || "100", 10),
                             x: parseInt(layoutX.value || "0", 10),
                             y: parseInt(layoutY.value || "0", 10),
-                            width: parseInt(layoutWidth.value || "170", 10),
-                            height: parseInt(layoutHeight.value || "56", 10)
-                        });
+                            width: parseInt(layoutWidth.value || "170", 10)
+                        };
+
+                        if (!artRatios[assetKey]) {
+                            partial.height = parseInt(layoutHeight.value || "56", 10);
+                        }
+
+                        setMergedLayoutState(assetKey, partial);
                     }
 
                     function beginDrag(assetKey, event) {
@@ -988,10 +1176,7 @@
                             return;
                         }
 
-                        const focusType = (focusTypeInput.value || "").trim() || "Focus";
-                        const durationMinutes = parseInt(durationSlider.value || "5", 10);
-
-                        plannedSeconds = Math.max(300, Math.min(7200, durationMinutes * 60));
+                        plannedSeconds = Math.max(300, Math.min(7200, parseInt(durationSlider.value || "5", 10) * 60));
                         startedAtMs = Date.now();
                         pausedElapsedSeconds = 0;
                         isRunning = true;
@@ -1000,18 +1185,15 @@
                         completionTonePlayed = false;
 
                         setupPanel.classList.add("pl-setup-panel-locked");
-                        runStateLabel.textContent = "Time remaining";
-                        setButtonLabel(pauseButton, "Pause");
-                        setButtonLabel(exitButton, "Cancel");
-
                         runPanel.hidden = false;
                         pauseButton.hidden = false;
                         exitButton.hidden = false;
                         startFocusButton.hidden = true;
                         closeFocusButton.hidden = true;
 
-                        runPanel.dataset.focusType = focusType;
-                        runPanel.dataset.targetText = formatDurationSelection(durationMinutes);
+                        runStateLabel.textContent = "Time remaining";
+                        setButtonLabel(pauseButton, "Pause");
+                        setButtonLabel(exitButton, "Cancel");
 
                         updateUi();
                     });
@@ -1054,7 +1236,7 @@
                             return;
                         }
 
-                        hideConfirmState();
+                        setConfirmVisible(false);
                     });
 
                     confirmStopButton.addEventListener("click", function () {
@@ -1075,7 +1257,7 @@
 
                     document.addEventListener("keydown", function (event) {
                         if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
-                            hideConfirmState();
+                            setConfirmVisible(false);
                         }
                     });
 
@@ -1084,6 +1266,7 @@
                     window.addEventListener("pointercancel", endDrag);
                     window.addEventListener("resize", function () {
                         applyAllAssetLayouts();
+                        hydrateLayoutControls();
                     });
 
                     Object.entries(layoutAssets).forEach(([assetKey, config]) => {
@@ -1111,17 +1294,19 @@
                         layoutResetAll.addEventListener("click", resetAllLayoutAssets);
                     }
 
+                    applyPanelArtStates();
+                    primeArtRatios();
                     applyAllAssetLayouts();
-                    hydrateLayoutControls();
                     updateDurationReadout();
-                    returnToHome();
 
                     if (shouldShowRewardOverlay) {
                         hydrateRewardPanelFromDataset();
                         showRewardState();
+                    } else if (layoutModeEnabled) {
+                        hydrateLayoutControls();
+                    } else {
+                        returnToHome();
                     }
-
-                    window.setInterval(updateUi, 250);
                 })();
     </script>
 }
