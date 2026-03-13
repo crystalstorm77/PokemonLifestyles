@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- SECTION A START — Head -->
+    <!-- SEGMENT A START — Layout Shell -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Pokemon Lifestyles</title>
@@ -9,17 +9,15 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/art-skin.css" asp-append-version="true" />
-    <!-- SECTION A END — Head -->
+    <link rel="stylesheet" href="~/css/focus-stage.css" asp-append-version="true" />
+    <!-- SEGMENT A END — Layout Shell -->
 </head>
 <body>
-    <!-- SECTION B START — Body Shell -->
-    <main class="pl-page-shell">
+    <div class="app-shell">
         @RenderBody()
-    </main>
+    </div>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-    <!-- SECTION B END — Body Shell -->
 </body>
 </html>

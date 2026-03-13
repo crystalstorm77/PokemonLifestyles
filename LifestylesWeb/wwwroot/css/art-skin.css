@@ -1,5 +1,5 @@
-﻿/* SECTION A START — Asset Paths */
-.pl-home-screen {
+﻿/* SEGMENT A START — Asset Paths */
+.pl-focus-stage {
     --pl-home-scene-image: none;
     --pl-focus-shell-image: none;
     --pl-focus-setup-panel-image: none;
@@ -22,44 +22,62 @@
     --pl-btn-gotcha-image: none;
     --pl-btn-gotcha-fallback: linear-gradient(180deg, #2563eb, #2563eb);
 }
-/* SECTION A END — Asset Paths */
+/* SEGMENT A END — Asset Paths */
 
-/* SECTION B START — Layout Defaults */
-.pl-home-screen {
+/* SEGMENT B START — Stage Layout Defaults */
+.pl-focus-stage {
+    --pl-stage-width: 428;
+    --pl-stage-height: 926;
+    --pl-panel-setup-x: 16px;
+    --pl-panel-setup-y: 150px;
+    --pl-panel-setup-width: 396px;
+    --pl-panel-setup-height: 640px;
+    --pl-panel-run-x: 16px;
+    --pl-panel-run-y: 150px;
+    --pl-panel-run-width: 396px;
+    --pl-panel-run-height: 640px;
+    --pl-panel-confirm-x: 20px;
+    --pl-panel-confirm-y: 160px;
+    --pl-panel-confirm-width: 388px;
+    --pl-panel-confirm-height: 610px;
+    --pl-panel-reward-x: 20px;
+    --pl-panel-reward-y: 220px;
+    --pl-panel-reward-width: 388px;
+    --pl-panel-reward-height: 420px;
     --pl-layout-start-x: 24px;
-    --pl-layout-start-y: 640px;
+    --pl-layout-start-y: 805px;
     --pl-layout-start-width: 170px;
     --pl-layout-start-height: 56px;
     --pl-layout-start-scale: 100;
     --pl-layout-back-x: 234px;
-    --pl-layout-back-y: 640px;
+    --pl-layout-back-y: 805px;
     --pl-layout-back-width: 170px;
     --pl-layout-back-height: 56px;
     --pl-layout-back-scale: 100;
     --pl-layout-pause-x: 24px;
-    --pl-layout-pause-y: 760px;
+    --pl-layout-pause-y: 805px;
     --pl-layout-pause-width: 170px;
     --pl-layout-pause-height: 56px;
     --pl-layout-pause-scale: 100;
     --pl-layout-exit-x: 234px;
-    --pl-layout-exit-y: 760px;
+    --pl-layout-exit-y: 805px;
     --pl-layout-exit-width: 170px;
     --pl-layout-exit-height: 56px;
     --pl-layout-exit-scale: 100;
     --pl-layout-keep-going-x: 24px;
-    --pl-layout-keep-going-y: 710px;
+    --pl-layout-keep-going-y: 790px;
     --pl-layout-keep-going-width: 170px;
     --pl-layout-keep-going-height: 56px;
     --pl-layout-keep-going-scale: 100;
     --pl-layout-stop-x: 234px;
-    --pl-layout-stop-y: 710px;
+    --pl-layout-stop-y: 790px;
     --pl-layout-stop-width: 170px;
     --pl-layout-stop-height: 56px;
     --pl-layout-stop-scale: 100;
     --pl-layout-gotcha-x: 24px;
-    --pl-layout-gotcha-y: 700px;
+    --pl-layout-gotcha-y: 710px;
     --pl-layout-gotcha-width: 380px;
     --pl-layout-gotcha-height: 56px;
     --pl-layout-gotcha-scale: 100;
 }
-/* SECTION B END — Layout Defaults */
+/* SEGMENT B END — Stage Layout Defaults */
