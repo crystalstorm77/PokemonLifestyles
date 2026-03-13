@@ -353,7 +353,7 @@ body {
     --pl-focus-confirm-panel-image: none;
     --pl-focus-reward-panel-image: none;
     --pl-art-button-radius: 0.95rem;
-    --pl-btn-start-image: '/Assets/Ui/Buttons/Start.png';
+    --pl-btn-start-image: url('/assets/ui/buttons/start.png');
     --pl-btn-start-fallback: none;
     --pl-btn-start-size: 100% 100%;
     --pl-btn-start-pos: center center;
@@ -477,8 +477,8 @@ body {
 
     .pl-focus-panel .pl-button-stack > *,
     .pl-run-actions-two > * {
-        flex: 1 1 0;
-        width: auto;
+        flex: 1 1 0 !important;
+        width: 0 !important;
         min-width: 0;
         margin-top: 0;
         align-self: stretch;
@@ -683,32 +683,19 @@ body {
 
 .pl-art-button {
     position: relative;
-    isolation: isolate;
-    overflow: visible;
     border: none !important;
     box-shadow: none !important;
-    background: transparent !important;
+    background-color: transparent !important;
     border-radius: var(--pl-art-button-radius);
     min-height: 3.35rem;
     padding: 0.9rem 1rem;
+    overflow: hidden;
 }
 
     .pl-art-button:hover,
     .pl-art-button:focus,
     .pl-art-button:active {
-        background: transparent !important;
-    }
-
-    .pl-art-button::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        background-repeat: no-repeat, no-repeat;
-        background-position: center center, center center;
-        background-size: 100% 100%, 100% 100%;
-        border-radius: var(--pl-art-button-radius);
+        background-color: transparent !important;
     }
 
     .pl-art-button .pl-button-label {
@@ -717,48 +704,69 @@ body {
         display: block;
         width: 100%;
         text-align: center;
+        color: inherit;
     }
 
-.pl-button-start::before {
-    background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback);
-    background-size: var(--pl-btn-start-size), 100% 100%;
-    background-position: var(--pl-btn-start-pos), center center;
+.pl-button-start,
+.pl-button-pause,
+.pl-button-stop,
+.pl-button-gotcha {
+    color: #ffffff !important;
 }
 
-.pl-button-back::before {
-    background-image: var(--pl-btn-back-image), var(--pl-btn-back-fallback);
-    background-size: var(--pl-btn-back-size), 100% 100%;
-    background-position: var(--pl-btn-back-pos), center center;
+.pl-button-back,
+.pl-button-exit,
+.pl-button-keep-going {
+    color: #111827 !important;
 }
 
-.pl-button-pause::before {
-    background-image: var(--pl-btn-pause-image), var(--pl-btn-pause-fallback);
-    background-size: var(--pl-btn-pause-size), 100% 100%;
-    background-position: var(--pl-btn-pause-pos), center center;
+.pl-button-start {
+    background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-size: var(--pl-btn-start-size), 100% 100% !important;
+    background-position: var(--pl-btn-start-pos), center center !important;
 }
 
-.pl-button-exit::before {
-    background-image: var(--pl-btn-exit-image), var(--pl-btn-exit-fallback);
-    background-size: var(--pl-btn-exit-size), 100% 100%;
-    background-position: var(--pl-btn-exit-pos), center center;
+.pl-button-back {
+    background-image: var(--pl-btn-back-image), var(--pl-btn-back-fallback) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-size: var(--pl-btn-back-size), 100% 100% !important;
+    background-position: var(--pl-btn-back-pos), center center !important;
 }
 
-.pl-button-keep-going::before {
-    background-image: var(--pl-btn-keep-going-image), var(--pl-btn-keep-going-fallback);
-    background-size: var(--pl-btn-keep-going-size), 100% 100%;
-    background-position: var(--pl-btn-keep-going-pos), center center;
+.pl-button-pause {
+    background-image: var(--pl-btn-pause-image), var(--pl-btn-pause-fallback) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-size: var(--pl-btn-pause-size), 100% 100% !important;
+    background-position: var(--pl-btn-pause-pos), center center !important;
 }
 
-.pl-button-stop::before {
-    background-image: var(--pl-btn-stop-image), var(--pl-btn-stop-fallback);
-    background-size: var(--pl-btn-stop-size), 100% 100%;
-    background-position: var(--pl-btn-stop-pos), center center;
+.pl-button-exit {
+    background-image: var(--pl-btn-exit-image), var(--pl-btn-exit-fallback) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-size: var(--pl-btn-exit-size), 100% 100% !important;
+    background-position: var(--pl-btn-exit-pos), center center !important;
 }
 
-.pl-button-gotcha::before {
-    background-image: var(--pl-btn-gotcha-image), var(--pl-btn-gotcha-fallback);
-    background-size: var(--pl-btn-gotcha-size), 100% 100%;
-    background-position: var(--pl-btn-gotcha-pos), center center;
+.pl-button-keep-going {
+    background-image: var(--pl-btn-keep-going-image), var(--pl-btn-keep-going-fallback) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-size: var(--pl-btn-keep-going-size), 100% 100% !important;
+    background-position: var(--pl-btn-keep-going-pos), center center !important;
+}
+
+.pl-button-stop {
+    background-image: var(--pl-btn-stop-image), var(--pl-btn-stop-fallback) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-size: var(--pl-btn-stop-size), 100% 100% !important;
+    background-position: var(--pl-btn-stop-pos), center center !important;
+}
+
+.pl-button-gotcha {
+    background-image: var(--pl-btn-gotcha-image), var(--pl-btn-gotcha-fallback) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-size: var(--pl-btn-gotcha-size), 100% 100% !important;
+    background-position: var(--pl-btn-gotcha-pos), center center !important;
 }
 
 .pl-reward-compare-grid,
@@ -798,8 +806,8 @@ body {
 }
 
     .pl-reward-overlay-card .pl-button-stack > * {
-        flex: 1 1 0;
-        width: auto;
+        flex: 1 1 0 !important;
+        width: 0 !important;
         min-width: 0;
         margin-top: 0;
     }

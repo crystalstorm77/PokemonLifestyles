@@ -390,6 +390,22 @@
             let isConfirmOpen = false;
             let completionTonePlayed = false;
 
+            function setButtonLabel(button, text) {
+                if (!button) {
+                    return;
+                }
+
+                let label = button.querySelector(".pl-button-label");
+
+                if (!label) {
+                    label = document.createElement("span");
+                    label.className = "pl-button-label";
+                    button.replaceChildren(label);
+                }
+
+                label.textContent = text;
+            }
+
             function formatClock(totalSeconds) {
                 totalSeconds = Math.max(0, Math.floor(totalSeconds));
 
@@ -495,8 +511,8 @@
                 pausedElapsedSeconds = 0;
                 startedAtMs = 0;
 
-                pauseButton.textContent = "Pause";
-                exitButton.textContent = "Cancel";
+                setButtonLabel(pauseButton, "Pause");
+                setButtonLabel(exitButton, "Cancel");
                 exitButton.classList.remove("pl-stop-button-armed");
                 runStateLabel.textContent = "Time remaining";
                 runReadout.textContent = "00:05:00";
@@ -611,12 +627,12 @@
 
             function updateExitButton(elapsedSeconds) {
                 if (elapsedSeconds >= stopThresholdSeconds) {
-                    exitButton.textContent = "Stop Focusing";
+                    setButtonLabel(exitButton, "Stop Focusing");
                     exitButton.classList.add("pl-stop-button-armed");
                     return;
                 }
 
-                exitButton.textContent = "Cancel";
+                setButtonLabel(exitButton, "Cancel");
                 exitButton.classList.remove("pl-stop-button-armed");
             }
 
@@ -643,13 +659,13 @@
 
                 if (isPaused) {
                     runStateLabel.textContent = "Paused";
-                    pauseButton.textContent = "Keep Going?";
+                    setButtonLabel(pauseButton, "Keep Going?");
                     runNote.textContent = elapsedSeconds >= stopThresholdSeconds
                         ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
                         : "Session paused. Cancel before 1 minute to discard this session with no save.";
                 } else {
                     runStateLabel.textContent = "Time remaining";
-                    pauseButton.textContent = "Pause";
+                    setButtonLabel(pauseButton, "Pause");
                     runNote.textContent = elapsedSeconds >= stopThresholdSeconds
                         ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
                         : "Cancel before 1 minute to discard this session with no save.";
@@ -773,5 +789,6 @@
         })();
     </script>
     <!-- SECTION B END — Home Screen Scripts -->
+}
 }
 }
