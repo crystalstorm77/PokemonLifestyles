@@ -21,8 +21,6 @@ body {
 }
 
 .pl-home-scene-art {
-    position: absolute;
-    inset: 0;
     z-index: 0;
     pointer-events: none;
     background-image: var(--pl-home-scene-image);
@@ -52,6 +50,7 @@ body {
     position: absolute;
     z-index: 10;
     transform-origin: top left;
+    will-change: left, top, transform, width, height;
 }
 
     .pl-canvas-item[hidden] {
@@ -206,12 +205,21 @@ body {
     margin-top: 1rem;
 }
 
-.pl-field-label {
+.pl-field-label,
+.pl-field-hint {
     display: block;
-    margin-bottom: 0.45rem;
     font-size: 0.92rem;
-    font-weight: 800;
     color: #0f172a;
+}
+
+.pl-field-label {
+    margin-bottom: 0.45rem;
+    font-weight: 800;
+}
+
+.pl-field-hint {
+    margin-top: 0.35rem;
+    color: #64748b;
 }
 
 .pl-input {
@@ -268,7 +276,6 @@ body {
 .pl-mode-chip-active {
     background: #2563eb;
     color: #ffffff;
-    border-color: #2563eb;
 }
 
 .pl-mode-chip-disabled {
@@ -467,6 +474,7 @@ body {
 .pl-layout-selected {
     outline: 2px dashed #f59e0b;
     outline-offset: 3px;
+    cursor: move;
 }
 
 @media (max-width: 640px) {
@@ -479,4 +487,12 @@ body {
         width: min(94vw, 360px);
     }
 }
-/* SEGMENT A END — Home Canvas Styles */
+/* SEGMENT A END — Home Canvas Styles */ """
+print(len(canvas_seg.splitlines()))
+Japgollypython.exec to=container.exec code ￣奇米影视assistant to=container.exec analysis 彩神争霸大发快json {
+    "cmd":["bash","-lc","cat >/mnt/data/focus_canvas_check.css <<'EOF'\n/* dummy */\nEOF"]
+}
+
+::contentReference[oaicite:1] {
+    index =1
+}

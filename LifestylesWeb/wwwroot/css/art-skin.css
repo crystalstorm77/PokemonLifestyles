@@ -1,19 +1,20 @@
 ﻿/* SEGMENT A START — Asset Paths */
 .pl-home-screen {
-    --pl-home-scene-image: none;
+    /* Replace `none` with your own image path when the asset is ready. */
+    --pl-home-scene-image: url('/assets/ui/backgrounds/home-scene.png');
     --pl-art-button-radius: 0.95rem;
-    --pl-btn-home-focus-image: none;
-    --pl-btn-home-focus-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-home-focus-image: url('/assets/ui/buttons/focus-start.png');
+    --pl-btn-home-focus-fallback: none;
     --pl-btn-home-sleep-image: none;
     --pl-btn-home-sleep-fallback: linear-gradient(180deg, #f8fafc, #f8fafc);
-    --pl-focus-setup-panel-image: none;
+    --pl-focus-setup-panel-image: url('/assets/ui/panels/timer-panel.png');
     --pl-focus-run-panel-image: none;
     --pl-focus-confirm-panel-image: none;
     --pl-focus-reward-panel-image: none;
     --pl-btn-start-image: url('/assets/ui/buttons/start.png');
     --pl-btn-start-fallback: none;
-    --pl-btn-back-image: none;
-    --pl-btn-back-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
+    --pl-btn-back-image: url('/assets/ui/buttons/back.png');
+    --pl-btn-back-fallback: none;
     --pl-btn-pause-image: none;
     --pl-btn-pause-fallback: linear-gradient(180deg, #2563eb, #2563eb);
     --pl-btn-exit-image: none;
@@ -29,6 +30,11 @@
 
 /* SEGMENT B START — Canvas Layout Defaults */
 .pl-home-screen {
+    --pl-layout-home-scene-x: 0px;
+    --pl-layout-home-scene-y: 0px;
+    --pl-layout-home-scene-width: 428px;
+    --pl-layout-home-scene-height: 926px;
+    --pl-layout-home-scene-scale: 100;
     --pl-layout-home-focus-x: 74px;
     --pl-layout-home-focus-y: 838px;
     --pl-layout-home-focus-width: 120px;
