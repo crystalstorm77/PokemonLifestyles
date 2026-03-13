@@ -119,46 +119,830 @@
 </div>
 <!-- SECTION A END — Focus Entry Screen -->
 @section Scripts {
-    <!-- SECTION B START — Validation Scripts -->
-    <partial name="_ValidationScriptsPartial" />
-
+    <!-- SECTION B START — Home Screen Scripts -->
     <script>
-        (function () {
-            const slider = document.getElementById("pl-duration-slider");
-            const readout = document.getElementById("pl-duration-readout");
+                (function () {
+                    const homeRoot = document.getElementById("pl-home-root");
+                    const focusOverlay = document.getElementById("pl-focus-overlay");
+                    const rewardOverlay = document.getElementById("pl-reward-overlay");
 
-            if (!slider || !readout) {
-                return;
-            }
+                    const openFocusButton = document.getElementById("pl-open-focus-button");
+                    const focusBackButton = document.getElementById("pl-focus-back-button");
+                    const closeFocusButton = document.getElementById("pl-close-focus-button");
+                    const runHomeButton = document.getElementById("pl-run-home-button");
 
-            function formatDuration(totalMinutes) {
-                totalMinutes = Math.max(5, Math.min(120, totalMinutes));
+                    const setupPanel = document.getElementById("pl-focus-setup-panel");
+                    const runPanel = document.getElementById("pl-focus-run-panel");
 
-                const hours = Math.floor(totalMinutes / 60);
-                const minutes = totalMinutes % 60;
+                    const focusTypeInput = document.getElementById("pl-focus-type-input");
+                    const durationSlider = document.getElementById("pl-duration-slider");
+                    const durationReadout = document.getElementById("pl-duration-readout");
+                    const startFocusButton = document.getElementById("pl-start-focus-button");
 
-                if (hours === 0) {
-                    return `${totalMinutes} minutes`;
-                }
+                    const runFocusType = document.getElementById("pl-run-focus-type");
+                    const runTarget = document.getElementById("pl-run-target");
+                    const runStateLabel = document.getElementById("pl-run-state-label");
+                    const runReadout = document.getElementById("pl-run-readout");
+                    const runElapsed = document.getElementById("pl-run-elapsed");
+                    const progressFill = document.getElementById("pl-progress-fill");
+                    const pauseButton = document.getElementById("pl-pause-button");
+                    const exitButton = document.getElementById("pl-exit-button");
+                    const runNote = document.getElementById("pl-run-note");
 
-                if (minutes === 0) {
-                    return hours === 1 ? "1 hour" : `${hours} hours`;
-                }
+                    const confirmOverlay = document.getElementById("pl-confirm-overlay");
+                    const confirmCard = confirmOverlay.querySelector(".pl-run-overlay-card");
+                    const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
+                    const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
+                    const confirmCompleteXp = document.getElementById("pl-confirm-complete-xp");
+                    const confirmCompleteCoins = document.getElementById("pl-confirm-complete-coins");
+                    const confirmCurrentXp = document.getElementById("pl-confirm-current-xp");
+                    const confirmCurrentCoins = document.getElementById("pl-confirm-current-coins");
+                    const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
+                    const confirmStopButton = document.getElementById("pl-confirm-stop");
 
-                return hours === 1
-                    ? `1 hour ${minutes} minutes`
-                    : `${hours} hours ${minutes} minutes`;
-            }
+                    const rewardStatusText = document.getElementById("pl-reward-status-text");
+                    const rewardFocusType = document.getElementById("pl-reward-focus-type");
+                    const rewardDurationText = document.getElementById("pl-reward-duration-text");
+                    const rewardXp = document.getElementById("pl-reward-xp");
+                    const rewardCoins = document.getElementById("pl-reward-coins");
+                    const rewardCloseButton = document.getElementById("pl-reward-close-button");
+                    const rewardCard = rewardOverlay.querySelector(".pl-run-overlay-card");
 
-            function updateReadout() {
-                const totalMinutes = parseInt(slider.value || "25", 10);
-                readout.textContent = formatDuration(totalMinutes);
-            }
+                    const saveForm = document.getElementById("pl-save-form");
+                    const saveFocusType = document.getElementById("pl-save-focus-type");
+                    const savePlannedSeconds = document.getElementById("pl-save-planned-seconds");
+                    const saveElapsedSeconds = document.getElementById("pl-save-elapsed-seconds");
+                    const saveMode = document.getElementById("pl-save-mode");
 
-            slider.addEventListener("input", updateReadout);
-            updateReadout();
-        })();
+                    const layoutPanel = document.getElementById("pl-layout-panel");
+                    const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
+                    const layoutScale = document.getElementById("pl-layout-scale");
+                    const layoutX = document.getElementById("pl-layout-x");
+                    const layoutY = document.getElementById("pl-layout-y");
+                    const layoutScaleValue = document.getElementById("pl-layout-scale-value");
+                    const layoutXValue = document.getElementById("pl-layout-x-value");
+                    const layoutYValue = document.getElementById("pl-layout-y-value");
+                    const layoutResetSelected = document.getElementById("pl-layout-reset-selected");
+                    const layoutResetAll = document.getElementById("pl-layout-reset-all");
+                    const layoutCode = document.getElementById("pl-layout-code");
+
+                    if (!homeRoot || !focusOverlay || !rewardOverlay || !openFocusButton || !focusBackButton ||
+                        !closeFocusButton || !runHomeButton || !setupPanel || !runPanel || !focusTypeInput ||
+                        !durationSlider || !durationReadout || !startFocusButton || !runFocusType || !runTarget ||
+                        !runStateLabel || !runReadout || !runElapsed || !progressFill || !pauseButton ||
+                        !exitButton || !runNote || !confirmOverlay || !confirmCard || !confirmCurrentTime ||
+                        !confirmTimerStatus || !confirmCompleteXp || !confirmCompleteCoins || !confirmCurrentXp ||
+                        !confirmCurrentCoins || !confirmKeepGoingButton || !confirmStopButton ||
+                        !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
+                        !rewardCoins || !rewardCloseButton || !rewardCard || !saveForm || !saveFocusType ||
+                        !savePlannedSeconds || !saveElapsedSeconds || !saveMode || !layoutPanel ||
+                        !layoutAssetSelect || !layoutScale || !layoutX || !layoutY || !layoutScaleValue ||
+                        !layoutXValue || !layoutYValue || !layoutResetSelected || !layoutResetAll || !layoutCode) {
+                        return;
+                    }
+
+                    const stopThresholdSeconds = 60;
+                    const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
+                    const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
+                    const rewardSleepMultiplier = Math.max(1, parseFloat(homeRoot.dataset.rewardSleepMultiplier || "1") || 1);
+                    const rewardWindowEligible = String(homeRoot.dataset.rewardWindowEligible || "").toLowerCase() === "true";
+                    const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
+
+                    const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
+                    const layoutStorageKey = "pl-layout-mode-v3";
+
+                    const layoutAssets = {
+                        "start": { button: startFocusButton, container: focusOverlay },
+                        "back": { button: closeFocusButton, container: focusOverlay },
+                        "pause": { button: pauseButton, container: focusOverlay },
+                        "exit": { button: exitButton, container: focusOverlay },
+                        "keep-going": { button: confirmKeepGoingButton, container: confirmOverlay },
+                        "stop": { button: confirmStopButton, container: confirmOverlay },
+                        "gotcha": { button: rewardCloseButton, container: rewardOverlay }
+                    };
+
+                    let plannedSeconds = 300;
+                    let startedAtMs = 0;
+                    let pausedElapsedSeconds = 0;
+                    let isRunning = false;
+                    let isPaused = false;
+                    let isSubmitting = false;
+                    let isConfirmOpen = false;
+                    let completionTonePlayed = false;
+                    let dragState = null;
+
+                    function setButtonLabel(button, text) {
+                        if (!button) {
+                            return;
+                        }
+
+                        let label = button.querySelector(".pl-button-label");
+
+                        if (!label) {
+                            label = document.createElement("span");
+                            label.className = "pl-button-label";
+                            button.replaceChildren(label);
+                        }
+
+                        label.textContent = text;
+                    }
+
+                    function formatClock(totalSeconds) {
+                        totalSeconds = Math.max(0, Math.floor(totalSeconds));
+
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
+
+                        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+                    }
+
+                    function formatDurationSelection(totalMinutes) {
+                        totalMinutes = Math.max(5, Math.min(120, totalMinutes));
+
+                        const hours = Math.floor(totalMinutes / 60);
+                        const minutes = totalMinutes % 60;
+
+                        if (hours === 0) {
+                            return `${totalMinutes} minutes`;
+                        }
+
+                        if (minutes === 0) {
+                            return hours === 1 ? "1 hour" : `${hours} hours`;
+                        }
+
+                        return hours === 1
+                            ? `1 hour ${minutes} minutes`
+                            : `${hours} hours ${minutes} minutes`;
+                    }
+
+                    function calculateRewardPreview(durationSeconds, completed) {
+                        const rewardMinutes = Math.floor(Math.max(0, durationSeconds) / 60);
+
+                        if (!rewardWindowEligible || rewardMinutes <= 0) {
+                            return { xp: 0, coins: 0 };
+                        }
+
+                        const xpCompletionMultiplier = completed ? 1.0 : rewardIncompleteMultiplier;
+                        const coinCompletionMultiplier = completed ? 1.0 : 0.25;
+
+                        return {
+                            xp: Math.floor(rewardMinutes * rewardXpPerMinute * xpCompletionMultiplier * rewardSleepMultiplier),
+                            coins: Math.floor(rewardMinutes * coinCompletionMultiplier * rewardSleepMultiplier)
+                        };
+                    }
+
+                    function updateDurationReadout() {
+                        const totalMinutes = parseInt(durationSlider.value || "5", 10);
+                        durationReadout.textContent = formatDurationSelection(totalMinutes);
+                    }
+
+                    function showSetupPanel() {
+                        setupPanel.hidden = false;
+                        runPanel.hidden = true;
+                        applyAllAbsoluteLayouts();
+                    }
+
+                    function showRunPanel() {
+                        setupPanel.hidden = true;
+                        runPanel.hidden = false;
+                        applyAllAbsoluteLayouts();
+                    }
+
+                    function openFocusOverlay() {
+                        focusOverlay.hidden = false;
+                        focusOverlay.setAttribute("aria-hidden", "false");
+                        closeConfirmOverlay();
+                        showSetupPanel();
+                        updateDurationReadout();
+                        applyAllAbsoluteLayouts();
+                    }
+
+                    function closeFocusOverlay() {
+                        focusOverlay.hidden = true;
+                        focusOverlay.setAttribute("aria-hidden", "true");
+                        closeConfirmOverlay();
+                        resetRunState();
+                    }
+
+                    function openRewardOverlay() {
+                        rewardOverlay.hidden = false;
+                        rewardOverlay.setAttribute("aria-hidden", "false");
+                        applyAllAbsoluteLayouts();
+                    }
+
+                    function closeRewardOverlay() {
+                        rewardOverlay.hidden = true;
+                        rewardOverlay.setAttribute("aria-hidden", "true");
+                    }
+
+                    function hydrateRewardOverlayFromDataset() {
+                        rewardStatusText.textContent = String(homeRoot.dataset.rewardCompleted || "").toLowerCase() === "true"
+                            ? "Completed"
+                            : "Incomplete";
+
+                        rewardFocusType.textContent = homeRoot.dataset.rewardFocusType || "Focus";
+                        rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
+                        rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
+                        rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
+                    }
+
+                    function resetRunState() {
+                        isRunning = false;
+                        isPaused = false;
+                        isSubmitting = false;
+                        isConfirmOpen = false;
+                        completionTonePlayed = false;
+                        pausedElapsedSeconds = 0;
+                        startedAtMs = 0;
+
+                        setButtonLabel(pauseButton, "Pause");
+                        setButtonLabel(exitButton, "Cancel");
+                        exitButton.classList.remove("pl-stop-button-armed");
+                        runStateLabel.textContent = "Time remaining";
+                        runReadout.textContent = "00:05:00";
+                        runElapsed.textContent = "00:00:00";
+                        progressFill.style.width = "0%";
+                        runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
+                        showSetupPanel();
+                    }
+
+                    function getElapsedSeconds() {
+                        if (!isRunning) {
+                            return 0;
+                        }
+
+                        if (isPaused) {
+                            return Math.min(plannedSeconds, pausedElapsedSeconds);
+                        }
+
+                        const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+                        return Math.min(plannedSeconds, Math.max(0, liveElapsed));
+                    }
+
+                    function setButtonsDisabled(isDisabled) {
+                        pauseButton.disabled = isDisabled;
+                        exitButton.disabled = isDisabled;
+                        confirmKeepGoingButton.disabled = isDisabled;
+                        confirmStopButton.disabled = isDisabled;
+                        startFocusButton.disabled = isDisabled;
+                    }
+
+                    function openConfirmOverlay() {
+                        isConfirmOpen = true;
+                        confirmOverlay.hidden = false;
+                        confirmOverlay.setAttribute("aria-hidden", "false");
+                        updateConfirmOverlay(getElapsedSeconds());
+                        applyAllAbsoluteLayouts();
+                    }
+
+                    function closeConfirmOverlay() {
+                        isConfirmOpen = false;
+                        confirmOverlay.hidden = true;
+                        confirmOverlay.setAttribute("aria-hidden", "true");
+                    }
+
+                    function updateConfirmOverlay(elapsedSeconds) {
+                        const completePreview = calculateRewardPreview(plannedSeconds, true);
+                        const currentPreview = calculateRewardPreview(elapsedSeconds, false);
+
+                        confirmCurrentTime.textContent = formatClock(elapsedSeconds);
+                        confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
+                        confirmCompleteXp.textContent = String(completePreview.xp);
+                        confirmCompleteCoins.textContent = String(completePreview.coins);
+                        confirmCurrentXp.textContent = String(currentPreview.xp);
+                        confirmCurrentCoins.textContent = String(currentPreview.coins);
+                    }
+
+                    function playCompletionTone() {
+                        if (completionTonePlayed) {
+                            return;
+                        }
+
+                        completionTonePlayed = true;
+
+                        try {
+                            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+                            if (!AudioContextClass) {
+                                return;
+                            }
+
+                            const audioContext = new AudioContextClass();
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+
+                            oscillator.type = "sine";
+                            oscillator.frequency.value = 880;
+
+                            gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
+                            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+
+                            oscillator.start();
+                            oscillator.stop(audioContext.currentTime + 0.36);
+                        } catch {
+                        }
+                    }
+
+                    function submitSave(mode) {
+                        if (isSubmitting) {
+                            return;
+                        }
+
+                        const elapsedSeconds = mode === "complete"
+                            ? plannedSeconds
+                            : getElapsedSeconds();
+
+                        if (elapsedSeconds <= 0) {
+                            return;
+                        }
+
+                        isSubmitting = true;
+                        saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
+                        savePlannedSeconds.value = String(plannedSeconds);
+                        saveElapsedSeconds.value = String(elapsedSeconds);
+                        saveMode.value = mode;
+                        closeConfirmOverlay();
+                        setButtonsDisabled(true);
+                        saveForm.submit();
+                    }
+
+                    function updateExitButton(elapsedSeconds) {
+                        if (elapsedSeconds >= stopThresholdSeconds) {
+                            setButtonLabel(exitButton, "Stop Focusing");
+                            exitButton.classList.add("pl-stop-button-armed");
+                            return;
+                        }
+
+                        setButtonLabel(exitButton, "Cancel");
+                        exitButton.classList.remove("pl-stop-button-armed");
+                    }
+
+                    function updateUi() {
+                        if (!isRunning) {
+                            return;
+                        }
+
+                        const elapsedSeconds = getElapsedSeconds();
+                        const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+                        const progressPercent = plannedSeconds <= 0
+                            ? 0
+                            : (elapsedSeconds / plannedSeconds) * 100;
+
+                        runReadout.textContent = formatClock(remainingSeconds);
+                        runElapsed.textContent = formatClock(elapsedSeconds);
+                        progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
+
+                        updateExitButton(elapsedSeconds);
+
+                        if (isConfirmOpen) {
+                            updateConfirmOverlay(elapsedSeconds);
+                        }
+
+                        if (isPaused) {
+                            runStateLabel.textContent = "Paused";
+                            setButtonLabel(pauseButton, "Keep Going?");
+                            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                                ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
+                                : "Session paused. Cancel before 1 minute to discard this session with no save.";
+                        } else {
+                            runStateLabel.textContent = "Time remaining";
+                            setButtonLabel(pauseButton, "Pause");
+                            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                                ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
+                                : "Cancel before 1 minute to discard this session with no save.";
+                        }
+
+                        if (remainingSeconds <= 0 && !isSubmitting) {
+                            playCompletionTone();
+                            submitSave("complete");
+                        }
+                    }
+
+                    function getStoredLayoutState() {
+                        try {
+                            const raw = localStorage.getItem(layoutStorageKey);
+                            return raw ? JSON.parse(raw) : {};
+                        } catch {
+                            return {};
+                        }
+                    }
+
+                    function saveLayoutState(state) {
+                        try {
+                            localStorage.setItem(layoutStorageKey, JSON.stringify(state));
+                        } catch {
+                        }
+                    }
+
+                    function getAssetConfig(assetKey) {
+                        return layoutAssets[assetKey] || null;
+                    }
+
+                    function readCssPxVar(varName, fallbackValue) {
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+                        if (!raw) {
+                            return fallbackValue;
+                        }
+
+                        const parsed = parseFloat(raw.replace("px", ""));
+                        return Number.isFinite(parsed) ? parsed : fallbackValue;
+                    }
+
+                    function readCssNumberVar(varName, fallbackValue) {
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+                        if (!raw) {
+                            return fallbackValue;
+                        }
+
+                        const parsed = parseFloat(raw);
+                        return Number.isFinite(parsed) ? parsed : fallbackValue;
+                    }
+
+                    function getCssLayoutDefaults(assetKey) {
+                        return {
+                            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 24),
+                            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 24),
+                            width: readCssPxVar(`--pl-layout-${assetKey}-width`, 160),
+                            height: readCssPxVar(`--pl-layout-${assetKey}-height`, 56),
+                            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
+                        };
+                    }
+
+                    function getMergedLayoutState(assetKey) {
+                        const defaults = getCssLayoutDefaults(assetKey);
+                        const stored = getStoredLayoutState()[assetKey] || {};
+
+                        return {
+                            x: stored.x ?? defaults.x,
+                            y: stored.y ?? defaults.y,
+                            width: stored.width ?? defaults.width,
+                            height: stored.height ?? defaults.height,
+                            scale: stored.scale ?? defaults.scale
+                        };
+                    }
+
+                    function setMergedLayoutState(assetKey, partialState) {
+                        const state = getStoredLayoutState();
+                        const current = getMergedLayoutState(assetKey);
+
+                        state[assetKey] = {
+                            ...current,
+                            ...partialState
+                        };
+
+                        saveLayoutState(state);
+                        applyAbsoluteLayout(assetKey);
+                        hydrateLayoutControls();
+                    }
+
+                    function clearStoredLayoutState(assetKey) {
+                        const state = getStoredLayoutState();
+                        delete state[assetKey];
+                        saveLayoutState(state);
+                    }
+
+                    function applyAbsoluteLayout(assetKey) {
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const state = getMergedLayoutState(assetKey);
+                        const button = config.button;
+                        const container = config.container;
+
+                        if (getComputedStyle(container).position === "static") {
+                            container.style.position = "relative";
+                        }
+
+                        container.style.overflow = "visible";
+
+                        button.style.position = "absolute";
+                        button.style.left = `${state.x}px`;
+                        button.style.top = `${state.y}px`;
+                        button.style.width = `${state.width}px`;
+                        button.style.height = `${state.height}px`;
+                        button.style.margin = "0";
+                        button.style.transform = `scale(${state.scale / 100})`;
+                        button.style.transformOrigin = "top left";
+                        button.style.zIndex = "30";
+                    }
+
+                    function applyAllAbsoluteLayouts() {
+                        Object.keys(layoutAssets).forEach(applyAbsoluteLayout);
+                        refreshLayoutSelection();
+                    }
+
+                    function refreshLayoutSelection() {
+                        const selectedAssetKey = layoutAssetSelect.value;
+
+                        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+                            config.button.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
+                            config.button.style.touchAction = layoutModeEnabled ? "none" : "auto";
+                        });
+                    }
+
+                    function updateLayoutSliderBounds(assetKey) {
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const containerRect = config.container.getBoundingClientRect();
+                        const state = getMergedLayoutState(assetKey);
+
+                        layoutScale.min = "20";
+                        layoutScale.max = "250";
+
+                        layoutX.min = String(Math.round(-state.width));
+                        layoutX.max = String(Math.round(containerRect.width + state.width));
+
+                        layoutY.min = String(Math.round(-state.height));
+                        layoutY.max = String(Math.round(containerRect.height + state.height));
+                    }
+
+                    function updateLayoutCodePreview(assetKey) {
+                        const state = getMergedLayoutState(assetKey);
+
+                        layoutCode.value =
+        `.pl-home-screen {
+            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+            --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
+            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+        }`;
+                    }
+
+                    function hydrateLayoutControls() {
+                        const assetKey = layoutAssetSelect.value;
+                        const state = getMergedLayoutState(assetKey);
+
+                        updateLayoutSliderBounds(assetKey);
+
+                        layoutScale.value = String(Math.round(state.scale));
+                        layoutX.value = String(Math.round(state.x));
+                        layoutY.value = String(Math.round(state.y));
+
+                        layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
+                        layoutXValue.textContent = `${Math.round(state.x)} px`;
+                        layoutYValue.textContent = `${Math.round(state.y)} px`;
+
+                        updateLayoutCodePreview(assetKey);
+                        refreshLayoutSelection();
+
+                        const scaleLabel = layoutScale.closest(".pl-field")?.querySelector(".pl-field-label");
+                        const xLabel = layoutX.closest(".pl-field")?.querySelector(".pl-field-label");
+                        const yLabel = layoutY.closest(".pl-field")?.querySelector(".pl-field-label");
+                        const codeLabel = layoutCode.closest(".pl-field")?.querySelector(".pl-field-label");
+
+                        if (scaleLabel) scaleLabel.textContent = "Scale";
+                        if (xLabel) xLabel.textContent = "X (px)";
+                        if (yLabel) yLabel.textContent = "Y (px)";
+                        if (codeLabel) codeLabel.textContent = "Copy back into art-skin.css";
+                    }
+
+                    function pushLayoutControlValues() {
+                        const assetKey = layoutAssetSelect.value;
+
+                        setMergedLayoutState(assetKey, {
+                            scale: parseInt(layoutScale.value || "100", 10),
+                            x: parseInt(layoutX.value || "0", 10),
+                            y: parseInt(layoutY.value || "0", 10)
+                        });
+                    }
+
+                    function beginDrag(assetKey, event) {
+                        if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey) {
+                            return;
+                        }
+
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const state = getMergedLayoutState(assetKey);
+                        const containerRect = config.container.getBoundingClientRect();
+
+                        dragState = {
+                            assetKey,
+                            pointerId: event.pointerId,
+                            offsetX: event.clientX - containerRect.left - state.x,
+                            offsetY: event.clientY - containerRect.top - state.y
+                        };
+
+                        try {
+                            config.button.setPointerCapture(event.pointerId);
+                        } catch {
+                        }
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+
+                    function handleDragMove(event) {
+                        if (!dragState) {
+                            return;
+                        }
+
+                        const { assetKey, offsetX, offsetY } = dragState;
+                        const config = getAssetConfig(assetKey);
+                        if (!config) {
+                            return;
+                        }
+
+                        const containerRect = config.container.getBoundingClientRect();
+
+                        setMergedLayoutState(assetKey, {
+                            x: Math.round(event.clientX - containerRect.left - offsetX),
+                            y: Math.round(event.clientY - containerRect.top - offsetY)
+                        });
+
+                        event.preventDefault();
+                    }
+
+                    function endDrag(event) {
+                        if (!dragState) {
+                            return;
+                        }
+
+                        const { assetKey, pointerId } = dragState;
+                        const config = getAssetConfig(assetKey);
+
+                        if (config && pointerId === event.pointerId) {
+                            try {
+                                config.button.releasePointerCapture(pointerId);
+                            } catch {
+                            }
+                        }
+
+                        dragState = null;
+                    }
+
+                    function resetSelectedLayoutAsset() {
+                        const assetKey = layoutAssetSelect.value;
+                        clearStoredLayoutState(assetKey);
+                        applyAbsoluteLayout(assetKey);
+                        hydrateLayoutControls();
+                    }
+
+                    function resetAllLayoutAssets() {
+                        saveLayoutState({});
+                        applyAllAbsoluteLayouts();
+                        hydrateLayoutControls();
+                    }
+
+                    openFocusButton.addEventListener("click", function () {
+                        closeRewardOverlay();
+                        openFocusOverlay();
+                    });
+
+                    focusBackButton.addEventListener("click", function () {
+                        closeFocusOverlay();
+                    });
+
+                    closeFocusButton.addEventListener("click", function () {
+                        closeFocusOverlay();
+                    });
+
+                    runHomeButton.addEventListener("click", function () {
+                        closeFocusOverlay();
+                    });
+
+                    durationSlider.addEventListener("input", updateDurationReadout);
+
+                    startFocusButton.addEventListener("click", function () {
+                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "start")) {
+                            return;
+                        }
+
+                        const focusType = (focusTypeInput.value || "").trim() || "Focus";
+                        const durationMinutes = parseInt(durationSlider.value || "5", 10);
+
+                        plannedSeconds = Math.max(300, Math.min(7200, durationMinutes * 60));
+                        startedAtMs = Date.now();
+                        pausedElapsedSeconds = 0;
+                        isRunning = true;
+                        isPaused = false;
+                        isSubmitting = false;
+                        isConfirmOpen = false;
+                        completionTonePlayed = false;
+
+                        runFocusType.textContent = focusType;
+                        runTarget.textContent = formatDurationSelection(durationMinutes);
+
+                        showRunPanel();
+                        updateUi();
+                    });
+
+                    pauseButton.addEventListener("click", function () {
+                        if (!isRunning || isSubmitting || isConfirmOpen || (layoutModeEnabled && layoutAssetSelect.value === "pause")) {
+                            return;
+                        }
+
+                        if (!isPaused) {
+                            pausedElapsedSeconds = getElapsedSeconds();
+                            isPaused = true;
+                            updateUi();
+                            return;
+                        }
+
+                        startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+                        isPaused = false;
+                        updateUi();
+                    });
+
+                    exitButton.addEventListener("click", function () {
+                        if (!isRunning || isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "exit")) {
+                            return;
+                        }
+
+                        const elapsedSeconds = getElapsedSeconds();
+
+                        if (elapsedSeconds < stopThresholdSeconds) {
+                            closeFocusOverlay();
+                            return;
+                        }
+
+                        openConfirmOverlay();
+                    });
+
+                    confirmKeepGoingButton.addEventListener("click", function () {
+                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "keep-going")) {
+                            return;
+                        }
+
+                        closeConfirmOverlay();
+                    });
+
+                    confirmStopButton.addEventListener("click", function () {
+                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "stop")) {
+                            return;
+                        }
+
+                        submitSave("stop");
+                    });
+
+                    rewardCloseButton.addEventListener("click", function () {
+                        if (layoutModeEnabled && layoutAssetSelect.value === "gotcha") {
+                            return;
+                        }
+
+                        window.location.href = "/Index";
+                    });
+
+                    document.addEventListener("keydown", function (event) {
+                        if (event.key === "Escape" && isConfirmOpen && !isSubmitting) {
+                            closeConfirmOverlay();
+                        }
+                    });
+
+                    window.addEventListener("pointermove", handleDragMove);
+                    window.addEventListener("pointerup", endDrag);
+                    window.addEventListener("pointercancel", endDrag);
+
+                    Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+                        config.button.addEventListener("pointerdown", function (event) {
+                            beginDrag(assetKey, event);
+                        });
+
+                        config.button.addEventListener("click", function (event) {
+                            if (layoutModeEnabled && layoutAssetSelect.value === assetKey) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                        }, true);
+                    });
+
+                    if (layoutModeEnabled) {
+                        homeRoot.classList.add("pl-layout-active");
+                        layoutPanel.hidden = false;
+
+                        layoutAssetSelect.addEventListener("change", hydrateLayoutControls);
+                        layoutScale.addEventListener("input", pushLayoutControlValues);
+                        layoutX.addEventListener("input", pushLayoutControlValues);
+                        layoutY.addEventListener("input", pushLayoutControlValues);
+                        layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
+                        layoutResetAll.addEventListener("click", resetAllLayoutAssets);
+                    }
+
+                    applyAllAbsoluteLayouts();
+                    hydrateLayoutControls();
+                    updateDurationReadout();
+
+                    if (shouldShowRewardOverlay) {
+                        hydrateRewardOverlayFromDataset();
+                        openRewardOverlay();
+                    }
+
+                    window.setInterval(updateUi, 250);
+                })();
     </script>
-    <!-- SECTION B END — Validation Scripts -->
-}
+    <!-- SECTION B END — Home Screen Scripts -->
 }

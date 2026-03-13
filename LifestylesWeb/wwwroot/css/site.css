@@ -346,48 +346,6 @@ body {
 
 /* SECTION E START — Focus Setup + Run */
 .pl-home-screen {
-    --pl-home-scene-image: none;
-    --pl-focus-shell-image: none;
-    --pl-focus-setup-panel-image: none;
-    --pl-focus-run-panel-image: none;
-    --pl-focus-confirm-panel-image: none;
-    --pl-focus-reward-panel-image: none;
-    --pl-art-button-radius: 0.95rem;
-    --pl-btn-start-image: url('/assets/ui/buttons/start.png');
-    --pl-btn-start-fallback: none;
-    --pl-btn-start-scale: 100%;
-    --pl-btn-start-x: 50%;
-    --pl-btn-start-y: 50%;
-    --pl-btn-back-image: none;
-    --pl-btn-back-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
-    --pl-btn-back-scale: 100%;
-    --pl-btn-back-x: 50%;
-    --pl-btn-back-y: 50%;
-    --pl-btn-pause-image: none;
-    --pl-btn-pause-fallback: linear-gradient(180deg, #2563eb, #2563eb);
-    --pl-btn-pause-scale: 100%;
-    --pl-btn-pause-x: 50%;
-    --pl-btn-pause-y: 50%;
-    --pl-btn-exit-image: none;
-    --pl-btn-exit-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
-    --pl-btn-exit-scale: 100%;
-    --pl-btn-exit-x: 50%;
-    --pl-btn-exit-y: 50%;
-    --pl-btn-keep-going-image: none;
-    --pl-btn-keep-going-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
-    --pl-btn-keep-going-scale: 100%;
-    --pl-btn-keep-going-x: 50%;
-    --pl-btn-keep-going-y: 50%;
-    --pl-btn-stop-image: none;
-    --pl-btn-stop-fallback: linear-gradient(180deg, #2563eb, #2563eb);
-    --pl-btn-stop-scale: 100%;
-    --pl-btn-stop-x: 50%;
-    --pl-btn-stop-y: 50%;
-    --pl-btn-gotcha-image: none;
-    --pl-btn-gotcha-fallback: linear-gradient(180deg, #2563eb, #2563eb);
-    --pl-btn-gotcha-scale: 100%;
-    --pl-btn-gotcha-x: 50%;
-    --pl-btn-gotcha-y: 50%;
     padding-bottom: 7.5rem;
     position: relative;
     overflow: hidden;
@@ -477,19 +435,11 @@ body {
 
 .pl-focus-panel .pl-button-stack,
 .pl-run-actions-two {
-    display: flex;
-    align-items: stretch;
-    gap: 0.75rem;
+    display: block;
+    position: relative;
+    min-height: 72px;
+    margin-top: 1rem;
 }
-
-    .pl-focus-panel .pl-button-stack > *,
-    .pl-run-actions-two > * {
-        flex: 1 1 0 !important;
-        width: 0 !important;
-        min-width: 0;
-        margin-top: 0;
-        align-self: stretch;
-    }
 
 .pl-mode-grid {
     display: grid;
@@ -712,6 +662,7 @@ body {
         width: 100%;
         text-align: center;
         color: inherit;
+        pointer-events: none;
     }
 
 .pl-button-start,
@@ -730,50 +681,61 @@ body {
 .pl-button-start {
     background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-start-scale) var(--pl-btn-start-scale), 100% 100% !important;
-    background-position: var(--pl-btn-start-x) var(--pl-btn-start-y), center center !important;
+    background-size: 100% 100%, 100% 100% !important;
+    background-position: center center, center center !important;
 }
 
 .pl-button-back {
     background-image: var(--pl-btn-back-image), var(--pl-btn-back-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-back-scale) var(--pl-btn-back-scale), 100% 100% !important;
-    background-position: var(--pl-btn-back-x) var(--pl-btn-back-y), center center !important;
+    background-size: 100% 100%, 100% 100% !important;
+    background-position: center center, center center !important;
 }
 
 .pl-button-pause {
     background-image: var(--pl-btn-pause-image), var(--pl-btn-pause-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-pause-scale) var(--pl-btn-pause-scale), 100% 100% !important;
-    background-position: var(--pl-btn-pause-x) var(--pl-btn-pause-y), center center !important;
+    background-size: 100% 100%, 100% 100% !important;
+    background-position: center center, center center !important;
 }
 
 .pl-button-exit {
     background-image: var(--pl-btn-exit-image), var(--pl-btn-exit-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-exit-scale) var(--pl-btn-exit-scale), 100% 100% !important;
-    background-position: var(--pl-btn-exit-x) var(--pl-btn-exit-y), center center !important;
+    background-size: 100% 100%, 100% 100% !important;
+    background-position: center center, center center !important;
 }
 
 .pl-button-keep-going {
     background-image: var(--pl-btn-keep-going-image), var(--pl-btn-keep-going-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-keep-going-scale) var(--pl-btn-keep-going-scale), 100% 100% !important;
-    background-position: var(--pl-btn-keep-going-x) var(--pl-btn-keep-going-y), center center !important;
+    background-size: 100% 100%, 100% 100% !important;
+    background-position: center center, center center !important;
 }
 
 .pl-button-stop {
     background-image: var(--pl-btn-stop-image), var(--pl-btn-stop-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-stop-scale) var(--pl-btn-stop-scale), 100% 100% !important;
-    background-position: var(--pl-btn-stop-x) var(--pl-btn-stop-y), center center !important;
+    background-size: 100% 100%, 100% 100% !important;
+    background-position: center center, center center !important;
 }
 
 .pl-button-gotcha {
     background-image: var(--pl-btn-gotcha-image), var(--pl-btn-gotcha-fallback) !important;
     background-repeat: no-repeat, no-repeat !important;
-    background-size: var(--pl-btn-gotcha-scale) var(--pl-btn-gotcha-scale), 100% 100% !important;
-    background-position: var(--pl-btn-gotcha-x) var(--pl-btn-gotcha-y), center center !important;
+    background-size: 100% 100%, 100% 100% !important;
+    background-position: center center, center center !important;
+}
+
+.pl-layout-selected {
+    outline: 2px dashed #f59e0b;
+    outline-offset: 3px;
+}
+
+.pl-home-screen.pl-layout-active .pl-art-button {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .pl-reward-compare-grid,
@@ -808,16 +770,10 @@ body {
     }
 
 .pl-reward-overlay-card .pl-button-stack {
-    display: flex;
-    gap: 0.75rem;
+    display: block;
+    position: relative;
+    min-height: 72px;
 }
-
-    .pl-reward-overlay-card .pl-button-stack > * {
-        flex: 1 1 0 !important;
-        width: 0 !important;
-        min-width: 0;
-        margin-top: 0;
-    }
 
 .pl-reward-value-large {
     display: block;
@@ -861,7 +817,7 @@ body {
 }
 
 .pl-layout-code {
-    min-height: 7rem;
+    min-height: 9rem;
     resize: vertical;
     font-family: Consolas, "Courier New", monospace;
     font-size: 0.82rem;
