@@ -352,13 +352,35 @@ body {
     --pl-focus-run-panel-image: none;
     --pl-focus-confirm-panel-image: none;
     --pl-focus-reward-panel-image: none;
-    --pl-btn-start-image: url('/assets/ui/buttons/start.png');
+    --pl-art-button-radius: 0.95rem;
+    --pl-btn-start-image: '/Assets/Ui/Buttons/Start.png';
+    --pl-btn-start-fallback: none;
+    --pl-btn-start-size: 100% 100%;
+    --pl-btn-start-pos: center center;
     --pl-btn-back-image: none;
+    --pl-btn-back-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
+    --pl-btn-back-size: 100% 100%;
+    --pl-btn-back-pos: center center;
     --pl-btn-pause-image: none;
+    --pl-btn-pause-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-pause-size: 100% 100%;
+    --pl-btn-pause-pos: center center;
     --pl-btn-exit-image: none;
+    --pl-btn-exit-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
+    --pl-btn-exit-size: 100% 100%;
+    --pl-btn-exit-pos: center center;
     --pl-btn-keep-going-image: none;
+    --pl-btn-keep-going-fallback: linear-gradient(180deg, #e5e7eb, #e5e7eb);
+    --pl-btn-keep-going-size: 100% 100%;
+    --pl-btn-keep-going-pos: center center;
     --pl-btn-stop-image: none;
+    --pl-btn-stop-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-stop-size: 100% 100%;
+    --pl-btn-stop-pos: center center;
     --pl-btn-gotcha-image: none;
+    --pl-btn-gotcha-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-gotcha-size: 100% 100%;
+    --pl-btn-gotcha-pos: center center;
     padding-bottom: 7.5rem;
     position: relative;
     overflow: hidden;
@@ -449,13 +471,17 @@ body {
 .pl-focus-panel .pl-button-stack,
 .pl-run-actions-two {
     display: flex;
+    align-items: stretch;
     gap: 0.75rem;
 }
 
     .pl-focus-panel .pl-button-stack > *,
     .pl-run-actions-two > * {
         flex: 1 1 0;
+        width: auto;
         min-width: 0;
+        margin-top: 0;
+        align-self: stretch;
     }
 
 .pl-mode-grid {
@@ -615,12 +641,10 @@ body {
 }
 
 .pl-stop-button-armed {
-    background: #fee2e2;
     color: #991b1b;
 }
 
     .pl-stop-button-armed:hover {
-        background: #fecaca;
         color: #991b1b;
     }
 
@@ -659,8 +683,21 @@ body {
 
 .pl-art-button {
     position: relative;
-    overflow: hidden;
+    isolation: isolate;
+    overflow: visible;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: var(--pl-art-button-radius);
+    min-height: 3.35rem;
+    padding: 0.9rem 1rem;
 }
+
+    .pl-art-button:hover,
+    .pl-art-button:focus,
+    .pl-art-button:active {
+        background: transparent !important;
+    }
 
     .pl-art-button::before {
         content: "";
@@ -668,43 +705,60 @@ body {
         inset: 0;
         z-index: 0;
         pointer-events: none;
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: 100% 100%;
-        opacity: 1;
+        background-repeat: no-repeat, no-repeat;
+        background-position: center center, center center;
+        background-size: 100% 100%, 100% 100%;
+        border-radius: var(--pl-art-button-radius);
     }
 
     .pl-art-button .pl-button-label {
         position: relative;
         z-index: 1;
+        display: block;
+        width: 100%;
+        text-align: center;
     }
 
 .pl-button-start::before {
-    background-image: var(--pl-btn-start-image);
+    background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback);
+    background-size: var(--pl-btn-start-size), 100% 100%;
+    background-position: var(--pl-btn-start-pos), center center;
 }
 
 .pl-button-back::before {
-    background-image: var(--pl-btn-back-image);
+    background-image: var(--pl-btn-back-image), var(--pl-btn-back-fallback);
+    background-size: var(--pl-btn-back-size), 100% 100%;
+    background-position: var(--pl-btn-back-pos), center center;
 }
 
 .pl-button-pause::before {
-    background-image: var(--pl-btn-pause-image);
+    background-image: var(--pl-btn-pause-image), var(--pl-btn-pause-fallback);
+    background-size: var(--pl-btn-pause-size), 100% 100%;
+    background-position: var(--pl-btn-pause-pos), center center;
 }
 
 .pl-button-exit::before {
-    background-image: var(--pl-btn-exit-image);
+    background-image: var(--pl-btn-exit-image), var(--pl-btn-exit-fallback);
+    background-size: var(--pl-btn-exit-size), 100% 100%;
+    background-position: var(--pl-btn-exit-pos), center center;
 }
 
 .pl-button-keep-going::before {
-    background-image: var(--pl-btn-keep-going-image);
+    background-image: var(--pl-btn-keep-going-image), var(--pl-btn-keep-going-fallback);
+    background-size: var(--pl-btn-keep-going-size), 100% 100%;
+    background-position: var(--pl-btn-keep-going-pos), center center;
 }
 
 .pl-button-stop::before {
-    background-image: var(--pl-btn-stop-image);
+    background-image: var(--pl-btn-stop-image), var(--pl-btn-stop-fallback);
+    background-size: var(--pl-btn-stop-size), 100% 100%;
+    background-position: var(--pl-btn-stop-pos), center center;
 }
 
 .pl-button-gotcha::before {
-    background-image: var(--pl-btn-gotcha-image);
+    background-image: var(--pl-btn-gotcha-image), var(--pl-btn-gotcha-fallback);
+    background-size: var(--pl-btn-gotcha-size), 100% 100%;
+    background-position: var(--pl-btn-gotcha-pos), center center;
 }
 
 .pl-reward-compare-grid,
@@ -745,7 +799,9 @@ body {
 
     .pl-reward-overlay-card .pl-button-stack > * {
         flex: 1 1 0;
+        width: auto;
         min-width: 0;
+        margin-top: 0;
     }
 
 .pl-reward-value-large {
