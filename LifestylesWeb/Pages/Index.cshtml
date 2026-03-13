@@ -297,6 +297,8 @@
         </label>
 
         <div class="pl-layout-actions">
+            <button type="button" class="pl-home-action-button" id="pl-layout-save-selected">Save Selected</button>
+            <button type="button" class="pl-home-action-button" id="pl-layout-revert-selected">Revert Selected</button>
             <button type="button" class="pl-home-action-button" id="pl-layout-reset-selected">Reset Selected</button>
             <button type="button" class="pl-home-action-button" id="pl-layout-reset-all">Reset All</button>
         </div>
@@ -391,6 +393,8 @@
                     const layoutYValue = document.getElementById("pl-layout-y-value");
                     const layoutHeightLabel = document.getElementById("pl-layout-height-label");
                     const layoutHeightHint = document.getElementById("pl-layout-height-hint");
+                    const layoutSaveSelected = document.getElementById("pl-layout-save-selected");
+                    const layoutRevertSelected = document.getElementById("pl-layout-revert-selected");
                     const layoutResetSelected = document.getElementById("pl-layout-reset-selected");
                     const layoutResetAll = document.getElementById("pl-layout-reset-all");
                     const layoutCode = document.getElementById("pl-layout-code");
@@ -409,8 +413,8 @@
                         !saveForm || !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds ||
                         !saveMode || !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX ||
                         !layoutY || !layoutWidth || !layoutHeight || !layoutScaleValue || !layoutXValue ||
-                        !layoutYValue || !layoutHeightLabel || !layoutHeightHint || !layoutResetSelected ||
-                        !layoutResetAll || !layoutCode) {
+                        !layoutYValue || !layoutHeightLabel || !layoutHeightHint || !layoutSaveSelected ||
+                        !layoutRevertSelected || !layoutResetSelected || !layoutResetAll || !layoutCode) {
                         return;
                     }
 
@@ -440,6 +444,7 @@
                         "keep-going": "--pl-btn-keep-going-image",
                         "stop": "--pl-btn-stop-image",
                         "gotcha": "--pl-btn-gotcha-image",
+                        "slider": "--pl-slider-track-empty-image",
                         "slider-nib-art": "--pl-slider-nib-image"
                     };
 
@@ -469,9 +474,10 @@
                         sliderGroup
                     ];
 
-                    const artRatios = {};
+                    const artMetrics = {};
                     let sharedLayoutState = {};
-                    let pendingSaveTimer = 0;
+                    let currentDraftAssetKey = null;
+                    let currentDraftState = null;
                     let plannedSeconds = 300;
                     let startedAtMs = 0;
                     let pausedElapsedSeconds = 0;
@@ -527,6 +533,37 @@
                         return !!(varName && readCssUrlVar(varName));
                     }
 
+                    function normalizeLayoutOverride(value) {
+                        if (!value || typeof value !== "object") {
+                            return null;
+                        }
+
+                        return {
+                            x: value.x ?? value.X,
+                            y: value.y ?? value.Y,
+                            width: value.width ?? value.Width,
+                            height: value.height ?? value.Height,
+                            scale: value.scale ?? value.Scale
+                        };
+                    }
+
+                    function normalizeLayoutItems(items) {
+                        if (!items || typeof items !== "object") {
+                            return {};
+                        }
+
+                        const result = {};
+
+                        Object.entries(items).forEach(([key, value]) => {
+                            const normalized = normalizeLayoutOverride(value);
+                            if (normalized) {
+                                result[key] = normalized;
+                            }
+                        });
+
+                        return result;
+                    }
+
                     async function loadSharedLayoutState() {
                         try {
                             const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
@@ -537,15 +574,10 @@
                             }
 
                             const payload = await response.json();
-                            sharedLayoutState = payload?.items ?? {};
+                            sharedLayoutState = normalizeLayoutItems(payload?.items ?? payload?.Items);
                         } catch {
                             sharedLayoutState = {};
                         }
-                    }
-
-                    function scheduleSharedLayoutSave() {
-                        window.clearTimeout(pendingSaveTimer);
-                        pendingSaveTimer = window.setTimeout(saveSharedLayoutState, 200);
                     }
 
                     async function saveSharedLayoutState() {
@@ -561,7 +593,62 @@
                         }
                     }
 
-                    function loadArtRatio(assetKey) {
+                    function analyzeImageMetrics(image) {
+                        const metrics = {
+                            canvasWidth: image.naturalWidth,
+                            canvasHeight: image.naturalHeight,
+                            canvasRatio: image.naturalWidth / image.naturalHeight,
+                            visibleLeftRatio: 0,
+                            visibleTopRatio: 0,
+                            visibleWidthRatio: 1,
+                            visibleHeightRatio: 1,
+                            hasVisibleBounds: false
+                        };
+
+                        try {
+                            const canvas = document.createElement("canvas");
+                            canvas.width = image.naturalWidth;
+                            canvas.height = image.naturalHeight;
+
+                            const context = canvas.getContext("2d", { willReadFrequently: true });
+                            if (!context) {
+                                return metrics;
+                            }
+
+                            context.drawImage(image, 0, 0);
+                            const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+
+                            let minX = canvas.width;
+                            let minY = canvas.height;
+                            let maxX = -1;
+                            let maxY = -1;
+
+                            for (let y = 0; y < canvas.height; y += 1) {
+                                for (let x = 0; x < canvas.width; x += 1) {
+                                    const alpha = data[((y * canvas.width) + x) * 4 + 3];
+                                    if (alpha > 0) {
+                                        if (x < minX) minX = x;
+                                        if (y < minY) minY = y;
+                                        if (x > maxX) maxX = x;
+                                        if (y > maxY) maxY = y;
+                                    }
+                                }
+                            }
+
+                            if (maxX >= minX && maxY >= minY) {
+                                metrics.visibleLeftRatio = minX / canvas.width;
+                                metrics.visibleTopRatio = minY / canvas.height;
+                                metrics.visibleWidthRatio = (maxX - minX + 1) / canvas.width;
+                                metrics.visibleHeightRatio = (maxY - minY + 1) / canvas.height;
+                                metrics.hasVisibleBounds = true;
+                            }
+                        } catch {
+                        }
+
+                        return metrics;
+                    }
+
+                    function loadArtMetrics(assetKey) {
                         const varName = artImageVars[assetKey];
                         if (!varName) {
                             return;
@@ -570,7 +657,7 @@
                         const url = readCssUrlVar(varName);
 
                         if (!url) {
-                            delete artRatios[assetKey];
+                            delete artMetrics[assetKey];
                             applyPanelArtStates();
                             applyAssetLayout(assetKey);
                             return;
@@ -579,19 +666,14 @@
                         const image = new Image();
 
                         image.onload = function () {
-                            if (image.naturalWidth > 0 && image.naturalHeight > 0) {
-                                artRatios[assetKey] = image.naturalWidth / image.naturalHeight;
-                            } else {
-                                delete artRatios[assetKey];
-                            }
-
+                            artMetrics[assetKey] = analyzeImageMetrics(image);
                             applyPanelArtStates();
                             applyAssetLayout(assetKey);
                             hydrateLayoutControls();
                         };
 
                         image.onerror = function () {
-                            delete artRatios[assetKey];
+                            delete artMetrics[assetKey];
                             applyPanelArtStates();
                             applyAssetLayout(assetKey);
                             hydrateLayoutControls();
@@ -600,8 +682,8 @@
                         image.src = url;
                     }
 
-                    function primeArtRatios() {
-                        Object.keys(artImageVars).forEach(loadArtRatio);
+                    function primeArtMetrics() {
+                        Object.keys(artImageVars).forEach(loadArtMetrics);
                     }
 
                     function applyPanelArtStates() {
@@ -678,7 +760,7 @@
                         };
                     }
 
-                    function getMergedLayoutState(assetKey) {
+                    function getSavedLayoutState(assetKey) {
                         const defaults = getCssLayoutDefaults(assetKey);
                         const stored = sharedLayoutState[assetKey] || {};
 
@@ -691,52 +773,109 @@
                         };
                     }
 
-                    function getResolvedHeight(assetKey, state) {
-                        const ratio = artRatios[assetKey];
+                    function getEffectiveLayoutState(assetKey) {
+                        const saved = getSavedLayoutState(assetKey);
 
-                        if (ratio && ratio > 0) {
-                            return Math.max(1, Math.round(state.width / ratio));
+                        if (assetKey === currentDraftAssetKey && currentDraftState) {
+                            return {
+                                x: currentDraftState.x ?? saved.x,
+                                y: currentDraftState.y ?? saved.y,
+                                width: currentDraftState.width ?? saved.width,
+                                height: currentDraftState.height ?? saved.height,
+                                scale: currentDraftState.scale ?? saved.scale
+                            };
+                        }
+
+                        return saved;
+                    }
+
+                    function getResolvedHeight(assetKey, state) {
+                        const metrics = artMetrics[assetKey];
+
+                        if (metrics && metrics.canvasRatio > 0) {
+                            return Math.max(1, Math.round(state.width / metrics.canvasRatio));
                         }
 
                         return state.height;
                     }
 
-                    function setMergedLayoutState(assetKey, partialState) {
-                        const current = getMergedLayoutState(assetKey);
+                    function beginDraftForSelected(partialState) {
+                        const assetKey = layoutAssetSelect.value;
+                        const baseState = getEffectiveLayoutState(assetKey);
 
-                        sharedLayoutState[assetKey] = {
-                            ...current,
-                            ...partialState
+                        currentDraftAssetKey = assetKey;
+                        currentDraftState = {
+                            x: partialState?.x ?? baseState.x,
+                            y: partialState?.y ?? baseState.y,
+                            width: partialState?.width ?? baseState.width,
+                            height: partialState?.height ?? baseState.height,
+                            scale: partialState?.scale ?? baseState.scale
                         };
-
-                        applyAssetLayout(assetKey);
-                        hydrateLayoutControls();
-                        scheduleSharedLayoutSave();
                     }
 
-                    function clearStoredLayoutState(assetKey) {
-                        delete sharedLayoutState[assetKey];
-                        scheduleSharedLayoutSave();
+                    function discardCurrentDraft() {
+                        const assetKey = currentDraftAssetKey;
+                        currentDraftAssetKey = null;
+                        currentDraftState = null;
+
+                        if (assetKey) {
+                            applyAssetLayout(assetKey);
+                        }
+                    }
+
+                    async function saveSelectedLayoutAsset() {
+                        const assetKey = layoutAssetSelect.value;
+
+                        if (currentDraftAssetKey !== assetKey || !currentDraftState) {
+                            return;
+                        }
+
+                        sharedLayoutState[assetKey] = {
+                            x: currentDraftState.x,
+                            y: currentDraftState.y,
+                            width: currentDraftState.width,
+                            height: currentDraftState.height,
+                            scale: currentDraftState.scale
+                        };
+
+                        currentDraftAssetKey = null;
+                        currentDraftState = null;
+                        await saveSharedLayoutState();
+                        applyAllAssetLayouts();
+                        hydrateLayoutControls();
+                    }
+
+                    function revertSelectedLayoutAsset() {
+                        discardCurrentDraft();
+                        hydrateLayoutControls();
+                    }
+
+                    function resetSelectedLayoutAsset() {
+                        beginDraftForSelected(getCssLayoutDefaults(layoutAssetSelect.value));
+                        applyAssetLayout(layoutAssetSelect.value);
+                        hydrateLayoutControls();
+                    }
+
+                    async function resetAllLayoutAssets() {
+                        sharedLayoutState = {};
+                        currentDraftAssetKey = null;
+                        currentDraftState = null;
+                        await saveSharedLayoutState();
+                        applyAllAssetLayouts();
+                        hydrateLayoutControls();
                     }
 
                     function updateSliderVisuals() {
-                        const state = getMergedLayoutState("slider");
-                        const ratio = artRatios["slider-nib-art"] || 1;
+                        const state = getEffectiveLayoutState("slider");
                         const groupWidth = Math.max(20, state.width);
-                        const groupHeight = Math.max(20, state.height);
-                        const trackHeight = Math.max(10, Math.round(groupHeight * 0.32));
-                        const trackTop = Math.round((groupHeight - trackHeight) / 2);
-                        const nibHeight = groupHeight;
-                        const nibWidth = Math.max(20, Math.round(nibHeight * ratio));
+                        const groupHeight = getResolvedHeight("slider", state);
+                        const sliderMetric = artMetrics["slider"];
+                        const nibMetric = artMetrics["slider-nib-art"];
 
                         const min = parseInt(durationSlider.min || "5", 10);
                         const max = parseInt(durationSlider.max || "120", 10);
                         const value = parseInt(durationSlider.value || "5", 10);
                         const progressRatio = max <= min ? 0 : (value - min) / (max - min);
-
-                        const nibTravel = Math.max(0, groupWidth - nibWidth);
-                        const nibLeft = Math.round(progressRatio * nibTravel);
-                        const fillWidth = Math.max(0, Math.round(nibLeft + (nibWidth / 2)));
 
                         sliderGroup.style.left = `${state.x}px`;
                         sliderGroup.style.top = `${state.y}px`;
@@ -745,25 +884,37 @@
                         sliderGroup.style.transform = `scale(${state.scale / 100})`;
 
                         sliderTrackShell.style.left = "0px";
-                        sliderTrackShell.style.top = `${trackTop}px`;
+                        sliderTrackShell.style.top = "0px";
                         sliderTrackShell.style.width = `${groupWidth}px`;
-                        sliderTrackShell.style.height = `${trackHeight}px`;
+                        sliderTrackShell.style.height = `${groupHeight}px`;
 
                         sliderTrackEmptyArt.style.width = `${groupWidth}px`;
-                        sliderTrackEmptyArt.style.height = `${trackHeight}px`;
+                        sliderTrackEmptyArt.style.height = `${groupHeight}px`;
 
                         sliderFillShell.style.left = "0px";
-                        sliderFillShell.style.top = `${trackTop}px`;
-                        sliderFillShell.style.width = `${fillWidth}px`;
-                        sliderFillShell.style.height = `${trackHeight}px`;
+                        sliderFillShell.style.top = "0px";
+                        sliderFillShell.style.width = `${Math.round(groupWidth * progressRatio)}px`;
+                        sliderFillShell.style.height = `${groupHeight}px`;
 
                         sliderFillArt.style.width = `${groupWidth}px`;
-                        sliderFillArt.style.height = `${trackHeight}px`;
+                        sliderFillArt.style.height = `${groupHeight}px`;
 
-                        sliderNibVisual.style.left = `${nibLeft}px`;
+                        sliderNibVisual.style.left = "0px";
                         sliderNibVisual.style.top = "0px";
-                        sliderNibVisual.style.width = `${nibWidth}px`;
-                        sliderNibVisual.style.height = `${nibHeight}px`;
+                        sliderNibVisual.style.width = `${groupWidth}px`;
+                        sliderNibVisual.style.height = `${groupHeight}px`;
+
+                        if (nibMetric && nibMetric.hasVisibleBounds) {
+                            const visibleWidth = groupWidth * nibMetric.visibleWidthRatio;
+                            const defaultLeft = groupWidth * nibMetric.visibleLeftRatio;
+                            const targetLeft = progressRatio * Math.max(0, groupWidth - visibleWidth);
+                            const translateX = Math.round(targetLeft - defaultLeft);
+                            sliderNibVisual.style.transform = `translateX(${translateX}px)`;
+                        } else if (sliderMetric && sliderMetric.hasVisibleBounds) {
+                            sliderNibVisual.style.transform = `translateX(${Math.round((progressRatio - 0.5) * groupWidth)}px)`;
+                        } else {
+                            sliderNibVisual.style.transform = "translateX(0px)";
+                        }
 
                         durationSlider.style.pointerEvents = layoutModeEnabled ? "none" : "auto";
                     }
@@ -784,7 +935,7 @@
                             return;
                         }
 
-                        const state = getMergedLayoutState(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const resolvedHeight = getResolvedHeight(assetKey, state);
 
                         element.style.left = `${state.x}px`;
@@ -812,7 +963,7 @@
                     }
 
                     function updateLayoutSliderBounds(assetKey) {
-                        const state = getMergedLayoutState(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const rect = getHomeRect();
                         const resolvedHeight = getResolvedHeight(assetKey, state);
 
@@ -827,9 +978,9 @@
                     }
 
                     function updateLayoutCodePreview(assetKey) {
-                        const state = getMergedLayoutState(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const resolvedHeight = getResolvedHeight(assetKey, state);
-                        const ratioLocked = !!artRatios[assetKey];
+                        const ratioLocked = !!artMetrics[assetKey];
 
                         if (ratioLocked) {
                             layoutCode.value =
@@ -1169,7 +1320,7 @@
                     }
 
                     function updateLayoutSliderBounds(assetKey) {
-                        const state = getMergedLayoutState(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const rect = getHomeRect();
                         const resolvedHeight = getResolvedHeight(assetKey, state);
 
@@ -1184,9 +1335,9 @@
                     }
 
                     function updateLayoutCodePreview(assetKey) {
-                        const state = getMergedLayoutState(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const resolvedHeight = getResolvedHeight(assetKey, state);
-                        const ratioLocked = !!artRatios[assetKey];
+                        const ratioLocked = !!artMetrics[assetKey];
 
                         if (ratioLocked) {
                             layoutCode.value =
@@ -1213,9 +1364,9 @@
 
                     function hydrateLayoutControls() {
                         const assetKey = layoutAssetSelect.value;
-                        const state = getMergedLayoutState(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const resolvedHeight = getResolvedHeight(assetKey, state);
-                        const ratioLocked = !!artRatios[assetKey];
+                        const ratioLocked = !!artMetrics[assetKey];
 
                         previewLayoutAsset(assetKey);
                         updateLayoutSliderBounds(assetKey);
@@ -1251,19 +1402,23 @@
                             width: parseInt(layoutWidth.value || "170", 10)
                         };
 
-                        if (!artRatios[assetKey]) {
+                        if (!artMetrics[assetKey]) {
                             partial.height = parseInt(layoutHeight.value || "56", 10);
                         }
 
-                        setMergedLayoutState(assetKey, partial);
+                        beginDraftForSelected(partial);
+                        applyAssetLayout(assetKey);
+                        hydrateLayoutControls();
                     }
 
-                    function refreshLayoutSelection() {
-                        const selectedAssetKey = layoutAssetSelect.value;
+                    function handleLayoutAssetChange() {
+                        const newAssetKey = layoutAssetSelect.value;
 
-                        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
-                            config.element.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
-                        });
+                        if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
+                            discardCurrentDraft();
+                        }
+
+                        hydrateLayoutControls();
                     }
 
                     function beginDrag(assetKey, event) {
@@ -1271,7 +1426,7 @@
                             return;
                         }
 
-                        const state = getMergedLayoutState(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const rect = getHomeRect();
 
                         dragState = {
@@ -1280,6 +1435,8 @@
                             offsetX: event.clientX - rect.left - state.x,
                             offsetY: event.clientY - rect.top - state.y
                         };
+
+                        beginDraftForSelected(state);
 
                         try {
                             getAssetElement(assetKey)?.setPointerCapture(event.pointerId);
@@ -1297,11 +1454,13 @@
 
                         const rect = getHomeRect();
 
-                        setMergedLayoutState(dragState.assetKey, {
+                        beginDraftForSelected({
                             x: Math.round(event.clientX - rect.left - dragState.offsetX),
                             y: Math.round(event.clientY - rect.top - dragState.offsetY)
                         });
 
+                        applyAssetLayout(dragState.assetKey);
+                        hydrateLayoutControls();
                         event.preventDefault();
                     }
 
@@ -1320,19 +1479,6 @@
                         }
 
                         dragState = null;
-                    }
-
-                    function resetSelectedLayoutAsset() {
-                        clearStoredLayoutState(layoutAssetSelect.value);
-                        applyAssetLayout(layoutAssetSelect.value);
-                        hydrateLayoutControls();
-                    }
-
-                    function resetAllLayoutAssets() {
-                        sharedLayoutState = {};
-                        applyAllAssetLayouts();
-                        hydrateLayoutControls();
-                        scheduleSharedLayoutSave();
                     }
 
                     homeFocusButton.addEventListener("click", function () {
@@ -1469,19 +1615,21 @@
 
                     async function initializeAsync() {
                         applyPanelArtStates();
-                        primeArtRatios();
+                        primeArtMetrics();
                         await loadSharedLayoutState();
                         applyAllAssetLayouts();
                         updateDurationReadout();
 
                         if (layoutModeEnabled) {
                             layoutPanel.hidden = false;
-                            layoutAssetSelect.addEventListener("change", hydrateLayoutControls);
+                            layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
                             layoutScale.addEventListener("input", pushLayoutControlValues);
                             layoutX.addEventListener("input", pushLayoutControlValues);
                             layoutY.addEventListener("input", pushLayoutControlValues);
                             layoutWidth.addEventListener("input", pushLayoutControlValues);
                             layoutHeight.addEventListener("input", pushLayoutControlValues);
+                            layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
+                            layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
                             layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
                             layoutResetAll.addEventListener("click", resetAllLayoutAssets);
                             hydrateLayoutControls();
