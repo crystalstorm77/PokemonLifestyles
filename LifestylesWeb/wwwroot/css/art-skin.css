@@ -1,12 +1,15 @@
 ﻿/* SEGMENT A START — Asset Paths */
-.pl-focus-stage {
+.pl-home-screen {
     --pl-home-scene-image: none;
-    --pl-focus-shell-image: none;
+    --pl-art-button-radius: 0.95rem;
+    --pl-btn-home-focus-image: none;
+    --pl-btn-home-focus-fallback: linear-gradient(180deg, #2563eb, #2563eb);
+    --pl-btn-home-sleep-image: none;
+    --pl-btn-home-sleep-fallback: linear-gradient(180deg, #f8fafc, #f8fafc);
     --pl-focus-setup-panel-image: none;
     --pl-focus-run-panel-image: none;
     --pl-focus-confirm-panel-image: none;
     --pl-focus-reward-panel-image: none;
-    --pl-art-button-radius: 0.95rem;
     --pl-btn-start-image: url('/assets/ui/buttons/start.png');
     --pl-btn-start-fallback: none;
     --pl-btn-back-image: none;
@@ -24,60 +27,72 @@
 }
 /* SEGMENT A END — Asset Paths */
 
-/* SEGMENT B START — Stage Layout Defaults */
-.pl-focus-stage {
-    --pl-stage-width: 428;
-    --pl-stage-height: 926;
-    --pl-panel-setup-x: 16px;
-    --pl-panel-setup-y: 150px;
-    --pl-panel-setup-width: 396px;
-    --pl-panel-setup-height: 640px;
-    --pl-panel-run-x: 16px;
-    --pl-panel-run-y: 150px;
-    --pl-panel-run-width: 396px;
-    --pl-panel-run-height: 640px;
-    --pl-panel-confirm-x: 20px;
-    --pl-panel-confirm-y: 160px;
-    --pl-panel-confirm-width: 388px;
-    --pl-panel-confirm-height: 610px;
-    --pl-panel-reward-x: 20px;
-    --pl-panel-reward-y: 220px;
-    --pl-panel-reward-width: 388px;
-    --pl-panel-reward-height: 420px;
+/* SEGMENT B START — Canvas Layout Defaults */
+.pl-home-screen {
+    --pl-layout-home-focus-x: 74px;
+    --pl-layout-home-focus-y: 838px;
+    --pl-layout-home-focus-width: 120px;
+    --pl-layout-home-focus-height: 60px;
+    --pl-layout-home-focus-scale: 100;
+    --pl-layout-home-sleep-x: 234px;
+    --pl-layout-home-sleep-y: 838px;
+    --pl-layout-home-sleep-width: 120px;
+    --pl-layout-home-sleep-height: 60px;
+    --pl-layout-home-sleep-scale: 100;
+    --pl-layout-setup-panel-x: 16px;
+    --pl-layout-setup-panel-y: 146px;
+    --pl-layout-setup-panel-width: 396px;
+    --pl-layout-setup-panel-height: 620px;
+    --pl-layout-setup-panel-scale: 100;
     --pl-layout-start-x: 24px;
-    --pl-layout-start-y: 805px;
+    --pl-layout-start-y: 792px;
     --pl-layout-start-width: 170px;
     --pl-layout-start-height: 56px;
     --pl-layout-start-scale: 100;
     --pl-layout-back-x: 234px;
-    --pl-layout-back-y: 805px;
+    --pl-layout-back-y: 792px;
     --pl-layout-back-width: 170px;
     --pl-layout-back-height: 56px;
     --pl-layout-back-scale: 100;
+    --pl-layout-run-panel-x: 24px;
+    --pl-layout-run-panel-y: 604px;
+    --pl-layout-run-panel-width: 380px;
+    --pl-layout-run-panel-height: 152px;
+    --pl-layout-run-panel-scale: 100;
     --pl-layout-pause-x: 24px;
-    --pl-layout-pause-y: 805px;
+    --pl-layout-pause-y: 792px;
     --pl-layout-pause-width: 170px;
     --pl-layout-pause-height: 56px;
     --pl-layout-pause-scale: 100;
     --pl-layout-exit-x: 234px;
-    --pl-layout-exit-y: 805px;
+    --pl-layout-exit-y: 792px;
     --pl-layout-exit-width: 170px;
     --pl-layout-exit-height: 56px;
     --pl-layout-exit-scale: 100;
+    --pl-layout-confirm-panel-x: 20px;
+    --pl-layout-confirm-panel-y: 200px;
+    --pl-layout-confirm-panel-width: 388px;
+    --pl-layout-confirm-panel-height: 340px;
+    --pl-layout-confirm-panel-scale: 100;
     --pl-layout-keep-going-x: 24px;
-    --pl-layout-keep-going-y: 790px;
+    --pl-layout-keep-going-y: 560px;
     --pl-layout-keep-going-width: 170px;
     --pl-layout-keep-going-height: 56px;
     --pl-layout-keep-going-scale: 100;
     --pl-layout-stop-x: 234px;
-    --pl-layout-stop-y: 790px;
+    --pl-layout-stop-y: 560px;
     --pl-layout-stop-width: 170px;
     --pl-layout-stop-height: 56px;
     --pl-layout-stop-scale: 100;
+    --pl-layout-reward-panel-x: 28px;
+    --pl-layout-reward-panel-y: 260px;
+    --pl-layout-reward-panel-width: 372px;
+    --pl-layout-reward-panel-height: 220px;
+    --pl-layout-reward-panel-scale: 100;
     --pl-layout-gotcha-x: 24px;
-    --pl-layout-gotcha-y: 710px;
+    --pl-layout-gotcha-y: 504px;
     --pl-layout-gotcha-width: 380px;
     --pl-layout-gotcha-height: 56px;
     --pl-layout-gotcha-scale: 100;
 }
-/* SEGMENT B END — Stage Layout Defaults */
+/* SEGMENT B END — Canvas Layout Defaults */

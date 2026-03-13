@@ -4,7 +4,7 @@
     ViewData["Title"] = "Home";
 }
 
-<!-- SEGMENT A START — Home Screen + Focus Stage -->
+<!-- SEGMENT A START — Home Canvas Markup -->
 <div class="pl-screen pl-home-screen"
      id="pl-home-root"
      data-reward-xp-per-minute="@Model.RewardPreviewFocusXpPerMinute"
@@ -17,256 +17,244 @@
      data-reward-completed="@Model.RewardCompleted.ToString().ToLowerInvariant()"
      data-reward-xp="@Model.RewardXp"
      data-reward-coins="@Model.RewardCoins">
-    <div class="pl-home-scene" aria-hidden="true"></div>
+    <div class="pl-home-scene-art" aria-hidden="true"></div>
 
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
     {
-        <div class="pl-home-status">@Model.StatusMessage</div>
+        <div class="pl-status-toast">@Model.StatusMessage</div>
     }
 
-    <nav class="pl-home-actions" aria-label="Home actions">
-        <button class="pl-home-action-button pl-home-action-button-primary" type="button" id="pl-open-focus-button">
-            <span>Focus</span>
-        </button>
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-home-focus"
+            id="pl-home-focus-button">
+        <span class="pl-button-label">Focus</span>
+    </button>
 
-        <button class="pl-home-action-button" type="button" disabled>
-            <span>Sleep</span>
-            <span class="pl-home-action-note">Later</span>
-        </button>
-    </nav>
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-home-sleep"
+            id="pl-home-sleep-button"
+            disabled>
+        <span class="pl-button-label">Sleep</span>
+    </button>
 
-    <div class="pl-focus-overlay" id="pl-focus-overlay" hidden aria-hidden="true">
-        <div class="pl-focus-overlay-backdrop"></div>
+    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-setup" id="pl-setup-panel" hidden>
+        <div class="pl-panel-header">
+            <span class="pl-eyebrow" style="margin:0;">Focus Session</span>
+            <span class="pl-badge">Countdown</span>
+        </div>
 
-        <div class="pl-focus-stage-shell" id="pl-focus-stage-shell">
-            <div class="pl-focus-stage" id="pl-focus-stage">
-                <div class="pl-stage-scene-art" aria-hidden="true"></div>
-                <div class="pl-stage-shell-art" aria-hidden="true"></div>
+        <h2 class="pl-title" style="margin-top:0.55rem;">Stay with it</h2>
+        <p class="pl-subtitle">
+            This panel sits on the real home screen. It is not a second screen.
+        </p>
 
-                <section class="pl-stage-layer" id="pl-stage-layer-setup">
-                    <div class="pl-stage-panel pl-stage-panel-setup">
-                        <div class="pl-stage-header">
-                            <button type="button" class="pl-link-button" id="pl-focus-back-link">← Back</button>
-                            <span class="pl-badge">Countdown</span>
-                        </div>
+        <div class="pl-setup-controls" id="pl-setup-controls">
+            <div class="pl-mode-grid">
+                <button class="pl-mode-chip pl-mode-chip-active" type="button">
+                    <span>Countdown</span>
+                    <small>Ready now</small>
+                </button>
 
-                        <p class="pl-eyebrow">Focus Session</p>
-                        <h2 class="pl-title">Stay with it</h2>
-                        <p class="pl-subtitle">
-                            This is now a stage-style overlay. The panel is one element, and the buttons are separate stage elements.
-                        </p>
+                <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
+                    <span>Count Up</span>
+                    <small>Later</small>
+                </button>
+            </div>
 
-                        <div class="pl-mode-grid">
-                            <button class="pl-mode-chip pl-mode-chip-active" type="button">
-                                <span>Countdown</span>
-                                <small>Ready now</small>
-                            </button>
+            <label class="pl-field">
+                <span class="pl-field-label">Focus type</span>
+                <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
+            </label>
 
-                            <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
-                                <span>Count Up</span>
-                                <small>Later</small>
-                            </button>
-                        </div>
+            <div class="pl-field">
+                <span class="pl-field-label">Countdown length</span>
 
-                        <label class="pl-field">
-                            <span class="pl-field-label">Focus type</span>
-                            <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
-                        </label>
+                <div class="pl-duration-card">
+                    <strong class="pl-duration-readout" id="pl-duration-readout">5 minutes</strong>
 
-                        <div class="pl-field">
-                            <span class="pl-field-label">Countdown length</span>
+                    <input class="pl-slider"
+                           id="pl-duration-slider"
+                           type="range"
+                           min="5"
+                           max="120"
+                           step="1"
+                           value="5" />
 
-                            <div class="pl-duration-card">
-                                <strong class="pl-duration-readout" id="pl-duration-readout">5 minutes</strong>
-
-                                <input class="pl-slider"
-                                       id="pl-duration-slider"
-                                       type="range"
-                                       min="5"
-                                       max="120"
-                                       step="1"
-                                       value="5" />
-
-                                <div class="pl-slider-scale">
-                                    <span>5 min</span>
-                                    <span>2 hr</span>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="pl-slider-scale">
+                        <span>5 min</span>
+                        <span>2 hr</span>
                     </div>
-
-                    <button type="button" class="pl-stage-button pl-stage-button-start" id="pl-start-focus-button">
-                        <span class="pl-button-label">Start</span>
-                    </button>
-
-                    <button type="button" class="pl-stage-button pl-stage-button-back" id="pl-close-focus-button">
-                        <span class="pl-button-label">Back</span>
-                    </button>
-                </section>
-
-                <section class="pl-stage-layer" id="pl-stage-layer-run" hidden>
-                    <div class="pl-stage-panel pl-stage-panel-run">
-                        <div class="pl-stage-header">
-                            <button type="button" class="pl-link-button" id="pl-run-home-link">← Home</button>
-                            <span class="pl-badge">Countdown</span>
-                        </div>
-
-                        <p class="pl-eyebrow">Focus Session</p>
-                        <h2 class="pl-title">Stay with it</h2>
-                        <p class="pl-subtitle">
-                            Settings are locked while the session is active.
-                        </p>
-
-                        <div class="pl-run-meta-grid">
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Focus type</span>
-                                <strong class="pl-run-value" id="pl-run-focus-type">Focus</strong>
-                            </div>
-
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Target</span>
-                                <strong class="pl-run-value" id="pl-run-target">5 minutes</strong>
-                            </div>
-                        </div>
-
-                        <div class="pl-run-timer-shell">
-                            <div class="pl-run-timer-caption" id="pl-run-state-label">Time remaining</div>
-                            <div class="pl-run-timer" id="pl-run-readout">00:05:00</div>
-                            <div class="pl-run-support">
-                                Elapsed:
-                                <span id="pl-run-elapsed">00:00:00</span>
-                            </div>
-                        </div>
-
-                        <div class="pl-progress-track" aria-hidden="true">
-                            <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
-                        </div>
-
-                        <p class="pl-subtitle" id="pl-run-note">
-                            Cancel before 1 minute to discard this session with no save.
-                        </p>
-                    </div>
-
-                    <button type="button" class="pl-stage-button pl-stage-button-pause" id="pl-pause-button">
-                        <span class="pl-button-label">Pause</span>
-                    </button>
-
-                    <button type="button" class="pl-stage-button pl-stage-button-exit" id="pl-exit-button">
-                        <span class="pl-button-label">Cancel</span>
-                    </button>
-                </section>
-
-                <section class="pl-stage-layer" id="pl-stage-layer-confirm" hidden>
-                    <div class="pl-stage-modal-dim"></div>
-
-                    <div class="pl-stage-panel pl-stage-panel-confirm">
-                        <p class="pl-eyebrow">Stop Focusing</p>
-                        <h2 class="pl-section-title">Are you sure?</h2>
-                        <p class="pl-subtitle">
-                            Session will be marked <strong>incomplete</strong>.
-                        </p>
-
-                        <div class="pl-run-meta-grid">
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Current elapsed</span>
-                                <strong class="pl-run-value" id="pl-confirm-current-time">00:00:00</strong>
-                            </div>
-
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Timer status</span>
-                                <strong class="pl-run-value" id="pl-confirm-timer-status">Still counting down</strong>
-                            </div>
-                        </div>
-
-                        <div class="pl-reward-compare-grid">
-                            <div class="pl-reward-compare-card">
-                                <span class="pl-run-label">If complete</span>
-
-                                <div class="pl-reward-row">
-                                    <span>XP</span>
-                                    <strong id="pl-confirm-complete-xp">0</strong>
-                                </div>
-
-                                <div class="pl-reward-row">
-                                    <span>Coins</span>
-                                    <strong id="pl-confirm-complete-coins">0</strong>
-                                </div>
-                            </div>
-
-                            <div class="pl-reward-compare-card">
-                                <span class="pl-run-label">Current</span>
-
-                                <div class="pl-reward-row">
-                                    <span>XP</span>
-                                    <strong id="pl-confirm-current-xp">0</strong>
-                                </div>
-
-                                <div class="pl-reward-row">
-                                    <span>Coins</span>
-                                    <strong id="pl-confirm-current-coins">0</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="button" class="pl-stage-button pl-stage-button-keep-going" id="pl-confirm-keep-going">
-                        <span class="pl-button-label">Keep Going</span>
-                    </button>
-
-                    <button type="button" class="pl-stage-button pl-stage-button-stop" id="pl-confirm-stop">
-                        <span class="pl-button-label">Stop Focusing</span>
-                    </button>
-                </section>
-
-                <section class="pl-stage-layer" id="pl-stage-layer-reward" hidden>
-                    <div class="pl-stage-modal-dim"></div>
-
-                    <div class="pl-stage-panel pl-stage-panel-reward">
-                        <p class="pl-eyebrow">Rewards</p>
-                        <h2 class="pl-section-title">Rewards</h2>
-                        <p class="pl-subtitle">
-                            <span id="pl-reward-status-text">Completed</span>
-                            <strong id="pl-reward-focus-type">Focus</strong>
-                            session for
-                            <strong id="pl-reward-duration-text">00:00:00</strong>.
-                        </p>
-
-                        <div class="pl-reward-summary-grid">
-                            <div class="pl-reward-summary-card">
-                                <span class="pl-run-label">XP</span>
-                                <strong class="pl-reward-value-large" id="pl-reward-xp">0</strong>
-                            </div>
-
-                            <div class="pl-reward-summary-card">
-                                <span class="pl-run-label">Coins</span>
-                                <strong class="pl-reward-value-large" id="pl-reward-coins">0</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="button" class="pl-stage-button pl-stage-button-gotcha" id="pl-reward-close-button">
-                        <span class="pl-button-label">Gotcha!</span>
-                    </button>
-                </section>
+                </div>
             </div>
         </div>
     </div>
 
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
+            id="pl-start-focus-button"
+            hidden>
+        <span class="pl-button-label">Start</span>
+    </button>
+
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-back"
+            id="pl-close-focus-button"
+            hidden>
+        <span class="pl-button-label">Back</span>
+    </button>
+
+    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-run" id="pl-run-panel" hidden>
+        <div class="pl-run-card">
+            <div class="pl-run-caption" id="pl-run-state-label">Time remaining</div>
+            <div class="pl-run-readout" id="pl-run-readout">00:05:00</div>
+            <div class="pl-run-support">
+                Elapsed:
+                <span id="pl-run-elapsed">00:00:00</span>
+            </div>
+
+            <div class="pl-progress-track" aria-hidden="true">
+                <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <p class="pl-run-note" id="pl-run-note">
+                Cancel before 1 minute to discard this session with no save.
+            </p>
+        </div>
+    </div>
+
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-pause"
+            id="pl-pause-button"
+            hidden>
+        <span class="pl-button-label">Pause</span>
+    </button>
+
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-exit"
+            id="pl-exit-button"
+            hidden>
+        <span class="pl-button-label">Cancel</span>
+    </button>
+
+    <div class="pl-panel-dim pl-canvas-item" id="pl-confirm-dim" hidden></div>
+
+    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-confirm" id="pl-confirm-panel" hidden>
+        <p class="pl-eyebrow">Stop Focusing</p>
+        <h2 class="pl-section-title">Are you sure?</h2>
+        <p class="pl-subtitle">
+            Session will be marked <strong>incomplete</strong>.
+        </p>
+
+        <div class="pl-grid-two">
+            <div class="pl-info-box">
+                <span class="pl-info-label">Current elapsed</span>
+                <strong class="pl-info-value" id="pl-confirm-current-time">00:00:00</strong>
+            </div>
+
+            <div class="pl-info-box">
+                <span class="pl-info-label">Timer status</span>
+                <strong class="pl-info-value" id="pl-confirm-timer-status">Still counting down</strong>
+            </div>
+        </div>
+
+        <div class="pl-grid-two">
+            <div class="pl-info-box">
+                <span class="pl-info-label">If complete</span>
+
+                <div class="pl-reward-row">
+                    <span>XP</span>
+                    <strong id="pl-confirm-complete-xp">0</strong>
+                </div>
+
+                <div class="pl-reward-row">
+                    <span>Coins</span>
+                    <strong id="pl-confirm-complete-coins">0</strong>
+                </div>
+            </div>
+
+            <div class="pl-info-box">
+                <span class="pl-info-label">Current</span>
+
+                <div class="pl-reward-row">
+                    <span>XP</span>
+                    <strong id="pl-confirm-current-xp">0</strong>
+                </div>
+
+                <div class="pl-reward-row">
+                    <span>Coins</span>
+                    <strong id="pl-confirm-current-coins">0</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-keep-going"
+            id="pl-confirm-keep-going"
+            hidden>
+        <span class="pl-button-label">Keep Going</span>
+    </button>
+
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-stop"
+            id="pl-confirm-stop"
+            hidden>
+        <span class="pl-button-label">Stop Focusing</span>
+    </button>
+
+    <div class="pl-panel-dim pl-canvas-item" id="pl-reward-dim" hidden></div>
+
+    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-reward" id="pl-reward-panel" hidden>
+        <p class="pl-eyebrow">Rewards</p>
+        <h2 class="pl-section-title">Rewards</h2>
+        <p class="pl-subtitle">
+            <span id="pl-reward-status-text">Completed</span>
+            <strong id="pl-reward-focus-type">Focus</strong>
+            session for
+            <strong id="pl-reward-duration-text">00:00:00</strong>.
+        </p>
+
+        <div class="pl-grid-two">
+            <div class="pl-info-box">
+                <span class="pl-info-label">XP</span>
+                <strong class="pl-reward-value-large" id="pl-reward-xp">0</strong>
+            </div>
+
+            <div class="pl-info-box">
+                <span class="pl-info-label">Coins</span>
+                <strong class="pl-reward-value-large" id="pl-reward-coins">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <button type="button"
+            class="pl-canvas-item pl-canvas-button pl-canvas-button-gotcha"
+            id="pl-reward-close-button"
+            hidden>
+        <span class="pl-button-label">Gotcha!</span>
+    </button>
+
     <aside class="pl-layout-panel" id="pl-layout-panel" hidden aria-label="Layout mode panel">
-        <div class="pl-layout-panel-header">
+        <div class="pl-layout-header">
             <strong>Layout Mode</strong>
-            <span>Stage-relative</span>
+            <span>Home canvas</span>
         </div>
 
         <label class="pl-field">
             <span class="pl-field-label">Asset</span>
             <select class="pl-input" id="pl-layout-asset-select">
+                <option value="home-focus">home-focus</option>
+                <option value="home-sleep">home-sleep</option>
+                <option value="setup-panel">setup-panel</option>
                 <option value="start">start</option>
                 <option value="back">back</option>
+                <option value="run-panel">run-panel</option>
                 <option value="pause">pause</option>
                 <option value="exit">exit</option>
+                <option value="confirm-panel">confirm-panel</option>
                 <option value="keep-going">keep-going</option>
                 <option value="stop">stop</option>
+                <option value="reward-panel">reward-panel</option>
                 <option value="gotcha">gotcha</option>
             </select>
         </label>
@@ -296,7 +284,7 @@
 
         <label class="pl-field">
             <span class="pl-field-label">Height (px)</span>
-            <input class="pl-input" id="pl-layout-height" type="number" min="20" max="700" step="1" value="56" />
+            <input class="pl-input" id="pl-layout-height" type="number" min="20" max="1200" step="1" value="56" />
         </label>
 
         <div class="pl-layout-actions">
@@ -317,39 +305,38 @@
         <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
     </form>
 </div>
-<!-- SEGMENT A END — Home Screen + Focus Stage -->
-<!-- SEGMENT B START — Focus Stage Scripts -->
+<!-- SEGMENT A END — Home Canvas Markup -->
+<!-- SEGMENT B START — Home Canvas Scripts -->
 @section Scripts {
     <script>
                 (function () {
                     const homeRoot = document.getElementById("pl-home-root");
-                    const focusOverlay = document.getElementById("pl-focus-overlay");
-                    const focusStageShell = document.getElementById("pl-focus-stage-shell");
-                    const focusStage = document.getElementById("pl-focus-stage");
 
-                    const openFocusButton = document.getElementById("pl-open-focus-button");
+                    const homeFocusButton = document.getElementById("pl-home-focus-button");
+                    const homeSleepButton = document.getElementById("pl-home-sleep-button");
+
+                    const setupPanel = document.getElementById("pl-setup-panel");
+                    const setupControls = document.getElementById("pl-setup-controls");
+                    const startFocusButton = document.getElementById("pl-start-focus-button");
                     const closeFocusButton = document.getElementById("pl-close-focus-button");
-                    const focusBackLink = document.getElementById("pl-focus-back-link");
-                    const runHomeLink = document.getElementById("pl-run-home-link");
 
-                    const setupLayer = document.getElementById("pl-stage-layer-setup");
-                    const runLayer = document.getElementById("pl-stage-layer-run");
-                    const confirmLayer = document.getElementById("pl-stage-layer-confirm");
-                    const rewardLayer = document.getElementById("pl-stage-layer-reward");
+                    const runPanel = document.getElementById("pl-run-panel");
+                    const pauseButton = document.getElementById("pl-pause-button");
+                    const exitButton = document.getElementById("pl-exit-button");
+
+                    const confirmDim = document.getElementById("pl-confirm-dim");
+                    const confirmPanel = document.getElementById("pl-confirm-panel");
+                    const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
+                    const confirmStopButton = document.getElementById("pl-confirm-stop");
+
+                    const rewardDim = document.getElementById("pl-reward-dim");
+                    const rewardPanel = document.getElementById("pl-reward-panel");
+                    const rewardCloseButton = document.getElementById("pl-reward-close-button");
 
                     const focusTypeInput = document.getElementById("pl-focus-type-input");
                     const durationSlider = document.getElementById("pl-duration-slider");
                     const durationReadout = document.getElementById("pl-duration-readout");
 
-                    const startFocusButton = document.getElementById("pl-start-focus-button");
-                    const pauseButton = document.getElementById("pl-pause-button");
-                    const exitButton = document.getElementById("pl-exit-button");
-                    const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
-                    const confirmStopButton = document.getElementById("pl-confirm-stop");
-                    const rewardCloseButton = document.getElementById("pl-reward-close-button");
-
-                    const runFocusType = document.getElementById("pl-run-focus-type");
-                    const runTarget = document.getElementById("pl-run-target");
                     const runStateLabel = document.getElementById("pl-run-state-label");
                     const runReadout = document.getElementById("pl-run-readout");
                     const runElapsed = document.getElementById("pl-run-elapsed");
@@ -389,26 +376,26 @@
                     const layoutResetAll = document.getElementById("pl-layout-reset-all");
                     const layoutCode = document.getElementById("pl-layout-code");
 
-                    if (!homeRoot || !focusOverlay || !focusStageShell || !focusStage || !openFocusButton ||
-                        !closeFocusButton || !focusBackLink || !runHomeLink || !setupLayer || !runLayer ||
-                        !confirmLayer || !rewardLayer || !focusTypeInput || !durationSlider ||
-                        !durationReadout || !startFocusButton || !pauseButton || !exitButton ||
-                        !confirmKeepGoingButton || !confirmStopButton || !rewardCloseButton ||
-                        !runFocusType || !runTarget || !runStateLabel || !runReadout || !runElapsed ||
-                        !runNote || !progressFill || !confirmCurrentTime || !confirmTimerStatus ||
-                        !confirmCompleteXp || !confirmCompleteCoins || !confirmCurrentXp ||
-                        !confirmCurrentCoins || !rewardStatusText || !rewardFocusType ||
-                        !rewardDurationText || !rewardXp || !rewardCoins || !saveForm ||
-                        !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds || !saveMode ||
-                        !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX || !layoutY ||
-                        !layoutWidth || !layoutHeight || !layoutScaleValue || !layoutXValue ||
-                        !layoutYValue || !layoutResetSelected || !layoutResetAll || !layoutCode) {
+                    if (!homeRoot || !homeFocusButton || !homeSleepButton || !setupPanel || !setupControls ||
+                        !startFocusButton || !closeFocusButton || !runPanel || !pauseButton || !exitButton ||
+                        !confirmDim || !confirmPanel || !confirmKeepGoingButton || !confirmStopButton ||
+                        !rewardDim || !rewardPanel || !rewardCloseButton || !focusTypeInput ||
+                        !durationSlider || !durationReadout || !runStateLabel || !runReadout ||
+                        !runElapsed || !runNote || !progressFill || !confirmCurrentTime ||
+                        !confirmTimerStatus || !confirmCompleteXp || !confirmCompleteCoins ||
+                        !confirmCurrentXp || !confirmCurrentCoins || !rewardStatusText ||
+                        !rewardFocusType || !rewardDurationText || !rewardXp || !rewardCoins ||
+                        !saveForm || !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds ||
+                        !saveMode || !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX ||
+                        !layoutY || !layoutWidth || !layoutHeight || !layoutScaleValue ||
+                        !layoutXValue || !layoutYValue || !layoutResetSelected || !layoutResetAll ||
+                        !layoutCode) {
                         return;
                     }
 
                     const stopThresholdSeconds = 60;
                     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-                    const layoutStorageKey = "pl-layout-stage-v1";
+                    const layoutStorageKey = "pl-home-canvas-layout-v1";
 
                     const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
                     const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
@@ -417,13 +404,19 @@
                     const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
 
                     const layoutAssets = {
-                        "start": { button: startFocusButton },
-                        "back": { button: closeFocusButton },
-                        "pause": { button: pauseButton },
-                        "exit": { button: exitButton },
-                        "keep-going": { button: confirmKeepGoingButton },
-                        "stop": { button: confirmStopButton },
-                        "gotcha": { button: rewardCloseButton }
+                        "home-focus": { element: homeFocusButton },
+                        "home-sleep": { element: homeSleepButton },
+                        "setup-panel": { element: setupPanel },
+                        "start": { element: startFocusButton },
+                        "back": { element: closeFocusButton },
+                        "run-panel": { element: runPanel },
+                        "pause": { element: pauseButton },
+                        "exit": { element: exitButton },
+                        "confirm-panel": { element: confirmPanel },
+                        "keep-going": { element: confirmKeepGoingButton },
+                        "stop": { element: confirmStopButton },
+                        "reward-panel": { element: rewardPanel },
+                        "gotcha": { element: rewardCloseButton }
                     };
 
                     let plannedSeconds = 300;
@@ -435,23 +428,8 @@
                     let completionTonePlayed = false;
                     let dragState = null;
 
-                    function getStageWidth() {
-                        return parseFloat(getComputedStyle(focusStage).getPropertyValue("--pl-stage-width")) || 428;
-                    }
-
-                    function getStageHeight() {
-                        return parseFloat(getComputedStyle(focusStage).getPropertyValue("--pl-stage-height")) || 926;
-                    }
-
-                    function getStageScale() {
-                        const rect = focusStageShell.getBoundingClientRect();
-                        return rect.width / getStageWidth();
-                    }
-
-                    function syncStageScale() {
-                        const rect = focusStageShell.getBoundingClientRect();
-                        const scale = rect.width / getStageWidth();
-                        focusStage.style.transform = `scale(${scale})`;
+                    function getHomeRect() {
+                        return homeRoot.getBoundingClientRect();
                     }
 
                     function setButtonLabel(button, text) {
@@ -515,61 +493,76 @@
                         durationReadout.textContent = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
                     }
 
-                    function showSetupLayer() {
-                        setupLayer.hidden = false;
-                        runLayer.hidden = true;
-                        confirmLayer.hidden = true;
-                        rewardLayer.hidden = true;
+                    function setHomeButtonsVisible(isVisible) {
+                        homeFocusButton.hidden = !isVisible;
+                        homeSleepButton.hidden = !isVisible;
                     }
 
-                    function showRunLayer() {
-                        setupLayer.hidden = true;
-                        runLayer.hidden = false;
-                        confirmLayer.hidden = true;
-                        rewardLayer.hidden = true;
+                    function setSetupVisible(isVisible) {
+                        setupPanel.hidden = !isVisible;
+                        startFocusButton.hidden = !isVisible;
+                        closeFocusButton.hidden = !isVisible;
                     }
 
-                    function showConfirmLayer() {
-                        confirmLayer.hidden = false;
+                    function setRunVisible(isVisible) {
+                        runPanel.hidden = !isVisible;
+                        pauseButton.hidden = !isVisible;
+                        exitButton.hidden = !isVisible;
                     }
 
-                    function hideConfirmLayer() {
-                        confirmLayer.hidden = true;
+                    function setConfirmVisible(isVisible) {
+                        confirmDim.hidden = !isVisible;
+                        confirmPanel.hidden = !isVisible;
+                        confirmKeepGoingButton.hidden = !isVisible;
+                        confirmStopButton.hidden = !isVisible;
                     }
 
-                    function showRewardLayer() {
-                        setupLayer.hidden = true;
-                        runLayer.hidden = true;
-                        confirmLayer.hidden = true;
-                        rewardLayer.hidden = false;
+                    function setRewardVisible(isVisible) {
+                        rewardDim.hidden = !isVisible;
+                        rewardPanel.hidden = !isVisible;
+                        rewardCloseButton.hidden = !isVisible;
                     }
 
-                    function openFocusOverlay() {
-                        focusOverlay.hidden = false;
-                        focusOverlay.setAttribute("aria-hidden", "false");
-                        showSetupLayer();
-                        syncStageScale();
-                        applyAllButtonLayouts();
-                        updateDurationReadout();
+                    function openFocusSetup() {
+                        setHomeButtonsVisible(false);
+                        setSetupVisible(true);
+                        setRunVisible(false);
+                        setConfirmVisible(false);
+                        setRewardVisible(false);
                     }
 
-                    function closeFocusOverlay() {
-                        focusOverlay.hidden = true;
-                        focusOverlay.setAttribute("aria-hidden", "true");
-                        hideConfirmLayer();
-                        rewardLayer.hidden = true;
+                    function returnToHome() {
+                        setHomeButtonsVisible(true);
+                        setSetupVisible(false);
+                        setRunVisible(false);
+                        setConfirmVisible(false);
+                        setRewardVisible(false);
                         resetRunState();
                     }
 
-                    function hydrateRewardOverlayFromDataset() {
-                        rewardStatusText.textContent = String(homeRoot.dataset.rewardCompleted || "").toLowerCase() === "true"
-                            ? "Completed"
-                            : "Incomplete";
+                    function startRunState() {
+                        setHomeButtonsVisible(false);
+                        setSetupVisible(true);
+                        setRunVisible(true);
+                        setConfirmVisible(false);
+                        setRewardVisible(false);
+                        setupPanel.classList.add("pl-setup-panel-locked");
+                    }
 
-                        rewardFocusType.textContent = homeRoot.dataset.rewardFocusType || "Focus";
-                        rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
-                        rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
-                        rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
+                    function showConfirmState() {
+                        setConfirmVisible(true);
+                    }
+
+                    function hideConfirmState() {
+                        setConfirmVisible(false);
+                    }
+
+                    function showRewardState() {
+                        setHomeButtonsVisible(false);
+                        setSetupVisible(false);
+                        setRunVisible(false);
+                        setConfirmVisible(false);
+                        setRewardVisible(true);
                     }
 
                     function resetRunState() {
@@ -580,15 +573,14 @@
                         pausedElapsedSeconds = 0;
                         startedAtMs = 0;
 
+                        setupPanel.classList.remove("pl-setup-panel-locked");
                         setButtonLabel(pauseButton, "Pause");
                         setButtonLabel(exitButton, "Cancel");
-                        exitButton.classList.remove("pl-stop-button-armed");
                         runStateLabel.textContent = "Time remaining";
                         runReadout.textContent = "00:05:00";
                         runElapsed.textContent = "00:00:00";
                         progressFill.style.width = "0%";
                         runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
-                        showSetupLayer();
                     }
 
                     function getElapsedSeconds() {
@@ -613,7 +605,7 @@
                         rewardCloseButton.disabled = isDisabled;
                     }
 
-                    function updateConfirmOverlay(elapsedSeconds) {
+                    function updateConfirmPanel(elapsedSeconds) {
                         const completePreview = calculateRewardPreview(plannedSeconds, true);
                         const currentPreview = calculateRewardPreview(elapsedSeconds, false);
 
@@ -623,6 +615,17 @@
                         confirmCompleteCoins.textContent = String(completePreview.coins);
                         confirmCurrentXp.textContent = String(currentPreview.xp);
                         confirmCurrentCoins.textContent = String(currentPreview.coins);
+                    }
+
+                    function hydrateRewardPanelFromDataset() {
+                        rewardStatusText.textContent = String(homeRoot.dataset.rewardCompleted || "").toLowerCase() === "true"
+                            ? "Completed"
+                            : "Incomplete";
+
+                        rewardFocusType.textContent = homeRoot.dataset.rewardFocusType || "Focus";
+                        rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
+                        rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
+                        rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
                     }
 
                     function playCompletionTone() {
@@ -680,10 +683,8 @@
                     function updateExitButton(elapsedSeconds) {
                         if (elapsedSeconds >= stopThresholdSeconds) {
                             setButtonLabel(exitButton, "Stop Focusing");
-                            exitButton.classList.add("pl-stop-button-armed");
                         } else {
                             setButtonLabel(exitButton, "Cancel");
-                            exitButton.classList.remove("pl-stop-button-armed");
                         }
                     }
 
@@ -702,8 +703,8 @@
 
                         updateExitButton(elapsedSeconds);
 
-                        if (!confirmLayer.hidden) {
-                            updateConfirmOverlay(elapsedSeconds);
+                        if (!confirmPanel.hidden) {
+                            updateConfirmPanel(elapsedSeconds);
                         }
 
                         if (isPaused) {
@@ -742,12 +743,12 @@
                         }
                     }
 
-                    function getAssetButton(assetKey) {
-                        return layoutAssets[assetKey]?.button || null;
+                    function getAssetElement(assetKey) {
+                        return layoutAssets[assetKey]?.element || null;
                     }
 
                     function readCssPxVar(varName, fallbackValue) {
-                        const raw = getComputedStyle(focusStage).getPropertyValue(varName).trim();
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
                         if (!raw) {
                             return fallbackValue;
                         }
@@ -757,7 +758,7 @@
                     }
 
                     function readCssNumberVar(varName, fallbackValue) {
-                        const raw = getComputedStyle(focusStage).getPropertyValue(varName).trim();
+                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
                         if (!raw) {
                             return fallbackValue;
                         }
@@ -799,7 +800,7 @@
                         };
 
                         saveLayoutState(state);
-                        applyButtonLayout(assetKey);
+                        applyAssetLayout(assetKey);
                         hydrateLayoutControls();
                     }
 
@@ -809,23 +810,23 @@
                         saveLayoutState(state);
                     }
 
-                    function applyButtonLayout(assetKey) {
-                        const button = getAssetButton(assetKey);
-                        if (!button) {
+                    function applyAssetLayout(assetKey) {
+                        const element = getAssetElement(assetKey);
+                        if (!element) {
                             return;
                         }
 
                         const state = getMergedLayoutState(assetKey);
 
-                        button.style.left = `${state.x}px`;
-                        button.style.top = `${state.y}px`;
-                        button.style.width = `${state.width}px`;
-                        button.style.height = `${state.height}px`;
-                        button.style.transform = `scale(${state.scale / 100})`;
+                        element.style.left = `${state.x}px`;
+                        element.style.top = `${state.y}px`;
+                        element.style.width = `${state.width}px`;
+                        element.style.height = `${state.height}px`;
+                        element.style.transform = `scale(${state.scale / 100})`;
                     }
 
-                    function applyAllButtonLayouts() {
-                        Object.keys(layoutAssets).forEach(applyButtonLayout);
+                    function applyAllAssetLayouts() {
+                        Object.keys(layoutAssets).forEach(applyAssetLayout);
                         refreshLayoutSelection();
                     }
 
@@ -833,28 +834,29 @@
                         const selectedAssetKey = layoutAssetSelect.value;
 
                         Object.entries(layoutAssets).forEach(([assetKey, config]) => {
-                            config.button.classList.toggle("pl-layout-selected", layoutModeEnabled && layoutAssetSelect.value === assetKey);
+                            config.element.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
                         });
                     }
 
                     function updateLayoutSliderBounds(assetKey) {
                         const state = getMergedLayoutState(assetKey);
+                        const rect = getHomeRect();
 
                         layoutScale.min = "20";
                         layoutScale.max = "250";
 
                         layoutX.min = String(Math.round(-state.width));
-                        layoutX.max = String(Math.round(getStageWidth() + state.width));
+                        layoutX.max = String(Math.round(rect.width + state.width));
 
                         layoutY.min = String(Math.round(-state.height));
-                        layoutY.max = String(Math.round(getStageHeight() + state.height));
+                        layoutY.max = String(Math.round(rect.height + state.height));
                     }
 
                     function updateLayoutCodePreview(assetKey) {
                         const state = getMergedLayoutState(assetKey);
 
                         layoutCode.value =
-        `.pl-focus-stage {
+        `.pl-home-screen {
             --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
             --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
             --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
@@ -901,18 +903,17 @@
                         }
 
                         const state = getMergedLayoutState(assetKey);
-                        const stageRect = focusStage.getBoundingClientRect();
-                        const stageScale = getStageScale();
+                        const rect = getHomeRect();
 
                         dragState = {
                             assetKey,
                             pointerId: event.pointerId,
-                            offsetX: ((event.clientX - stageRect.left) / stageScale) - state.x,
-                            offsetY: ((event.clientY - stageRect.top) / stageScale) - state.y
+                            offsetX: event.clientX - rect.left - state.x,
+                            offsetY: event.clientY - rect.top - state.y
                         };
 
                         try {
-                            getAssetButton(assetKey)?.setPointerCapture(event.pointerId);
+                            getAssetElement(assetKey)?.setPointerCapture(event.pointerId);
                         } catch {
                         }
 
@@ -925,12 +926,11 @@
                             return;
                         }
 
-                        const stageRect = focusStage.getBoundingClientRect();
-                        const stageScale = getStageScale();
+                        const rect = getHomeRect();
 
                         setMergedLayoutState(dragState.assetKey, {
-                            x: Math.round(((event.clientX - stageRect.left) / stageScale) - dragState.offsetX),
-                            y: Math.round(((event.clientY - stageRect.top) / stageScale) - dragState.offsetY)
+                            x: Math.round(event.clientX - rect.left - dragState.offsetX),
+                            y: Math.round(event.clientY - rect.top - dragState.offsetY)
                         });
 
                         event.preventDefault();
@@ -941,11 +941,11 @@
                             return;
                         }
 
-                        const button = getAssetButton(dragState.assetKey);
+                        const element = getAssetElement(dragState.assetKey);
 
-                        if (button && dragState.pointerId === event.pointerId) {
+                        if (element && dragState.pointerId === event.pointerId) {
                             try {
-                                button.releasePointerCapture(dragState.pointerId);
+                                element.releasePointerCapture(dragState.pointerId);
                             } catch {
                             }
                         }
@@ -955,18 +955,22 @@
 
                     function resetSelectedLayoutAsset() {
                         clearStoredLayoutState(layoutAssetSelect.value);
-                        applyButtonLayout(layoutAssetSelect.value);
+                        applyAssetLayout(layoutAssetSelect.value);
                         hydrateLayoutControls();
                     }
 
                     function resetAllLayoutAssets() {
                         saveLayoutState({});
-                        applyAllButtonLayouts();
+                        applyAllAssetLayouts();
                         hydrateLayoutControls();
                     }
 
-                    openFocusButton.addEventListener("click", function () {
-                        openFocusOverlay();
+                    homeFocusButton.addEventListener("click", function () {
+                        if (layoutModeEnabled && layoutAssetSelect.value === "home-focus") {
+                            return;
+                        }
+
+                        openFocusSetup();
                     });
 
                     closeFocusButton.addEventListener("click", function () {
@@ -974,15 +978,7 @@
                             return;
                         }
 
-                        closeFocusOverlay();
-                    });
-
-                    focusBackLink.addEventListener("click", function () {
-                        closeFocusOverlay();
-                    });
-
-                    runHomeLink.addEventListener("click", function () {
-                        closeFocusOverlay();
+                        returnToHome();
                     });
 
                     durationSlider.addEventListener("input", updateDurationReadout);
@@ -1003,15 +999,25 @@
                         isSubmitting = false;
                         completionTonePlayed = false;
 
-                        runFocusType.textContent = focusType;
-                        runTarget.textContent = formatDurationSelection(durationMinutes);
+                        setupPanel.classList.add("pl-setup-panel-locked");
+                        runStateLabel.textContent = "Time remaining";
+                        setButtonLabel(pauseButton, "Pause");
+                        setButtonLabel(exitButton, "Cancel");
 
-                        showRunLayer();
+                        runPanel.hidden = false;
+                        pauseButton.hidden = false;
+                        exitButton.hidden = false;
+                        startFocusButton.hidden = true;
+                        closeFocusButton.hidden = true;
+
+                        runPanel.dataset.focusType = focusType;
+                        runPanel.dataset.targetText = formatDurationSelection(durationMinutes);
+
                         updateUi();
                     });
 
                     pauseButton.addEventListener("click", function () {
-                        if (!isRunning || isSubmitting || !confirmLayer.hidden || (layoutModeEnabled && layoutAssetSelect.value === "pause")) {
+                        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutModeEnabled && layoutAssetSelect.value === "pause")) {
                             return;
                         }
 
@@ -1035,12 +1041,12 @@
                         const elapsedSeconds = getElapsedSeconds();
 
                         if (elapsedSeconds < stopThresholdSeconds) {
-                            closeFocusOverlay();
+                            returnToHome();
                             return;
                         }
 
-                        updateConfirmOverlay(elapsedSeconds);
-                        showConfirmLayer();
+                        updateConfirmPanel(elapsedSeconds);
+                        showConfirmState();
                     });
 
                     confirmKeepGoingButton.addEventListener("click", function () {
@@ -1048,7 +1054,7 @@
                             return;
                         }
 
-                        hideConfirmLayer();
+                        hideConfirmState();
                     });
 
                     confirmStopButton.addEventListener("click", function () {
@@ -1068,8 +1074,8 @@
                     });
 
                     document.addEventListener("keydown", function (event) {
-                        if (event.key === "Escape" && !confirmLayer.hidden && !isSubmitting) {
-                            hideConfirmLayer();
+                        if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
+                            hideConfirmState();
                         }
                     });
 
@@ -1077,16 +1083,15 @@
                     window.addEventListener("pointerup", endDrag);
                     window.addEventListener("pointercancel", endDrag);
                     window.addEventListener("resize", function () {
-                        syncStageScale();
-                        applyAllButtonLayouts();
+                        applyAllAssetLayouts();
                     });
 
                     Object.entries(layoutAssets).forEach(([assetKey, config]) => {
-                        config.button.addEventListener("pointerdown", function (event) {
+                        config.element.addEventListener("pointerdown", function (event) {
                             beginDrag(assetKey, event);
                         });
 
-                        config.button.addEventListener("click", function (event) {
+                        config.element.addEventListener("click", function (event) {
                             if (layoutModeEnabled && layoutAssetSelect.value === assetKey) {
                                 event.preventDefault();
                                 event.stopPropagation();
@@ -1106,19 +1111,18 @@
                         layoutResetAll.addEventListener("click", resetAllLayoutAssets);
                     }
 
-                    syncStageScale();
-                    applyAllButtonLayouts();
+                    applyAllAssetLayouts();
                     hydrateLayoutControls();
                     updateDurationReadout();
+                    returnToHome();
 
                     if (shouldShowRewardOverlay) {
-                        hydrateRewardOverlayFromDataset();
-                        openFocusOverlay();
-                        showRewardLayer();
+                        hydrateRewardPanelFromDataset();
+                        showRewardState();
                     }
 
                     window.setInterval(updateUi, 250);
                 })();
     </script>
 }
-<!-- SEGMENT B END — Focus Stage Scripts -->
+<!-- SEGMENT B END — Home Canvas Scripts -->
