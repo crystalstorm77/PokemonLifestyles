@@ -17,6 +17,8 @@
      data-reward-completed="@Model.RewardCompleted.ToString().ToLowerInvariant()"
      data-reward-xp="@Model.RewardXp"
      data-reward-coins="@Model.RewardCoins">
+    <div class="pl-home-scene-art" aria-hidden="true"></div>
+
     <section class="pl-card pl-home-card">
         <p class="pl-eyebrow">Pokemon Lifestyles</p>
         <h1 class="pl-title">Home</h1>
@@ -82,7 +84,9 @@
         <div class="pl-focus-overlay-backdrop"></div>
 
         <div class="pl-focus-shell">
-            <section class="pl-card pl-focus-panel" id="pl-focus-setup-panel">
+            <div class="pl-focus-shell-art" aria-hidden="true"></div>
+
+            <section class="pl-card pl-focus-panel pl-focus-panel-setup" id="pl-focus-setup-panel">
                 <div class="pl-card-header">
                     <button type="button" class="pl-link-button" id="pl-focus-back-button">← Back</button>
                     <span class="pl-badge">Countdown</span>
@@ -134,12 +138,17 @@
                 </div>
 
                 <div class="pl-button-stack">
-                    <button type="button" class="pl-primary-button" id="pl-start-focus-button">Start</button>
-                    <button type="button" class="pl-secondary-button" id="pl-close-focus-button">Back</button>
+                    <button type="button" class="pl-primary-button pl-art-button pl-button-start" id="pl-start-focus-button">
+                        <span class="pl-button-label">Start</span>
+                    </button>
+
+                    <button type="button" class="pl-secondary-button pl-art-button pl-button-back" id="pl-close-focus-button">
+                        <span class="pl-button-label">Back</span>
+                    </button>
                 </div>
             </section>
 
-            <section class="pl-card pl-focus-panel" id="pl-focus-run-panel" hidden>
+            <section class="pl-card pl-focus-panel pl-focus-panel-run" id="pl-focus-run-panel" hidden>
                 <div class="pl-card-header">
                     <button type="button" class="pl-link-button" id="pl-run-home-button">← Home</button>
                     <span class="pl-badge">Countdown</span>
@@ -177,8 +186,13 @@
                 </div>
 
                 <div class="pl-run-actions pl-run-actions-two">
-                    <button type="button" class="pl-primary-button" id="pl-pause-button">Pause</button>
-                    <button type="button" class="pl-secondary-button" id="pl-exit-button">Cancel</button>
+                    <button type="button" class="pl-primary-button pl-art-button pl-button-pause" id="pl-pause-button">
+                        <span class="pl-button-label">Pause</span>
+                    </button>
+
+                    <button type="button" class="pl-secondary-button pl-art-button pl-button-exit" id="pl-exit-button">
+                        <span class="pl-button-label">Cancel</span>
+                    </button>
                 </div>
 
                 <p class="pl-field-hint" id="pl-run-note">
@@ -189,7 +203,7 @@
             <div class="pl-run-overlay" id="pl-confirm-overlay" hidden aria-hidden="true">
                 <div class="pl-run-overlay-backdrop"></div>
 
-                <div class="pl-run-overlay-card" role="dialog" aria-modal="true" aria-labelledby="pl-confirm-title">
+                <div class="pl-run-overlay-card pl-focus-panel-confirm" role="dialog" aria-modal="true" aria-labelledby="pl-confirm-title">
                     <p class="pl-eyebrow">Stop Focusing</p>
                     <h2 class="pl-section-title" id="pl-confirm-title">Are you sure?</h2>
                     <p class="pl-subtitle pl-overlay-subtitle">
@@ -239,8 +253,13 @@
                     </div>
 
                     <div class="pl-run-actions pl-run-actions-two">
-                        <button type="button" class="pl-secondary-button" id="pl-confirm-keep-going">Keep Going</button>
-                        <button type="button" class="pl-primary-button" id="pl-confirm-stop">Stop Focusing</button>
+                        <button type="button" class="pl-secondary-button pl-art-button pl-button-keep-going" id="pl-confirm-keep-going">
+                            <span class="pl-button-label">Keep Going</span>
+                        </button>
+
+                        <button type="button" class="pl-primary-button pl-art-button pl-button-stop" id="pl-confirm-stop">
+                            <span class="pl-button-label">Stop Focusing</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -250,7 +269,7 @@
     <div class="pl-run-overlay" id="pl-reward-overlay" hidden aria-hidden="true">
         <div class="pl-run-overlay-backdrop"></div>
 
-        <div class="pl-run-overlay-card pl-reward-overlay-card" role="dialog" aria-modal="true" aria-labelledby="pl-reward-title">
+        <div class="pl-run-overlay-card pl-reward-overlay-card pl-focus-panel-reward" role="dialog" aria-modal="true" aria-labelledby="pl-reward-title">
             <p class="pl-eyebrow">Rewards</p>
             <h2 class="pl-section-title" id="pl-reward-title">Rewards</h2>
             <p class="pl-subtitle pl-overlay-subtitle">
@@ -273,7 +292,9 @@
             </div>
 
             <div class="pl-button-stack">
-                <button type="button" class="pl-primary-button" id="pl-reward-close-button">Gotcha!</button>
+                <button type="button" class="pl-primary-button pl-art-button pl-button-gotcha" id="pl-reward-close-button">
+                    <span class="pl-button-label">Gotcha!</span>
+                </button>
             </div>
         </div>
     </div>
@@ -286,6 +307,7 @@
     </form>
 </div>
 <!-- SECTION A END — Home Screen + Focus Overlay -->
+
 @section Scripts {
     <!-- SECTION B START — Home Screen Scripts -->
     <script>

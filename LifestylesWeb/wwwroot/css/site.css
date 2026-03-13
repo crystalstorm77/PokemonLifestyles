@@ -346,11 +346,40 @@ body {
 
 /* SECTION E START — Focus Setup + Run */
 .pl-home-screen {
+    --pl-home-scene-image: none;
+    --pl-focus-shell-image: none;
+    --pl-focus-setup-panel-image: none;
+    --pl-focus-run-panel-image: none;
+    --pl-focus-confirm-panel-image: none;
+    --pl-focus-reward-panel-image: none;
+    --pl-btn-start-image: url('/assets/ui/buttons/start.png');
+    --pl-btn-back-image: none;
+    --pl-btn-pause-image: none;
+    --pl-btn-exit-image: none;
+    --pl-btn-keep-going-image: none;
+    --pl-btn-stop-image: none;
+    --pl-btn-gotcha-image: none;
     padding-bottom: 7.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.pl-home-scene-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--pl-home-scene-image);
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: cover;
+    opacity: 1;
 }
 
 .pl-home-card,
 .pl-dev-card {
+    position: relative;
+    z-index: 1;
     margin-bottom: 1rem;
 }
 
@@ -380,19 +409,54 @@ body {
     width: min(100%, 430px);
 }
 
-.pl-focus-panel {
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
+.pl-focus-shell-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--pl-focus-shell-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
 }
 
-    .pl-focus-panel .pl-button-stack {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+.pl-focus-panel {
+    position: relative;
+    z-index: 1;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 100% 100%;
+}
 
-        .pl-focus-panel .pl-button-stack > *,
-        .pl-run-actions-two > * {
-            min-width: 0;
-        }
+.pl-focus-panel-setup {
+    background-image: var(--pl-focus-setup-panel-image);
+}
+
+.pl-focus-panel-run {
+    background-image: var(--pl-focus-run-panel-image);
+}
+
+.pl-focus-panel-confirm {
+    background-image: var(--pl-focus-confirm-panel-image);
+}
+
+.pl-focus-panel-reward {
+    background-image: var(--pl-focus-reward-panel-image);
+}
+
+.pl-focus-panel .pl-button-stack,
+.pl-run-actions-two {
+    display: flex;
+    gap: 0.75rem;
+}
+
+    .pl-focus-panel .pl-button-stack > *,
+    .pl-run-actions-two > * {
+        flex: 1 1 0;
+        min-width: 0;
+    }
 
 .pl-mode-grid {
     display: grid;
@@ -547,14 +611,7 @@ body {
 }
 
 .pl-run-actions {
-    display: grid;
-    gap: 0.75rem;
     margin-top: 1rem;
-}
-
-.pl-run-actions-two {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
 }
 
 .pl-stop-button-armed {
@@ -591,10 +648,63 @@ body {
     padding: 1.2rem;
     background: #ffffff;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 100% 100%;
 }
 
 .pl-overlay-subtitle {
     margin-top: 0.5rem;
+}
+
+.pl-art-button {
+    position: relative;
+    overflow: hidden;
+}
+
+    .pl-art-button::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: 100% 100%;
+        opacity: 1;
+    }
+
+    .pl-art-button .pl-button-label {
+        position: relative;
+        z-index: 1;
+    }
+
+.pl-button-start::before {
+    background-image: var(--pl-btn-start-image);
+}
+
+.pl-button-back::before {
+    background-image: var(--pl-btn-back-image);
+}
+
+.pl-button-pause::before {
+    background-image: var(--pl-btn-pause-image);
+}
+
+.pl-button-exit::before {
+    background-image: var(--pl-btn-exit-image);
+}
+
+.pl-button-keep-going::before {
+    background-image: var(--pl-btn-keep-going-image);
+}
+
+.pl-button-stop::before {
+    background-image: var(--pl-btn-stop-image);
+}
+
+.pl-button-gotcha::before {
+    background-image: var(--pl-btn-gotcha-image);
 }
 
 .pl-reward-compare-grid,
@@ -629,8 +739,14 @@ body {
     }
 
 .pl-reward-overlay-card .pl-button-stack {
-    grid-template-columns: 1fr;
+    display: flex;
+    gap: 0.75rem;
 }
+
+    .pl-reward-overlay-card .pl-button-stack > * {
+        flex: 1 1 0;
+        min-width: 0;
+    }
 
 .pl-reward-value-large {
     display: block;

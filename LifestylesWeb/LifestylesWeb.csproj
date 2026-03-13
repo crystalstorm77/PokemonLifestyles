@@ -10,4 +10,11 @@
     <ProjectReference Include="..\LifestyleCore\LifestyleCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\Assets\UI\Backgrounds\" />
+    <Folder Include="wwwroot\Assets\UI\Buttons\" />
+    <Folder Include="wwwroot\Assets\UI\Icons\" />
+    <Folder Include="wwwroot\Assets\UI\Panels\" />
+  </ItemGroup>
+
 </Project>
