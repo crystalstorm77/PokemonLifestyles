@@ -316,7 +316,11 @@
         <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
     </form>
 </div>
+<script src="~/js/pl-viewport-debug.js" asp-append-version="true"></script>
 <!-- SEGMENT A END — Home Canvas Markup -->
+
+
+
 <!-- SEGMENT B START — Home Canvas Scripts -->
 @section Scripts {
     <script>
@@ -1365,7 +1369,7 @@
 
                     function hydrateLayoutControls() {
                         const assetKey = layoutAssetSelect.value;
-                        const state = getEffectiveLayoutState(assetKey);
+                        const state = getEffectiveLayoutStatsegmenmte(assetKey);
                         const resolvedHeight = getResolvedHeight(assetKey, state);
                         const ratioLocked = !!artMetrics[assetKey];
 
