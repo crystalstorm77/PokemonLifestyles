@@ -869,6 +869,7 @@
                         const state = getEffectiveLayoutState("slider");
                         const groupWidth = Math.max(20, state.width);
                         const groupHeight = getResolvedHeight("slider", state);
+
                         const sliderMetric = artMetrics["slider"];
                         const nibMetric = artMetrics["slider-nib-art"];
 
@@ -877,44 +878,44 @@
                         const value = parseInt(durationSlider.value || "5", 10);
                         const progressRatio = max <= min ? 0 : (value - min) / (max - min);
 
+                        const trackLeft = sliderMetric && sliderMetric.hasVisibleBounds
+                            ? groupWidth * sliderMetric.visibleLeftRatio
+                            : 0;
+
+                        const trackWidth = sliderMetric && sliderMetric.hasVisibleBounds
+                            ? groupWidth * sliderMetric.visibleWidthRatio
+                            : groupWidth;
+
+                        const targetCenter = trackLeft + (progressRatio * trackWidth);
+
+                        const defaultNibCenter = nibMetric && nibMetric.hasVisibleBounds
+                            ? groupWidth * (nibMetric.visibleLeftRatio + (nibMetric.visibleWidthRatio / 2))
+                            : groupWidth / 2;
+
+                        const translateX = Math.round(targetCenter - defaultNibCenter);
+                        const fillWidth = Math.max(0, Math.min(groupWidth, Math.round(targetCenter)));
+
                         sliderGroup.style.left = `${state.x}px`;
                         sliderGroup.style.top = `${state.y}px`;
                         sliderGroup.style.width = `${groupWidth}px`;
                         sliderGroup.style.height = `${groupHeight}px`;
                         sliderGroup.style.transform = `scale(${state.scale / 100})`;
 
-                        sliderTrackShell.style.left = "0px";
-                        sliderTrackShell.style.top = "0px";
                         sliderTrackShell.style.width = `${groupWidth}px`;
                         sliderTrackShell.style.height = `${groupHeight}px`;
 
                         sliderTrackEmptyArt.style.width = `${groupWidth}px`;
                         sliderTrackEmptyArt.style.height = `${groupHeight}px`;
 
-                        sliderFillShell.style.left = "0px";
-                        sliderFillShell.style.top = "0px";
-                        sliderFillShell.style.width = `${Math.round(groupWidth * progressRatio)}px`;
+                        sliderFillShell.style.width = `${fillWidth}px`;
                         sliderFillShell.style.height = `${groupHeight}px`;
 
                         sliderFillArt.style.width = `${groupWidth}px`;
                         sliderFillArt.style.height = `${groupHeight}px`;
 
-                        sliderNibVisual.style.left = "0px";
-                        sliderNibVisual.style.top = "0px";
                         sliderNibVisual.style.width = `${groupWidth}px`;
                         sliderNibVisual.style.height = `${groupHeight}px`;
-
-                        if (nibMetric && nibMetric.hasVisibleBounds) {
-                            const visibleWidth = groupWidth * nibMetric.visibleWidthRatio;
-                            const defaultLeft = groupWidth * nibMetric.visibleLeftRatio;
-                            const targetLeft = progressRatio * Math.max(0, groupWidth - visibleWidth);
-                            const translateX = Math.round(targetLeft - defaultLeft);
-                            sliderNibVisual.style.transform = `translateX(${translateX}px)`;
-                        } else if (sliderMetric && sliderMetric.hasVisibleBounds) {
-                            sliderNibVisual.style.transform = `translateX(${Math.round((progressRatio - 0.5) * groupWidth)}px)`;
-                        } else {
-                            sliderNibVisual.style.transform = "translateX(0px)";
-                        }
+                        sliderNibVisual.style.transform = `translateX(${translateX}px)`;
 
                         durationSlider.style.pointerEvents = layoutModeEnabled ? "none" : "auto";
                     }
@@ -1394,13 +1395,14 @@
                     }
 
                     function pushLayoutControlValues() {
-                        const assetKey = layoutAssetSelect.value;
                         const partial = {
                             scale: parseInt(layoutScale.value || "100", 10),
                             x: parseInt(layoutX.value || "0", 10),
                             y: parseInt(layoutY.value || "0", 10),
                             width: parseInt(layoutWidth.value || "170", 10)
                         };
+
+                        const assetKey = layoutAssetSelect.value;
 
                         if (!artMetrics[assetKey]) {
                             partial.height = parseInt(layoutHeight.value || "56", 10);

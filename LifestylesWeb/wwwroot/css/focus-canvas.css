@@ -2,18 +2,26 @@
 html,
 body {
     margin: 0;
+    width: 100%;
     min-height: 100%;
-    background: #9aa5b1;
+    height: 100%;
+    background: #d9e8fb;
 }
 
 .app-shell {
-    min-height: 100svh;
+    width: 100%;
+    min-height: 100dvh;
+    height: 100dvh;
+    display: flex;
+    justify-content: center;
+    background: #d9e8fb;
 }
 
 .pl-home-screen {
     position: relative;
     width: min(100vw, 428px);
-    min-height: 100svh;
+    height: 100dvh;
+    min-height: 100dvh;
     margin: 0 auto;
     overflow: hidden;
     background: radial-gradient(circle at top, rgba(255, 255, 255, 0.28), transparent 24%), radial-gradient(circle at bottom, rgba(255, 255, 255, 0.18), transparent 30%), #d9e8fb;
@@ -332,10 +340,21 @@ body {
 
 .pl-slider-track-shell,
 .pl-slider-fill-shell,
-.pl-slider-nib-visual,
 .pl-slider-input-overlay {
     position: absolute;
     inset: 0;
+}
+
+.pl-slider-nib-visual {
+    position: absolute;
+    inset: 0;
+    background-color: transparent;
+    background-image: var(--pl-slider-nib-image), var(--pl-slider-nib-fallback);
+    background-repeat: no-repeat, no-repeat;
+    background-position: left top, left top;
+    background-size: 100% 100%, 100% 100%;
+    pointer-events: none;
+    transform-origin: top left;
 }
 
 .pl-slider-track-shell,
@@ -360,16 +379,6 @@ body {
     background-repeat: no-repeat, no-repeat;
     background-position: left center, left center;
     background-size: 100% 100%, 100% 100%;
-}
-
-.pl-slider-nib-visual {
-    background-color: transparent;
-    background-image: var(--pl-slider-nib-image), var(--pl-slider-nib-fallback);
-    background-repeat: no-repeat, no-repeat;
-    background-position: left top, left top;
-    background-size: 100% 100%, 100% 100%;
-    pointer-events: none;
-    transform-origin: top left;
 }
 
 .pl-slider-input-overlay {
