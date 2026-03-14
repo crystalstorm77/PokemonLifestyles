@@ -1,4 +1,9 @@
 ﻿/* SEGMENT A START — Home Canvas Styles */
+:root {
+    --pl-home-screen-width: 428px;
+    --pl-home-screen-height: 926px;
+}
+
 html,
 body {
     margin: 0;
@@ -30,11 +35,14 @@ body {
 
 .pl-home-screen {
     position: relative;
-    width: 428px;
-    height: 926px;
-    min-height: 926px;
-    max-width: 428px;
-    margin: 0 auto;
+    width: var(--pl-home-screen-width);
+    height: var(--pl-home-screen-height);
+    min-height: var(--pl-home-screen-height);
+    max-width: var(--pl-home-screen-width);
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: calc(0px - env(safe-area-inset-top, 0px));
     overflow: hidden;
     touch-action: pinch-zoom;
     background: radial-gradient(circle at top, rgba(255, 255, 255, 0.28), transparent 24%), radial-gradient(circle at bottom, rgba(255, 255, 255, 0.18), transparent 30%), #d9e8fb;
