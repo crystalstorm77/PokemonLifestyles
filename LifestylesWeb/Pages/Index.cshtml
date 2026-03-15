@@ -344,6 +344,7 @@
                     const sliderFillShell = document.getElementById("pl-slider-fill-shell");
                     const sliderFillArt = document.getElementById("pl-slider-fill-art");
                     const sliderNibVisual = document.getElementById("pl-slider-nib-visual");
+
                     const startFocusButton = document.getElementById("pl-start-focus-button");
                     const closeFocusButton = document.getElementById("pl-close-focus-button");
 
@@ -498,6 +499,29 @@
                         return homeRoot.getBoundingClientRect();
                     }
 
+                    function getHomeDesignWidth() {
+                        return readCssPxVar("--pl-home-screen-width", homeRoot.clientWidth || 428);
+                    }
+
+                    function getHomeDesignHeight() {
+                        return readCssPxVar("--pl-home-screen-height", homeRoot.clientHeight || 926);
+                    }
+
+                    function getHomeStageScale() {
+                        const parsed = parseFloat(homeRoot.dataset.stageScale || "1");
+                        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+                    }
+
+                    function clientToHomeDesignPoint(clientX, clientY) {
+                        const rect = getHomeRect();
+                        const stageScale = getHomeStageScale();
+
+                        return {
+                            x: (clientX - rect.left) / stageScale,
+                            y: (clientY - rect.top) / stageScale
+                        };
+                    }
+
                     function readCssPxVar(varName, fallbackValue) {
                         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
 
@@ -618,35 +642,48 @@
                             canvas.height = image.naturalHeight;
 
                             const context = canvas.getContext("2d", { willReadFrequently: true });
+
                             if (!context) {
                                 return metrics;
                             }
 
                             context.drawImage(image, 0, 0);
-                            const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
 
-                            let minX = canvas.width;
-                            let minY = canvas.height;
+                            const imageData = context.getImageData(0, 0, image.naturalWidth, image.naturalHeight).data;
+
+                            let minX = image.naturalWidth;
+                            let minY = image.naturalHeight;
                             let maxX = -1;
                             let maxY = -1;
 
-                            for (let y = 0; y < canvas.height; y += 1) {
-                                for (let x = 0; x < canvas.width; x += 1) {
-                                    const alpha = data[((y * canvas.width) + x) * 4 + 3];
+                            for (let y = 0; y < image.naturalHeight; y += 1) {
+                                for (let x = 0; x < image.naturalWidth; x += 1) {
+                                    const alpha = imageData[((y * image.naturalWidth) + x) * 4 + 3];
                                     if (alpha > 0) {
-                                        if (x < minX) minX = x;
-                                        if (y < minY) minY = y;
-                                        if (x > maxX) maxX = x;
-                                        if (y > maxY) maxY = y;
+                                        if (x < minX) {
+                                            minX = x;
+                                        }
+
+                                        if (y < minY) {
+                                            minY = y;
+                                        }
+
+                                        if (x > maxX) {
+                                            maxX = x;
+                                        }
+
+                                        if (y > maxY) {
+                                            maxY = y;
+                                        }
                                     }
                                 }
                             }
 
                             if (maxX >= minX && maxY >= minY) {
-                                metrics.visibleLeftRatio = minX / canvas.width;
-                                metrics.visibleTopRatio = minY / canvas.height;
-                                metrics.visibleWidthRatio = (maxX - minX + 1) / canvas.width;
-                                metrics.visibleHeightRatio = (maxY - minY + 1) / canvas.height;
+                                metrics.visibleLeftRatio = minX / image.naturalWidth;
+                                metrics.visibleTopRatio = minY / image.naturalHeight;
+                                metrics.visibleWidthRatio = (maxX - minX + 1) / image.naturalWidth;
+                                metrics.visibleHeightRatio = (maxY - minY + 1) / image.naturalHeight;
                                 metrics.hasVisibleBounds = true;
                             }
                         } catch {
@@ -655,42 +692,67 @@
                         return metrics;
                     }
 
-                    function loadArtMetrics(assetKey) {
-                        const varName = artImageVars[assetKey];
-                        if (!varName) {
-                            return;
-                        }
+                    function primeArtMetrics() {
+                        Object.entries(artImageVars).forEach(([assetKey, cssVar]) => {
+                            const url = readCssUrlVar(cssVar);
+                            if (!url) {
+                                return;
+                            }
 
-                        const url = readCssUrlVar(varName);
+                            const image = new Image();
+                            image.decoding = "async";
+                            image.onload = function () {
+                                artMetrics[assetKey] = analyzeImageMetrics(image);
 
-                        if (!url) {
-                            delete artMetrics[assetKey];
-                            applyPanelArtStates();
-                            applyAssetLayout(assetKey);
-                            return;
-                        }
+                                if (assetKey === "slider" || assetKey === "slider-nib-art") {
+                                    updateSliderVisuals();
+                                }
 
-                        const image = new Image();
-
-                        image.onload = function () {
-                            artMetrics[assetKey] = analyzeImageMetrics(image);
-                            applyPanelArtStates();
-                            applyAssetLayout(assetKey);
-                            hydrateLayoutControls();
-                        };
-
-                        image.onerror = function () {
-                            delete artMetrics[assetKey];
-                            applyPanelArtStates();
-                            applyAssetLayout(assetKey);
-                            hydrateLayoutControls();
-                        };
-
-                        image.src = url;
+                                if (layoutModeEnabled) {
+                                    hydrateLayoutControls();
+                                }
+                            };
+                            image.src = url;
+                        });
                     }
 
-                    function primeArtMetrics() {
-                        Object.keys(artImageVars).forEach(loadArtMetrics);
+                    function setButtonLabel(button, label) {
+                        const labelElement = button.querySelector(".pl-button-label");
+                        if (labelElement) {
+                            labelElement.textContent = label;
+                        }
+                    }
+
+                    function formatClock(totalSeconds) {
+                        const clamped = Math.max(0, Math.floor(totalSeconds));
+                        const hours = String(Math.floor(clamped / 3600)).padStart(2, "0");
+                        const minutes = String(Math.floor((clamped % 3600) / 60)).padStart(2, "0");
+                        const seconds = String(clamped % 60).padStart(2, "0");
+                        return `${hours}:${minutes}:${seconds}`;
+                    }
+
+                    function formatDurationSelection(totalMinutes) {
+                        const minutes = Math.max(1, Math.floor(totalMinutes));
+                        if (minutes === 1) {
+                            return "1 minute";
+                        }
+
+                        return `${minutes} minutes`;
+                    }
+
+                    function calculateRewardPreview(elapsedSeconds, isComplete) {
+                        const roundedMinutes = Math.max(0, Math.round(elapsedSeconds / 60));
+                        const baseXp = Math.round(roundedMinutes * rewardXpPerMinute);
+                        const multiplier = isComplete ? rewardSleepMultiplier : rewardIncompleteMultiplier;
+                        const xp = Math.max(0, Math.round(baseXp * multiplier));
+                        const coins = rewardWindowEligible
+                            ? Math.max(0, Math.round(xp / 100))
+                            : 0;
+
+                        return {
+                            xp,
+                            coins
+                        };
                     }
 
                     function applyPanelArtStates() {
@@ -700,69 +762,14 @@
                         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
                     }
 
-                    function setButtonLabel(button, text) {
-                        let label = button.querySelector(".pl-button-label");
-
-                        if (!label) {
-                            label = document.createElement("span");
-                            label.className = "pl-button-label";
-                            button.replaceChildren(label);
-                        }
-
-                        label.textContent = text;
-                    }
-
-                    function formatClock(totalSeconds) {
-                        totalSeconds = Math.max(0, Math.floor(totalSeconds));
-
-                        const hours = Math.floor(totalSeconds / 3600);
-                        const minutes = Math.floor((totalSeconds % 3600) / 60);
-                        const seconds = totalSeconds % 60;
-
-                        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-                    }
-
-                    function formatDurationSelection(totalMinutes) {
-                        totalMinutes = Math.max(5, Math.min(120, totalMinutes));
-
-                        const hours = Math.floor(totalMinutes / 60);
-                        const minutes = totalMinutes % 60;
-
-                        if (hours === 0) {
-                            return `${totalMinutes} minutes`;
-                        }
-
-                        if (minutes === 0) {
-                            return hours === 1 ? "1 hour" : `${hours} hours`;
-                        }
-
-                        return hours === 1
-                            ? `1 hour ${minutes} minutes`
-                            : `${hours} hours ${minutes} minutes`;
-                    }
-
-                    function calculateRewardPreview(durationSeconds, completed) {
-                        const rewardMinutes = Math.floor(Math.max(0, durationSeconds) / 60);
-
-                        if (!rewardWindowEligible || rewardMinutes <= 0) {
-                            return { xp: 0, coins: 0 };
-                        }
-
-                        const xpCompletionMultiplier = completed ? 1.0 : rewardIncompleteMultiplier;
-                        const coinCompletionMultiplier = completed ? 1.0 : 0.25;
-
-                        return {
-                            xp: Math.floor(rewardMinutes * rewardXpPerMinute * xpCompletionMultiplier * rewardSleepMultiplier),
-                            coins: Math.floor(rewardMinutes * coinCompletionMultiplier * rewardSleepMultiplier)
-                        };
-                    }
-
                     function getCssLayoutDefaults(assetKey) {
+                        const metrics = artMetrics[assetKey];
+
                         return {
-                            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 24),
-                            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 24),
-                            width: readCssPxVar(`--pl-layout-${assetKey}-width`, 170),
-                            height: readCssPxVar(`--pl-layout-${assetKey}-height`, 56),
+                            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 0),
+                            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 0),
+                            width: readCssPxVar(`--pl-layout-${assetKey}-width`, 160),
+                            height: readCssPxVar(`--pl-layout-${assetKey}-height`, metrics && metrics.canvasRatio > 0 ? Math.round(readCssPxVar(`--pl-layout-${assetKey}-width`, 160) / metrics.canvasRatio) : 56),
                             scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
                         };
                     }
@@ -972,17 +979,18 @@
 
                     function updateLayoutSliderBounds(assetKey) {
                         const state = getEffectiveLayoutState(assetKey);
-                        const rect = getHomeRect();
+                        const designWidth = getHomeDesignWidth();
+                        const designHeight = getHomeDesignHeight();
                         const resolvedHeight = getResolvedHeight(assetKey, state);
 
                         layoutScale.min = "20";
                         layoutScale.max = "250";
 
                         layoutX.min = String(Math.round(-state.width));
-                        layoutX.max = String(Math.round(rect.width + state.width));
+                        layoutX.max = String(Math.round(designWidth + state.width));
 
                         layoutY.min = String(Math.round(-resolvedHeight));
-                        layoutY.max = String(Math.round(rect.height + resolvedHeight));
+                        layoutY.max = String(Math.round(designHeight + resolvedHeight));
                     }
 
                     function updateLayoutCodePreview(assetKey) {
@@ -1329,17 +1337,18 @@
 
                     function updateLayoutSliderBounds(assetKey) {
                         const state = getEffectiveLayoutState(assetKey);
-                        const rect = getHomeRect();
+                        const designWidth = getHomeDesignWidth();
+                        const designHeight = getHomeDesignHeight();
                         const resolvedHeight = getResolvedHeight(assetKey, state);
 
                         layoutScale.min = "20";
                         layoutScale.max = "250";
 
                         layoutX.min = String(Math.round(-state.width));
-                        layoutX.max = String(Math.round(rect.width + state.width));
+                        layoutX.max = String(Math.round(designWidth + state.width));
 
                         layoutY.min = String(Math.round(-resolvedHeight));
-                        layoutY.max = String(Math.round(rect.height + resolvedHeight));
+                        layoutY.max = String(Math.round(designHeight + resolvedHeight));
                     }
 
                     function updateLayoutCodePreview(assetKey) {
@@ -1372,7 +1381,7 @@
 
                     function hydrateLayoutControls() {
                         const assetKey = layoutAssetSelect.value;
-                        const state = getEffectiveLayoutStatsegmenmte(assetKey);
+                        const state = getEffectiveLayoutState(assetKey);
                         const resolvedHeight = getResolvedHeight(assetKey, state);
                         const ratioLocked = !!artMetrics[assetKey];
 
@@ -1436,13 +1445,13 @@
                         }
 
                         const state = getEffectiveLayoutState(assetKey);
-                        const rect = getHomeRect();
+                        const designPoint = clientToHomeDesignPoint(event.clientX, event.clientY);
 
                         dragState = {
                             assetKey,
                             pointerId: event.pointerId,
-                            offsetX: event.clientX - rect.left - state.x,
-                            offsetY: event.clientY - rect.top - state.y
+                            offsetX: designPoint.x - state.x,
+                            offsetY: designPoint.y - state.y
                         };
 
                         beginDraftForSelected(state);
@@ -1461,11 +1470,11 @@
                             return;
                         }
 
-                        const rect = getHomeRect();
+                        const designPoint = clientToHomeDesignPoint(event.clientX, event.clientY);
 
                         beginDraftForSelected({
-                            x: Math.round(event.clientX - rect.left - dragState.offsetX),
-                            y: Math.round(event.clientY - rect.top - dragState.offsetY)
+                            x: Math.round(designPoint.x - dragState.offsetX),
+                            y: Math.round(designPoint.y - dragState.offsetY)
                         });
 
                         applyAssetLayout(dragState.assetKey);
@@ -1607,6 +1616,13 @@
                     window.addEventListener("resize", function () {
                         applyAllAssetLayouts();
                         hydrateLayoutControls();
+                    });
+                    window.addEventListener("pl-home-stage-resized", function () {
+                        applyAllAssetLayouts();
+
+                        if (layoutModeEnabled) {
+                            hydrateLayoutControls();
+                        }
                     });
 
                     Object.entries(layoutAssets).forEach(([assetKey, config]) => {
