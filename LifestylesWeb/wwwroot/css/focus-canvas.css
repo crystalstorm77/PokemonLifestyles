@@ -2,6 +2,9 @@
 :root {
     --pl-home-screen-width: 428px;
     --pl-home-screen-height: 926px;
+    --pl-home-stage-scale: 1;
+    --pl-home-stage-render-width: var(--pl-home-screen-width);
+    --pl-home-stage-render-height: var(--pl-home-screen-height);
 }
 
 html,
@@ -33,16 +36,31 @@ body {
     background: #d9e8fb;
 }
 
+.pl-home-stage-shell {
+    position: relative;
+    flex: 0 0 auto;
+    width: var(--pl-home-stage-render-width);
+    height: var(--pl-home-stage-render-height);
+    margin: 0 auto;
+    overflow: visible;
+}
+
+.pl-home-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--pl-home-screen-width);
+    height: var(--pl-home-screen-height);
+    transform-origin: top left;
+    transform: scale(var(--pl-home-stage-scale));
+}
+
 .pl-home-screen {
     position: relative;
     width: var(--pl-home-screen-width);
     height: var(--pl-home-screen-height);
     min-height: var(--pl-home-screen-height);
-    max-width: var(--pl-home-screen-width);
-    margin-top: 0;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: calc(0px - env(safe-area-inset-top, 0px));
+    max-width: none;
     overflow: hidden;
     touch-action: pinch-zoom;
     background: radial-gradient(circle at top, rgba(255, 255, 255, 0.28), transparent 24%), radial-gradient(circle at bottom, rgba(255, 255, 255, 0.18), transparent 30%), #d9e8fb;
