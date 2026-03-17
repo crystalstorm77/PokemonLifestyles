@@ -2,6 +2,10 @@
 :root {
     --pl-home-screen-width: 428px;
     --pl-home-screen-height: 926px;
+    --pl-safe-ui-author-left: 0px;
+    --pl-safe-ui-author-top: 0px;
+    --pl-safe-ui-author-width: 428px;
+    --pl-safe-ui-author-height: 879px;
 }
 
 html,
