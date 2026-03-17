@@ -197,7 +197,7 @@
         homeStage.style.transform = "scale(1)";
     }
 
-    function applyStandaloneRuntimeShellStyles(renderWidth, renderHeight) {
+    function applyStandaloneRuntimeShellStyles(renderWidth, renderHeight, visualOffsetTop) {
         if (appShell) {
             appShell.style.justifyContent = "flex-start";
             appShell.style.alignItems = "stretch";
@@ -206,7 +206,7 @@
 
         homeStageShell.style.width = `${round3(renderWidth)}px`;
         homeStageShell.style.height = `${round3(renderHeight)}px`;
-        homeStageShell.style.margin = "0";
+        homeStageShell.style.margin = `${round3(-visualOffsetTop)}px 0 0 0`;
         homeStageShell.style.flex = "0 0 auto";
         homeStageShell.style.alignSelf = "stretch";
 
@@ -392,6 +392,14 @@
             }
             : liveSafeArea;
 
+        const standaloneVisualOffsetTop = standaloneDisplayMode && standaloneStartupLock.lockedFrame
+            ? Math.max(
+                0,
+                liveSafeArea.top,
+                standaloneStartupLock.lockedFrame.viewportHeight - liveViewport.height
+            )
+            : 0;
+
         setDesktopPreviewClasses(desktopPreviewMode);
 
         let rootWidth = designWidth;
@@ -479,7 +487,7 @@
             rootHeight = viewport.height;
 
             if (standaloneDisplayMode) {
-                applyStandaloneRuntimeShellStyles(rootWidth, rootHeight);
+                applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, standaloneVisualOffsetTop);
             }
             else {
                 resetRuntimeShellStyles();
@@ -529,6 +537,7 @@
         homeRoot.dataset.desktopRuntimeEmulationMode = desktopRuntimeEmulationMode ? "true" : "false";
         homeRoot.dataset.standaloneLockPending = standaloneLockPending ? "true" : "false";
         homeRoot.dataset.standaloneFrameLocked = standaloneStartupLock.lockedFrame ? "true" : "false";
+        homeRoot.dataset.standaloneVisualOffsetTop = String(round3(standaloneVisualOffsetTop));
         homeRoot.dataset.desktopPreviewScale = String(round3(previewScale));
 
         homeRoot.dataset.viewportWidth = String(round3(rootWidth));
@@ -591,7 +600,8 @@
                 uiAuthorWidth,
                 uiAuthorHeight,
                 uiProjectionScale,
-                standaloneLockPending
+                standaloneLockPending,
+                standaloneVisualOffsetTop
             }
         }));
     }
