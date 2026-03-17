@@ -101,6 +101,12 @@
         element.style.height = `${round3(height)}px`;
     }
 
+    function setDesktopPreviewClasses(isEnabled) {
+        homeStageShell.classList.toggle("pl-desktop-preview-mode", isEnabled);
+        homeStage.classList.toggle("pl-desktop-preview-mode", isEnabled);
+        homeRoot.classList.toggle("pl-desktop-preview-mode", isEnabled);
+    }
+
     function resetRuntimeShellStyles() {
         if (appShell) {
             appShell.style.removeProperty("justify-content");
@@ -152,6 +158,8 @@
         const safeArea = readSafeAreaInsets();
         const displayMode = readDisplayMode();
         const desktopPreviewMode = shouldUseDesktopPreviewMode(displayMode);
+
+        setDesktopPreviewClasses(desktopPreviewMode);
 
         let rootWidth = designWidth;
         let rootHeight = designHeight;
