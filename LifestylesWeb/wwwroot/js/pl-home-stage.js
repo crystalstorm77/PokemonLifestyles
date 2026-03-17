@@ -147,8 +147,31 @@
         homeStage.style.transform = `scale(${round3(previewScale)})`;
     }
 
+    function applyDesktopRuntimeShellStyles(renderWidth, renderHeight) {
+        if (appShell) {
+            appShell.style.justifyContent = "center";
+            appShell.style.alignItems = "flex-start";
+            appShell.style.padding = "0";
+        }
+
+        homeStageShell.style.width = `${round3(renderWidth)}px`;
+        homeStageShell.style.height = `${round3(renderHeight)}px`;
+        homeStageShell.style.margin = "0 auto";
+        homeStageShell.style.flex = "0 0 auto";
+        homeStageShell.style.alignSelf = "flex-start";
+
+        homeStage.style.width = `${round3(renderWidth)}px`;
+        homeStage.style.height = `${round3(renderHeight)}px`;
+        homeStage.style.transformOrigin = "top left";
+        homeStage.style.transform = "scale(1)";
+    }
+
     function shouldUseDesktopPreviewMode(displayMode) {
         return layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
+    }
+
+    function shouldUseDesktopRuntimeEmulationMode(displayMode) {
+        return !layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
     }
 
     function markStageReady() {
@@ -160,22 +183,21 @@
     window.addEventListener("pl-home-first-paint-ready", function () {
         markStageReady();
     }, { once: true });
-// SEGMENT A END — Home Stage Bootstrap
+    // SEGMENT A END — Home Stage Bootstrap
 
     // SEGMENT B START — Home Stage Measurements
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
-
         const uiAuthorLeft = readDesignPx("--pl-safe-ui-author-left", 0);
         const uiAuthorTop = readDesignPx("--pl-safe-ui-author-top", 0);
         const uiAuthorWidth = readDesignPx("--pl-safe-ui-author-width", designWidth);
         const uiAuthorHeight = readDesignPx("--pl-safe-ui-author-height", designHeight);
-
         const viewport = readViewportSize();
         const safeArea = readSafeAreaInsets();
         const displayMode = readDisplayMode();
         const desktopPreviewMode = shouldUseDesktopPreviewMode(displayMode);
+        const desktopRuntimeEmulationMode = shouldUseDesktopRuntimeEmulationMode(displayMode);
 
         setDesktopPreviewClasses(desktopPreviewMode);
 
@@ -204,8 +226,8 @@
         let previewScale = 1;
 
         if (desktopPreviewMode) {
-            const previewHorizontalPadding = layoutModeEnabled ? 72 : 24;
-            const previewVerticalPadding = layoutModeEnabled ? 18 : 24;
+            const previewHorizontalPadding = 72;
+            const previewVerticalPadding = 18;
 
             previewScale = Math.min(
                 1,
@@ -224,6 +246,40 @@
             worldStageMeasuredScale = previewScale;
             safeUiStageMeasuredScale = previewScale;
             uiProjectionScale = 1;
+        }
+        else if (desktopRuntimeEmulationMode) {
+            resetRuntimeShellStyles();
+
+            rootHeight = viewport.height;
+            rootWidth = Math.min(
+                viewport.width,
+                Math.round((rootHeight * designWidth) / designHeight)
+            );
+
+            applyDesktopRuntimeShellStyles(rootWidth, rootHeight);
+
+            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
+            worldRenderWidth = designWidth * worldScale;
+            worldRenderHeight = designHeight * worldScale;
+            worldLeft = (rootWidth - worldRenderWidth) / 2;
+            worldTop = (rootHeight - worldRenderHeight) / 2;
+            worldStageMeasuredScale = worldScale;
+
+            safeFrameLeft = 0;
+            safeFrameTop = 0;
+            safeFrameWidth = rootWidth;
+            safeFrameHeight = rootHeight;
+
+            safeUiRenderWidth = safeFrameWidth;
+            safeUiRenderHeight = safeFrameHeight;
+            safeUiLeft = 0;
+            safeUiTop = 0;
+            safeUiStageMeasuredScale = 1;
+
+            uiProjectionScale = Math.min(
+                safeFrameWidth / uiAuthorWidth,
+                safeFrameHeight / uiAuthorHeight
+            );
         }
         else {
             resetRuntimeShellStyles();
@@ -272,6 +328,7 @@
 
         homeRoot.dataset.stageDisplayMode = displayMode;
         homeRoot.dataset.desktopPreviewMode = desktopPreviewMode ? "true" : "false";
+        homeRoot.dataset.desktopRuntimeEmulationMode = desktopRuntimeEmulationMode ? "true" : "false";
         homeRoot.dataset.desktopPreviewScale = String(round3(previewScale));
 
         homeRoot.dataset.viewportWidth = String(round3(rootWidth));
@@ -319,6 +376,7 @@
             detail: {
                 displayMode,
                 desktopPreviewMode,
+                desktopRuntimeEmulationMode,
                 previewScale,
                 viewportWidth: rootWidth,
                 viewportHeight: rootHeight,
