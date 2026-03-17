@@ -166,6 +166,12 @@
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
+
+        const uiAuthorLeft = readDesignPx("--pl-safe-ui-author-left", 0);
+        const uiAuthorTop = readDesignPx("--pl-safe-ui-author-top", 0);
+        const uiAuthorWidth = readDesignPx("--pl-safe-ui-author-width", designWidth);
+        const uiAuthorHeight = readDesignPx("--pl-safe-ui-author-height", designHeight);
+
         const viewport = readViewportSize();
         const safeArea = readSafeAreaInsets();
         const displayMode = readDisplayMode();
@@ -181,17 +187,19 @@
         let worldRenderHeight = designHeight;
         let worldLeft = 0;
         let worldTop = 0;
+        let worldStageMeasuredScale = 1;
 
-        let safeFrameLeft = 0;
-        let safeFrameTop = 0;
-        let safeFrameWidth = designWidth;
-        let safeFrameHeight = designHeight;
+        let safeFrameLeft = uiAuthorLeft;
+        let safeFrameTop = uiAuthorTop;
+        let safeFrameWidth = uiAuthorWidth;
+        let safeFrameHeight = uiAuthorHeight;
 
-        let safeUiScale = 1;
-        let safeUiRenderWidth = designWidth;
-        let safeUiRenderHeight = designHeight;
-        let safeUiLeft = 0;
-        let safeUiTop = 0;
+        let safeUiRenderWidth = uiAuthorWidth;
+        let safeUiRenderHeight = uiAuthorHeight;
+        let safeUiLeft = uiAuthorLeft;
+        let safeUiTop = uiAuthorTop;
+        let safeUiStageMeasuredScale = 1;
+        let uiProjectionScale = 1;
 
         let previewScale = 1;
 
@@ -212,6 +220,10 @@
                 designWidth,
                 designHeight
             );
+
+            worldStageMeasuredScale = previewScale;
+            safeUiStageMeasuredScale = previewScale;
+            uiProjectionScale = 1;
         }
         else {
             resetRuntimeShellStyles();
@@ -224,28 +236,38 @@
             worldRenderHeight = designHeight * worldScale;
             worldLeft = (rootWidth - worldRenderWidth) / 2;
             worldTop = (rootHeight - worldRenderHeight) / 2;
+            worldStageMeasuredScale = worldScale;
 
             safeFrameLeft = safeArea.left;
             safeFrameTop = safeArea.top;
             safeFrameWidth = Math.max(1, rootWidth - safeArea.left - safeArea.right);
             safeFrameHeight = Math.max(1, rootHeight - safeArea.top - safeArea.bottom);
 
-            safeUiScale = Math.min(1, safeFrameWidth / designWidth, safeFrameHeight / designHeight);
-            safeUiRenderWidth = designWidth * safeUiScale;
-            safeUiRenderHeight = designHeight * safeUiScale;
-            safeUiLeft = safeFrameLeft + ((safeFrameWidth - safeUiRenderWidth) / 2);
+            safeUiRenderWidth = safeFrameWidth;
+            safeUiRenderHeight = safeFrameHeight;
+            safeUiLeft = safeFrameLeft;
             safeUiTop = safeFrameTop;
+            safeUiStageMeasuredScale = 1;
+
+            uiProjectionScale = Math.min(
+                safeFrameWidth / uiAuthorWidth,
+                safeFrameHeight / uiAuthorHeight
+            );
         }
 
         homeRoot.style.width = `${round3(rootWidth)}px`;
         homeRoot.style.height = `${round3(rootHeight)}px`;
 
-        setShellBox(worldStageShell, worldLeft, worldTop, worldRenderWidth, worldRenderHeight);
+        worldStage.style.width = `${round3(designWidth)}px`;
+        worldStage.style.height = `${round3(designHeight)}px`;
         worldStage.style.transform = `scale(${round3(worldScale)})`;
 
-        setShellBox(safeUiStageShell, safeUiLeft, safeUiTop, safeUiRenderWidth, safeUiRenderHeight);
-        safeUiStage.style.transform = `scale(${round3(safeUiScale)})`;
+        safeUiStage.style.width = `${round3(safeUiRenderWidth)}px`;
+        safeUiStage.style.height = `${round3(safeUiRenderHeight)}px`;
+        safeUiStage.style.transform = "scale(1)";
 
+        setShellBox(worldStageShell, worldLeft, worldTop, worldRenderWidth, worldRenderHeight);
+        setShellBox(safeUiStageShell, safeUiLeft, safeUiTop, safeUiRenderWidth, safeUiRenderHeight);
         setShellBox(safeZoneOutline, safeFrameLeft, safeFrameTop, safeFrameWidth, safeFrameHeight);
 
         homeRoot.dataset.stageDisplayMode = displayMode;
@@ -255,13 +277,19 @@
         homeRoot.dataset.viewportWidth = String(round3(rootWidth));
         homeRoot.dataset.viewportHeight = String(round3(rootHeight));
 
-        homeRoot.dataset.worldStageScale = String(round3(worldScale));
+        homeRoot.dataset.worldStageScale = String(round3(worldStageMeasuredScale));
         homeRoot.dataset.worldStageRenderWidth = String(round3(worldRenderWidth));
         homeRoot.dataset.worldStageRenderHeight = String(round3(worldRenderHeight));
 
-        homeRoot.dataset.safeUiStageScale = String(round3(safeUiScale));
+        homeRoot.dataset.uiAuthorFrameLeft = String(round3(uiAuthorLeft));
+        homeRoot.dataset.uiAuthorFrameTop = String(round3(uiAuthorTop));
+        homeRoot.dataset.uiAuthorFrameWidth = String(round3(uiAuthorWidth));
+        homeRoot.dataset.uiAuthorFrameHeight = String(round3(uiAuthorHeight));
+
+        homeRoot.dataset.safeUiStageScale = String(round3(safeUiStageMeasuredScale));
         homeRoot.dataset.safeUiStageRenderWidth = String(round3(safeUiRenderWidth));
         homeRoot.dataset.safeUiStageRenderHeight = String(round3(safeUiRenderHeight));
+        homeRoot.dataset.uiProjectionScale = String(round3(uiProjectionScale));
 
         homeRoot.dataset.safeFrameLeft = String(round3(safeFrameLeft));
         homeRoot.dataset.safeFrameTop = String(round3(safeFrameTop));
@@ -294,12 +322,17 @@
                 previewScale,
                 viewportWidth: rootWidth,
                 viewportHeight: rootHeight,
-                worldScale,
-                safeUiScale,
+                worldScale: worldStageMeasuredScale,
+                safeUiScale: safeUiStageMeasuredScale,
                 safeFrameLeft,
                 safeFrameTop,
                 safeFrameWidth,
-                safeFrameHeight
+                safeFrameHeight,
+                uiAuthorLeft,
+                uiAuthorTop,
+                uiAuthorWidth,
+                uiAuthorHeight,
+                uiProjectionScale
             }
         }));
     }
@@ -325,4 +358,5 @@
         initializeHomeStageLayout();
     }
 })();
+
 // SEGMENT B END — Home Stage Measurements

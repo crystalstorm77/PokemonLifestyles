@@ -213,12 +213,45 @@
         return match ? match[2] : "";
     }
 
+    function readDatasetPx(name, fallbackValue) {
+        const parsed = parseFloat(homeRoot.dataset[name] || "");
+        return Number.isFinite(parsed) ? parsed : fallbackValue;
+    }
+
     function getDesignWidth() {
         return readCssPxVar("--pl-home-screen-width", 428);
     }
 
     function getDesignHeight() {
         return readCssPxVar("--pl-home-screen-height", 926);
+    }
+
+    function getUiAuthorFrameLeft() {
+        return readDatasetPx("uiAuthorFrameLeft", readCssPxVar("--pl-safe-ui-author-left", 0));
+    }
+
+    function getUiAuthorFrameTop() {
+        return readDatasetPx("uiAuthorFrameTop", readCssPxVar("--pl-safe-ui-author-top", 0));
+    }
+
+    function getUiAuthorFrameWidth() {
+        return readDatasetPx("uiAuthorFrameWidth", readCssPxVar("--pl-safe-ui-author-width", getDesignWidth()));
+    }
+
+    function getUiAuthorFrameHeight() {
+        return readDatasetPx("uiAuthorFrameHeight", readCssPxVar("--pl-safe-ui-author-height", getDesignHeight()));
+    }
+
+    function getSafeFrameWidth() {
+        return readDatasetPx("safeFrameWidth", getUiAuthorFrameWidth());
+    }
+
+    function getSafeFrameHeight() {
+        return readDatasetPx("safeFrameHeight", getUiAuthorFrameHeight());
+    }
+
+    function getUiProjectionScale() {
+        return readDatasetPx("uiProjectionScale", 1);
     }
 
     function getWorldStageScale() {
@@ -365,6 +398,7 @@
             for (let y = 0; y < image.naturalHeight; y += 1) {
                 for (let x = 0; x < image.naturalWidth; x += 1) {
                     const alpha = imageData[((y * image.naturalWidth) + x) * 4 + 3];
+
                     if (alpha > 0) {
                         if (x < minX) {
                             minX = x;
@@ -397,6 +431,33 @@
         }
 
         return metrics;
+    }
+
+    function primeArtMetrics() {
+        Object.entries(artImageVars).forEach(([assetKey, cssVar]) => {
+            const url = readCssUrlVar(cssVar);
+
+            if (!url) {
+                return;
+            }
+
+            const image = new Image();
+            image.decoding = "async";
+
+            image.onload = function () {
+                artMetrics[assetKey] = analyzeImageMetrics(image);
+
+                if (assetKey === "slider" || assetKey === "slider-nib-art") {
+                    updateSliderVisuals();
+                }
+
+                if (layoutModeEnabled) {
+                    refreshLayoutUi();
+                }
+            };
+
+            image.src = url;
+        });
     }
 
     function getCssLayoutDefaults(assetKey) {
@@ -527,10 +588,17 @@
         refreshLayoutUi();
     }
 
-    function getStageBounds() {
+    function getStageBounds(assetKey) {
+        if (getAssetStageType(assetKey) === "world") {
+            return {
+                width: getDesignWidth(),
+                height: getDesignHeight()
+            };
+        }
+
         return {
-            width: getDesignWidth(),
-            height: getDesignHeight()
+            width: getUiAuthorFrameWidth(),
+            height: getUiAuthorFrameHeight()
         };
     }
 
@@ -560,7 +628,7 @@
     }
 
     function getVisibilityStatus(assetKey, state) {
-        const stageBounds = getStageBounds();
+        const stageBounds = getStageBounds(assetKey);
         const scaledSize = getScaledAssetSize(assetKey, state);
 
         return {
@@ -571,6 +639,7 @@
 
     function setButtonLabel(button, label) {
         const labelElement = button.querySelector(".pl-button-label");
+
         if (labelElement) {
             labelElement.textContent = label;
         }
@@ -601,19 +670,56 @@
         return { xp, coins };
     }
 
+    function projectAxis(authorPosition, authorBoxSize, authorFrameSize, runtimeFrameSize, uiScale) {
+        const projectedSize = Math.max(1, authorBoxSize * uiScale);
+        const authorInsideMax = Math.max(0, authorFrameSize - authorBoxSize);
+        const runtimeInsideMax = Math.max(0, runtimeFrameSize - projectedSize);
+
+        if (authorPosition < 0) {
+            return authorPosition;
+        }
+
+        if (authorPosition > authorInsideMax) {
+            return runtimeInsideMax + (authorPosition - authorInsideMax);
+        }
+
+        if (authorInsideMax <= 0 || runtimeInsideMax <= 0) {
+            return 0;
+        }
+
+        return (authorPosition / authorInsideMax) * runtimeInsideMax;
+    }
+
+    function projectUiAssetRect(state, authorWidth, authorHeight) {
+        const uiScale = getUiProjectionScale();
+        const authorFrameWidth = getUiAuthorFrameWidth();
+        const authorFrameHeight = getUiAuthorFrameHeight();
+        const runtimeFrameWidth = getSafeFrameWidth();
+        const runtimeFrameHeight = getSafeFrameHeight();
+
+        return {
+            left: projectAxis(state.x, authorWidth, authorFrameWidth, runtimeFrameWidth, uiScale),
+            top: projectAxis(state.y, authorHeight, authorFrameHeight, runtimeFrameHeight, uiScale),
+            width: Math.max(1, authorWidth * uiScale),
+            height: Math.max(1, authorHeight * uiScale)
+        };
+    }
+
     function applyPanelArtStates() {
         setupPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("setup-panel"));
         runPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("run-panel"));
         confirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("confirm-panel"));
         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
     }
+
     // SEGMENT A END — Home Canvas Bootstrap
 
     // SEGMENT B START — Home Canvas Layout
     function updateSliderVisuals() {
         const state = getEffectiveLayoutState("slider");
-        const groupWidth = Math.max(20, state.width);
-        const groupHeight = getResolvedHeight("slider", state);
+        const authorWidth = Math.max(20, state.width * (state.scale / 100));
+        const authorHeight = getResolvedHeight("slider", state) * (state.scale / 100);
+        const projected = projectUiAssetRect(state, authorWidth, authorHeight);
 
         const sliderMetric = artMetrics["slider"];
         const nibMetric = artMetrics["slider-nib-art"];
@@ -624,42 +730,42 @@
         const progressRatio = max <= min ? 0 : (value - min) / (max - min);
 
         const trackLeft = sliderMetric && sliderMetric.hasVisibleBounds
-            ? groupWidth * sliderMetric.visibleLeftRatio
+            ? projected.width * sliderMetric.visibleLeftRatio
             : 0;
 
         const trackWidth = sliderMetric && sliderMetric.hasVisibleBounds
-            ? groupWidth * sliderMetric.visibleWidthRatio
-            : groupWidth;
+            ? projected.width * sliderMetric.visibleWidthRatio
+            : projected.width;
 
         const targetCenter = trackLeft + (progressRatio * trackWidth);
 
         const defaultNibCenter = nibMetric && nibMetric.hasVisibleBounds
-            ? groupWidth * (nibMetric.visibleLeftRatio + (nibMetric.visibleWidthRatio / 2))
-            : groupWidth / 2;
+            ? projected.width * (nibMetric.visibleLeftRatio + (nibMetric.visibleWidthRatio / 2))
+            : projected.width / 2;
 
         const translateX = Math.round(targetCenter - defaultNibCenter);
-        const fillWidth = Math.max(0, Math.min(groupWidth, Math.round(targetCenter)));
+        const fillWidth = Math.max(0, Math.min(projected.width, Math.round(targetCenter)));
 
-        sliderGroup.style.left = `${state.x}px`;
-        sliderGroup.style.top = `${state.y}px`;
-        sliderGroup.style.width = `${groupWidth}px`;
-        sliderGroup.style.height = `${groupHeight}px`;
-        sliderGroup.style.transform = `scale(${state.scale / 100})`;
+        sliderGroup.style.left = `${projected.left}px`;
+        sliderGroup.style.top = `${projected.top}px`;
+        sliderGroup.style.width = `${projected.width}px`;
+        sliderGroup.style.height = `${projected.height}px`;
+        sliderGroup.style.transform = "scale(1)";
 
-        sliderTrackShell.style.width = `${groupWidth}px`;
-        sliderTrackShell.style.height = `${groupHeight}px`;
+        sliderTrackShell.style.width = `${projected.width}px`;
+        sliderTrackShell.style.height = `${projected.height}px`;
 
-        sliderTrackEmptyArt.style.width = `${groupWidth}px`;
-        sliderTrackEmptyArt.style.height = `${groupHeight}px`;
+        sliderTrackEmptyArt.style.width = `${projected.width}px`;
+        sliderTrackEmptyArt.style.height = `${projected.height}px`;
 
         sliderFillShell.style.width = `${fillWidth}px`;
-        sliderFillShell.style.height = `${groupHeight}px`;
+        sliderFillShell.style.height = `${projected.height}px`;
 
-        sliderFillArt.style.width = `${groupWidth}px`;
-        sliderFillArt.style.height = `${groupHeight}px`;
+        sliderFillArt.style.width = `${projected.width}px`;
+        sliderFillArt.style.height = `${projected.height}px`;
 
-        sliderNibVisual.style.width = `${groupWidth}px`;
-        sliderNibVisual.style.height = `${groupHeight}px`;
+        sliderNibVisual.style.width = `${projected.width}px`;
+        sliderNibVisual.style.height = `${projected.height}px`;
         sliderNibVisual.style.transform = `translateX(${translateX}px)`;
 
         durationSlider.style.pointerEvents = layoutModeEnabled ? "none" : "auto";
@@ -672,6 +778,7 @@
 
     function applyAssetLayout(assetKey) {
         const element = getAssetElement(assetKey);
+
         if (!element) {
             return;
         }
@@ -684,15 +791,29 @@
         const state = getEffectiveLayoutState(assetKey);
         const resolvedHeight = getResolvedHeight(assetKey, state);
 
-        element.style.left = `${state.x}px`;
-        element.style.top = `${state.y}px`;
-        element.style.width = `${state.width}px`;
-        element.style.height = `${resolvedHeight}px`;
-        element.style.transform = `scale(${state.scale / 100})`;
+        if (getAssetStageType(assetKey) === "world") {
+            element.style.left = `${state.x}px`;
+            element.style.top = `${state.y}px`;
+            element.style.width = `${state.width}px`;
+            element.style.height = `${resolvedHeight}px`;
+            element.style.transform = `scale(${state.scale / 100})`;
 
-        if (assetKey === "home-scene") {
-            element.style.pointerEvents = "none";
+            if (assetKey === "home-scene") {
+                element.style.pointerEvents = "none";
+            }
+
+            return;
         }
+
+        const authorWidth = state.width * (state.scale / 100);
+        const authorHeight = resolvedHeight * (state.scale / 100);
+        const projected = projectUiAssetRect(state, authorWidth, authorHeight);
+
+        element.style.left = `${projected.left}px`;
+        element.style.top = `${projected.top}px`;
+        element.style.width = `${projected.width}px`;
+        element.style.height = `${projected.height}px`;
+        element.style.transform = "scale(1)";
     }
 
     function applyAllAssetLayouts() {
@@ -715,7 +836,7 @@
 
     function updateLayoutSliderBounds(assetKey) {
         const state = getEffectiveLayoutState(assetKey);
-        const stageBounds = getStageBounds();
+        const stageBounds = getStageBounds(assetKey);
         const scaledSize = getScaledAssetSize(assetKey, state);
 
         layoutScale.min = "20";
@@ -769,7 +890,7 @@
 
         layoutStageStatus.textContent = stageType === "world"
             ? "World layer · fills the screen with cover scaling."
-            : "Safe UI layer · always scaled to remain visible.";
+            : "Safe UI layer · authored against the shared safe frame.";
 
         layoutSafeZoneStatus.textContent = (!status.xStatus.inside || !status.yStatus.inside)
             ? `Outside safe zone · ${status.xStatus.text}; ${status.yStatus.text}`
@@ -932,7 +1053,8 @@
 
         dragState = null;
     }
-    // SEGMENT B END — Home Canvas Layout
+
+// SEGMENT B END — Home Canvas Layout
 
     // SEGMENT C START — Home Canvas App Flow
     function setSetupChildrenVisible(isVisible) {
