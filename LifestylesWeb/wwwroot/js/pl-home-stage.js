@@ -237,12 +237,6 @@
     function captureStandaloneRuntimeFrame() {
         const liveViewport = readViewportSize();
         const screenSize = readStandaloneScreenSize(liveViewport);
-        const safeArea = readSafeAreaInsets();
-        const derivedTopInset = Math.max(
-            0,
-            screenSize.height - liveViewport.height - safeArea.bottom
-        );
-        const resolvedTopInset = Math.max(safeArea.top, derivedTopInset);
 
         return {
             viewportWidth: screenSize.width,
@@ -251,14 +245,14 @@
             liveViewportHeight: liveViewport.height,
             screenWidth: screenSize.width,
             screenHeight: screenSize.height,
-            safeAreaTop: resolvedTopInset,
-            safeAreaRight: safeArea.right,
-            safeAreaBottom: safeArea.bottom,
-            safeAreaLeft: safeArea.left,
-            safeFrameLeft: safeArea.left,
-            safeFrameTop: resolvedTopInset,
-            safeFrameWidth: Math.max(1, screenSize.width - safeArea.left - safeArea.right),
-            safeFrameHeight: Math.max(1, screenSize.height - resolvedTopInset - safeArea.bottom)
+            safeAreaTop: 0,
+            safeAreaRight: 0,
+            safeAreaBottom: 0,
+            safeAreaLeft: 0,
+            safeFrameLeft: 0,
+            safeFrameTop: 0,
+            safeFrameWidth: Math.max(1, screenSize.width),
+            safeFrameHeight: Math.max(1, screenSize.height)
         };
     }
 
@@ -344,7 +338,7 @@
     window.addEventListener("pl-home-first-paint-ready", function () {
         markStageReady();
     }, { once: true });
-    // SEGMENT A END — Home Stage Bootstrap
+// SEGMENT A END — Home Stage Bootstrap
 
     // SEGMENT B START — Home Stage Measurements
     function applyHomeStageLayout() {
