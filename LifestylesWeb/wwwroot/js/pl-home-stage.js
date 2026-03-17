@@ -197,6 +197,25 @@
         homeStage.style.transform = "scale(1)";
     }
 
+    function applyStandaloneRuntimeShellStyles(renderWidth, renderHeight) {
+        if (appShell) {
+            appShell.style.justifyContent = "flex-start";
+            appShell.style.alignItems = "stretch";
+            appShell.style.padding = "0";
+        }
+
+        homeStageShell.style.width = `${round3(renderWidth)}px`;
+        homeStageShell.style.height = `${round3(renderHeight)}px`;
+        homeStageShell.style.margin = "0";
+        homeStageShell.style.flex = "0 0 auto";
+        homeStageShell.style.alignSelf = "stretch";
+
+        homeStage.style.width = `${round3(renderWidth)}px`;
+        homeStage.style.height = `${round3(renderHeight)}px`;
+        homeStage.style.transformOrigin = "top left";
+        homeStage.style.transform = "scale(1)";
+    }
+
     function shouldUseDesktopPreviewMode(displayMode) {
         return layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
     }
@@ -338,7 +357,7 @@
     window.addEventListener("pl-home-first-paint-ready", function () {
         markStageReady();
     }, { once: true });
-// SEGMENT A END — Home Stage Bootstrap
+    // SEGMENT A END — Home Stage Bootstrap
 
     // SEGMENT B START — Home Stage Measurements
     function applyHomeStageLayout() {
@@ -456,10 +475,15 @@
             );
         }
         else {
-            resetRuntimeShellStyles();
-
             rootWidth = viewport.width;
             rootHeight = viewport.height;
+
+            if (standaloneDisplayMode) {
+                applyStandaloneRuntimeShellStyles(rootWidth, rootHeight);
+            }
+            else {
+                resetRuntimeShellStyles();
+            }
 
             worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
             worldRenderWidth = designWidth * worldScale;
