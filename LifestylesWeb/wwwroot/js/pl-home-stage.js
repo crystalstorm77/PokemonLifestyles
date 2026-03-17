@@ -50,6 +50,25 @@
         };
     }
 
+    function readStandaloneScreenSize(fallbackViewport) {
+        const widthCandidates = [
+            parsePx(window.screen?.width),
+            parsePx(window.screen?.availWidth),
+            fallbackViewport.width
+        ];
+
+        const heightCandidates = [
+            parsePx(window.screen?.height),
+            parsePx(window.screen?.availHeight),
+            fallbackViewport.height
+        ];
+
+        return {
+            width: Math.max(1, ...widthCandidates),
+            height: Math.max(1, ...heightCandidates)
+        };
+    }
+
     function readDisplayMode() {
         if (window.matchMedia("(display-mode: standalone)").matches) {
             return "standalone";
@@ -200,6 +219,10 @@
         return {
             viewportWidth: frame.viewportWidth,
             viewportHeight: frame.viewportHeight,
+            liveViewportWidth: frame.liveViewportWidth,
+            liveViewportHeight: frame.liveViewportHeight,
+            screenWidth: frame.screenWidth,
+            screenHeight: frame.screenHeight,
             safeAreaTop: frame.safeAreaTop,
             safeAreaRight: frame.safeAreaRight,
             safeAreaBottom: frame.safeAreaBottom,
@@ -212,20 +235,30 @@
     }
 
     function captureStandaloneRuntimeFrame() {
-        const viewport = readViewportSize();
+        const liveViewport = readViewportSize();
+        const screenSize = readStandaloneScreenSize(liveViewport);
         const safeArea = readSafeAreaInsets();
+        const derivedTopInset = Math.max(
+            0,
+            screenSize.height - liveViewport.height - safeArea.bottom
+        );
+        const resolvedTopInset = Math.max(safeArea.top, derivedTopInset);
 
         return {
-            viewportWidth: viewport.width,
-            viewportHeight: viewport.height,
-            safeAreaTop: safeArea.top,
+            viewportWidth: screenSize.width,
+            viewportHeight: screenSize.height,
+            liveViewportWidth: liveViewport.width,
+            liveViewportHeight: liveViewport.height,
+            screenWidth: screenSize.width,
+            screenHeight: screenSize.height,
+            safeAreaTop: resolvedTopInset,
             safeAreaRight: safeArea.right,
             safeAreaBottom: safeArea.bottom,
             safeAreaLeft: safeArea.left,
             safeFrameLeft: safeArea.left,
-            safeFrameTop: safeArea.top,
-            safeFrameWidth: Math.max(1, viewport.width - safeArea.left - safeArea.right),
-            safeFrameHeight: Math.max(1, viewport.height - safeArea.top - safeArea.bottom)
+            safeFrameTop: resolvedTopInset,
+            safeFrameWidth: Math.max(1, screenSize.width - safeArea.left - safeArea.right),
+            safeFrameHeight: Math.max(1, screenSize.height - resolvedTopInset - safeArea.bottom)
         };
     }
 
