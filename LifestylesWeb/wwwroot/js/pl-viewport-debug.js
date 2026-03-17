@@ -9,6 +9,18 @@
 
     const panelId = "pl-viewport-debug-panel";
     const collapsedStorageKey = "plViewportDebugCollapsed";
+    const layerToggleStorageKey = "plViewportDebugLayerToggles";
+
+    function createDefaultLayerToggleState() {
+        return {
+            shellTint: false,
+            rootTint: false,
+            worldTint: false,
+            hideScene: false,
+            hideWorld: false,
+            hideSafeUi: false
+        };
+    }
 
     function injectStyles() {
         if (document.getElementById("pl-viewport-debug-style")) {
@@ -85,6 +97,53 @@
                 max-height: calc(100dvh - 6rem);
             }
 
+            .pl-viewport-debug-controls {
+                display: flex;
+                flex-direction: column;
+                gap: 0.55rem;
+                margin-bottom: 0.9rem;
+                padding-bottom: 0.85rem;
+                border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+            }
+
+            .pl-viewport-debug-controls-title {
+                font-size: 0.76rem;
+                font-weight: 800;
+                color: #334155;
+            }
+
+            .pl-viewport-debug-controls-help {
+                font-size: 0.72rem;
+                line-height: 1.35;
+                color: #64748b;
+            }
+
+            .pl-viewport-debug-control-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.45rem 0.7rem;
+            }
+
+            .pl-viewport-debug-control {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                min-width: 0;
+                font-size: 0.72rem;
+                line-height: 1.2;
+                color: #0f172a;
+            }
+
+            .pl-viewport-debug-control input {
+                margin: 0;
+                flex: 0 0 auto;
+            }
+
+            .pl-viewport-debug-secondary-button {
+                align-self: flex-start;
+                border-radius: 0.75rem;
+            }
+
             .pl-viewport-debug-pre {
                 margin: 0;
                 white-space: pre-wrap;
@@ -104,6 +163,10 @@
 
                 .pl-viewport-debug-body {
                     max-height: calc(100dvh - 5.4rem);
+                }
+
+                .pl-viewport-debug-control-grid {
+                    grid-template-columns: 1fr;
                 }
             }
         `;
@@ -135,6 +198,22 @@
             </div>
 
             <div class="pl-viewport-debug-body">
+                <div class="pl-viewport-debug-controls">
+                    <div class="pl-viewport-debug-controls-title">Layer diagnostics</div>
+                    <div class="pl-viewport-debug-controls-help">Use these in layout mode on the phone to identify which layer owns the grey strip.</div>
+
+                    <div class="pl-viewport-debug-control-grid">
+                        <label class="pl-viewport-debug-control"><input type="checkbox" id="pl-viewport-debug-shell-tint" />Tint shell</label>
+                        <label class="pl-viewport-debug-control"><input type="checkbox" id="pl-viewport-debug-root-tint" />Tint root</label>
+                        <label class="pl-viewport-debug-control"><input type="checkbox" id="pl-viewport-debug-world-tint" />Tint world shell</label>
+                        <label class="pl-viewport-debug-control"><input type="checkbox" id="pl-viewport-debug-hide-scene" />Hide scene art</label>
+                        <label class="pl-viewport-debug-control"><input type="checkbox" id="pl-viewport-debug-hide-world" />Hide world shell</label>
+                        <label class="pl-viewport-debug-control"><input type="checkbox" id="pl-viewport-debug-hide-safe-ui" />Hide safe UI</label>
+                    </div>
+
+                    <button type="button" class="pl-viewport-debug-button pl-viewport-debug-secondary-button" id="pl-viewport-debug-reset-layers">Clear layers</button>
+                </div>
+
                 <pre class="pl-viewport-debug-pre" id="pl-viewport-debug-output"></pre>
             </div>
         `;
@@ -154,6 +233,16 @@
         }
 
         return String(Math.round(value * 100) / 100);
+    }
+
+    function summarizeCssValue(value) {
+        const normalized = String(value || "").trim();
+
+        if (!normalized) {
+            return "n/a";
+        }
+
+        return normalized.length > 96 ? `${normalized.slice(0, 96)}...` : normalized;
     }
 
     function readSafeAreaInsets() {
@@ -208,14 +297,140 @@
 
         return `${label}: x=${round(rect.left)} y=${round(rect.top)} w=${round(rect.width)} h=${round(rect.height)} right=${round(rect.right)} bottom=${round(rect.bottom)}`;
     }
+
+    function getLayerElements() {
+        return {
+            appShell: document.querySelector(".app-shell"),
+            homeStageShell: document.getElementById("pl-home-stage-shell"),
+            homeStage: document.getElementById("pl-home-stage"),
+            homeRoot: document.getElementById("pl-home-root"),
+            worldStageShell: document.getElementById("pl-world-stage-shell"),
+            worldStage: document.getElementById("pl-world-stage"),
+            homeSceneArt: document.getElementById("pl-home-scene-art"),
+            safeUiStageShell: document.getElementById("pl-safe-ui-stage-shell"),
+            safeUiStage: document.getElementById("pl-safe-ui-stage"),
+            safeZoneOutline: document.getElementById("pl-safe-zone-outline")
+        };
+    }
+
+    function readLayerToggleState() {
+        const defaults = createDefaultLayerToggleState();
+
+        try {
+            const raw = window.sessionStorage.getItem(layerToggleStorageKey);
+
+            if (!raw) {
+                return defaults;
+            }
+
+            const parsed = JSON.parse(raw);
+            return {
+                shellTint: parsed?.shellTint === true,
+                rootTint: parsed?.rootTint === true,
+                worldTint: parsed?.worldTint === true,
+                hideScene: parsed?.hideScene === true,
+                hideWorld: parsed?.hideWorld === true,
+                hideSafeUi: parsed?.hideSafeUi === true
+            };
+        }
+        catch {
+            return defaults;
+        }
+    }
+
+    function writeLayerToggleState(state) {
+        try {
+            window.sessionStorage.setItem(layerToggleStorageKey, JSON.stringify(state));
+        }
+        catch {
+            // Ignore storage availability issues.
+        }
+    }
+
+    function applyLayerDiagnostics(state) {
+        const layers = getLayerElements();
+
+        const resetElement = (element, properties) => {
+            if (!element) {
+                return;
+            }
+
+            for (const property of properties) {
+                element.style.removeProperty(property);
+            }
+        };
+
+        resetElement(layers.appShell, ["box-shadow"]);
+        resetElement(layers.homeRoot, ["box-shadow"]);
+        resetElement(layers.worldStageShell, ["box-shadow", "opacity"]);
+        resetElement(layers.homeSceneArt, ["opacity"]);
+        resetElement(layers.safeUiStageShell, ["opacity"]);
+        resetElement(layers.safeZoneOutline, ["opacity"]);
+
+        if (state.shellTint && layers.appShell) {
+            layers.appShell.style.boxShadow = "inset 0 0 0 9999px rgba(239, 68, 68, 0.22)";
+        }
+
+        if (state.rootTint && layers.homeRoot) {
+            layers.homeRoot.style.boxShadow = "inset 0 0 0 9999px rgba(59, 130, 246, 0.2)";
+        }
+
+        if (state.worldTint && layers.worldStageShell) {
+            layers.worldStageShell.style.boxShadow = "inset 0 0 0 9999px rgba(34, 197, 94, 0.18)";
+        }
+
+        if (state.hideScene && layers.homeSceneArt) {
+            layers.homeSceneArt.style.opacity = "0";
+        }
+
+        if (state.hideWorld && layers.worldStageShell) {
+            layers.worldStageShell.style.opacity = "0";
+        }
+
+        if (state.hideSafeUi && layers.safeUiStageShell) {
+            layers.safeUiStageShell.style.opacity = "0";
+        }
+
+        if (state.hideSafeUi && layers.safeZoneOutline) {
+            layers.safeZoneOutline.style.opacity = "0";
+        }
+    }
+
+    function syncLayerToggleInputs(panel, state) {
+        const mapping = {
+            shellTint: "#pl-viewport-debug-shell-tint",
+            rootTint: "#pl-viewport-debug-root-tint",
+            worldTint: "#pl-viewport-debug-world-tint",
+            hideScene: "#pl-viewport-debug-hide-scene",
+            hideWorld: "#pl-viewport-debug-hide-world",
+            hideSafeUi: "#pl-viewport-debug-hide-safe-ui"
+        };
+
+        Object.entries(mapping).forEach(([key, selector]) => {
+            const input = panel.querySelector(selector);
+
+            if (input) {
+                input.checked = state[key] === true;
+            }
+        });
+    }
     // SEGMENT A END — Viewport Debug Bootstrap
     // SEGMENT B START — Viewport Debug Measurements
     function buildOutput() {
-        const homeRoot = document.getElementById("pl-home-root");
         const html = document.documentElement;
         const safeArea = readSafeAreaInsets();
-        const homeRect = homeRoot ? homeRoot.getBoundingClientRect() : null;
         const visualViewport = window.visualViewport;
+        const layers = getLayerElements();
+
+        const appShellRect = layers.appShell ? layers.appShell.getBoundingClientRect() : null;
+        const homeStageShellRect = layers.homeStageShell ? layers.homeStageShell.getBoundingClientRect() : null;
+        const homeStageRect = layers.homeStage ? layers.homeStage.getBoundingClientRect() : null;
+        const homeRootRect = layers.homeRoot ? layers.homeRoot.getBoundingClientRect() : null;
+        const worldStageShellRect = layers.worldStageShell ? layers.worldStageShell.getBoundingClientRect() : null;
+        const worldStageRect = layers.worldStage ? layers.worldStage.getBoundingClientRect() : null;
+        const safeUiStageShellRect = layers.safeUiStageShell ? layers.safeUiStageShell.getBoundingClientRect() : null;
+        const safeUiStageRect = layers.safeUiStage ? layers.safeUiStage.getBoundingClientRect() : null;
+        const safeZoneOutlineRect = layers.safeZoneOutline ? layers.safeZoneOutline.getBoundingClientRect() : null;
 
         const lines = [];
         lines.push(`displayMode: ${readDisplayMode()}`);
@@ -247,22 +462,79 @@
             lines.push("");
         }
 
-        lines.push(formatRect("homeRoot.rect", homeRect));
+        lines.push(formatRect("appShell.rect", appShellRect));
+        lines.push(formatRect("homeStageShell.rect", homeStageShellRect));
+        lines.push(formatRect("homeStage.rect", homeStageRect));
+        lines.push(formatRect("homeRoot.rect", homeRootRect));
+        lines.push(formatRect("worldStageShell.rect", worldStageShellRect));
+        lines.push(formatRect("worldStage.rect", worldStageRect));
+        lines.push(formatRect("safeUiStageShell.rect", safeUiStageShellRect));
+        lines.push(formatRect("safeUiStage.rect", safeUiStageRect));
+        lines.push(formatRect("safeZoneOutline.rect", safeZoneOutlineRect));
+        lines.push("");
 
-        if (homeRoot) {
-            const computed = window.getComputedStyle(homeRoot);
-            lines.push(`homeRoot.cssSize: ${computed.width} x ${computed.height}`);
-            lines.push(`homeRoot.clientSize: ${round(homeRoot.clientWidth)} x ${round(homeRoot.clientHeight)}`);
-            lines.push(`homeRoot.offsetSize: ${round(homeRoot.offsetWidth)} x ${round(homeRoot.offsetHeight)}`);
-        }
+        const addSizeLines = (label, element) => {
+            if (!element) {
+                return;
+            }
 
-        if (homeRect) {
-            lines.push(`homeRoot.bottom - innerHeight: ${round(homeRect.bottom - window.innerHeight)}`);
-            lines.push(`homeRoot.bottom - clientHeight: ${round(homeRect.bottom - html.clientHeight)}`);
+            const computed = window.getComputedStyle(element);
+            lines.push(`${label}.cssSize: ${computed.width} x ${computed.height}`);
+            lines.push(`${label}.clientSize: ${round(element.clientWidth)} x ${round(element.clientHeight)}`);
+            lines.push(`${label}.offsetSize: ${round(element.offsetWidth)} x ${round(element.offsetHeight)}`);
+        };
+
+        addSizeLines("appShell", layers.appShell);
+        addSizeLines("homeRoot", layers.homeRoot);
+        addSizeLines("worldStageShell", layers.worldStageShell);
+        lines.push("");
+
+        const addBottomDeltaLines = (label, rect) => {
+            if (!rect) {
+                return;
+            }
+
+            lines.push(`${label}.bottom - innerHeight: ${round(rect.bottom - window.innerHeight)}`);
+            lines.push(`${label}.bottom - clientHeight: ${round(rect.bottom - html.clientHeight)}`);
 
             if (visualViewport) {
-                lines.push(`homeRoot.bottom - visualViewport.height: ${round(homeRect.bottom - visualViewport.height)}`);
+                lines.push(`${label}.bottom - visualViewport.height: ${round(rect.bottom - visualViewport.height)}`);
             }
+        };
+
+        addBottomDeltaLines("appShell", appShellRect);
+        addBottomDeltaLines("homeRoot", homeRootRect);
+        addBottomDeltaLines("worldStageShell", worldStageShellRect);
+        lines.push("");
+
+        if (layers.appShell) {
+            const appShellComputed = window.getComputedStyle(layers.appShell);
+            lines.push(`appShell.backgroundImage: ${summarizeCssValue(appShellComputed.backgroundImage)}`);
+            lines.push(`appShell.backgroundSize: ${summarizeCssValue(appShellComputed.backgroundSize)}`);
+            lines.push(`appShell.backgroundPosition: ${summarizeCssValue(appShellComputed.backgroundPosition)}`);
+        }
+
+        if (layers.homeRoot) {
+            const homeRootComputed = window.getComputedStyle(layers.homeRoot);
+            lines.push(`homeRoot.background: ${summarizeCssValue(homeRootComputed.backgroundColor)}`);
+        }
+
+        if (layers.homeSceneArt) {
+            const sceneComputed = window.getComputedStyle(layers.homeSceneArt);
+            lines.push(`homeSceneArt.backgroundImage: ${summarizeCssValue(sceneComputed.backgroundImage)}`);
+            lines.push(`homeSceneArt.opacity: ${summarizeCssValue(sceneComputed.opacity)}`);
+        }
+
+        if (layers.worldStageShell) {
+            const worldShellComputed = window.getComputedStyle(layers.worldStageShell);
+            lines.push(`worldStageShell.overflow: ${summarizeCssValue(worldShellComputed.overflow)}`);
+            lines.push(`worldStageShell.opacity: ${summarizeCssValue(worldShellComputed.opacity)}`);
+        }
+
+        if (layers.safeUiStageShell) {
+            const safeUiComputed = window.getComputedStyle(layers.safeUiStageShell);
+            lines.push(`safeUiStageShell.overflow: ${summarizeCssValue(safeUiComputed.overflow)}`);
+            lines.push(`safeUiStageShell.opacity: ${summarizeCssValue(safeUiComputed.opacity)}`);
         }
 
         return lines.join("\n");
@@ -299,13 +571,23 @@
         const output = panel.querySelector("#pl-viewport-debug-output");
         const refreshButton = panel.querySelector("#pl-viewport-debug-refresh");
         const toggleButton = panel.querySelector("#pl-viewport-debug-toggle");
+        const resetLayersButton = panel.querySelector("#pl-viewport-debug-reset-layers");
 
-        if (!output || !refreshButton || !toggleButton) {
+        if (!output || !refreshButton || !toggleButton || !resetLayersButton) {
             return;
         }
 
+        let layerState = readLayerToggleState();
+
         const update = () => {
             output.textContent = buildOutput();
+        };
+
+        const applyAndRefresh = () => {
+            applyLayerDiagnostics(layerState);
+            syncLayerToggleInputs(panel, layerState);
+            writeLayerToggleState(layerState);
+            update();
         };
 
         refreshButton.addEventListener("click", update);
@@ -314,12 +596,44 @@
             setCollapsed(panel, collapsed);
         });
 
+        const checkboxBindings = [
+            ["#pl-viewport-debug-shell-tint", "shellTint"],
+            ["#pl-viewport-debug-root-tint", "rootTint"],
+            ["#pl-viewport-debug-world-tint", "worldTint"],
+            ["#pl-viewport-debug-hide-scene", "hideScene"],
+            ["#pl-viewport-debug-hide-world", "hideWorld"],
+            ["#pl-viewport-debug-hide-safe-ui", "hideSafeUi"]
+        ];
+
+        checkboxBindings.forEach(([selector, key]) => {
+            const input = panel.querySelector(selector);
+
+            if (!input) {
+                return;
+            }
+
+            input.addEventListener("change", () => {
+                layerState = {
+                    ...layerState,
+                    [key]: input.checked
+                };
+                applyAndRefresh();
+            });
+        });
+
+        resetLayersButton.addEventListener("click", () => {
+            layerState = createDefaultLayerToggleState();
+            applyAndRefresh();
+        });
+
         setCollapsed(panel, readCollapsedPreference());
-        update();
+        applyAndRefresh();
 
         window.addEventListener("resize", update);
         window.addEventListener("orientationchange", update);
         window.addEventListener("scroll", update, { passive: true });
+        window.addEventListener("pageshow", update);
+        window.addEventListener("pl-home-stage-resized", update);
 
         if (window.visualViewport) {
             window.visualViewport.addEventListener("resize", update);
