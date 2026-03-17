@@ -1,10 +1,13 @@
 ﻿// SEGMENT A START — Home Stage Bootstrap
 (function () {
-    const homeStageShell = document.getElementById("pl-home-stage-shell");
-    const homeStage = document.getElementById("pl-home-stage");
     const homeRoot = document.getElementById("pl-home-root");
+    const worldStageShell = document.getElementById("pl-world-stage-shell");
+    const worldStage = document.getElementById("pl-world-stage");
+    const safeUiStageShell = document.getElementById("pl-safe-ui-stage-shell");
+    const safeUiStage = document.getElementById("pl-safe-ui-stage");
+    const safeZoneOutline = document.getElementById("pl-safe-zone-outline");
 
-    if (!homeStageShell || !homeStage || !homeRoot) {
+    if (!homeRoot || !worldStageShell || !worldStage || !safeUiStageShell || !safeUiStage || !safeZoneOutline) {
         return;
     }
 
@@ -17,14 +20,6 @@
 
         const parsed = parseFloat(raw.replace("px", ""));
         return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackValue;
-    }
-
-    function clampScale(value) {
-        if (!Number.isFinite(value) || value <= 0) {
-            return 1;
-        }
-
-        return Math.min(1, value);
     }
 
     function readViewportSize() {
@@ -56,132 +51,145 @@
 
         return "browser";
     }
+
+    function parsePx(value) {
+        const parsed = parseFloat(String(value || "").replace("px", "").trim());
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function readSafeAreaInsets() {
+        let probe = document.getElementById("pl-safe-area-probe");
+
+        if (!probe) {
+            probe = document.createElement("div");
+            probe.id = "pl-safe-area-probe";
+            probe.setAttribute("aria-hidden", "true");
+            probe.style.position = "fixed";
+            probe.style.left = "0";
+            probe.style.top = "0";
+            probe.style.visibility = "hidden";
+            probe.style.pointerEvents = "none";
+            probe.style.paddingTop = "env(safe-area-inset-top, 0px)";
+            probe.style.paddingRight = "env(safe-area-inset-right, 0px)";
+            probe.style.paddingBottom = "env(safe-area-inset-bottom, 0px)";
+            probe.style.paddingLeft = "env(safe-area-inset-left, 0px)";
+            document.body.appendChild(probe);
+        }
+
+        const computed = window.getComputedStyle(probe);
+
+        return {
+            top: parsePx(computed.paddingTop),
+            right: parsePx(computed.paddingRight),
+            bottom: parsePx(computed.paddingBottom),
+            left: parsePx(computed.paddingLeft)
+        };
+    }
+
+    function round3(value) {
+        return Math.round(value * 1000) / 1000;
+    }
+
+    function setShellBox(element, left, top, width, height) {
+        element.style.left = `${round3(left)}px`;
+        element.style.top = `${round3(top)}px`;
+        element.style.width = `${round3(width)}px`;
+        element.style.height = `${round3(height)}px`;
+    }
     // SEGMENT A END — Home Stage Bootstrap
+
     // SEGMENT B START — Home Stage Measurements
-    function applyHomeStageScale() {
+    function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
         const viewport = readViewportSize();
+        const safeArea = readSafeAreaInsets();
         const displayMode = readDisplayMode();
 
-        const widthScale = viewport.width / designWidth;
-        const heightScale = viewport.height / designHeight;
+        const rootWidth = Math.max(1, viewport.width);
+        const rootHeight = Math.max(1, viewport.height);
 
-        let stageScale = 1;
-        let stageTranslateY = 0;
+        const worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
+        const worldRenderWidth = designWidth * worldScale;
+        const worldRenderHeight = designHeight * worldScale;
+        const worldLeft = (rootWidth - worldRenderWidth) / 2;
+        const worldTop = (rootHeight - worldRenderHeight) / 2;
 
-        if (displayMode === "standalone" || displayMode === "fullscreen") {
-            stageScale = clampScale(widthScale);
-            const scaledHeight = designHeight * stageScale;
-            const overflowHeight = Math.max(0, scaledHeight - viewport.height);
-            stageTranslateY = overflowHeight > 0 ? -overflowHeight : 0;
-        }
-        else {
-            stageScale = clampScale(Math.min(widthScale, heightScale));
-        }
+        const safeFrameLeft = safeArea.left;
+        const safeFrameTop = safeArea.top;
+        const safeFrameWidth = Math.max(1, rootWidth - safeArea.left - safeArea.right);
+        const safeFrameHeight = Math.max(1, rootHeight - safeArea.top - safeArea.bottom);
 
-        const scaledWidth = Math.round(designWidth * stageScale * 1000) / 1000;
-        const scaledHeight = Math.round(designHeight * stageScale * 1000) / 1000;
-        const renderWidth = scaledWidth;
-        const renderHeight = displayMode === "standalone" || displayMode === "fullscreen"
-            ? Math.min(scaledHeight, viewport.height)
-            : scaledHeight;
+        const safeUiScale = Math.min(1, safeFrameWidth / designWidth, safeFrameHeight / designHeight);
+        const safeUiRenderWidth = designWidth * safeUiScale;
+        const safeUiRenderHeight = designHeight * safeUiScale;
+        const safeUiLeft = safeFrameLeft + ((safeFrameWidth - safeUiRenderWidth) / 2);
+        const safeUiTop = safeFrameTop;
 
-        homeStageShell.style.width = `${renderWidth}px`;
-        homeStageShell.style.height = `${renderHeight}px`;
-        homeStage.style.transform = `translateY(${stageTranslateY}px) scale(${stageScale})`;
+        homeRoot.style.width = `${round3(rootWidth)}px`;
+        homeRoot.style.height = `${round3(rootHeight)}px`;
 
-        homeRoot.dataset.stageScale = String(stageScale);
-        homeRoot.dataset.stageTranslateY = String(Math.round(stageTranslateY * 1000) / 1000);
-        homeRoot.dataset.stageRenderWidth = String(renderWidth);
-        homeRoot.dataset.stageRenderHeight = String(renderHeight);
-        homeRoot.dataset.stageViewportWidth = String(Math.round(viewport.width * 1000) / 1000);
-        homeRoot.dataset.stageViewportHeight = String(Math.round(viewport.height * 1000) / 1000);
+        setShellBox(worldStageShell, worldLeft, worldTop, worldRenderWidth, worldRenderHeight);
+        worldStage.style.transform = `scale(${round3(worldScale)})`;
+
+        setShellBox(safeUiStageShell, safeUiLeft, safeUiTop, safeUiRenderWidth, safeUiRenderHeight);
+        safeUiStage.style.transform = `scale(${round3(safeUiScale)})`;
+
+        setShellBox(safeZoneOutline, safeFrameLeft, safeFrameTop, safeFrameWidth, safeFrameHeight);
+
         homeRoot.dataset.stageDisplayMode = displayMode;
+        homeRoot.dataset.viewportWidth = String(round3(rootWidth));
+        homeRoot.dataset.viewportHeight = String(round3(rootHeight));
+
+        homeRoot.dataset.worldStageScale = String(round3(worldScale));
+        homeRoot.dataset.worldStageRenderWidth = String(round3(worldRenderWidth));
+        homeRoot.dataset.worldStageRenderHeight = String(round3(worldRenderHeight));
+
+        homeRoot.dataset.safeUiStageScale = String(round3(safeUiScale));
+        homeRoot.dataset.safeUiStageRenderWidth = String(round3(safeUiRenderWidth));
+        homeRoot.dataset.safeUiStageRenderHeight = String(round3(safeUiRenderHeight));
+
+        homeRoot.dataset.safeFrameLeft = String(round3(safeFrameLeft));
+        homeRoot.dataset.safeFrameTop = String(round3(safeFrameTop));
+        homeRoot.dataset.safeFrameWidth = String(round3(safeFrameWidth));
+        homeRoot.dataset.safeFrameHeight = String(round3(safeFrameHeight));
+        homeRoot.dataset.safeAreaTop = String(round3(safeArea.top));
+        homeRoot.dataset.safeAreaRight = String(round3(safeArea.right));
+        homeRoot.dataset.safeAreaBottom = String(round3(safeArea.bottom));
+        homeRoot.dataset.safeAreaLeft = String(round3(safeArea.left));
 
         window.dispatchEvent(new CustomEvent("pl-home-stage-resized", {
             detail: {
-                stageScale,
-                stageTranslateY,
-                renderWidth,
-                renderHeight,
-                viewportWidth: viewport.width,
-                viewportHeight: viewport.height,
-                displayMode
+                displayMode,
+                viewportWidth: rootWidth,
+                viewportHeight: rootHeight,
+                worldScale,
+                safeUiScale,
+                safeFrameLeft,
+                safeFrameTop,
+                safeFrameWidth,
+                safeFrameHeight
             }
         }));
     }
 
-    function initializeHomeStageScale() {
-        applyHomeStageScale();
+    function initializeHomeStageLayout() {
+        applyHomeStageLayout();
 
-        window.addEventListener("resize", applyHomeStageScale);
-        window.addEventListener("orientationchange", applyHomeStageScale);
+        window.addEventListener("resize", applyHomeStageLayout);
+        window.addEventListener("orientationchange", applyHomeStageLayout);
 
         if (window.visualViewport) {
-            window.visualViewport.addEventListener("resize", applyHomeStageScale);
-            window.visualViewport.addEventListener("scroll", applyHomeStageScale);
+            window.visualViewport.addEventListener("resize", applyHomeStageLayout);
+            window.visualViewport.addEventListener("scroll", applyHomeStageLayout);
         }
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initializeHomeStageScale, { once: true });
+        document.addEventListener("DOMContentLoaded", initializeHomeStageLayout, { once: true });
     }
     else {
-        initializeHomeStageScale();
-    }
-})();
-// SEGMENT B END — Home Stage Measurements
-    // SEGMENT B START — Home Stage Measurements
-    function applyHomeStageScale() {
-        const designWidth = readDesignPx("--pl-home-screen-width", 428);
-        const designHeight = readDesignPx("--pl-home-screen-height", 926);
-        const viewport = readViewportSize();
-
-        const widthScale = viewport.width / designWidth;
-        const heightScale = viewport.height / designHeight;
-        const stageScale = clampScale(Math.min(widthScale, heightScale));
-        const renderWidth = Math.round(designWidth * stageScale * 1000) / 1000;
-        const renderHeight = Math.round(designHeight * stageScale * 1000) / 1000;
-
-        homeStageShell.style.width = `${renderWidth}px`;
-        homeStageShell.style.height = `${renderHeight}px`;
-        homeStage.style.transform = `scale(${stageScale})`;
-
-        homeRoot.dataset.stageScale = String(stageScale);
-        homeRoot.dataset.stageRenderWidth = String(renderWidth);
-        homeRoot.dataset.stageRenderHeight = String(renderHeight);
-        homeRoot.dataset.stageViewportWidth = String(Math.round(viewport.width * 1000) / 1000);
-        homeRoot.dataset.stageViewportHeight = String(Math.round(viewport.height * 1000) / 1000);
-
-        window.dispatchEvent(new CustomEvent("pl-home-stage-resized", {
-            detail: {
-                stageScale,
-                renderWidth,
-                renderHeight,
-                viewportWidth: viewport.width,
-                viewportHeight: viewport.height
-            }
-        }));
-    }
-
-    function initializeHomeStageScale() {
-        applyHomeStageScale();
-
-        window.addEventListener("resize", applyHomeStageScale);
-        window.addEventListener("orientationchange", applyHomeStageScale);
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener("resize", applyHomeStageScale);
-            window.visualViewport.addEventListener("scroll", applyHomeStageScale);
-        }
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initializeHomeStageScale, { once: true });
-    }
-    else {
-        initializeHomeStageScale();
+        initializeHomeStageLayout();
     }
 })();
 // SEGMENT B END — Home Stage Measurements

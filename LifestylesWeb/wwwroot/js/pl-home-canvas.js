@@ -1,0 +1,1474 @@
+﻿// SEGMENT A START — Home Canvas Bootstrap
+(function () {
+    const homeRoot = document.getElementById("pl-home-root");
+    const worldStage = document.getElementById("pl-world-stage");
+    const safeUiStage = document.getElementById("pl-safe-ui-stage");
+    const safeZoneOutline = document.getElementById("pl-safe-zone-outline");
+
+    const homeSceneArt = document.getElementById("pl-home-scene-art");
+    const homeFocusButton = document.getElementById("pl-home-focus-button");
+    const homeSleepButton = document.getElementById("pl-home-sleep-button");
+
+    const setupPanel = document.getElementById("pl-setup-panel");
+    const setupControls = document.getElementById("pl-setup-controls");
+    const focusTypeField = document.getElementById("pl-focus-type-field");
+    const durationText = document.getElementById("pl-duration-text");
+    const sliderGroup = document.getElementById("pl-slider-group");
+    const sliderTrackShell = document.getElementById("pl-slider-track-shell");
+    const sliderTrackEmptyArt = document.getElementById("pl-slider-track-empty-art");
+    const sliderFillShell = document.getElementById("pl-slider-fill-shell");
+    const sliderFillArt = document.getElementById("pl-slider-fill-art");
+    const sliderNibVisual = document.getElementById("pl-slider-nib-visual");
+    const durationSlider = document.getElementById("pl-duration-slider");
+
+    const startFocusButton = document.getElementById("pl-start-focus-button");
+    const closeFocusButton = document.getElementById("pl-close-focus-button");
+
+    const runPanel = document.getElementById("pl-run-panel");
+    const pauseButton = document.getElementById("pl-pause-button");
+    const exitButton = document.getElementById("pl-exit-button");
+
+    const confirmDim = document.getElementById("pl-confirm-dim");
+    const confirmPanel = document.getElementById("pl-confirm-panel");
+    const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
+    const confirmStopButton = document.getElementById("pl-confirm-stop");
+
+    const rewardDim = document.getElementById("pl-reward-dim");
+    const rewardPanel = document.getElementById("pl-reward-panel");
+    const rewardCloseButton = document.getElementById("pl-reward-close-button");
+
+    const focusTypeInput = document.getElementById("pl-focus-type-input");
+
+    const runStateLabel = document.getElementById("pl-run-state-label");
+    const runReadout = document.getElementById("pl-run-readout");
+    const runElapsed = document.getElementById("pl-run-elapsed");
+    const runNote = document.getElementById("pl-run-note");
+    const progressFill = document.getElementById("pl-progress-fill");
+
+    const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
+    const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
+    const confirmCompleteXp = document.getElementById("pl-confirm-complete-xp");
+    const confirmCompleteCoins = document.getElementById("pl-confirm-complete-coins");
+    const confirmCurrentXp = document.getElementById("pl-confirm-current-xp");
+    const confirmCurrentCoins = document.getElementById("pl-confirm-current-coins");
+
+    const rewardStatusText = document.getElementById("pl-reward-status-text");
+    const rewardFocusType = document.getElementById("pl-reward-focus-type");
+    const rewardDurationText = document.getElementById("pl-reward-duration-text");
+    const rewardXp = document.getElementById("pl-reward-xp");
+    const rewardCoins = document.getElementById("pl-reward-coins");
+
+    const saveForm = document.getElementById("pl-save-form");
+    const saveFocusType = document.getElementById("pl-save-focus-type");
+    const savePlannedSeconds = document.getElementById("pl-save-planned-seconds");
+    const saveElapsedSeconds = document.getElementById("pl-save-elapsed-seconds");
+    const saveMode = document.getElementById("pl-save-mode");
+
+    const layoutPanel = document.getElementById("pl-layout-panel");
+    const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
+    const layoutStageStatus = document.getElementById("pl-layout-stage-status");
+    const layoutSafeZoneStatus = document.getElementById("pl-layout-safe-zone-status");
+
+    const layoutScale = document.getElementById("pl-layout-scale");
+    const layoutScaleNumber = document.getElementById("pl-layout-scale-number");
+    const layoutX = document.getElementById("pl-layout-x");
+    const layoutXNumber = document.getElementById("pl-layout-x-number");
+    const layoutY = document.getElementById("pl-layout-y");
+    const layoutYNumber = document.getElementById("pl-layout-y-number");
+
+    const layoutWidth = document.getElementById("pl-layout-width");
+    const layoutHeight = document.getElementById("pl-layout-height");
+    const layoutScaleValue = document.getElementById("pl-layout-scale-value");
+    const layoutXValue = document.getElementById("pl-layout-x-value");
+    const layoutYValue = document.getElementById("pl-layout-y-value");
+    const layoutHeightLabel = document.getElementById("pl-layout-height-label");
+    const layoutHeightHint = document.getElementById("pl-layout-height-hint");
+    const layoutSaveSelected = document.getElementById("pl-layout-save-selected");
+    const layoutRevertSelected = document.getElementById("pl-layout-revert-selected");
+    const layoutResetSelected = document.getElementById("pl-layout-reset-selected");
+    const layoutResetAll = document.getElementById("pl-layout-reset-all");
+    const layoutCode = document.getElementById("pl-layout-code");
+
+    if (!homeRoot || !worldStage || !safeUiStage || !safeZoneOutline ||
+        !homeSceneArt || !homeFocusButton || !homeSleepButton ||
+        !setupPanel || !setupControls || !focusTypeField || !durationText ||
+        !sliderGroup || !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell ||
+        !sliderFillArt || !sliderNibVisual || !durationSlider || !startFocusButton ||
+        !closeFocusButton || !runPanel || !pauseButton || !exitButton ||
+        !confirmDim || !confirmPanel || !confirmKeepGoingButton || !confirmStopButton ||
+        !rewardDim || !rewardPanel || !rewardCloseButton || !focusTypeInput ||
+        !runStateLabel || !runReadout || !runElapsed || !runNote || !progressFill ||
+        !confirmCurrentTime || !confirmTimerStatus || !confirmCompleteXp ||
+        !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
+        !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
+        !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
+        !saveElapsedSeconds || !saveMode || !layoutPanel || !layoutAssetSelect ||
+        !layoutStageStatus || !layoutSafeZoneStatus || !layoutScale || !layoutScaleNumber ||
+        !layoutX || !layoutXNumber || !layoutY || !layoutYNumber || !layoutWidth ||
+        !layoutHeight || !layoutScaleValue || !layoutXValue || !layoutYValue ||
+        !layoutHeightLabel || !layoutHeightHint || !layoutSaveSelected ||
+        !layoutRevertSelected || !layoutResetSelected || !layoutResetAll || !layoutCode) {
+        return;
+    }
+
+    const stopThresholdSeconds = 60;
+    const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
+    const layoutSyncReadUrl = "/LayoutSync?handler=Read";
+    const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
+
+    const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
+    const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
+    const rewardSleepMultiplier = Math.max(1, parseFloat(homeRoot.dataset.rewardSleepMultiplier || "1") || 1);
+    const rewardWindowEligible = String(homeRoot.dataset.rewardWindowEligible || "").toLowerCase() === "true";
+    const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
+
+    const artImageVars = {
+        "home-scene": "--pl-home-scene-image",
+        "home-focus": "--pl-btn-home-focus-image",
+        "home-sleep": "--pl-btn-home-sleep-image",
+        "setup-panel": "--pl-focus-setup-panel-image",
+        "run-panel": "--pl-focus-run-panel-image",
+        "confirm-panel": "--pl-focus-confirm-panel-image",
+        "reward-panel": "--pl-focus-reward-panel-image",
+        "start": "--pl-btn-start-image",
+        "back": "--pl-btn-back-image",
+        "pause": "--pl-btn-pause-image",
+        "exit": "--pl-btn-exit-image",
+        "keep-going": "--pl-btn-keep-going-image",
+        "stop": "--pl-btn-stop-image",
+        "gotcha": "--pl-btn-gotcha-image",
+        "slider": "--pl-slider-track-empty-image",
+        "slider-nib-art": "--pl-slider-nib-image"
+    };
+
+    const layoutAssets = {
+        "home-scene": { element: homeSceneArt, stage: "world" },
+        "home-focus": { element: homeFocusButton, stage: "ui" },
+        "home-sleep": { element: homeSleepButton, stage: "ui" },
+        "setup-panel": { element: setupPanel, stage: "ui" },
+        "focus-type-field": { element: focusTypeField, stage: "ui" },
+        "duration-text": { element: durationText, stage: "ui" },
+        "slider": { element: sliderGroup, stage: "ui" },
+        "start": { element: startFocusButton, stage: "ui" },
+        "back": { element: closeFocusButton, stage: "ui" },
+        "run-panel": { element: runPanel, stage: "ui" },
+        "pause": { element: pauseButton, stage: "ui" },
+        "exit": { element: exitButton, stage: "ui" },
+        "confirm-panel": { element: confirmPanel, stage: "ui" },
+        "keep-going": { element: confirmKeepGoingButton, stage: "ui" },
+        "stop": { element: confirmStopButton, stage: "ui" },
+        "reward-panel": { element: rewardPanel, stage: "ui" },
+        "gotcha": { element: rewardCloseButton, stage: "ui" }
+    };
+
+    const setupInteractiveElements = [
+        focusTypeField,
+        durationText,
+        sliderGroup
+    ];
+
+    const artMetrics = {};
+    let sharedLayoutState = {};
+    let currentDraftAssetKey = null;
+    let currentDraftState = null;
+    let plannedSeconds = 300;
+    let startedAtMs = 0;
+    let pausedElapsedSeconds = 0;
+    let isRunning = false;
+    let isPaused = false;
+    let isSubmitting = false;
+    let completionTonePlayed = false;
+    let dragState = null;
+
+    function readCssPxVar(varName, fallbackValue) {
+        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+        if (!raw) {
+            return fallbackValue;
+        }
+
+        const parsed = parseFloat(raw.replace("px", ""));
+        return Number.isFinite(parsed) ? parsed : fallbackValue;
+    }
+
+    function readCssNumberVar(varName, fallbackValue) {
+        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+        if (!raw) {
+            return fallbackValue;
+        }
+
+        const parsed = parseFloat(raw);
+        return Number.isFinite(parsed) ? parsed : fallbackValue;
+    }
+
+    function readCssUrlVar(varName) {
+        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
+        if (!raw || raw === "none") {
+            return "";
+        }
+
+        const match = raw.match(/^url\((['"]?)(.*?)\1\)$/);
+        return match ? match[2] : "";
+    }
+
+    function getDesignWidth() {
+        return readCssPxVar("--pl-home-screen-width", 428);
+    }
+
+    function getDesignHeight() {
+        return readCssPxVar("--pl-home-screen-height", 926);
+    }
+
+    function getWorldStageScale() {
+        const parsed = parseFloat(homeRoot.dataset.worldStageScale || "1");
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    }
+
+    function getSafeUiStageScale() {
+        const parsed = parseFloat(homeRoot.dataset.safeUiStageScale || "1");
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    }
+
+    function getAssetElement(assetKey) {
+        return layoutAssets[assetKey]?.element || null;
+    }
+
+    function getAssetStageType(assetKey) {
+        return layoutAssets[assetKey]?.stage || "ui";
+    }
+
+    function getAssetStageElement(assetKey) {
+        return getAssetStageType(assetKey) === "world" ? worldStage : safeUiStage;
+    }
+
+    function getAssetStageRect(assetKey) {
+        return getAssetStageElement(assetKey).getBoundingClientRect();
+    }
+
+    function getAssetStageScale(assetKey) {
+        return getAssetStageType(assetKey) === "world"
+            ? getWorldStageScale()
+            : getSafeUiStageScale();
+    }
+
+    function clientToAssetDesignPoint(assetKey, clientX, clientY) {
+        const rect = getAssetStageRect(assetKey);
+        const scale = getAssetStageScale(assetKey);
+
+        return {
+            x: (clientX - rect.left) / scale,
+            y: (clientY - rect.top) / scale
+        };
+    }
+
+    function assetHasArt(assetKey) {
+        const varName = artImageVars[assetKey];
+        return !!(varName && readCssUrlVar(varName));
+    }
+
+    function normalizeLayoutOverride(value) {
+        if (!value || typeof value !== "object") {
+            return null;
+        }
+
+        return {
+            x: value.x ?? value.X,
+            y: value.y ?? value.Y,
+            width: value.width ?? value.Width,
+            height: value.height ?? value.Height,
+            scale: value.scale ?? value.Scale
+        };
+    }
+
+    function normalizeLayoutItems(items) {
+        if (!items || typeof items !== "object") {
+            return {};
+        }
+
+        const result = {};
+        Object.entries(items).forEach(([key, value]) => {
+            const normalized = normalizeLayoutOverride(value);
+            if (normalized) {
+                result[key] = normalized;
+            }
+        });
+
+        return result;
+    }
+
+    async function loadSharedLayoutState() {
+        try {
+            const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
+
+            if (!response.ok) {
+                sharedLayoutState = {};
+                return;
+            }
+
+            const payload = await response.json();
+            sharedLayoutState = normalizeLayoutItems(payload?.items ?? payload?.Items);
+        }
+        catch {
+            sharedLayoutState = {};
+        }
+    }
+
+    async function saveSharedLayoutState() {
+        try {
+            await fetch(layoutSyncWriteUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ items: sharedLayoutState })
+            });
+        }
+        catch {
+        }
+    }
+
+    function analyzeImageMetrics(image) {
+        const metrics = {
+            canvasWidth: image.naturalWidth,
+            canvasHeight: image.naturalHeight,
+            canvasRatio: image.naturalWidth / image.naturalHeight,
+            visibleLeftRatio: 0,
+            visibleTopRatio: 0,
+            visibleWidthRatio: 1,
+            visibleHeightRatio: 1,
+            hasVisibleBounds: false
+        };
+
+        try {
+            const canvas = document.createElement("canvas");
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+
+            const context = canvas.getContext("2d", { willReadFrequently: true });
+            if (!context) {
+                return metrics;
+            }
+
+            context.drawImage(image, 0, 0);
+            const imageData = context.getImageData(0, 0, image.naturalWidth, image.naturalHeight).data;
+
+            let minX = image.naturalWidth;
+            let minY = image.naturalHeight;
+            let maxX = -1;
+            let maxY = -1;
+
+            for (let y = 0; y < image.naturalHeight; y += 1) {
+                for (let x = 0; x < image.naturalWidth; x += 1) {
+                    const alpha = imageData[((y * image.naturalWidth) + x) * 4 + 3];
+                    if (alpha > 0) {
+                        if (x < minX) {
+                            minX = x;
+                        }
+
+                        if (y < minY) {
+                            minY = y;
+                        }
+
+                        if (x > maxX) {
+                            maxX = x;
+                        }
+
+                        if (y > maxY) {
+                            maxY = y;
+                        }
+                    }
+                }
+            }
+
+            if (maxX >= minX && maxY >= minY) {
+                metrics.visibleLeftRatio = minX / image.naturalWidth;
+                metrics.visibleTopRatio = minY / image.naturalHeight;
+                metrics.visibleWidthRatio = (maxX - minX + 1) / image.naturalWidth;
+                metrics.visibleHeightRatio = (maxY - minY + 1) / image.naturalHeight;
+                metrics.hasVisibleBounds = true;
+            }
+        }
+        catch {
+        }
+
+        return metrics;
+    }
+
+    function primeArtMetrics() {
+        Object.entries(artImageVars).forEach(([assetKey, cssVar]) => {
+            const url = readCssUrlVar(cssVar);
+            if (!url) {
+                return;
+            }
+
+            const image = new Image();
+            image.decoding = "async";
+            image.onload = function () {
+                artMetrics[assetKey] = analyzeImageMetrics(image);
+
+                if (assetKey === "slider" || assetKey === "slider-nib-art") {
+                    updateSliderVisuals();
+                }
+
+                if (layoutModeEnabled) {
+                    refreshLayoutUi();
+                }
+            };
+            image.src = url;
+        });
+    }
+
+    function getCssLayoutDefaults(assetKey) {
+        const metrics = artMetrics[assetKey];
+        const defaultWidth = readCssPxVar(`--pl-layout-${assetKey}-width`, 160);
+
+        return {
+            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 0),
+            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 0),
+            width: defaultWidth,
+            height: readCssPxVar(`--pl-layout-${assetKey}-height`, metrics && metrics.canvasRatio > 0 ? Math.round(defaultWidth / metrics.canvasRatio) : 56),
+            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
+        };
+    }
+
+    function getSavedLayoutState(assetKey) {
+        const defaults = getCssLayoutDefaults(assetKey);
+        const stored = sharedLayoutState[assetKey] || {};
+
+        return {
+            x: stored.x ?? defaults.x,
+            y: stored.y ?? defaults.y,
+            width: stored.width ?? defaults.width,
+            height: stored.height ?? defaults.height,
+            scale: stored.scale ?? defaults.scale
+        };
+    }
+
+    function getEffectiveLayoutState(assetKey) {
+        const saved = getSavedLayoutState(assetKey);
+
+        if (assetKey === currentDraftAssetKey && currentDraftState) {
+            return {
+                x: currentDraftState.x ?? saved.x,
+                y: currentDraftState.y ?? saved.y,
+                width: currentDraftState.width ?? saved.width,
+                height: currentDraftState.height ?? saved.height,
+                scale: currentDraftState.scale ?? saved.scale
+            };
+        }
+
+        return saved;
+    }
+
+    function getResolvedHeight(assetKey, state) {
+        const metrics = artMetrics[assetKey];
+
+        if (metrics && metrics.canvasRatio > 0) {
+            return Math.max(1, Math.round(state.width / metrics.canvasRatio));
+        }
+
+        return state.height;
+    }
+
+    function getScaledAssetSize(assetKey, state) {
+        const resolvedHeight = getResolvedHeight(assetKey, state);
+        const scaleRatio = Math.max(0.01, (state.scale || 100) / 100);
+
+        return {
+            width: Math.max(1, state.width * scaleRatio),
+            height: Math.max(1, resolvedHeight * scaleRatio)
+        };
+    }
+
+    function beginDraftForSelected(partialState) {
+        const assetKey = layoutAssetSelect.value;
+        const baseState = getEffectiveLayoutState(assetKey);
+
+        currentDraftAssetKey = assetKey;
+        currentDraftState = {
+            x: partialState?.x ?? baseState.x,
+            y: partialState?.y ?? baseState.y,
+            width: partialState?.width ?? baseState.width,
+            height: partialState?.height ?? baseState.height,
+            scale: partialState?.scale ?? baseState.scale
+        };
+    }
+
+    function discardCurrentDraft() {
+        const assetKey = currentDraftAssetKey;
+        currentDraftAssetKey = null;
+        currentDraftState = null;
+
+        if (assetKey) {
+            applyAssetLayout(assetKey);
+        }
+    }
+
+    async function saveSelectedLayoutAsset() {
+        const assetKey = layoutAssetSelect.value;
+
+        if (currentDraftAssetKey !== assetKey || !currentDraftState) {
+            return;
+        }
+
+        sharedLayoutState[assetKey] = {
+            x: currentDraftState.x,
+            y: currentDraftState.y,
+            width: currentDraftState.width,
+            height: currentDraftState.height,
+            scale: currentDraftState.scale
+        };
+
+        currentDraftAssetKey = null;
+        currentDraftState = null;
+        await saveSharedLayoutState();
+        applyAllAssetLayouts();
+        refreshLayoutUi();
+    }
+
+    function revertSelectedLayoutAsset() {
+        discardCurrentDraft();
+        refreshLayoutUi();
+    }
+
+    function resetSelectedLayoutAsset() {
+        beginDraftForSelected(getCssLayoutDefaults(layoutAssetSelect.value));
+        applyAssetLayout(layoutAssetSelect.value);
+        refreshLayoutUi();
+    }
+
+    async function resetAllLayoutAssets() {
+        sharedLayoutState = {};
+        currentDraftAssetKey = null;
+        currentDraftState = null;
+        await saveSharedLayoutState();
+        applyAllAssetLayouts();
+        refreshLayoutUi();
+    }
+
+    function getStageBounds() {
+        return {
+            width: getDesignWidth(),
+            height: getDesignHeight()
+        };
+    }
+
+    function describeAxisPlacement(axis, position, size, limit) {
+        const roundedPosition = Math.round(position);
+        const roundedSize = Math.round(size);
+        const insideMax = Math.max(0, Math.round(limit - roundedSize));
+
+        if (roundedPosition < 0) {
+            return {
+                inside: false,
+                text: `0 px (${Math.abs(roundedPosition)} px off ${axis === "x" ? "left" : "top"})`
+            };
+        }
+
+        if (roundedPosition > insideMax) {
+            return {
+                inside: false,
+                text: `${insideMax} px (${roundedPosition - insideMax} px off ${axis === "x" ? "right" : "bottom"})`
+            };
+        }
+
+        return {
+            inside: true,
+            text: `${roundedPosition} px (inside safe zone)`
+        };
+    }
+
+    function getVisibilityStatus(assetKey, state) {
+        const stageBounds = getStageBounds();
+        const scaledSize = getScaledAssetSize(assetKey, state);
+
+        return {
+            xStatus: describeAxisPlacement("x", state.x, scaledSize.width, stageBounds.width),
+            yStatus: describeAxisPlacement("y", state.y, scaledSize.height, stageBounds.height)
+        };
+    }
+
+    function setButtonLabel(button, label) {
+        const labelElement = button.querySelector(".pl-button-label");
+        if (labelElement) {
+            labelElement.textContent = label;
+        }
+    }
+
+    function formatClock(totalSeconds) {
+        const clamped = Math.max(0, Math.floor(totalSeconds));
+        const hours = String(Math.floor(clamped / 3600)).padStart(2, "0");
+        const minutes = String(Math.floor((clamped % 3600) / 60)).padStart(2, "0");
+        const seconds = String(clamped % 60).padStart(2, "0");
+        return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function formatDurationSelection(totalMinutes) {
+        const minutes = Math.max(1, Math.floor(totalMinutes));
+        return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+    }
+
+    function calculateRewardPreview(elapsedSeconds, isComplete) {
+        const roundedMinutes = Math.max(0, Math.round(elapsedSeconds / 60));
+        const baseXp = Math.round(roundedMinutes * rewardXpPerMinute);
+        const multiplier = isComplete ? rewardSleepMultiplier : rewardIncompleteMultiplier;
+        const xp = Math.max(0, Math.round(baseXp * multiplier));
+        const coins = rewardWindowEligible
+            ? Math.max(0, Math.round(xp / 100))
+            : 0;
+
+        return { xp, coins };
+    }
+
+    function applyPanelArtStates() {
+        setupPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("setup-panel"));
+        runPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("run-panel"));
+        confirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("confirm-panel"));
+        rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
+    }
+    // SEGMENT A END — Home Canvas Bootstrap
+
+    // SEGMENT B START — Home Canvas Layout
+    function updateSliderVisuals() {
+        const state = getEffectiveLayoutState("slider");
+        const groupWidth = Math.max(20, state.width);
+        const groupHeight = getResolvedHeight("slider", state);
+
+        const sliderMetric = artMetrics["slider"];
+        const nibMetric = artMetrics["slider-nib-art"];
+
+        const min = parseInt(durationSlider.min || "5", 10);
+        const max = parseInt(durationSlider.max || "120", 10);
+        const value = parseInt(durationSlider.value || "5", 10);
+        const progressRatio = max <= min ? 0 : (value - min) / (max - min);
+
+        const trackLeft = sliderMetric && sliderMetric.hasVisibleBounds
+            ? groupWidth * sliderMetric.visibleLeftRatio
+            : 0;
+
+        const trackWidth = sliderMetric && sliderMetric.hasVisibleBounds
+            ? groupWidth * sliderMetric.visibleWidthRatio
+            : groupWidth;
+
+        const targetCenter = trackLeft + (progressRatio * trackWidth);
+
+        const defaultNibCenter = nibMetric && nibMetric.hasVisibleBounds
+            ? groupWidth * (nibMetric.visibleLeftRatio + (nibMetric.visibleWidthRatio / 2))
+            : groupWidth / 2;
+
+        const translateX = Math.round(targetCenter - defaultNibCenter);
+        const fillWidth = Math.max(0, Math.min(groupWidth, Math.round(targetCenter)));
+
+        sliderGroup.style.left = `${state.x}px`;
+        sliderGroup.style.top = `${state.y}px`;
+        sliderGroup.style.width = `${groupWidth}px`;
+        sliderGroup.style.height = `${groupHeight}px`;
+        sliderGroup.style.transform = `scale(${state.scale / 100})`;
+
+        sliderTrackShell.style.width = `${groupWidth}px`;
+        sliderTrackShell.style.height = `${groupHeight}px`;
+
+        sliderTrackEmptyArt.style.width = `${groupWidth}px`;
+        sliderTrackEmptyArt.style.height = `${groupHeight}px`;
+
+        sliderFillShell.style.width = `${fillWidth}px`;
+        sliderFillShell.style.height = `${groupHeight}px`;
+
+        sliderFillArt.style.width = `${groupWidth}px`;
+        sliderFillArt.style.height = `${groupHeight}px`;
+
+        sliderNibVisual.style.width = `${groupWidth}px`;
+        sliderNibVisual.style.height = `${groupHeight}px`;
+        sliderNibVisual.style.transform = `translateX(${translateX}px)`;
+
+        durationSlider.style.pointerEvents = layoutModeEnabled ? "none" : "auto";
+    }
+
+    function updateDurationReadout() {
+        durationText.textContent = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
+        updateSliderVisuals();
+    }
+
+    function applyAssetLayout(assetKey) {
+        const element = getAssetElement(assetKey);
+        if (!element) {
+            return;
+        }
+
+        if (assetKey === "slider") {
+            updateSliderVisuals();
+            return;
+        }
+
+        const state = getEffectiveLayoutState(assetKey);
+        const resolvedHeight = getResolvedHeight(assetKey, state);
+
+        element.style.left = `${state.x}px`;
+        element.style.top = `${state.y}px`;
+        element.style.width = `${state.width}px`;
+        element.style.height = `${resolvedHeight}px`;
+        element.style.transform = `scale(${state.scale / 100})`;
+
+        if (assetKey === "home-scene") {
+            element.style.pointerEvents = "none";
+        }
+    }
+
+    function applyAllAssetLayouts() {
+        Object.keys(layoutAssets).forEach(applyAssetLayout);
+        refreshLayoutSelection();
+    }
+
+    function refreshLayoutSelection() {
+        const selectedAssetKey = layoutAssetSelect.value;
+
+        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+            const state = getEffectiveLayoutState(assetKey);
+            const status = getVisibilityStatus(assetKey, state);
+            const isSelected = layoutModeEnabled && assetKey === selectedAssetKey;
+
+            config.element.classList.toggle("pl-layout-selected", isSelected);
+            config.element.classList.toggle("pl-layout-selected-unsafe", isSelected && (!status.xStatus.inside || !status.yStatus.inside));
+        });
+    }
+
+    function updateLayoutSliderBounds(assetKey) {
+        const state = getEffectiveLayoutState(assetKey);
+        const stageBounds = getStageBounds();
+        const scaledSize = getScaledAssetSize(assetKey, state);
+
+        layoutScale.min = "20";
+        layoutScale.max = "250";
+        layoutScaleNumber.min = "20";
+        layoutScaleNumber.max = "250";
+
+        layoutX.min = String(Math.round(-scaledSize.width));
+        layoutX.max = String(Math.round(stageBounds.width + scaledSize.width));
+        layoutXNumber.min = layoutX.min;
+        layoutXNumber.max = layoutX.max;
+
+        layoutY.min = String(Math.round(-scaledSize.height));
+        layoutY.max = String(Math.round(stageBounds.height + scaledSize.height));
+        layoutYNumber.min = layoutY.min;
+        layoutYNumber.max = layoutY.max;
+    }
+
+    function updateLayoutCodePreview(assetKey) {
+        const state = getEffectiveLayoutState(assetKey);
+        const resolvedHeight = getResolvedHeight(assetKey, state);
+        const ratioLocked = !!artMetrics[assetKey];
+
+        if (ratioLocked) {
+            layoutCode.value =
+                `.pl-home-screen {
+    --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+    --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+    --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+    --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+}
+
+/* Height auto from asset ratio: ${resolvedHeight}px */`;
+            return;
+        }
+
+        layoutCode.value =
+            `.pl-home-screen {
+    --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+    --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+    --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+    --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
+    --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+}`;
+    }
+
+    function updateLayoutStatusDisplay(assetKey) {
+        const state = getEffectiveLayoutState(assetKey);
+        const status = getVisibilityStatus(assetKey, state);
+        const stageType = getAssetStageType(assetKey);
+
+        layoutStageStatus.textContent = stageType === "world"
+            ? "World layer · fills the screen with cover scaling."
+            : "Safe UI layer · always scaled to remain visible.";
+
+        layoutSafeZoneStatus.textContent = (!status.xStatus.inside || !status.yStatus.inside)
+            ? `Outside safe zone · ${status.xStatus.text}; ${status.yStatus.text}`
+            : "Inside safe zone.";
+
+        layoutSafeZoneStatus.classList.toggle("pl-layout-field-hint-safe", status.xStatus.inside && status.yStatus.inside);
+        layoutSafeZoneStatus.classList.toggle("pl-layout-field-hint-unsafe", !status.xStatus.inside || !status.yStatus.inside);
+
+        layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
+        layoutXValue.textContent = status.xStatus.text;
+        layoutYValue.textContent = status.yStatus.text;
+    }
+
+    function syncNumberPairs() {
+        layoutScaleNumber.value = layoutScale.value;
+        layoutXNumber.value = layoutX.value;
+        layoutYNumber.value = layoutY.value;
+    }
+
+    function refreshLayoutUi() {
+        const assetKey = layoutAssetSelect.value;
+        const state = getEffectiveLayoutState(assetKey);
+        const resolvedHeight = getResolvedHeight(assetKey, state);
+        const ratioLocked = !!artMetrics[assetKey];
+
+        previewLayoutAsset(assetKey);
+        updateLayoutSliderBounds(assetKey);
+        applyAllAssetLayouts();
+
+        layoutScale.value = String(Math.round(state.scale));
+        layoutX.value = String(Math.round(state.x));
+        layoutY.value = String(Math.round(state.y));
+        layoutWidth.value = String(Math.round(state.width));
+        layoutHeight.value = String(Math.round(resolvedHeight));
+        syncNumberPairs();
+
+        layoutHeight.disabled = ratioLocked;
+        layoutHeight.readOnly = ratioLocked;
+        layoutHeightLabel.textContent = ratioLocked ? "Height (auto)" : "Height (px)";
+        layoutHeightHint.textContent = ratioLocked
+            ? "Image-backed assets keep their natural aspect ratio automatically."
+            : "";
+
+        updateLayoutCodePreview(assetKey);
+        updateLayoutStatusDisplay(assetKey);
+        refreshLayoutSelection();
+    }
+
+    function buildPartialStateFromControls() {
+        const assetKey = layoutAssetSelect.value;
+        const base = getEffectiveLayoutState(assetKey);
+
+        const partial = {
+            scale: parseInt(layoutScaleNumber.value || layoutScale.value || String(base.scale), 10),
+            x: parseInt(layoutXNumber.value || layoutX.value || String(base.x), 10),
+            y: parseInt(layoutYNumber.value || layoutY.value || String(base.y), 10),
+            width: parseInt(layoutWidth.value || String(base.width), 10)
+        };
+
+        if (!artMetrics[assetKey]) {
+            partial.height = parseInt(layoutHeight.value || String(base.height), 10);
+        }
+
+        return partial;
+    }
+
+    function pushLayoutControlValues() {
+        const partial = buildPartialStateFromControls();
+        beginDraftForSelected(partial);
+        updateLayoutSliderBounds(layoutAssetSelect.value);
+
+        layoutScale.value = String(Math.round(currentDraftState.scale));
+        layoutX.value = String(Math.round(currentDraftState.x));
+        layoutY.value = String(Math.round(currentDraftState.y));
+        syncNumberPairs();
+
+        applyAssetLayout(layoutAssetSelect.value);
+        updateLayoutCodePreview(layoutAssetSelect.value);
+        updateLayoutStatusDisplay(layoutAssetSelect.value);
+        refreshLayoutSelection();
+    }
+
+    function handleLayoutAssetChange() {
+        const newAssetKey = layoutAssetSelect.value;
+
+        if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
+            discardCurrentDraft();
+        }
+
+        refreshLayoutUi();
+    }
+
+    function beginDrag(assetKey, event) {
+        if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey) {
+            return;
+        }
+
+        const state = getEffectiveLayoutState(assetKey);
+        const designPoint = clientToAssetDesignPoint(assetKey, event.clientX, event.clientY);
+
+        dragState = {
+            assetKey,
+            pointerId: event.pointerId,
+            offsetX: designPoint.x - state.x,
+            offsetY: designPoint.y - state.y
+        };
+
+        beginDraftForSelected(state);
+
+        try {
+            getAssetElement(assetKey)?.setPointerCapture(event.pointerId);
+        }
+        catch {
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    function handleDragMove(event) {
+        if (!dragState) {
+            return;
+        }
+
+        const designPoint = clientToAssetDesignPoint(dragState.assetKey, event.clientX, event.clientY);
+
+        beginDraftForSelected({
+            x: Math.round(designPoint.x - dragState.offsetX),
+            y: Math.round(designPoint.y - dragState.offsetY)
+        });
+
+        updateLayoutSliderBounds(dragState.assetKey);
+
+        layoutX.value = String(Math.round(currentDraftState.x));
+        layoutY.value = String(Math.round(currentDraftState.y));
+        syncNumberPairs();
+
+        applyAssetLayout(dragState.assetKey);
+        updateLayoutCodePreview(dragState.assetKey);
+        updateLayoutStatusDisplay(dragState.assetKey);
+        refreshLayoutSelection();
+
+        event.preventDefault();
+    }
+
+    function endDrag(event) {
+        if (!dragState) {
+            return;
+        }
+
+        const element = getAssetElement(dragState.assetKey);
+
+        if (element && dragState.pointerId === event.pointerId) {
+            try {
+                element.releasePointerCapture(dragState.pointerId);
+            }
+            catch {
+            }
+        }
+
+        dragState = null;
+    }
+    // SEGMENT B END — Home Canvas Layout
+
+    // SEGMENT C START — Home Canvas App Flow
+    function setSetupChildrenVisible(isVisible) {
+        focusTypeField.hidden = !isVisible;
+        durationText.hidden = !isVisible;
+        sliderGroup.hidden = !isVisible;
+    }
+
+    function setSetupChildrenLocked(isLocked) {
+        setupInteractiveElements.forEach(function (element) {
+            element.classList.toggle("pl-setup-child-locked", isLocked);
+        });
+
+        focusTypeInput.disabled = isLocked;
+        durationSlider.disabled = isLocked;
+    }
+
+    function setHomeButtonsVisible(isVisible) {
+        homeFocusButton.hidden = !isVisible;
+        homeSleepButton.hidden = !isVisible;
+    }
+
+    function setSetupVisible(isVisible) {
+        setupPanel.hidden = !isVisible;
+        startFocusButton.hidden = !isVisible;
+        closeFocusButton.hidden = !isVisible;
+        setSetupChildrenVisible(isVisible);
+    }
+
+    function setRunVisible(isVisible) {
+        runPanel.hidden = !isVisible;
+        pauseButton.hidden = !isVisible;
+        exitButton.hidden = !isVisible;
+    }
+
+    function setConfirmVisible(isVisible) {
+        confirmDim.hidden = !isVisible;
+        confirmPanel.hidden = !isVisible;
+        confirmKeepGoingButton.hidden = !isVisible;
+        confirmStopButton.hidden = !isVisible;
+    }
+
+    function setRewardVisible(isVisible) {
+        rewardDim.hidden = !isVisible;
+        rewardPanel.hidden = !isVisible;
+        rewardCloseButton.hidden = !isVisible;
+    }
+
+    function showHomeState() {
+        setHomeButtonsVisible(true);
+        setSetupVisible(false);
+        setRunVisible(false);
+        setConfirmVisible(false);
+        setRewardVisible(false);
+    }
+
+    function showSetupState() {
+        setHomeButtonsVisible(false);
+        setSetupVisible(true);
+        setRunVisible(false);
+        setConfirmVisible(false);
+        setRewardVisible(false);
+        setupPanel.classList.remove("pl-setup-panel-locked");
+        setSetupChildrenLocked(false);
+        updateDurationReadout();
+    }
+
+    function showRunStatePreview() {
+        showSetupState();
+        setupPanel.classList.add("pl-setup-panel-locked");
+        setSetupChildrenLocked(true);
+        setRunVisible(true);
+        runStateLabel.textContent = "Time remaining";
+        runReadout.textContent = "00:25:00";
+        runElapsed.textContent = "00:10:00";
+        progressFill.style.width = "40%";
+        setButtonLabel(pauseButton, "Pause");
+        setButtonLabel(exitButton, "Stop Focusing");
+        runNote.textContent = "You have reached 1 minute. Stopping now will save the current session as incomplete.";
+    }
+
+    function showConfirmStatePreview() {
+        showRunStatePreview();
+        setConfirmVisible(true);
+        updateConfirmPanel(600);
+    }
+
+    function showRewardStatePreview() {
+        setHomeButtonsVisible(false);
+        setSetupVisible(false);
+        setRunVisible(false);
+        setConfirmVisible(false);
+        setRewardVisible(true);
+        rewardStatusText.textContent = "Completed";
+        rewardFocusType.textContent = "Focus";
+        rewardDurationText.textContent = "00:25:00";
+        rewardXp.textContent = "2500";
+        rewardCoins.textContent = "25";
+    }
+
+    function previewLayoutAsset(assetKey) {
+        if (!layoutModeEnabled) {
+            return;
+        }
+
+        switch (assetKey) {
+            case "home-scene":
+            case "home-focus":
+            case "home-sleep":
+                showHomeState();
+                break;
+            case "setup-panel":
+            case "focus-type-field":
+            case "duration-text":
+            case "slider":
+            case "start":
+            case "back":
+                showSetupState();
+                break;
+            case "run-panel":
+            case "pause":
+            case "exit":
+                showRunStatePreview();
+                break;
+            case "confirm-panel":
+            case "keep-going":
+            case "stop":
+                showConfirmStatePreview();
+                break;
+            case "reward-panel":
+            case "gotcha":
+                showRewardStatePreview();
+                break;
+            default:
+                showHomeState();
+                break;
+        }
+
+        updateDurationReadout();
+    }
+
+    function openFocusSetup() {
+        showSetupState();
+    }
+
+    function returnToHome() {
+        resetRunState();
+        showHomeState();
+    }
+
+    function resetRunState() {
+        isRunning = false;
+        isPaused = false;
+        isSubmitting = false;
+        completionTonePlayed = false;
+        pausedElapsedSeconds = 0;
+        startedAtMs = 0;
+
+        setupPanel.classList.remove("pl-setup-panel-locked");
+        setSetupChildrenLocked(false);
+        setButtonLabel(pauseButton, "Pause");
+        setButtonLabel(exitButton, "Cancel");
+        runStateLabel.textContent = "Time remaining";
+        runReadout.textContent = "00:05:00";
+        runElapsed.textContent = "00:00:00";
+        progressFill.style.width = "0%";
+        runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
+        updateDurationReadout();
+    }
+
+    function getElapsedSeconds() {
+        if (!isRunning) {
+            return 0;
+        }
+
+        if (isPaused) {
+            return Math.min(plannedSeconds, pausedElapsedSeconds);
+        }
+
+        const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+        return Math.min(plannedSeconds, Math.max(0, liveElapsed));
+    }
+
+    function setButtonsDisabled(isDisabled) {
+        startFocusButton.disabled = isDisabled;
+        pauseButton.disabled = isDisabled;
+        exitButton.disabled = isDisabled;
+        confirmKeepGoingButton.disabled = isDisabled;
+        confirmStopButton.disabled = isDisabled;
+        rewardCloseButton.disabled = isDisabled;
+        focusTypeInput.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
+        durationSlider.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
+    }
+
+    function updateConfirmPanel(elapsedSeconds) {
+        const completePreview = calculateRewardPreview(plannedSeconds, true);
+        const currentPreview = calculateRewardPreview(elapsedSeconds, false);
+
+        confirmCurrentTime.textContent = formatClock(elapsedSeconds);
+        confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
+        confirmCompleteXp.textContent = String(completePreview.xp);
+        confirmCompleteCoins.textContent = String(completePreview.coins);
+        confirmCurrentXp.textContent = String(currentPreview.xp);
+        confirmCurrentCoins.textContent = String(currentPreview.coins);
+    }
+
+    function hydrateRewardPanelFromDataset() {
+        rewardStatusText.textContent = String(homeRoot.dataset.rewardCompleted || "").toLowerCase() === "true"
+            ? "Completed"
+            : "Incomplete";
+
+        rewardFocusType.textContent = homeRoot.dataset.rewardFocusType || "Focus";
+        rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
+        rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
+        rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
+    }
+
+    function playCompletionTone() {
+        if (completionTonePlayed) {
+            return;
+        }
+
+        completionTonePlayed = true;
+
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) {
+                return;
+            }
+
+            const audioContext = new AudioContextClass();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = "sine";
+            oscillator.frequency.value = 880;
+
+            gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.36);
+        }
+        catch {
+        }
+    }
+
+    function submitSave(mode) {
+        if (isSubmitting) {
+            return;
+        }
+
+        const elapsedSeconds = mode === "complete" ? plannedSeconds : getElapsedSeconds();
+        if (elapsedSeconds <= 0) {
+            return;
+        }
+
+        isSubmitting = true;
+        saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
+        savePlannedSeconds.value = String(plannedSeconds);
+        saveElapsedSeconds.value = String(elapsedSeconds);
+        saveMode.value = mode;
+        setButtonsDisabled(true);
+        saveForm.submit();
+    }
+
+    function updateExitButton(elapsedSeconds) {
+        if (elapsedSeconds >= stopThresholdSeconds) {
+            setButtonLabel(exitButton, "Stop Focusing");
+        }
+        else {
+            setButtonLabel(exitButton, "Cancel");
+        }
+    }
+
+    function updateUi() {
+        if (!isRunning) {
+            return;
+        }
+
+        const elapsedSeconds = getElapsedSeconds();
+        const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+        const progressPercent = plannedSeconds <= 0 ? 0 : (elapsedSeconds / plannedSeconds) * 100;
+
+        runReadout.textContent = formatClock(remainingSeconds);
+        runElapsed.textContent = formatClock(elapsedSeconds);
+        progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
+
+        updateExitButton(elapsedSeconds);
+
+        if (!confirmPanel.hidden) {
+            updateConfirmPanel(elapsedSeconds);
+        }
+
+        if (isPaused) {
+            runStateLabel.textContent = "Paused";
+            setButtonLabel(pauseButton, "Keep Going?");
+            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
+                : "Session paused. Cancel before 1 minute to discard this session with no save.";
+        }
+        else {
+            runStateLabel.textContent = "Time remaining";
+            setButtonLabel(pauseButton, "Pause");
+            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
+                ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
+                : "Cancel before 1 minute to discard this session with no save.";
+        }
+
+        if (remainingSeconds <= 0 && !isSubmitting) {
+            playCompletionTone();
+            submitSave("complete");
+        }
+    }
+
+    homeFocusButton.addEventListener("click", function () {
+        if (layoutModeEnabled && layoutAssetSelect.value === "home-focus") {
+            return;
+        }
+
+        openFocusSetup();
+    });
+
+    closeFocusButton.addEventListener("click", function () {
+        if (layoutModeEnabled && layoutAssetSelect.value === "back") {
+            return;
+        }
+
+        returnToHome();
+    });
+
+    durationSlider.addEventListener("input", function () {
+        updateDurationReadout();
+    });
+
+    startFocusButton.addEventListener("click", function () {
+        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "start")) {
+            return;
+        }
+
+        plannedSeconds = Math.max(300, Math.min(7200, parseInt(durationSlider.value || "5", 10) * 60));
+        startedAtMs = Date.now();
+        pausedElapsedSeconds = 0;
+        isRunning = true;
+        isPaused = false;
+        isSubmitting = false;
+        completionTonePlayed = false;
+
+        setupPanel.classList.add("pl-setup-panel-locked");
+        setSetupChildrenLocked(true);
+        runPanel.hidden = false;
+        pauseButton.hidden = false;
+        exitButton.hidden = false;
+        startFocusButton.hidden = true;
+        closeFocusButton.hidden = true;
+
+        runStateLabel.textContent = "Time remaining";
+        setButtonLabel(pauseButton, "Pause");
+        setButtonLabel(exitButton, "Cancel");
+
+        updateUi();
+    });
+
+    pauseButton.addEventListener("click", function () {
+        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutModeEnabled && layoutAssetSelect.value === "pause")) {
+            return;
+        }
+
+        if (!isPaused) {
+            pausedElapsedSeconds = getElapsedSeconds();
+            isPaused = true;
+            updateUi();
+            return;
+        }
+
+        startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+        isPaused = false;
+        updateUi();
+    });
+
+    exitButton.addEventListener("click", function () {
+        if (!isRunning || isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "exit")) {
+            return;
+        }
+
+        const elapsedSeconds = getElapsedSeconds();
+
+        if (elapsedSeconds < stopThresholdSeconds) {
+            returnToHome();
+            return;
+        }
+
+        updateConfirmPanel(elapsedSeconds);
+        setConfirmVisible(true);
+    });
+
+    confirmKeepGoingButton.addEventListener("click", function () {
+        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "keep-going")) {
+            return;
+        }
+
+        setConfirmVisible(false);
+    });
+
+    confirmStopButton.addEventListener("click", function () {
+        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "stop")) {
+            return;
+        }
+
+        submitSave("stop");
+    });
+
+    rewardCloseButton.addEventListener("click", function () {
+        if (layoutModeEnabled && layoutAssetSelect.value === "gotcha") {
+            return;
+        }
+
+        window.location.href = "/Index";
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
+            setConfirmVisible(false);
+        }
+    });
+
+    window.addEventListener("pointermove", handleDragMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    window.addEventListener("resize", function () {
+        applyAllAssetLayouts();
+
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    window.addEventListener("pl-home-stage-resized", function () {
+        applyAllAssetLayouts();
+
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+        config.element.addEventListener("pointerdown", function (event) {
+            beginDrag(assetKey, event);
+        });
+
+        config.element.addEventListener("click", function (event) {
+            if (layoutModeEnabled && layoutAssetSelect.value === assetKey) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, true);
+    });
+
+    function wireLayoutInputs() {
+        const rangeToNumberPairs = [
+            [layoutScale, layoutScaleNumber],
+            [layoutX, layoutXNumber],
+            [layoutY, layoutYNumber]
+        ];
+
+        rangeToNumberPairs.forEach(([rangeInput, numberInput]) => {
+            rangeInput.addEventListener("input", function () {
+                numberInput.value = rangeInput.value;
+                pushLayoutControlValues();
+            });
+
+            numberInput.addEventListener("input", function () {
+                rangeInput.value = numberInput.value;
+                pushLayoutControlValues();
+            });
+        });
+
+        layoutWidth.addEventListener("input", pushLayoutControlValues);
+        layoutHeight.addEventListener("input", pushLayoutControlValues);
+        layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
+        layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
+        layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
+        layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
+        layoutResetAll.addEventListener("click", resetAllLayoutAssets);
+    }
+
+    async function initializeAsync() {
+        applyPanelArtStates();
+        primeArtMetrics();
+        await loadSharedLayoutState();
+
+        homeRoot.classList.toggle("pl-layout-mode", layoutModeEnabled);
+        safeZoneOutline.hidden = !layoutModeEnabled;
+
+        applyAllAssetLayouts();
+        updateDurationReadout();
+
+        if (layoutModeEnabled) {
+            layoutPanel.hidden = false;
+            wireLayoutInputs();
+            refreshLayoutUi();
+            return;
+        }
+
+        if (shouldShowRewardOverlay) {
+            hydrateRewardPanelFromDataset();
+            showRewardStatePreview();
+        }
+        else {
+            returnToHome();
+        }
+    }
+
+    initializeAsync();
+    window.setInterval(updateUi, 250);
+})();
+// SEGMENT C END — Home Canvas App Flow

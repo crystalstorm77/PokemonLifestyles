@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Home";
 }
-
 <!-- SEGMENT A START — Home Canvas Markup -->
 <div class="pl-home-stage-shell" id="pl-home-stage-shell">
     <div class="pl-home-stage" id="pl-home-stage">
@@ -19,227 +18,237 @@
              data-reward-completed="@Model.RewardCompleted.ToString().ToLowerInvariant()"
              data-reward-xp="@Model.RewardXp"
              data-reward-coins="@Model.RewardCoins">
-            <div class="pl-canvas-item pl-home-scene-art" id="pl-home-scene-art" aria-hidden="true"></div>
 
-            @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-            {
-                <div class="pl-status-toast">@Model.StatusMessage</div>
-            }
-
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-home-focus"
-                    id="pl-home-focus-button">
-                <span class="pl-button-label">Focus</span>
-            </button>
-
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-home-sleep"
-                    id="pl-home-sleep-button"
-                    disabled>
-                <span class="pl-button-label">Sleep</span>
-            </button>
-
-            <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-setup" id="pl-setup-panel" hidden>
-                <div class="pl-setup-copy">
-                    <div class="pl-panel-header">
-                        <span class="pl-eyebrow" style="margin:0;">Focus Session</span>
-                        <span class="pl-badge">Countdown</span>
-                    </div>
-
-                    <h2 class="pl-title" style="margin-top:0.55rem;">Stay with it</h2>
-                    <p class="pl-subtitle">
-                        This panel sits on the real home screen. It is not a second screen.
-                    </p>
-                </div>
-
-                <div class="pl-setup-controls" id="pl-setup-controls">
-                    <div class="pl-mode-grid">
-                        <button class="pl-mode-chip pl-mode-chip-active" type="button">
-                            <span>Countdown</span>
-                            <small>Ready now</small>
-                        </button>
-
-                        <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
-                            <span>Count Up</span>
-                            <small>Later</small>
-                        </button>
-                    </div>
+            <div class="pl-world-stage-shell" id="pl-world-stage-shell" aria-hidden="true">
+                <div class="pl-world-stage" id="pl-world-stage">
+                    <div class="pl-canvas-item pl-home-scene-art" id="pl-home-scene-art" aria-hidden="true"></div>
                 </div>
             </div>
 
-            <label class="pl-canvas-item pl-canvas-form-field" id="pl-focus-type-field" hidden>
-                <span class="pl-field-label">Focus type</span>
-                <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
-            </label>
+            <div class="pl-safe-zone-outline" id="pl-safe-zone-outline" hidden aria-hidden="true"></div>
 
-            <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>5 minutes</div>
+            <div class="pl-safe-ui-stage-shell" id="pl-safe-ui-stage-shell">
+                <div class="pl-safe-ui-stage" id="pl-safe-ui-stage">
+                    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+                    {
+                        <div class="pl-status-toast">@Model.StatusMessage</div>
+                    }
 
-            <div class="pl-canvas-item pl-slider-group" id="pl-slider-group" hidden>
-                <div class="pl-slider-track-shell" id="pl-slider-track-shell">
-                    <div class="pl-slider-track-empty-art" id="pl-slider-track-empty-art" aria-hidden="true"></div>
-                </div>
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-home-focus"
+                            id="pl-home-focus-button">
+                        <span class="pl-button-label">Focus</span>
+                    </button>
 
-                <div class="pl-slider-fill-shell" id="pl-slider-fill-shell">
-                    <div class="pl-slider-fill-art" id="pl-slider-fill-art" aria-hidden="true"></div>
-                </div>
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-home-sleep"
+                            id="pl-home-sleep-button"
+                            disabled>
+                        <span class="pl-button-label">Sleep</span>
+                    </button>
 
-                <div class="pl-slider-nib-visual" id="pl-slider-nib-visual" aria-hidden="true"></div>
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-setup" id="pl-setup-panel" hidden>
+                        <div class="pl-setup-copy">
+                            <div class="pl-panel-header">
+                                <span class="pl-eyebrow" style="margin:0;">Focus Session</span>
+                                <span class="pl-badge">Countdown</span>
+                            </div>
 
-                <input class="pl-slider-input-overlay"
-                       id="pl-duration-slider"
-                       type="range"
-                       min="5"
-                       max="120"
-                       step="1"
-                       value="5"
-                       aria-label="Countdown length" />
-            </div>
-
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
-                    id="pl-start-focus-button"
-                    hidden>
-                <span class="pl-button-label">Start</span>
-            </button>
-
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-back"
-                    id="pl-close-focus-button"
-                    hidden>
-                <span class="pl-button-label">Back</span>
-            </button>
-
-            <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-run" id="pl-run-panel" hidden>
-                <div class="pl-run-card">
-                    <div class="pl-run-caption" id="pl-run-state-label">Time remaining</div>
-                    <div class="pl-run-readout" id="pl-run-readout">00:05:00</div>
-                    <div class="pl-run-support">
-                        Elapsed:
-                        <span id="pl-run-elapsed">00:00:00</span>
-                    </div>
-
-                    <div class="pl-progress-track" aria-hidden="true">
-                        <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
-                    </div>
-
-                    <p class="pl-run-note" id="pl-run-note">
-                        Cancel before 1 minute to discard this session with no save.
-                    </p>
-                </div>
-            </div>
-
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-pause"
-                    id="pl-pause-button"
-                    hidden>
-                <span class="pl-button-label">Pause</span>
-            </button>
-
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-exit"
-                    id="pl-exit-button"
-                    hidden>
-                <span class="pl-button-label">Cancel</span>
-            </button>
-
-            <div class="pl-panel-dim pl-canvas-item" id="pl-confirm-dim" hidden></div>
-
-            <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-confirm" id="pl-confirm-panel" hidden>
-                <p class="pl-eyebrow">Stop Focusing</p>
-                <h2 class="pl-section-title">Are you sure?</h2>
-                <p class="pl-subtitle">
-                    Session will be marked <strong>incomplete</strong>.
-                </p>
-
-                <div class="pl-grid-two">
-                    <div class="pl-info-box">
-                        <span class="pl-info-label">Current elapsed</span>
-                        <strong class="pl-info-value" id="pl-confirm-current-time">00:00:00</strong>
-                    </div>
-
-                    <div class="pl-info-box">
-                        <span class="pl-info-label">Timer status</span>
-                        <strong class="pl-info-value" id="pl-confirm-timer-status">Still counting down</strong>
-                    </div>
-                </div>
-
-                <div class="pl-grid-two">
-                    <div class="pl-info-box">
-                        <span class="pl-info-label">If complete</span>
-
-                        <div class="pl-reward-row">
-                            <span>XP</span>
-                            <strong id="pl-confirm-complete-xp">0</strong>
+                            <h2 class="pl-title" style="margin-top:0.55rem;">Stay with it</h2>
+                            <p class="pl-subtitle">
+                                This panel sits on the real home screen. It is not a second screen.
+                            </p>
                         </div>
 
-                        <div class="pl-reward-row">
-                            <span>Coins</span>
-                            <strong id="pl-confirm-complete-coins">0</strong>
+                        <div class="pl-setup-controls" id="pl-setup-controls">
+                            <div class="pl-mode-grid">
+                                <button class="pl-mode-chip pl-mode-chip-active" type="button">
+                                    <span>Countdown</span>
+                                    <small>Ready now</small>
+                                </button>
+
+                                <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
+                                    <span>Count Up</span>
+                                    <small>Later</small>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="pl-info-box">
-                        <span class="pl-info-label">Current</span>
+                    <label class="pl-canvas-item pl-canvas-form-field" id="pl-focus-type-field" hidden>
+                        <span class="pl-field-label">Focus type</span>
+                        <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
+                    </label>
 
-                        <div class="pl-reward-row">
-                            <span>XP</span>
-                            <strong id="pl-confirm-current-xp">0</strong>
+                    <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>5 minutes</div>
+
+                    <div class="pl-canvas-item pl-slider-group" id="pl-slider-group" hidden>
+                        <div class="pl-slider-track-shell" id="pl-slider-track-shell">
+                            <div class="pl-slider-track-empty-art" id="pl-slider-track-empty-art" aria-hidden="true"></div>
                         </div>
 
-                        <div class="pl-reward-row">
-                            <span>Coins</span>
-                            <strong id="pl-confirm-current-coins">0</strong>
+                        <div class="pl-slider-fill-shell" id="pl-slider-fill-shell">
+                            <div class="pl-slider-fill-art" id="pl-slider-fill-art" aria-hidden="true"></div>
+                        </div>
+
+                        <div class="pl-slider-nib-visual" id="pl-slider-nib-visual" aria-hidden="true"></div>
+
+                        <input class="pl-slider-input-overlay"
+                               id="pl-duration-slider"
+                               type="range"
+                               min="5"
+                               max="120"
+                               step="1"
+                               value="5"
+                               aria-label="Countdown length" />
+                    </div>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
+                            id="pl-start-focus-button"
+                            hidden>
+                        <span class="pl-button-label">Start</span>
+                    </button>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-back"
+                            id="pl-close-focus-button"
+                            hidden>
+                        <span class="pl-button-label">Back</span>
+                    </button>
+
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-run" id="pl-run-panel" hidden>
+                        <div class="pl-run-card">
+                            <div class="pl-run-caption" id="pl-run-state-label">Time remaining</div>
+                            <div class="pl-run-readout" id="pl-run-readout">00:05:00</div>
+                            <div class="pl-run-support">
+                                Elapsed:
+                                <span id="pl-run-elapsed">00:00:00</span>
+                            </div>
+
+                            <div class="pl-progress-track" aria-hidden="true">
+                                <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
+                            </div>
+
+                            <p class="pl-run-note" id="pl-run-note">
+                                Cancel before 1 minute to discard this session with no save.
+                            </p>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-keep-going"
-                    id="pl-confirm-keep-going"
-                    hidden>
-                <span class="pl-button-label">Keep Going</span>
-            </button>
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-pause"
+                            id="pl-pause-button"
+                            hidden>
+                        <span class="pl-button-label">Pause</span>
+                    </button>
 
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-stop"
-                    id="pl-confirm-stop"
-                    hidden>
-                <span class="pl-button-label">Stop Focusing</span>
-            </button>
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-exit"
+                            id="pl-exit-button"
+                            hidden>
+                        <span class="pl-button-label">Cancel</span>
+                    </button>
 
-            <div class="pl-panel-dim pl-canvas-item" id="pl-reward-dim" hidden></div>
+                    <div class="pl-panel-dim pl-canvas-item" id="pl-confirm-dim" hidden></div>
 
-            <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-reward" id="pl-reward-panel" hidden>
-                <p class="pl-eyebrow">Rewards</p>
-                <h2 class="pl-section-title">Rewards</h2>
-                <p class="pl-subtitle">
-                    <span id="pl-reward-status-text">Completed</span>
-                    <strong id="pl-reward-focus-type">Focus</strong>
-                    session for
-                    <strong id="pl-reward-duration-text">00:00:00</strong>.
-                </p>
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-confirm" id="pl-confirm-panel" hidden>
+                        <p class="pl-eyebrow">Stop Focusing</p>
+                        <h2 class="pl-section-title">Are you sure?</h2>
+                        <p class="pl-subtitle">
+                            Session will be marked <strong>incomplete</strong>.
+                        </p>
 
-                <div class="pl-grid-two">
-                    <div class="pl-info-box">
-                        <span class="pl-info-label">XP</span>
-                        <strong class="pl-reward-value-large" id="pl-reward-xp">0</strong>
+                        <div class="pl-grid-two">
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Current elapsed</span>
+                                <strong class="pl-info-value" id="pl-confirm-current-time">00:00:00</strong>
+                            </div>
+
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Timer status</span>
+                                <strong class="pl-info-value" id="pl-confirm-timer-status">Still counting down</strong>
+                            </div>
+                        </div>
+
+                        <div class="pl-grid-two">
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">If complete</span>
+
+                                <div class="pl-reward-row">
+                                    <span>XP</span>
+                                    <strong id="pl-confirm-complete-xp">0</strong>
+                                </div>
+
+                                <div class="pl-reward-row">
+                                    <span>Coins</span>
+                                    <strong id="pl-confirm-complete-coins">0</strong>
+                                </div>
+                            </div>
+
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Current</span>
+
+                                <div class="pl-reward-row">
+                                    <span>XP</span>
+                                    <strong id="pl-confirm-current-xp">0</strong>
+                                </div>
+
+                                <div class="pl-reward-row">
+                                    <span>Coins</span>
+                                    <strong id="pl-confirm-current-coins">0</strong>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="pl-info-box">
-                        <span class="pl-info-label">Coins</span>
-                        <strong class="pl-reward-value-large" id="pl-reward-coins">0</strong>
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-keep-going"
+                            id="pl-confirm-keep-going"
+                            hidden>
+                        <span class="pl-button-label">Keep Going</span>
+                    </button>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-stop"
+                            id="pl-confirm-stop"
+                            hidden>
+                        <span class="pl-button-label">Stop Focusing</span>
+                    </button>
+
+                    <div class="pl-panel-dim pl-canvas-item" id="pl-reward-dim" hidden></div>
+
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-reward" id="pl-reward-panel" hidden>
+                        <p class="pl-eyebrow">Rewards</p>
+                        <h2 class="pl-section-title">Rewards</h2>
+                        <p class="pl-subtitle">
+                            <span id="pl-reward-status-text">Completed</span>
+                            <strong id="pl-reward-focus-type">Focus</strong>
+                            session for
+                            <strong id="pl-reward-duration-text">00:00:00</strong>.
+                        </p>
+
+                        <div class="pl-grid-two">
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">XP</span>
+                                <strong class="pl-reward-value-large" id="pl-reward-xp">0</strong>
+                            </div>
+
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Coins</span>
+                                <strong class="pl-reward-value-large" id="pl-reward-coins">0</strong>
+                            </div>
+                        </div>
                     </div>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-gotcha"
+                            id="pl-reward-close-button"
+                            hidden>
+                        <span class="pl-button-label">Gotcha!</span>
+                    </button>
                 </div>
             </div>
-
-            <button type="button"
-                    class="pl-canvas-item pl-canvas-button pl-canvas-button-gotcha"
-                    id="pl-reward-close-button"
-                    hidden>
-                <span class="pl-button-label">Gotcha!</span>
-            </button>
-
         </div>
     </div>
 </div>
@@ -248,6 +257,11 @@
     <div class="pl-layout-header">
         <strong>Layout Mode</strong>
         <span>Home canvas</span>
+    </div>
+
+    <div class="pl-layout-status-stack">
+        <span class="pl-field-hint" id="pl-layout-stage-status">Safe UI layer</span>
+        <span class="pl-field-hint" id="pl-layout-safe-zone-status">Inside safe zone.</span>
     </div>
 
     <label class="pl-field">
@@ -275,20 +289,29 @@
 
     <label class="pl-field">
         <span class="pl-field-label">Scale</span>
-        <input class="pl-input" id="pl-layout-scale" type="range" min="20" max="250" step="1" value="100" />
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-scale" type="range" min="20" max="250" step="1" value="100" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-scale-number" type="number" min="20" max="250" step="1" value="100" />
+        </div>
         <span class="pl-field-hint" id="pl-layout-scale-value">100%</span>
     </label>
 
     <label class="pl-field">
         <span class="pl-field-label">X (px)</span>
-        <input class="pl-input" id="pl-layout-x" type="range" min="-300" max="700" step="1" value="0" />
-        <span class="pl-field-hint" id="pl-layout-x-value">0 px</span>
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-x" type="range" min="-300" max="700" step="1" value="0" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-x-number" type="number" min="-300" max="700" step="1" value="0" />
+        </div>
+        <span class="pl-field-hint" id="pl-layout-x-value">0 px (inside safe zone)</span>
     </label>
 
     <label class="pl-field">
         <span class="pl-field-label">Y (px)</span>
-        <input class="pl-input" id="pl-layout-y" type="range" min="-300" max="1200" step="1" value="0" />
-        <span class="pl-field-hint" id="pl-layout-y-value">0 px</span>
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-y" type="range" min="-300" max="1200" step="1" value="0" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-y-number" type="number" min="-300" max="1200" step="1" value="0" />
+        </div>
+        <span class="pl-field-hint" id="pl-layout-y-value">0 px (inside safe zone)</span>
     </label>
 
     <label class="pl-field">
@@ -326,1352 +349,6 @@
 <!-- SEGMENT A END — Home Canvas Markup -->
 <!-- SEGMENT B START — Home Canvas Scripts -->
 @section Scripts {
-    <script>
-                (function () {
-                    const homeRoot = document.getElementById("pl-home-root");
-
-                    const homeSceneArt = document.getElementById("pl-home-scene-art");
-                    const homeFocusButton = document.getElementById("pl-home-focus-button");
-                    const homeSleepButton = document.getElementById("pl-home-sleep-button");
-
-                    const setupPanel = document.getElementById("pl-setup-panel");
-                    const setupControls = document.getElementById("pl-setup-controls");
-                    const focusTypeField = document.getElementById("pl-focus-type-field");
-                    const durationText = document.getElementById("pl-duration-text");
-                    const sliderGroup = document.getElementById("pl-slider-group");
-                    const sliderTrackShell = document.getElementById("pl-slider-track-shell");
-                    const sliderTrackEmptyArt = document.getElementById("pl-slider-track-empty-art");
-                    const sliderFillShell = document.getElementById("pl-slider-fill-shell");
-                    const sliderFillArt = document.getElementById("pl-slider-fill-art");
-                    const sliderNibVisual = document.getElementById("pl-slider-nib-visual");
-
-                    const startFocusButton = document.getElementById("pl-start-focus-button");
-                    const closeFocusButton = document.getElementById("pl-close-focus-button");
-
-                    const runPanel = document.getElementById("pl-run-panel");
-                    const pauseButton = document.getElementById("pl-pause-button");
-                    const exitButton = document.getElementById("pl-exit-button");
-
-                    const confirmDim = document.getElementById("pl-confirm-dim");
-                    const confirmPanel = document.getElementById("pl-confirm-panel");
-                    const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
-                    const confirmStopButton = document.getElementById("pl-confirm-stop");
-
-                    const rewardDim = document.getElementById("pl-reward-dim");
-                    const rewardPanel = document.getElementById("pl-reward-panel");
-                    const rewardCloseButton = document.getElementById("pl-reward-close-button");
-
-                    const focusTypeInput = document.getElementById("pl-focus-type-input");
-                    const durationSlider = document.getElementById("pl-duration-slider");
-
-                    const runStateLabel = document.getElementById("pl-run-state-label");
-                    const runReadout = document.getElementById("pl-run-readout");
-                    const runElapsed = document.getElementById("pl-run-elapsed");
-                    const runNote = document.getElementById("pl-run-note");
-                    const progressFill = document.getElementById("pl-progress-fill");
-
-                    const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
-                    const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
-                    const confirmCompleteXp = document.getElementById("pl-confirm-complete-xp");
-                    const confirmCompleteCoins = document.getElementById("pl-confirm-complete-coins");
-                    const confirmCurrentXp = document.getElementById("pl-confirm-current-xp");
-                    const confirmCurrentCoins = document.getElementById("pl-confirm-current-coins");
-
-                    const rewardStatusText = document.getElementById("pl-reward-status-text");
-                    const rewardFocusType = document.getElementById("pl-reward-focus-type");
-                    const rewardDurationText = document.getElementById("pl-reward-duration-text");
-                    const rewardXp = document.getElementById("pl-reward-xp");
-                    const rewardCoins = document.getElementById("pl-reward-coins");
-
-                    const saveForm = document.getElementById("pl-save-form");
-                    const saveFocusType = document.getElementById("pl-save-focus-type");
-                    const savePlannedSeconds = document.getElementById("pl-save-planned-seconds");
-                    const saveElapsedSeconds = document.getElementById("pl-save-elapsed-seconds");
-                    const saveMode = document.getElementById("pl-save-mode");
-
-                    const layoutPanel = document.getElementById("pl-layout-panel");
-                    const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
-                    const layoutScale = document.getElementById("pl-layout-scale");
-                    const layoutX = document.getElementById("pl-layout-x");
-                    const layoutY = document.getElementById("pl-layout-y");
-                    const layoutWidth = document.getElementById("pl-layout-width");
-                    const layoutHeight = document.getElementById("pl-layout-height");
-                    const layoutScaleValue = document.getElementById("pl-layout-scale-value");
-                    const layoutXValue = document.getElementById("pl-layout-x-value");
-                    const layoutYValue = document.getElementById("pl-layout-y-value");
-                    const layoutHeightLabel = document.getElementById("pl-layout-height-label");
-                    const layoutHeightHint = document.getElementById("pl-layout-height-hint");
-                    const layoutSaveSelected = document.getElementById("pl-layout-save-selected");
-                    const layoutRevertSelected = document.getElementById("pl-layout-revert-selected");
-                    const layoutResetSelected = document.getElementById("pl-layout-reset-selected");
-                    const layoutResetAll = document.getElementById("pl-layout-reset-all");
-                    const layoutCode = document.getElementById("pl-layout-code");
-
-                    if (!homeRoot || !homeSceneArt || !homeFocusButton || !homeSleepButton || !setupPanel ||
-                        !setupControls || !focusTypeField || !durationText || !sliderGroup ||
-                        !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell || !sliderFillArt ||
-                        !sliderNibVisual || !startFocusButton || !closeFocusButton || !runPanel ||
-                        !pauseButton || !exitButton || !confirmDim || !confirmPanel ||
-                        !confirmKeepGoingButton || !confirmStopButton || !rewardDim || !rewardPanel ||
-                        !rewardCloseButton || !focusTypeInput || !durationSlider || !runStateLabel ||
-                        !runReadout || !runElapsed || !runNote || !progressFill || !confirmCurrentTime ||
-                        !confirmTimerStatus || !confirmCompleteXp || !confirmCompleteCoins ||
-                        !confirmCurrentXp || !confirmCurrentCoins || !rewardStatusText ||
-                        !rewardFocusType || !rewardDurationText || !rewardXp || !rewardCoins ||
-                        !saveForm || !saveFocusType || !savePlannedSeconds || !saveElapsedSeconds ||
-                        !saveMode || !layoutPanel || !layoutAssetSelect || !layoutScale || !layoutX ||
-                        !layoutY || !layoutWidth || !layoutHeight || !layoutScaleValue || !layoutXValue ||
-                        !layoutYValue || !layoutHeightLabel || !layoutHeightHint || !layoutSaveSelected ||
-                        !layoutRevertSelected || !layoutResetSelected || !layoutResetAll || !layoutCode) {
-                        return;
-                    }
-
-                    const stopThresholdSeconds = 60;
-                    const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-                    const layoutSyncReadUrl = "/LayoutSync?handler=Read";
-                    const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
-
-                    const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
-                    const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
-                    const rewardSleepMultiplier = Math.max(1, parseFloat(homeRoot.dataset.rewardSleepMultiplier || "1") || 1);
-                    const rewardWindowEligible = String(homeRoot.dataset.rewardWindowEligible || "").toLowerCase() === "true";
-                    const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
-
-                    const artImageVars = {
-                        "home-scene": "--pl-home-scene-image",
-                        "home-focus": "--pl-btn-home-focus-image",
-                        "home-sleep": "--pl-btn-home-sleep-image",
-                        "setup-panel": "--pl-focus-setup-panel-image",
-                        "run-panel": "--pl-focus-run-panel-image",
-                        "confirm-panel": "--pl-focus-confirm-panel-image",
-                        "reward-panel": "--pl-focus-reward-panel-image",
-                        "start": "--pl-btn-start-image",
-                        "back": "--pl-btn-back-image",
-                        "pause": "--pl-btn-pause-image",
-                        "exit": "--pl-btn-exit-image",
-                        "keep-going": "--pl-btn-keep-going-image",
-                        "stop": "--pl-btn-stop-image",
-                        "gotcha": "--pl-btn-gotcha-image",
-                        "slider": "--pl-slider-track-empty-image",
-                        "slider-nib-art": "--pl-slider-nib-image"
-                    };
-
-                    const layoutAssets = {
-                        "home-scene": { element: homeSceneArt },
-                        "home-focus": { element: homeFocusButton },
-                        "home-sleep": { element: homeSleepButton },
-                        "setup-panel": { element: setupPanel },
-                        "focus-type-field": { element: focusTypeField },
-                        "duration-text": { element: durationText },
-                        "slider": { element: sliderGroup },
-                        "start": { element: startFocusButton },
-                        "back": { element: closeFocusButton },
-                        "run-panel": { element: runPanel },
-                        "pause": { element: pauseButton },
-                        "exit": { element: exitButton },
-                        "confirm-panel": { element: confirmPanel },
-                        "keep-going": { element: confirmKeepGoingButton },
-                        "stop": { element: confirmStopButton },
-                        "reward-panel": { element: rewardPanel },
-                        "gotcha": { element: rewardCloseButton }
-                    };
-
-                    const setupInteractiveElements = [
-                        focusTypeField,
-                        durationText,
-                        sliderGroup
-                    ];
-
-                    const artMetrics = {};
-                    let sharedLayoutState = {};
-                    let currentDraftAssetKey = null;
-                    let currentDraftState = null;
-                    let plannedSeconds = 300;
-                    let startedAtMs = 0;
-                    let pausedElapsedSeconds = 0;
-                    let isRunning = false;
-                    let isPaused = false;
-                    let isSubmitting = false;
-                    let completionTonePlayed = false;
-                    let dragState = null;
-
-                    function getHomeRect() {
-                        return homeRoot.getBoundingClientRect();
-                    }
-
-                    function getHomeDesignWidth() {
-                        return readCssPxVar("--pl-home-screen-width", homeRoot.clientWidth || 428);
-                    }
-
-                    function getHomeDesignHeight() {
-                        return readCssPxVar("--pl-home-screen-height", homeRoot.clientHeight || 926);
-                    }
-
-                    function getHomeStageScale() {
-                        const parsed = parseFloat(homeRoot.dataset.stageScale || "1");
-                        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-                    }
-
-                    function clientToHomeDesignPoint(clientX, clientY) {
-                        const rect = getHomeRect();
-                        const stageScale = getHomeStageScale();
-
-                        return {
-                            x: (clientX - rect.left) / stageScale,
-                            y: (clientY - rect.top) / stageScale
-                        };
-                    }
-
-                    function readCssPxVar(varName, fallbackValue) {
-                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
-
-                        if (!raw) {
-                            return fallbackValue;
-                        }
-
-                        const parsed = parseFloat(raw.replace("px", ""));
-                        return Number.isFinite(parsed) ? parsed : fallbackValue;
-                    }
-
-                    function readCssNumberVar(varName, fallbackValue) {
-                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
-
-                        if (!raw) {
-                            return fallbackValue;
-                        }
-
-                        const parsed = parseFloat(raw);
-                        return Number.isFinite(parsed) ? parsed : fallbackValue;
-                    }
-
-                    function readCssUrlVar(varName) {
-                        const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
-
-                        if (!raw || raw === "none") {
-                            return "";
-                        }
-
-                        const match = raw.match(/^url\((['"]?)(.*?)\1\)$/);
-                        return match ? match[2] : "";
-                    }
-
-                    function getAssetElement(assetKey) {
-                        return layoutAssets[assetKey]?.element || null;
-                    }
-
-                    function assetHasArt(assetKey) {
-                        const varName = artImageVars[assetKey];
-                        return !!(varName && readCssUrlVar(varName));
-                    }
-
-                    function normalizeLayoutOverride(value) {
-                        if (!value || typeof value !== "object") {
-                            return null;
-                        }
-
-                        return {
-                            x: value.x ?? value.X,
-                            y: value.y ?? value.Y,
-                            width: value.width ?? value.Width,
-                            height: value.height ?? value.Height,
-                            scale: value.scale ?? value.Scale
-                        };
-                    }
-
-                    function normalizeLayoutItems(items) {
-                        if (!items || typeof items !== "object") {
-                            return {};
-                        }
-
-                        const result = {};
-
-                        Object.entries(items).forEach(([key, value]) => {
-                            const normalized = normalizeLayoutOverride(value);
-                            if (normalized) {
-                                result[key] = normalized;
-                            }
-                        });
-
-                        return result;
-                    }
-
-                    async function loadSharedLayoutState() {
-                        try {
-                            const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
-
-                            if (!response.ok) {
-                                sharedLayoutState = {};
-                                return;
-                            }
-
-                            const payload = await response.json();
-                            sharedLayoutState = normalizeLayoutItems(payload?.items ?? payload?.Items);
-                        } catch {
-                            sharedLayoutState = {};
-                        }
-                    }
-
-                    async function saveSharedLayoutState() {
-                        try {
-                            await fetch(layoutSyncWriteUrl, {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({ items: sharedLayoutState })
-                            });
-                        } catch {
-                        }
-                    }
-
-                    function analyzeImageMetrics(image) {
-                        const metrics = {
-                            canvasWidth: image.naturalWidth,
-                            canvasHeight: image.naturalHeight,
-                            canvasRatio: image.naturalWidth / image.naturalHeight,
-                            visibleLeftRatio: 0,
-                            visibleTopRatio: 0,
-                            visibleWidthRatio: 1,
-                            visibleHeightRatio: 1,
-                            hasVisibleBounds: false
-                        };
-
-                        try {
-                            const canvas = document.createElement("canvas");
-                            canvas.width = image.naturalWidth;
-                            canvas.height = image.naturalHeight;
-
-                            const context = canvas.getContext("2d", { willReadFrequently: true });
-
-                            if (!context) {
-                                return metrics;
-                            }
-
-                            context.drawImage(image, 0, 0);
-
-                            const imageData = context.getImageData(0, 0, image.naturalWidth, image.naturalHeight).data;
-
-                            let minX = image.naturalWidth;
-                            let minY = image.naturalHeight;
-                            let maxX = -1;
-                            let maxY = -1;
-
-                            for (let y = 0; y < image.naturalHeight; y += 1) {
-                                for (let x = 0; x < image.naturalWidth; x += 1) {
-                                    const alpha = imageData[((y * image.naturalWidth) + x) * 4 + 3];
-                                    if (alpha > 0) {
-                                        if (x < minX) {
-                                            minX = x;
-                                        }
-
-                                        if (y < minY) {
-                                            minY = y;
-                                        }
-
-                                        if (x > maxX) {
-                                            maxX = x;
-                                        }
-
-                                        if (y > maxY) {
-                                            maxY = y;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (maxX >= minX && maxY >= minY) {
-                                metrics.visibleLeftRatio = minX / image.naturalWidth;
-                                metrics.visibleTopRatio = minY / image.naturalHeight;
-                                metrics.visibleWidthRatio = (maxX - minX + 1) / image.naturalWidth;
-                                metrics.visibleHeightRatio = (maxY - minY + 1) / image.naturalHeight;
-                                metrics.hasVisibleBounds = true;
-                            }
-                        } catch {
-                        }
-
-                        return metrics;
-                    }
-
-                    function primeArtMetrics() {
-                        Object.entries(artImageVars).forEach(([assetKey, cssVar]) => {
-                            const url = readCssUrlVar(cssVar);
-                            if (!url) {
-                                return;
-                            }
-
-                            const image = new Image();
-                            image.decoding = "async";
-                            image.onload = function () {
-                                artMetrics[assetKey] = analyzeImageMetrics(image);
-
-                                if (assetKey === "slider" || assetKey === "slider-nib-art") {
-                                    updateSliderVisuals();
-                                }
-
-                                if (layoutModeEnabled) {
-                                    hydrateLayoutControls();
-                                }
-                            };
-                            image.src = url;
-                        });
-                    }
-
-                    function setButtonLabel(button, label) {
-                        const labelElement = button.querySelector(".pl-button-label");
-                        if (labelElement) {
-                            labelElement.textContent = label;
-                        }
-                    }
-
-                    function formatClock(totalSeconds) {
-                        const clamped = Math.max(0, Math.floor(totalSeconds));
-                        const hours = String(Math.floor(clamped / 3600)).padStart(2, "0");
-                        const minutes = String(Math.floor((clamped % 3600) / 60)).padStart(2, "0");
-                        const seconds = String(clamped % 60).padStart(2, "0");
-                        return `${hours}:${minutes}:${seconds}`;
-                    }
-
-                    function formatDurationSelection(totalMinutes) {
-                        const minutes = Math.max(1, Math.floor(totalMinutes));
-                        if (minutes === 1) {
-                            return "1 minute";
-                        }
-
-                        return `${minutes} minutes`;
-                    }
-
-                    function calculateRewardPreview(elapsedSeconds, isComplete) {
-                        const roundedMinutes = Math.max(0, Math.round(elapsedSeconds / 60));
-                        const baseXp = Math.round(roundedMinutes * rewardXpPerMinute);
-                        const multiplier = isComplete ? rewardSleepMultiplier : rewardIncompleteMultiplier;
-                        const xp = Math.max(0, Math.round(baseXp * multiplier));
-                        const coins = rewardWindowEligible
-                            ? Math.max(0, Math.round(xp / 100))
-                            : 0;
-
-                        return {
-                            xp,
-                            coins
-                        };
-                    }
-
-                    function applyPanelArtStates() {
-                        setupPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("setup-panel"));
-                        runPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("run-panel"));
-                        confirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("confirm-panel"));
-                        rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
-                    }
-
-                    function getCssLayoutDefaults(assetKey) {
-                        const metrics = artMetrics[assetKey];
-
-                        return {
-                            x: readCssPxVar(`--pl-layout-${assetKey}-x`, 0),
-                            y: readCssPxVar(`--pl-layout-${assetKey}-y`, 0),
-                            width: readCssPxVar(`--pl-layout-${assetKey}-width`, 160),
-                            height: readCssPxVar(`--pl-layout-${assetKey}-height`, metrics && metrics.canvasRatio > 0 ? Math.round(readCssPxVar(`--pl-layout-${assetKey}-width`, 160) / metrics.canvasRatio) : 56),
-                            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
-                        };
-                    }
-
-                    function getSavedLayoutState(assetKey) {
-                        const defaults = getCssLayoutDefaults(assetKey);
-                        const stored = sharedLayoutState[assetKey] || {};
-
-                        return {
-                            x: stored.x ?? defaults.x,
-                            y: stored.y ?? defaults.y,
-                            width: stored.width ?? defaults.width,
-                            height: stored.height ?? defaults.height,
-                            scale: stored.scale ?? defaults.scale
-                        };
-                    }
-
-                    function getEffectiveLayoutState(assetKey) {
-                        const saved = getSavedLayoutState(assetKey);
-
-                        if (assetKey === currentDraftAssetKey && currentDraftState) {
-                            return {
-                                x: currentDraftState.x ?? saved.x,
-                                y: currentDraftState.y ?? saved.y,
-                                width: currentDraftState.width ?? saved.width,
-                                height: currentDraftState.height ?? saved.height,
-                                scale: currentDraftState.scale ?? saved.scale
-                            };
-                        }
-
-                        return saved;
-                    }
-
-                    function getResolvedHeight(assetKey, state) {
-                        const metrics = artMetrics[assetKey];
-
-                        if (metrics && metrics.canvasRatio > 0) {
-                            return Math.max(1, Math.round(state.width / metrics.canvasRatio));
-                        }
-
-                        return state.height;
-                    }
-
-                    function beginDraftForSelected(partialState) {
-                        const assetKey = layoutAssetSelect.value;
-                        const baseState = getEffectiveLayoutState(assetKey);
-
-                        currentDraftAssetKey = assetKey;
-                        currentDraftState = {
-                            x: partialState?.x ?? baseState.x,
-                            y: partialState?.y ?? baseState.y,
-                            width: partialState?.width ?? baseState.width,
-                            height: partialState?.height ?? baseState.height,
-                            scale: partialState?.scale ?? baseState.scale
-                        };
-                    }
-
-                    function discardCurrentDraft() {
-                        const assetKey = currentDraftAssetKey;
-                        currentDraftAssetKey = null;
-                        currentDraftState = null;
-
-                        if (assetKey) {
-                            applyAssetLayout(assetKey);
-                        }
-                    }
-
-                    async function saveSelectedLayoutAsset() {
-                        const assetKey = layoutAssetSelect.value;
-
-                        if (currentDraftAssetKey !== assetKey || !currentDraftState) {
-                            return;
-                        }
-
-                        sharedLayoutState[assetKey] = {
-                            x: currentDraftState.x,
-                            y: currentDraftState.y,
-                            width: currentDraftState.width,
-                            height: currentDraftState.height,
-                            scale: currentDraftState.scale
-                        };
-
-                        currentDraftAssetKey = null;
-                        currentDraftState = null;
-                        await saveSharedLayoutState();
-                        applyAllAssetLayouts();
-                        hydrateLayoutControls();
-                    }
-
-                    function revertSelectedLayoutAsset() {
-                        discardCurrentDraft();
-                        hydrateLayoutControls();
-                    }
-
-                    function resetSelectedLayoutAsset() {
-                        beginDraftForSelected(getCssLayoutDefaults(layoutAssetSelect.value));
-                        applyAssetLayout(layoutAssetSelect.value);
-                        hydrateLayoutControls();
-                    }
-
-                    async function resetAllLayoutAssets() {
-                        sharedLayoutState = {};
-                        currentDraftAssetKey = null;
-                        currentDraftState = null;
-                        await saveSharedLayoutState();
-                        applyAllAssetLayouts();
-                        hydrateLayoutControls();
-                    }
-
-                    function updateSliderVisuals() {
-                        const state = getEffectiveLayoutState("slider");
-                        const groupWidth = Math.max(20, state.width);
-                        const groupHeight = getResolvedHeight("slider", state);
-
-                        const sliderMetric = artMetrics["slider"];
-                        const nibMetric = artMetrics["slider-nib-art"];
-
-                        const min = parseInt(durationSlider.min || "5", 10);
-                        const max = parseInt(durationSlider.max || "120", 10);
-                        const value = parseInt(durationSlider.value || "5", 10);
-                        const progressRatio = max <= min ? 0 : (value - min) / (max - min);
-
-                        const trackLeft = sliderMetric && sliderMetric.hasVisibleBounds
-                            ? groupWidth * sliderMetric.visibleLeftRatio
-                            : 0;
-
-                        const trackWidth = sliderMetric && sliderMetric.hasVisibleBounds
-                            ? groupWidth * sliderMetric.visibleWidthRatio
-                            : groupWidth;
-
-                        const targetCenter = trackLeft + (progressRatio * trackWidth);
-
-                        const defaultNibCenter = nibMetric && nibMetric.hasVisibleBounds
-                            ? groupWidth * (nibMetric.visibleLeftRatio + (nibMetric.visibleWidthRatio / 2))
-                            : groupWidth / 2;
-
-                        const translateX = Math.round(targetCenter - defaultNibCenter);
-                        const fillWidth = Math.max(0, Math.min(groupWidth, Math.round(targetCenter)));
-
-                        sliderGroup.style.left = `${state.x}px`;
-                        sliderGroup.style.top = `${state.y}px`;
-                        sliderGroup.style.width = `${groupWidth}px`;
-                        sliderGroup.style.height = `${groupHeight}px`;
-                        sliderGroup.style.transform = `scale(${state.scale / 100})`;
-
-                        sliderTrackShell.style.width = `${groupWidth}px`;
-                        sliderTrackShell.style.height = `${groupHeight}px`;
-
-                        sliderTrackEmptyArt.style.width = `${groupWidth}px`;
-                        sliderTrackEmptyArt.style.height = `${groupHeight}px`;
-
-                        sliderFillShell.style.width = `${fillWidth}px`;
-                        sliderFillShell.style.height = `${groupHeight}px`;
-
-                        sliderFillArt.style.width = `${groupWidth}px`;
-                        sliderFillArt.style.height = `${groupHeight}px`;
-
-                        sliderNibVisual.style.width = `${groupWidth}px`;
-                        sliderNibVisual.style.height = `${groupHeight}px`;
-                        sliderNibVisual.style.transform = `translateX(${translateX}px)`;
-
-                        durationSlider.style.pointerEvents = layoutModeEnabled ? "none" : "auto";
-                    }
-
-                    function updateDurationReadout() {
-                        durationText.textContent = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
-                        updateSliderVisuals();
-                    }
-
-                    function applyAssetLayout(assetKey) {
-                        const element = getAssetElement(assetKey);
-                        if (!element) {
-                            return;
-                        }
-
-                        if (assetKey === "slider") {
-                            updateSliderVisuals();
-                            return;
-                        }
-
-                        const state = getEffectiveLayoutState(assetKey);
-                        const resolvedHeight = getResolvedHeight(assetKey, state);
-
-                        element.style.left = `${state.x}px`;
-                        element.style.top = `${state.y}px`;
-                        element.style.width = `${state.width}px`;
-                        element.style.height = `${resolvedHeight}px`;
-                        element.style.transform = `scale(${state.scale / 100})`;
-
-                        if (assetKey === "home-scene") {
-                            element.style.pointerEvents = "none";
-                        }
-                    }
-
-                    function applyAllAssetLayouts() {
-                        Object.keys(layoutAssets).forEach(applyAssetLayout);
-                        refreshLayoutSelection();
-                    }
-
-                    function refreshLayoutSelection() {
-                        const selectedAssetKey = layoutAssetSelect.value;
-
-                        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
-                            config.element.classList.toggle("pl-layout-selected", layoutModeEnabled && assetKey === selectedAssetKey);
-                        });
-                    }
-
-                    function updateLayoutSliderBounds(assetKey) {
-                        const state = getEffectiveLayoutState(assetKey);
-                        const designWidth = getHomeDesignWidth();
-                        const designHeight = getHomeDesignHeight();
-                        const resolvedHeight = getResolvedHeight(assetKey, state);
-
-                        layoutScale.min = "20";
-                        layoutScale.max = "250";
-
-                        layoutX.min = String(Math.round(-state.width));
-                        layoutX.max = String(Math.round(designWidth + state.width));
-
-                        layoutY.min = String(Math.round(-resolvedHeight));
-                        layoutY.max = String(Math.round(designHeight + resolvedHeight));
-                    }
-
-                    function updateLayoutCodePreview(assetKey) {
-                        const state = getEffectiveLayoutState(assetKey);
-                        const resolvedHeight = getResolvedHeight(assetKey, state);
-                        const ratioLocked = !!artMetrics[assetKey];
-
-                        if (ratioLocked) {
-                            layoutCode.value =
-        `.pl-home-screen {
-            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
-        }
-
-        /* Height auto from asset ratio: ${resolvedHeight}px */`;
-                            return;
-                        }
-
-                        layoutCode.value =
-        `.pl-home-screen {
-            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-            --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
-            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
-        }`;
-                    }
-
-                    function setSetupChildrenVisible(isVisible) {
-                        focusTypeField.hidden = !isVisible;
-                        durationText.hidden = !isVisible;
-                        sliderGroup.hidden = !isVisible;
-                    }
-
-                    function setSetupChildrenLocked(isLocked) {
-                        setupInteractiveElements.forEach(function (element) {
-                            element.classList.toggle("pl-setup-child-locked", isLocked);
-                        });
-
-                        focusTypeInput.disabled = isLocked;
-                        durationSlider.disabled = isLocked;
-                    }
-
-                    function setHomeButtonsVisible(isVisible) {
-                        homeFocusButton.hidden = !isVisible;
-                        homeSleepButton.hidden = !isVisible;
-                    }
-
-                    function setSetupVisible(isVisible) {
-                        setupPanel.hidden = !isVisible;
-                        startFocusButton.hidden = !isVisible;
-                        closeFocusButton.hidden = !isVisible;
-                        setSetupChildrenVisible(isVisible);
-                    }
-
-                    function setRunVisible(isVisible) {
-                        runPanel.hidden = !isVisible;
-                        pauseButton.hidden = !isVisible;
-                        exitButton.hidden = !isVisible;
-                    }
-
-                    function setConfirmVisible(isVisible) {
-                        confirmDim.hidden = !isVisible;
-                        confirmPanel.hidden = !isVisible;
-                        confirmKeepGoingButton.hidden = !isVisible;
-                        confirmStopButton.hidden = !isVisible;
-                    }
-
-                    function setRewardVisible(isVisible) {
-                        rewardDim.hidden = !isVisible;
-                        rewardPanel.hidden = !isVisible;
-                        rewardCloseButton.hidden = !isVisible;
-                    }
-
-                    function showHomeState() {
-                        setHomeButtonsVisible(true);
-                        setSetupVisible(false);
-                        setRunVisible(false);
-                        setConfirmVisible(false);
-                        setRewardVisible(false);
-                    }
-
-                    function showSetupState() {
-                        setHomeButtonsVisible(false);
-                        setSetupVisible(true);
-                        setRunVisible(false);
-                        setConfirmVisible(false);
-                        setRewardVisible(false);
-                        setupPanel.classList.remove("pl-setup-panel-locked");
-                        setSetupChildrenLocked(false);
-                        updateDurationReadout();
-                    }
-
-                    function showRunStatePreview() {
-                        showSetupState();
-                        setupPanel.classList.add("pl-setup-panel-locked");
-                        setSetupChildrenLocked(true);
-                        setRunVisible(true);
-                        runStateLabel.textContent = "Time remaining";
-                        runReadout.textContent = "00:25:00";
-                        runElapsed.textContent = "00:10:00";
-                        progressFill.style.width = "40%";
-                        setButtonLabel(pauseButton, "Pause");
-                        setButtonLabel(exitButton, "Stop Focusing");
-                        runNote.textContent = "You have reached 1 minute. Stopping now will save the current session as incomplete.";
-                    }
-
-                    function showConfirmStatePreview() {
-                        showRunStatePreview();
-                        setConfirmVisible(true);
-                        updateConfirmPanel(600);
-                    }
-
-                    function showRewardStatePreview() {
-                        setHomeButtonsVisible(false);
-                        setSetupVisible(false);
-                        setRunVisible(false);
-                        setConfirmVisible(false);
-                        setRewardVisible(true);
-                        rewardStatusText.textContent = "Completed";
-                        rewardFocusType.textContent = "Focus";
-                        rewardDurationText.textContent = "00:25:00";
-                        rewardXp.textContent = "2500";
-                        rewardCoins.textContent = "25";
-                    }
-
-                    function previewLayoutAsset(assetKey) {
-                        if (!layoutModeEnabled) {
-                            return;
-                        }
-
-                        switch (assetKey) {
-                            case "home-scene":
-                            case "home-focus":
-                            case "home-sleep":
-                                showHomeState();
-                                break;
-                            case "setup-panel":
-                            case "focus-type-field":
-                            case "duration-text":
-                            case "slider":
-                            case "start":
-                            case "back":
-                                showSetupState();
-                                break;
-                            case "run-panel":
-                            case "pause":
-                            case "exit":
-                                showRunStatePreview();
-                                break;
-                            case "confirm-panel":
-                            case "keep-going":
-                            case "stop":
-                                showConfirmStatePreview();
-                                break;
-                            case "reward-panel":
-                            case "gotcha":
-                                showRewardStatePreview();
-                                break;
-                            default:
-                                showHomeState();
-                                break;
-                        }
-
-                        updateDurationReadout();
-                    }
-
-                    function openFocusSetup() {
-                        showSetupState();
-                    }
-
-                    function returnToHome() {
-                        resetRunState();
-                        showHomeState();
-                    }
-
-                    function resetRunState() {
-                        isRunning = false;
-                        isPaused = false;
-                        isSubmitting = false;
-                        completionTonePlayed = false;
-                        pausedElapsedSeconds = 0;
-                        startedAtMs = 0;
-
-                        setupPanel.classList.remove("pl-setup-panel-locked");
-                        setSetupChildrenLocked(false);
-                        setButtonLabel(pauseButton, "Pause");
-                        setButtonLabel(exitButton, "Cancel");
-                        runStateLabel.textContent = "Time remaining";
-                        runReadout.textContent = "00:05:00";
-                        runElapsed.textContent = "00:00:00";
-                        progressFill.style.width = "0%";
-                        runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
-                        updateDurationReadout();
-                    }
-
-                    function getElapsedSeconds() {
-                        if (!isRunning) {
-                            return 0;
-                        }
-
-                        if (isPaused) {
-                            return Math.min(plannedSeconds, pausedElapsedSeconds);
-                        }
-
-                        const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
-                        return Math.min(plannedSeconds, Math.max(0, liveElapsed));
-                    }
-
-                    function setButtonsDisabled(isDisabled) {
-                        startFocusButton.disabled = isDisabled;
-                        pauseButton.disabled = isDisabled;
-                        exitButton.disabled = isDisabled;
-                        confirmKeepGoingButton.disabled = isDisabled;
-                        confirmStopButton.disabled = isDisabled;
-                        rewardCloseButton.disabled = isDisabled;
-                        focusTypeInput.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
-                        durationSlider.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
-                    }
-
-                    function updateConfirmPanel(elapsedSeconds) {
-                        const completePreview = calculateRewardPreview(plannedSeconds, true);
-                        const currentPreview = calculateRewardPreview(elapsedSeconds, false);
-
-                        confirmCurrentTime.textContent = formatClock(elapsedSeconds);
-                        confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
-                        confirmCompleteXp.textContent = String(completePreview.xp);
-                        confirmCompleteCoins.textContent = String(completePreview.coins);
-                        confirmCurrentXp.textContent = String(currentPreview.xp);
-                        confirmCurrentCoins.textContent = String(currentPreview.coins);
-                    }
-
-                    function hydrateRewardPanelFromDataset() {
-                        rewardStatusText.textContent = String(homeRoot.dataset.rewardCompleted || "").toLowerCase() === "true"
-                            ? "Completed"
-                            : "Incomplete";
-
-                        rewardFocusType.textContent = homeRoot.dataset.rewardFocusType || "Focus";
-                        rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
-                        rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
-                        rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
-                    }
-
-                    function playCompletionTone() {
-                        if (completionTonePlayed) {
-                            return;
-                        }
-
-                        completionTonePlayed = true;
-
-                        try {
-                            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                            if (!AudioContextClass) {
-                                return;
-                            }
-
-                            const audioContext = new AudioContextClass();
-                            const oscillator = audioContext.createOscillator();
-                            const gainNode = audioContext.createGain();
-
-                            oscillator.type = "sine";
-                            oscillator.frequency.value = 880;
-
-                            gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
-                            gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02);
-                            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
-
-                            oscillator.connect(gainNode);
-                            gainNode.connect(audioContext.destination);
-
-                            oscillator.start();
-                            oscillator.stop(audioContext.currentTime + 0.36);
-                        } catch {
-                        }
-                    }
-
-                    function submitSave(mode) {
-                        if (isSubmitting) {
-                            return;
-                        }
-
-                        const elapsedSeconds = mode === "complete" ? plannedSeconds : getElapsedSeconds();
-                        if (elapsedSeconds <= 0) {
-                            return;
-                        }
-
-                        isSubmitting = true;
-                        saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
-                        savePlannedSeconds.value = String(plannedSeconds);
-                        saveElapsedSeconds.value = String(elapsedSeconds);
-                        saveMode.value = mode;
-                        setButtonsDisabled(true);
-                        saveForm.submit();
-                    }
-
-                    function updateExitButton(elapsedSeconds) {
-                        if (elapsedSeconds >= stopThresholdSeconds) {
-                            setButtonLabel(exitButton, "Stop Focusing");
-                        } else {
-                            setButtonLabel(exitButton, "Cancel");
-                        }
-                    }
-
-                    function updateUi() {
-                        if (!isRunning) {
-                            return;
-                        }
-
-                        const elapsedSeconds = getElapsedSeconds();
-                        const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
-                        const progressPercent = plannedSeconds <= 0 ? 0 : (elapsedSeconds / plannedSeconds) * 100;
-
-                        runReadout.textContent = formatClock(remainingSeconds);
-                        runElapsed.textContent = formatClock(elapsedSeconds);
-                        progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
-
-                        updateExitButton(elapsedSeconds);
-
-                        if (!confirmPanel.hidden) {
-                            updateConfirmPanel(elapsedSeconds);
-                        }
-
-                        if (isPaused) {
-                            runStateLabel.textContent = "Paused";
-                            setButtonLabel(pauseButton, "Keep Going?");
-                            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
-                                ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
-                                : "Session paused. Cancel before 1 minute to discard this session with no save.";
-                        } else {
-                            runStateLabel.textContent = "Time remaining";
-                            setButtonLabel(pauseButton, "Pause");
-                            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
-                                ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
-                                : "Cancel before 1 minute to discard this session with no save.";
-                        }
-
-                        if (remainingSeconds <= 0 && !isSubmitting) {
-                            playCompletionTone();
-                            submitSave("complete");
-                        }
-                    }
-
-                    function updateLayoutSliderBounds(assetKey) {
-                        const state = getEffectiveLayoutState(assetKey);
-                        const designWidth = getHomeDesignWidth();
-                        const designHeight = getHomeDesignHeight();
-                        const resolvedHeight = getResolvedHeight(assetKey, state);
-
-                        layoutScale.min = "20";
-                        layoutScale.max = "250";
-
-                        layoutX.min = String(Math.round(-state.width));
-                        layoutX.max = String(Math.round(designWidth + state.width));
-
-                        layoutY.min = String(Math.round(-resolvedHeight));
-                        layoutY.max = String(Math.round(designHeight + resolvedHeight));
-                    }
-
-                    function updateLayoutCodePreview(assetKey) {
-                        const state = getEffectiveLayoutState(assetKey);
-                        const resolvedHeight = getResolvedHeight(assetKey, state);
-                        const ratioLocked = !!artMetrics[assetKey];
-
-                        if (ratioLocked) {
-                            layoutCode.value =
-        `.pl-home-screen {
-            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
-        }
-
-        /* Height auto from asset ratio: ${resolvedHeight}px */`;
-                            return;
-                        }
-
-                        layoutCode.value =
-        `.pl-home-screen {
-            --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-            --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-            --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-            --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
-            --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
-        }`;
-                    }
-
-                    function hydrateLayoutControls() {
-                        const assetKey = layoutAssetSelect.value;
-                        const state = getEffectiveLayoutState(assetKey);
-                        const resolvedHeight = getResolvedHeight(assetKey, state);
-                        const ratioLocked = !!artMetrics[assetKey];
-
-                        previewLayoutAsset(assetKey);
-                        updateLayoutSliderBounds(assetKey);
-                        applyAllAssetLayouts();
-
-                        layoutScale.value = String(Math.round(state.scale));
-                        layoutX.value = String(Math.round(state.x));
-                        layoutY.value = String(Math.round(state.y));
-                        layoutWidth.value = String(Math.round(state.width));
-                        layoutHeight.value = String(Math.round(resolvedHeight));
-
-                        layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
-                        layoutXValue.textContent = `${Math.round(state.x)} px`;
-                        layoutYValue.textContent = `${Math.round(state.y)} px`;
-
-                        layoutHeight.disabled = ratioLocked;
-                        layoutHeight.readOnly = ratioLocked;
-                        layoutHeightLabel.textContent = ratioLocked ? "Height (auto)" : "Height (px)";
-                        layoutHeightHint.textContent = ratioLocked
-                            ? "Image-backed assets keep their natural aspect ratio automatically."
-                            : "";
-
-                        updateLayoutCodePreview(assetKey);
-                        refreshLayoutSelection();
-                    }
-
-                    function pushLayoutControlValues() {
-                        const partial = {
-                            scale: parseInt(layoutScale.value || "100", 10),
-                            x: parseInt(layoutX.value || "0", 10),
-                            y: parseInt(layoutY.value || "0", 10),
-                            width: parseInt(layoutWidth.value || "170", 10)
-                        };
-
-                        const assetKey = layoutAssetSelect.value;
-
-                        if (!artMetrics[assetKey]) {
-                            partial.height = parseInt(layoutHeight.value || "56", 10);
-                        }
-
-                        beginDraftForSelected(partial);
-                        applyAssetLayout(assetKey);
-                        hydrateLayoutControls();
-                    }
-
-                    function handleLayoutAssetChange() {
-                        const newAssetKey = layoutAssetSelect.value;
-
-                        if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
-                            discardCurrentDraft();
-                        }
-
-                        hydrateLayoutControls();
-                    }
-
-                    function beginDrag(assetKey, event) {
-                        if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey) {
-                            return;
-                        }
-
-                        const state = getEffectiveLayoutState(assetKey);
-                        const designPoint = clientToHomeDesignPoint(event.clientX, event.clientY);
-
-                        dragState = {
-                            assetKey,
-                            pointerId: event.pointerId,
-                            offsetX: designPoint.x - state.x,
-                            offsetY: designPoint.y - state.y
-                        };
-
-                        beginDraftForSelected(state);
-
-                        try {
-                            getAssetElement(assetKey)?.setPointerCapture(event.pointerId);
-                        } catch {
-                        }
-
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-
-                    function handleDragMove(event) {
-                        if (!dragState) {
-                            return;
-                        }
-
-                        const designPoint = clientToHomeDesignPoint(event.clientX, event.clientY);
-
-                        beginDraftForSelected({
-                            x: Math.round(designPoint.x - dragState.offsetX),
-                            y: Math.round(designPoint.y - dragState.offsetY)
-                        });
-
-                        applyAssetLayout(dragState.assetKey);
-                        hydrateLayoutControls();
-                        event.preventDefault();
-                    }
-
-                    function endDrag(event) {
-                        if (!dragState) {
-                            return;
-                        }
-
-                        const element = getAssetElement(dragState.assetKey);
-
-                        if (element && dragState.pointerId === event.pointerId) {
-                            try {
-                                element.releasePointerCapture(dragState.pointerId);
-                            } catch {
-                            }
-                        }
-
-                        dragState = null;
-                    }
-
-                    homeFocusButton.addEventListener("click", function () {
-                        if (layoutModeEnabled && layoutAssetSelect.value === "home-focus") {
-                            return;
-                        }
-
-                        openFocusSetup();
-                    });
-
-                    closeFocusButton.addEventListener("click", function () {
-                        if (layoutModeEnabled && layoutAssetSelect.value === "back") {
-                            return;
-                        }
-
-                        returnToHome();
-                    });
-
-                    durationSlider.addEventListener("input", function () {
-                        updateDurationReadout();
-                    });
-
-                    startFocusButton.addEventListener("click", function () {
-                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "start")) {
-                            return;
-                        }
-
-                        plannedSeconds = Math.max(300, Math.min(7200, parseInt(durationSlider.value || "5", 10) * 60));
-                        startedAtMs = Date.now();
-                        pausedElapsedSeconds = 0;
-                        isRunning = true;
-                        isPaused = false;
-                        isSubmitting = false;
-                        completionTonePlayed = false;
-
-                        setupPanel.classList.add("pl-setup-panel-locked");
-                        setSetupChildrenLocked(true);
-                        runPanel.hidden = false;
-                        pauseButton.hidden = false;
-                        exitButton.hidden = false;
-                        startFocusButton.hidden = true;
-                        closeFocusButton.hidden = true;
-
-                        runStateLabel.textContent = "Time remaining";
-                        setButtonLabel(pauseButton, "Pause");
-                        setButtonLabel(exitButton, "Cancel");
-
-                        updateUi();
-                    });
-
-                    pauseButton.addEventListener("click", function () {
-                        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutModeEnabled && layoutAssetSelect.value === "pause")) {
-                            return;
-                        }
-
-                        if (!isPaused) {
-                            pausedElapsedSeconds = getElapsedSeconds();
-                            isPaused = true;
-                            updateUi();
-                            return;
-                        }
-
-                        startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
-                        isPaused = false;
-                        updateUi();
-                    });
-
-                    exitButton.addEventListener("click", function () {
-                        if (!isRunning || isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "exit")) {
-                            return;
-                        }
-
-                        const elapsedSeconds = getElapsedSeconds();
-
-                        if (elapsedSeconds < stopThresholdSeconds) {
-                            returnToHome();
-                            return;
-                        }
-
-                        updateConfirmPanel(elapsedSeconds);
-                        setConfirmVisible(true);
-                    });
-
-                    confirmKeepGoingButton.addEventListener("click", function () {
-                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "keep-going")) {
-                            return;
-                        }
-
-                        setConfirmVisible(false);
-                    });
-
-                    confirmStopButton.addEventListener("click", function () {
-                        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "stop")) {
-                            return;
-                        }
-
-                        submitSave("stop");
-                    });
-
-                    rewardCloseButton.addEventListener("click", function () {
-                        if (layoutModeEnabled && layoutAssetSelect.value === "gotcha") {
-                            return;
-                        }
-
-                        window.location.href = "/Index";
-                    });
-
-                    document.addEventListener("keydown", function (event) {
-                        if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
-                            setConfirmVisible(false);
-                        }
-                    });
-
-                    window.addEventListener("pointermove", handleDragMove);
-                    window.addEventListener("pointerup", endDrag);
-                    window.addEventListener("pointercancel", endDrag);
-                    window.addEventListener("resize", function () {
-                        applyAllAssetLayouts();
-                        hydrateLayoutControls();
-                    });
-                    window.addEventListener("pl-home-stage-resized", function () {
-                        applyAllAssetLayouts();
-
-                        if (layoutModeEnabled) {
-                            hydrateLayoutControls();
-                        }
-                    });
-
-                    Object.entries(layoutAssets).forEach(([assetKey, config]) => {
-                        config.element.addEventListener("pointerdown", function (event) {
-                            beginDrag(assetKey, event);
-                        });
-
-                        config.element.addEventListener("click", function (event) {
-                            if (layoutModeEnabled && layoutAssetSelect.value === assetKey) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                            }
-                        }, true);
-                    });
-
-                    async function initializeAsync() {
-                        applyPanelArtStates();
-                        primeArtMetrics();
-                        await loadSharedLayoutState();
-                        applyAllAssetLayouts();
-                        updateDurationReadout();
-
-                        if (layoutModeEnabled) {
-                            layoutPanel.hidden = false;
-                            layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
-                            layoutScale.addEventListener("input", pushLayoutControlValues);
-                            layoutX.addEventListener("input", pushLayoutControlValues);
-                            layoutY.addEventListener("input", pushLayoutControlValues);
-                            layoutWidth.addEventListener("input", pushLayoutControlValues);
-                            layoutHeight.addEventListener("input", pushLayoutControlValues);
-                            layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
-                            layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
-                            layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
-                            layoutResetAll.addEventListener("click", resetAllLayoutAssets);
-                            hydrateLayoutControls();
-                            return;
-                        }
-
-                        if (shouldShowRewardOverlay) {
-                            hydrateRewardPanelFromDataset();
-                            showRewardStatePreview();
-                        } else {
-                            returnToHome();
-                        }
-                    }
-
-                    initializeAsync();
-                    window.setInterval(updateUi, 250);
-                })();
-    </script>
+    <script src="~/js/pl-home-canvas.js" asp-append-version="true"></script>
 }
 <!-- SEGMENT B END — Home Canvas Scripts -->
