@@ -9,7 +9,6 @@
     const safeUiStageShell = document.getElementById("pl-safe-ui-stage-shell");
     const safeUiStage = document.getElementById("pl-safe-ui-stage");
     const safeZoneOutline = document.getElementById("pl-safe-zone-outline");
-    const homeSceneArt = document.getElementById("pl-home-scene-art");
 
     if (!homeStageShell || !homeStage || !homeRoot || !worldStageShell || !worldStage || !safeUiStageShell || !safeUiStage || !safeZoneOutline) {
         return;
@@ -141,23 +140,12 @@
         homeRoot.classList.toggle("pl-desktop-preview-mode", isEnabled);
     }
 
-    function resetStandaloneShellBleedStyles() {
-        if (appShell) {
-            appShell.style.removeProperty("background-image");
-            appShell.style.removeProperty("background-repeat");
-            appShell.style.removeProperty("background-position");
-            appShell.style.removeProperty("background-size");
-        }
-    }
-
     function resetRuntimeShellStyles() {
         if (appShell) {
             appShell.style.removeProperty("justify-content");
             appShell.style.removeProperty("align-items");
             appShell.style.removeProperty("padding");
         }
-
-        resetStandaloneShellBleedStyles();
 
         homeStageShell.style.removeProperty("width");
         homeStageShell.style.removeProperty("height");
@@ -209,7 +197,7 @@
         homeStage.style.transform = "scale(1)";
     }
 
-    function applyStandaloneRuntimeShellStyles(renderWidth, renderHeight) {
+    function applyStandaloneRuntimeShellStyles(renderWidth, renderHeight, visualOffsetTop) {
         if (appShell) {
             appShell.style.justifyContent = "flex-start";
             appShell.style.alignItems = "stretch";
@@ -218,7 +206,7 @@
 
         homeStageShell.style.width = `${round3(renderWidth)}px`;
         homeStageShell.style.height = `${round3(renderHeight)}px`;
-        homeStageShell.style.margin = "0";
+        homeStageShell.style.margin = `${round3(-visualOffsetTop)}px 0 0 0`;
         homeStageShell.style.flex = "0 0 auto";
         homeStageShell.style.alignSelf = "stretch";
 
@@ -226,24 +214,6 @@
         homeStage.style.height = `${round3(renderHeight)}px`;
         homeStage.style.transformOrigin = "top left";
         homeStage.style.transform = "scale(1)";
-    }
-
-    function applyStandaloneShellBleedStyles(worldRenderWidth, worldRenderHeight, worldLeft, worldTop) {
-        if (!appShell || !homeSceneArt) {
-            return;
-        }
-
-        const sceneBackgroundImage = window.getComputedStyle(homeSceneArt).backgroundImage;
-
-        if (!sceneBackgroundImage || sceneBackgroundImage === "none") {
-            resetStandaloneShellBleedStyles();
-            return;
-        }
-
-        appShell.style.backgroundImage = sceneBackgroundImage;
-        appShell.style.backgroundRepeat = "no-repeat";
-        appShell.style.backgroundPosition = `${round3(worldLeft)}px ${round3(worldTop)}px`;
-        appShell.style.backgroundSize = `${round3(worldRenderWidth)}px ${round3(worldRenderHeight)}px`;
     }
 
     function shouldUseDesktopPreviewMode(displayMode) {
@@ -285,22 +255,24 @@
 
     function captureStandaloneRuntimeFrame() {
         const liveViewport = readViewportSize();
+        const screenSize = readStandaloneScreenSize(liveViewport);
+        const topReserve = Math.max(0, screenSize.height - liveViewport.height);
 
         return {
-            viewportWidth: liveViewport.width,
-            viewportHeight: liveViewport.height,
+            viewportWidth: screenSize.width,
+            viewportHeight: screenSize.height,
             liveViewportWidth: liveViewport.width,
             liveViewportHeight: liveViewport.height,
-            screenWidth: liveViewport.width,
-            screenHeight: liveViewport.height,
-            safeAreaTop: 0,
+            screenWidth: screenSize.width,
+            screenHeight: screenSize.height,
+            safeAreaTop: topReserve,
             safeAreaRight: 0,
             safeAreaBottom: 0,
             safeAreaLeft: 0,
             safeFrameLeft: 0,
-            safeFrameTop: 0,
-            safeFrameWidth: Math.max(1, liveViewport.width),
-            safeFrameHeight: Math.max(1, liveViewport.height)
+            safeFrameTop: topReserve,
+            safeFrameWidth: Math.max(1, screenSize.width),
+            safeFrameHeight: Math.max(1, screenSize.height - topReserve)
         };
     }
 
@@ -392,10 +364,11 @@
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
-        const uiAuthorLeft = readDesignPx("--pl-safe-ui-author-left", 0);
-        const uiAuthorTop = readDesignPx("--pl-safe-ui-author-top", 0);
-        const uiAuthorWidth = readDesignPx("--pl-safe-ui-author-width", designWidth);
-        const uiAuthorHeight = readDesignPx("--pl-safe-ui-author-height", designHeight);
+
+        const uiAuthorLeft = 0;
+        const uiAuthorTop = 47;
+        const uiAuthorWidth = designWidth;
+        const uiAuthorHeight = designHeight - uiAuthorTop;
 
         const liveViewport = readViewportSize();
         const liveSafeArea = readSafeAreaInsets();
@@ -421,7 +394,9 @@
             }
             : liveSafeArea;
 
-        const standaloneVisualOffsetTop = 0;
+        const standaloneVisualOffsetTop = standaloneDisplayMode && standaloneStartupLock.lockedFrame
+            ? safeArea.top
+            : 0;
 
         setDesktopPreviewClasses(desktopPreviewMode);
 
@@ -455,8 +430,8 @@
 
             previewScale = Math.min(
                 1,
-                Math.max(0.1, (viewport.width - (previewHorizontalPadding * 2)) / designWidth),
-                Math.max(0.1, (viewport.height - (previewVerticalPadding * 2)) / designHeight)
+                Math.max(0.1, (liveViewport.width - (previewHorizontalPadding * 2)) / designWidth),
+                Math.max(0.1, (liveViewport.height - (previewVerticalPadding * 2)) / designHeight)
             );
 
             applyDesktopPreviewShellStyles(
@@ -467,17 +442,34 @@
                 designHeight
             );
 
+            rootWidth = designWidth;
+            rootHeight = designHeight;
+
+            worldScale = previewScale;
+            worldRenderWidth = designWidth * previewScale;
+            worldRenderHeight = designHeight * previewScale;
+            worldLeft = 0;
+            worldTop = 0;
             worldStageMeasuredScale = previewScale;
+
+            safeFrameLeft = uiAuthorLeft;
+            safeFrameTop = uiAuthorTop;
+            safeFrameWidth = uiAuthorWidth;
+            safeFrameHeight = uiAuthorHeight;
+
+            safeUiRenderWidth = uiAuthorWidth;
+            safeUiRenderHeight = uiAuthorHeight;
+            safeUiLeft = uiAuthorLeft;
+            safeUiTop = uiAuthorTop;
             safeUiStageMeasuredScale = previewScale;
             uiProjectionScale = 1;
-            resetStandaloneShellBleedStyles();
         }
         else if (desktopRuntimeEmulationMode) {
             resetRuntimeShellStyles();
 
-            rootHeight = viewport.height;
+            rootHeight = liveViewport.height;
             rootWidth = Math.min(
-                viewport.width,
+                liveViewport.width,
                 Math.round((rootHeight * designWidth) / designHeight)
             );
 
@@ -491,62 +483,71 @@
             worldStageMeasuredScale = worldScale;
 
             safeFrameLeft = 0;
-            safeFrameTop = 0;
+            safeFrameTop = uiAuthorTop;
             safeFrameWidth = rootWidth;
-            safeFrameHeight = rootHeight;
+            safeFrameHeight = Math.max(1, rootHeight - uiAuthorTop);
 
             safeUiRenderWidth = safeFrameWidth;
             safeUiRenderHeight = safeFrameHeight;
             safeUiLeft = 0;
-            safeUiTop = 0;
+            safeUiTop = uiAuthorTop;
             safeUiStageMeasuredScale = 1;
 
             uiProjectionScale = Math.min(
                 safeFrameWidth / uiAuthorWidth,
                 safeFrameHeight / uiAuthorHeight
             );
-            resetStandaloneShellBleedStyles();
         }
-        else {
+        else if (standaloneDisplayMode) {
             rootWidth = viewport.width;
             rootHeight = viewport.height;
 
-            if (standaloneDisplayMode) {
-                applyStandaloneRuntimeShellStyles(rootWidth, rootHeight);
+            applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, standaloneVisualOffsetTop);
 
-                const standaloneBleedWidth = rootWidth;
-                const standaloneBleedHeight = Math.max(rootHeight, liveViewport.height + liveSafeArea.top);
+            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
+            worldRenderWidth = designWidth * worldScale;
+            worldRenderHeight = designHeight * worldScale;
+            worldLeft = (rootWidth - worldRenderWidth) / 2;
+            worldTop = (rootHeight - worldRenderHeight) / 2;
+            worldStageMeasuredScale = worldScale;
 
-                worldScale = Math.max(standaloneBleedWidth / designWidth, standaloneBleedHeight / designHeight);
-                worldRenderWidth = designWidth * worldScale;
-                worldRenderHeight = designHeight * worldScale;
-                worldLeft = (standaloneBleedWidth - worldRenderWidth) / 2;
-                worldTop = (standaloneBleedHeight - worldRenderHeight) / 2;
-                worldStageMeasuredScale = worldScale;
-
-                applyStandaloneShellBleedStyles(worldRenderWidth, worldRenderHeight, worldLeft, worldTop);
-            }
-            else {
-                resetRuntimeShellStyles();
-
-                worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
-                worldRenderWidth = designWidth * worldScale;
-                worldRenderHeight = designHeight * worldScale;
-                worldLeft = (rootWidth - worldRenderWidth) / 2;
-                worldTop = (rootHeight - worldRenderHeight) / 2;
-                worldStageMeasuredScale = worldScale;
-
-                resetStandaloneShellBleedStyles();
-            }
-
-            safeFrameLeft = safeArea.left;
+            safeFrameLeft = 0;
             safeFrameTop = safeArea.top;
-            safeFrameWidth = Math.max(1, rootWidth - safeArea.left - safeArea.right);
-            safeFrameHeight = Math.max(1, rootHeight - safeArea.top - safeArea.bottom);
+            safeFrameWidth = rootWidth;
+            safeFrameHeight = Math.max(1, rootHeight - safeArea.top);
 
             safeUiRenderWidth = safeFrameWidth;
             safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = safeFrameLeft;
+            safeUiLeft = 0;
+            safeUiTop = safeArea.top;
+            safeUiStageMeasuredScale = 1;
+
+            uiProjectionScale = Math.min(
+                safeFrameWidth / uiAuthorWidth,
+                safeFrameHeight / uiAuthorHeight
+            );
+        }
+        else {
+            resetRuntimeShellStyles();
+
+            rootWidth = liveViewport.width;
+            rootHeight = liveViewport.height;
+
+            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
+            worldRenderWidth = designWidth * worldScale;
+            worldRenderHeight = designHeight * worldScale;
+            worldLeft = (rootWidth - worldRenderWidth) / 2;
+            worldTop = (rootHeight - worldRenderHeight) / 2;
+            worldStageMeasuredScale = worldScale;
+
+            safeFrameLeft = 0;
+            safeFrameTop = Math.max(uiAuthorTop, liveSafeArea.top);
+            safeFrameWidth = rootWidth;
+            safeFrameHeight = Math.max(1, rootHeight - safeFrameTop);
+
+            safeUiRenderWidth = safeFrameWidth;
+            safeUiRenderHeight = safeFrameHeight;
+            safeUiLeft = 0;
             safeUiTop = safeFrameTop;
             safeUiStageMeasuredScale = 1;
 
