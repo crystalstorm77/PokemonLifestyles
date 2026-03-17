@@ -1441,21 +1441,70 @@
         layoutResetAll.addEventListener("click", resetAllLayoutAssets);
     }
 
+    async function awaitFirstPaintArtMetrics() {
+        const loadTasks = Object.entries(artImageVars).map(([assetKey, cssVar]) => {
+            const url = readCssUrlVar(cssVar);
+
+            if (!url) {
+                return Promise.resolve();
+            }
+
+            if (artMetrics[assetKey]) {
+                return Promise.resolve();
+            }
+
+            return new Promise(function (resolve) {
+                const image = new Image();
+                image.decoding = "async";
+
+                image.onload = function () {
+                    artMetrics[assetKey] = analyzeImageMetrics(image);
+                    resolve();
+                };
+
+                image.onerror = function () {
+                    resolve();
+                };
+
+                image.src = url;
+            });
+        });
+
+        await Promise.all(loadTasks);
+    }
+
+    function notifyFirstPaintReady() {
+        if (homeRoot.dataset.firstPaintReady === "true") {
+            return;
+        }
+
+        homeRoot.dataset.firstPaintReady = "true";
+
+        window.requestAnimationFrame(function () {
+            applyAllAssetLayouts();
+            updateDurationReadout();
+
+            window.requestAnimationFrame(function () {
+                window.dispatchEvent(new CustomEvent("pl-home-first-paint-ready"));
+            });
+        });
+    }
+
     async function initializeAsync() {
         applyPanelArtStates();
-        primeArtMetrics();
-        await loadSharedLayoutState();
+        await Promise.all([
+            loadSharedLayoutState(),
+            awaitFirstPaintArtMetrics()
+        ]);
 
         homeRoot.classList.toggle("pl-layout-mode", layoutModeEnabled);
         safeZoneOutline.hidden = !layoutModeEnabled;
-
-        applyAllAssetLayouts();
-        updateDurationReadout();
 
         if (layoutModeEnabled) {
             layoutPanel.hidden = false;
             wireLayoutInputs();
             refreshLayoutUi();
+            notifyFirstPaintReady();
             return;
         }
 
@@ -1466,6 +1515,10 @@
         else {
             returnToHome();
         }
+
+        applyAllAssetLayouts();
+        updateDurationReadout();
+        notifyFirstPaintReady();
     }
 
     initializeAsync();

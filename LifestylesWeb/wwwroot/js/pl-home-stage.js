@@ -16,8 +16,10 @@
 
     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
     const desktopPointerQuery = window.matchMedia("(pointer:fine)");
+    let firstPaintReady = false;
 
     homeStageShell.style.visibility = "hidden";
+    homeStageShell.dataset.stageReady = "false";
 
     function readDesignPx(varName, fallbackValue) {
         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
@@ -148,6 +150,16 @@
     function shouldUseDesktopPreviewMode(displayMode) {
         return displayMode === "browser" && desktopPointerQuery.matches;
     }
+
+    function markStageReady() {
+        firstPaintReady = true;
+        homeStageShell.style.visibility = "visible";
+        homeStageShell.dataset.stageReady = "true";
+    }
+
+    window.addEventListener("pl-home-first-paint-ready", function () {
+        markStageReady();
+    }, { once: true });
     // SEGMENT A END — Home Stage Bootstrap
 
     // SEGMENT B START — Home Stage Measurements
@@ -261,8 +273,13 @@
         homeRoot.dataset.safeAreaBottom = String(round3(safeArea.bottom));
         homeRoot.dataset.safeAreaLeft = String(round3(safeArea.left));
 
-        homeStageShell.style.visibility = "visible";
-        homeStageShell.dataset.stageReady = "true";
+        if (firstPaintReady) {
+            markStageReady();
+        }
+        else {
+            homeStageShell.style.visibility = "hidden";
+            homeStageShell.dataset.stageReady = "false";
+        }
 
         try {
             window.scrollTo(0, 0);
