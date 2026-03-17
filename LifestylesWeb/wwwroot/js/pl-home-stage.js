@@ -148,7 +148,7 @@
     }
 
     function shouldUseDesktopPreviewMode(displayMode) {
-        return displayMode === "browser" && desktopPointerQuery.matches;
+        return layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
     }
 
     function markStageReady() {
@@ -160,7 +160,7 @@
     window.addEventListener("pl-home-first-paint-ready", function () {
         markStageReady();
     }, { once: true });
-    // SEGMENT A END — Home Stage Bootstrap
+// SEGMENT A END — Home Stage Bootstrap
 
     // SEGMENT B START — Home Stage Measurements
     function applyHomeStageLayout() {
