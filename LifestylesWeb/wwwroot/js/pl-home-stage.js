@@ -16,6 +16,14 @@
 
     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
     const desktopPointerQuery = window.matchMedia("(pointer:fine)");
+    const standaloneStartupLock = {
+        lockedFrame: null,
+        settleRafId: 0,
+        settleActive: false,
+        bestFrame: null,
+        sessionId: 0
+    };
+
     let firstPaintReady = false;
 
     homeStageShell.style.visibility = "hidden";
@@ -56,6 +64,10 @@
         }
 
         return "browser";
+    }
+
+    function isStandaloneDisplayMode(displayMode) {
+        return displayMode === "standalone";
     }
 
     function parsePx(value) {
@@ -174,8 +186,124 @@
         return !layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
     }
 
+    function clearStandaloneStartupSampling() {
+        if (standaloneStartupLock.settleRafId) {
+            cancelAnimationFrame(standaloneStartupLock.settleRafId);
+            standaloneStartupLock.settleRafId = 0;
+        }
+
+        standaloneStartupLock.settleActive = false;
+        standaloneStartupLock.bestFrame = null;
+    }
+
+    function cloneStandaloneFrame(frame) {
+        return {
+            viewportWidth: frame.viewportWidth,
+            viewportHeight: frame.viewportHeight,
+            safeAreaTop: frame.safeAreaTop,
+            safeAreaRight: frame.safeAreaRight,
+            safeAreaBottom: frame.safeAreaBottom,
+            safeAreaLeft: frame.safeAreaLeft,
+            safeFrameLeft: frame.safeFrameLeft,
+            safeFrameTop: frame.safeFrameTop,
+            safeFrameWidth: frame.safeFrameWidth,
+            safeFrameHeight: frame.safeFrameHeight
+        };
+    }
+
+    function captureStandaloneRuntimeFrame() {
+        const viewport = readViewportSize();
+        const safeArea = readSafeAreaInsets();
+
+        return {
+            viewportWidth: viewport.width,
+            viewportHeight: viewport.height,
+            safeAreaTop: safeArea.top,
+            safeAreaRight: safeArea.right,
+            safeAreaBottom: safeArea.bottom,
+            safeAreaLeft: safeArea.left,
+            safeFrameLeft: safeArea.left,
+            safeFrameTop: safeArea.top,
+            safeFrameWidth: Math.max(1, viewport.width - safeArea.left - safeArea.right),
+            safeFrameHeight: Math.max(1, viewport.height - safeArea.top - safeArea.bottom)
+        };
+    }
+
+    function chooseBetterStandaloneFrame(currentBest, candidate) {
+        if (!currentBest) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        if (candidate.safeFrameHeight > currentBest.safeFrameHeight + 0.5) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        if (Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
+            candidate.safeFrameWidth > currentBest.safeFrameWidth + 0.5) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        if (Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
+            Math.abs(candidate.safeFrameWidth - currentBest.safeFrameWidth) <= 0.5 &&
+            candidate.viewportHeight > currentBest.viewportHeight + 0.5) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        return currentBest;
+    }
+
+    function beginStandaloneStartupLock() {
+        if (standaloneStartupLock.lockedFrame || standaloneStartupLock.settleActive) {
+            return;
+        }
+
+        clearStandaloneStartupSampling();
+
+        standaloneStartupLock.sessionId += 1;
+        standaloneStartupLock.settleActive = true;
+        standaloneStartupLock.bestFrame = null;
+
+        const sessionId = standaloneStartupLock.sessionId;
+        let remainingFrames = 12;
+
+        function sampleFrame() {
+            if (sessionId !== standaloneStartupLock.sessionId || standaloneStartupLock.lockedFrame) {
+                return;
+            }
+
+            const candidate = captureStandaloneRuntimeFrame();
+            standaloneStartupLock.bestFrame = chooseBetterStandaloneFrame(standaloneStartupLock.bestFrame, candidate);
+
+            remainingFrames -= 1;
+
+            if (remainingFrames > 0) {
+                standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
+                return;
+            }
+
+            standaloneStartupLock.lockedFrame = cloneStandaloneFrame(standaloneStartupLock.bestFrame || candidate);
+            standaloneStartupLock.settleRafId = 0;
+            standaloneStartupLock.settleActive = false;
+            standaloneStartupLock.bestFrame = null;
+
+            applyHomeStageLayout();
+        }
+
+        sampleFrame();
+    }
+
     function markStageReady() {
         firstPaintReady = true;
+
+        const displayMode = readDisplayMode();
+        const standaloneLockPending = isStandaloneDisplayMode(displayMode) && !standaloneStartupLock.lockedFrame;
+
+        if (standaloneLockPending) {
+            homeStageShell.style.visibility = "hidden";
+            homeStageShell.dataset.stageReady = "false";
+            return;
+        }
+
         homeStageShell.style.visibility = "visible";
         homeStageShell.dataset.stageReady = "true";
     }
@@ -193,11 +321,30 @@
         const uiAuthorTop = readDesignPx("--pl-safe-ui-author-top", 0);
         const uiAuthorWidth = readDesignPx("--pl-safe-ui-author-width", designWidth);
         const uiAuthorHeight = readDesignPx("--pl-safe-ui-author-height", designHeight);
-        const viewport = readViewportSize();
-        const safeArea = readSafeAreaInsets();
+
+        const liveViewport = readViewportSize();
+        const liveSafeArea = readSafeAreaInsets();
         const displayMode = readDisplayMode();
         const desktopPreviewMode = shouldUseDesktopPreviewMode(displayMode);
         const desktopRuntimeEmulationMode = shouldUseDesktopRuntimeEmulationMode(displayMode);
+        const standaloneDisplayMode = isStandaloneDisplayMode(displayMode);
+        const standaloneLockPending = standaloneDisplayMode && !standaloneStartupLock.lockedFrame;
+
+        const viewport = standaloneDisplayMode && standaloneStartupLock.lockedFrame
+            ? {
+                width: standaloneStartupLock.lockedFrame.viewportWidth,
+                height: standaloneStartupLock.lockedFrame.viewportHeight
+            }
+            : liveViewport;
+
+        const safeArea = standaloneDisplayMode && standaloneStartupLock.lockedFrame
+            ? {
+                top: standaloneStartupLock.lockedFrame.safeAreaTop,
+                right: standaloneStartupLock.lockedFrame.safeAreaRight,
+                bottom: standaloneStartupLock.lockedFrame.safeAreaBottom,
+                left: standaloneStartupLock.lockedFrame.safeAreaLeft
+            }
+            : liveSafeArea;
 
         setDesktopPreviewClasses(desktopPreviewMode);
 
@@ -329,6 +476,8 @@
         homeRoot.dataset.stageDisplayMode = displayMode;
         homeRoot.dataset.desktopPreviewMode = desktopPreviewMode ? "true" : "false";
         homeRoot.dataset.desktopRuntimeEmulationMode = desktopRuntimeEmulationMode ? "true" : "false";
+        homeRoot.dataset.standaloneLockPending = standaloneLockPending ? "true" : "false";
+        homeRoot.dataset.standaloneFrameLocked = standaloneStartupLock.lockedFrame ? "true" : "false";
         homeRoot.dataset.desktopPreviewScale = String(round3(previewScale));
 
         homeRoot.dataset.viewportWidth = String(round3(rootWidth));
@@ -358,7 +507,7 @@
         homeRoot.dataset.safeAreaBottom = String(round3(safeArea.bottom));
         homeRoot.dataset.safeAreaLeft = String(round3(safeArea.left));
 
-        if (firstPaintReady) {
+        if (firstPaintReady && !standaloneLockPending) {
             markStageReady();
         }
         else {
@@ -390,22 +539,33 @@
                 uiAuthorTop,
                 uiAuthorWidth,
                 uiAuthorHeight,
-                uiProjectionScale
+                uiProjectionScale,
+                standaloneLockPending
             }
         }));
     }
 
-    function initializeHomeStageLayout() {
-        applyHomeStageLayout();
+    function handleStageEnvironmentChange() {
+        const displayMode = readDisplayMode();
 
-        window.addEventListener("resize", applyHomeStageLayout);
-        window.addEventListener("pageshow", applyHomeStageLayout);
+        if (isStandaloneDisplayMode(displayMode) && !standaloneStartupLock.lockedFrame) {
+            beginStandaloneStartupLock();
+        }
+
+        applyHomeStageLayout();
+    }
+
+    function initializeHomeStageLayout() {
+        handleStageEnvironmentChange();
+
+        window.addEventListener("resize", handleStageEnvironmentChange);
+        window.addEventListener("pageshow", handleStageEnvironmentChange);
 
         if (desktopPointerQuery.addEventListener) {
-            desktopPointerQuery.addEventListener("change", applyHomeStageLayout);
+            desktopPointerQuery.addEventListener("change", handleStageEnvironmentChange);
         }
         else if (desktopPointerQuery.addListener) {
-            desktopPointerQuery.addListener(applyHomeStageLayout);
+            desktopPointerQuery.addListener(handleStageEnvironmentChange);
         }
     }
 
@@ -416,5 +576,4 @@
         initializeHomeStageLayout();
     }
 })();
-
 // SEGMENT B END — Home Stage Measurements
