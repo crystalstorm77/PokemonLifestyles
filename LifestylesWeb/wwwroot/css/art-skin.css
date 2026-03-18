@@ -34,6 +34,11 @@
 /* SEGMENT A END — Asset Paths */
 
 /* SEGMENT B START — Canvas Layout Defaults */
+
+:root {
+    --pl-art-app-edge-color: #01ff75;
+}
+
 .pl-home-screen {
     --pl-layout-home-scene-x: 0px;
     --pl-layout-home-scene-y: 0px;
@@ -121,4 +126,5 @@
     --pl-layout-gotcha-height: 56px;
     --pl-layout-gotcha-scale: 100;
 }
+
 /* SEGMENT B END — Canvas Layout Defaults */

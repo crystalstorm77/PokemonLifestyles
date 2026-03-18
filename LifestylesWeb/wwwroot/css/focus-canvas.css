@@ -707,7 +707,7 @@ body {
 /* SEGMENT B START — Home Canvas Runtime Overrides */
 
 :root {
-    --pl-app-edge-color: #01ff75;
+    --pl-app-edge-color: var(--pl-art-app-edge-color, #01ff75);
 }
 
 html,

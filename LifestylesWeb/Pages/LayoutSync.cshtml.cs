@@ -85,8 +85,13 @@ public sealed class LayoutSyncModel : PageModel
 public sealed class LayoutOverridesPayload
 {
     #region SEGMENT C — Layout Override Collection
+
     public Dictionary<string, LayoutAssetOverride> Items { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, string> Variables { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+
     #endregion // SEGMENT C — Layout Override Collection
 }
 

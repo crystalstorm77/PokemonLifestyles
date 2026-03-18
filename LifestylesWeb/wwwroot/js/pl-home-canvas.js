@@ -714,35 +714,308 @@
 
     // SEGMENT A END — Home Canvas Bootstrap
 
+
+
     // SEGMENT B START — Home Canvas Layout
+
+    const layoutColorAssetKey = "app-edge-color";
+    const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+    const layoutAssetField = layoutAssetSelect.closest(".pl-field");
+    const layoutScaleField = layoutScale.closest(".pl-field");
+    const layoutXField = layoutX.closest(".pl-field");
+    const layoutYField = layoutY.closest(".pl-field");
+    const layoutWidthField = layoutWidth.closest(".pl-field");
+    const layoutHeightField = layoutHeight.closest(".pl-field");
+
+    const defaultLayoutEdgeColor = normalizeHexColor(
+        getComputedStyle(document.documentElement).getPropertyValue(layoutEdgeColorVariableName),
+        "#01ff75");
+
+    let sharedLayoutVariables = {};
+    let currentVariableDraftKey = null;
+    let currentVariableDraftValue = null;
+
+    let layoutColorField = null;
+    let layoutColorPicker = null;
+    let layoutColorText = null;
+    let layoutColorHint = null;
+
+    function normalizeSimpleHexColor(rawValue) {
+        const raw = String(rawValue || "").trim();
+
+        if (/^#[0-9a-f]{6}$/i.test(raw)) {
+            return raw.toLowerCase();
+        }
+
+        if (/^#[0-9a-f]{3}$/i.test(raw)) {
+            return `#${raw[1]}${raw[1]}${raw[2]}${raw[2]}${raw[3]}${raw[3]}`.toLowerCase();
+        }
+
+        return "";
+    }
+
+    function clampRgbChannel(value) {
+        return Math.max(0, Math.min(255, Math.round(value)));
+    }
+
+    function channelToHex(value) {
+        return clampRgbChannel(value).toString(16).padStart(2, "0");
+    }
+
+    function tryNormalizeHexColor(rawValue) {
+        const simpleHex = normalizeSimpleHexColor(rawValue);
+
+        if (simpleHex) {
+            return simpleHex;
+        }
+
+        const rgbMatch = String(rawValue || "")
+            .trim()
+            .match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);
+
+        if (!rgbMatch) {
+            return "";
+        }
+
+        return `#${channelToHex(parseInt(rgbMatch[1], 10))}${channelToHex(parseInt(rgbMatch[2], 10))}${channelToHex(parseInt(rgbMatch[3], 10))}`;
+    }
+
+    function normalizeHexColor(rawValue, fallbackValue = "#01ff75") {
+        return tryNormalizeHexColor(rawValue)
+            || tryNormalizeHexColor(fallbackValue)
+            || "#01ff75";
+    }
+
+    function normalizeLayoutVariables(variables) {
+        if (!variables || typeof variables !== "object") {
+            return {};
+        }
+
+        const result = {};
+        const appEdgeColor = normalizeHexColor(
+            variables.appEdgeColor ?? variables.AppEdgeColor ?? variables["app-edge-color"],
+            "");
+
+        if (appEdgeColor) {
+            result.appEdgeColor = appEdgeColor;
+        }
+
+        return result;
+    }
+
+    function getCssLayoutVariableDefaults() {
+        return {
+            appEdgeColor: defaultLayoutEdgeColor
+        };
+    }
+
+    function getSavedLayoutVariable(key) {
+        return sharedLayoutVariables[key] ?? getCssLayoutVariableDefaults()[key];
+    }
+
+    function getEffectiveLayoutVariable(key) {
+        if (currentVariableDraftKey === key && currentVariableDraftValue) {
+            return currentVariableDraftValue;
+        }
+
+        return getSavedLayoutVariable(key);
+    }
+
+    function applyEdgeColorVariable(colorValue) {
+        const normalized = normalizeHexColor(colorValue, defaultLayoutEdgeColor);
+
+        document.documentElement.style.setProperty(layoutEdgeColorVariableName, normalized);
+
+        if (themeColorMeta) {
+            themeColorMeta.setAttribute("content", normalized);
+        }
+    }
+
+    function applyLayoutVariables() {
+        applyEdgeColorVariable(getEffectiveLayoutVariable("appEdgeColor"));
+    }
+
+    function discardVariableDraft() {
+        const hadDraft = !!currentVariableDraftKey;
+
+        currentVariableDraftKey = null;
+        currentVariableDraftValue = null;
+
+        if (hadDraft) {
+            applyLayoutVariables();
+        }
+    }
+
+    function beginVariableDraft(key, value) {
+        currentVariableDraftKey = key;
+        currentVariableDraftValue = normalizeHexColor(value, getSavedLayoutVariable(key));
+        applyLayoutVariables();
+    }
+
+    function isVariableAsset(assetKey) {
+        return assetKey === layoutColorAssetKey;
+    }
+
+    function syncLayoutColorInputs(colorValue) {
+        if (!layoutColorPicker || !layoutColorText) {
+            return;
+        }
+
+        const normalized = normalizeHexColor(colorValue, defaultLayoutEdgeColor);
+
+        layoutColorPicker.value = normalized;
+        layoutColorText.value = normalized.toUpperCase();
+    }
+
+    function setGeometryFieldsHidden(isHidden) {
+        [
+            layoutScaleField,
+            layoutXField,
+            layoutYField,
+            layoutWidthField,
+            layoutHeightField
+        ].forEach(function (field) {
+            if (field) {
+                field.hidden = isHidden;
+            }
+        });
+
+        if (layoutColorField) {
+            layoutColorField.hidden = !isHidden;
+        }
+    }
+
+    function ensureLayoutVariableControls() {
+        if (!layoutAssetSelect) {
+            return;
+        }
+
+        if (![...layoutAssetSelect.options].some(function (option) {
+            return option.value === layoutColorAssetKey;
+        })) {
+            const option = document.createElement("option");
+            option.value = layoutColorAssetKey;
+            option.textContent = layoutColorAssetKey;
+            layoutAssetSelect.appendChild(option);
+        }
+
+        if (layoutColorField) {
+            return;
+        }
+
+        layoutColorField = document.createElement("label");
+        layoutColorField.className = "pl-field";
+        layoutColorField.hidden = true;
+        layoutColorField.innerHTML = `
+      <span class="pl-field-label">Edge color</span>
+      <div class="pl-layout-range-with-number">
+        <input class="pl-input" id="pl-layout-edge-color-picker" type="color" value="${defaultLayoutEdgeColor}" />
+        <input class="pl-input pl-layout-number-input" id="pl-layout-edge-color-text" type="text" value="${defaultLayoutEdgeColor.toUpperCase()}" spellcheck="false" autocomplete="off" />
+      </div>
+      <span class="pl-field-hint" id="pl-layout-edge-color-hint">Tints the shell/background outside the authored canvas.</span>
+    `;
+
+        if (layoutAssetField && layoutAssetField.parentNode) {
+            layoutAssetField.parentNode.insertBefore(layoutColorField, layoutAssetField.nextSibling);
+        } else {
+            layoutPanel.appendChild(layoutColorField);
+        }
+
+        layoutColorPicker = layoutColorField.querySelector("#pl-layout-edge-color-picker");
+        layoutColorText = layoutColorField.querySelector("#pl-layout-edge-color-text");
+        layoutColorHint = layoutColorField.querySelector("#pl-layout-edge-color-hint");
+
+        layoutColorPicker.addEventListener("input", function () {
+            syncLayoutColorInputs(layoutColorPicker.value);
+            beginVariableDraft("appEdgeColor", layoutColorPicker.value);
+            updateLayoutCodePreview(layoutColorAssetKey);
+            updateLayoutStatusDisplay(layoutColorAssetKey);
+        });
+
+        const commitTextColorDraft = function () {
+            const normalized = normalizeHexColor(layoutColorText.value, layoutColorPicker.value || defaultLayoutEdgeColor);
+
+            syncLayoutColorInputs(normalized);
+            beginVariableDraft("appEdgeColor", normalized);
+            updateLayoutCodePreview(layoutColorAssetKey);
+            updateLayoutStatusDisplay(layoutColorAssetKey);
+        };
+
+        layoutColorText.addEventListener("change", commitTextColorDraft);
+        layoutColorText.addEventListener("blur", commitTextColorDraft);
+        layoutColorText.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                commitTextColorDraft();
+            }
+        });
+    }
+
+    async function loadSharedLayoutState() {
+        try {
+            const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
+
+            if (!response.ok) {
+                sharedLayoutState = {};
+                sharedLayoutVariables = {};
+                applyLayoutVariables();
+                return;
+            }
+
+            const payload = await response.json();
+            sharedLayoutState = normalizeLayoutItems(payload?.items ?? payload?.Items);
+            sharedLayoutVariables = normalizeLayoutVariables(payload?.variables ?? payload?.Variables);
+        }
+        catch {
+            sharedLayoutState = {};
+            sharedLayoutVariables = {};
+        }
+
+        currentVariableDraftKey = null;
+        currentVariableDraftValue = null;
+        applyLayoutVariables();
+    }
+
+    async function saveSharedLayoutState() {
+        try {
+            await fetch(layoutSyncWriteUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    items: sharedLayoutState,
+                    variables: sharedLayoutVariables
+                })
+            });
+        }
+        catch {
+        }
+    }
+
     function updateSliderVisuals() {
         const state = getEffectiveLayoutState("slider");
         const authorWidth = Math.max(20, state.width * (state.scale / 100));
         const authorHeight = getResolvedHeight("slider", state) * (state.scale / 100);
         const projected = projectUiAssetRect(state, authorWidth, authorHeight);
-
         const sliderMetric = artMetrics["slider"];
         const nibMetric = artMetrics["slider-nib-art"];
-
         const min = parseInt(durationSlider.min || "5", 10);
         const max = parseInt(durationSlider.max || "120", 10);
         const value = parseInt(durationSlider.value || "5", 10);
         const progressRatio = max <= min ? 0 : (value - min) / (max - min);
-
         const trackLeft = sliderMetric && sliderMetric.hasVisibleBounds
             ? projected.width * sliderMetric.visibleLeftRatio
             : 0;
-
         const trackWidth = sliderMetric && sliderMetric.hasVisibleBounds
             ? projected.width * sliderMetric.visibleWidthRatio
             : projected.width;
-
         const targetCenter = trackLeft + (progressRatio * trackWidth);
-
         const defaultNibCenter = nibMetric && nibMetric.hasVisibleBounds
             ? projected.width * (nibMetric.visibleLeftRatio + (nibMetric.visibleWidthRatio / 2))
             : projected.width / 2;
-
         const translateX = Math.round(targetCenter - defaultNibCenter);
         const fillWidth = Math.max(0, Math.min(projected.width, Math.round(targetCenter)));
 
@@ -818,23 +1091,30 @@
 
     function applyAllAssetLayouts() {
         Object.keys(layoutAssets).forEach(applyAssetLayout);
+        applyLayoutVariables();
         refreshLayoutSelection();
     }
 
     function refreshLayoutSelection() {
         const selectedAssetKey = layoutAssetSelect.value;
 
-        Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+        Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
             const state = getEffectiveLayoutState(assetKey);
             const status = getVisibilityStatus(assetKey, state);
             const isSelected = layoutModeEnabled && assetKey === selectedAssetKey;
 
             config.element.classList.toggle("pl-layout-selected", isSelected);
-            config.element.classList.toggle("pl-layout-selected-unsafe", isSelected && (!status.xStatus.inside || !status.yStatus.inside));
+            config.element.classList.toggle(
+                "pl-layout-selected-unsafe",
+                isSelected && (!status.xStatus.inside || !status.yStatus.inside));
         });
     }
 
     function updateLayoutSliderBounds(assetKey) {
+        if (isVariableAsset(assetKey)) {
+            return;
+        }
+
         const state = getEffectiveLayoutState(assetKey);
         const stageBounds = getStageBounds(assetKey);
         const scaledSize = getScaledAssetSize(assetKey, state);
@@ -856,6 +1136,14 @@
     }
 
     function updateLayoutCodePreview(assetKey) {
+        if (isVariableAsset(assetKey)) {
+            layoutCode.value =
+                `:root {
+  --pl-art-app-edge-color: ${getEffectiveLayoutVariable("appEdgeColor")};
+}`;
+            return;
+        }
+
         const state = getEffectiveLayoutState(assetKey);
         const resolvedHeight = getResolvedHeight(assetKey, state);
         const ratioLocked = !!artMetrics[assetKey];
@@ -863,10 +1151,10 @@
         if (ratioLocked) {
             layoutCode.value =
                 `.pl-home-screen {
-    --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-    --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-    --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-    --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
 }
 
 /* Height auto from asset ratio: ${resolvedHeight}px */`;
@@ -875,15 +1163,31 @@
 
         layoutCode.value =
             `.pl-home-screen {
-    --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-    --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-    --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-    --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
-    --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
+  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
+  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
+  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
+  --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
+  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
 }`;
     }
 
     function updateLayoutStatusDisplay(assetKey) {
+        if (isVariableAsset(assetKey)) {
+            layoutStageStatus.textContent = "Shell tint · colors the edge fill outside the authored canvas.";
+            layoutSafeZoneStatus.textContent = "Used for the iPhone edge / bottom-bar tint fallback.";
+            layoutSafeZoneStatus.classList.remove("pl-layout-field-hint-safe");
+            layoutSafeZoneStatus.classList.remove("pl-layout-field-hint-unsafe");
+            layoutScaleValue.textContent = getEffectiveLayoutVariable("appEdgeColor").toUpperCase();
+            layoutXValue.textContent = "Not position-based";
+            layoutYValue.textContent = "Not position-based";
+
+            if (layoutColorHint) {
+                layoutColorHint.textContent = "Saved through LayoutSync and mirrored into the theme-color meta.";
+            }
+
+            return;
+        }
+
         const state = getEffectiveLayoutState(assetKey);
         const status = getVisibilityStatus(assetKey, state);
         const stageType = getAssetStageType(assetKey);
@@ -891,14 +1195,11 @@
         layoutStageStatus.textContent = stageType === "world"
             ? "World layer · fills the screen with cover scaling."
             : "Safe UI layer · authored against the shared safe frame.";
-
         layoutSafeZoneStatus.textContent = (!status.xStatus.inside || !status.yStatus.inside)
             ? `Outside safe zone · ${status.xStatus.text}; ${status.yStatus.text}`
             : "Inside safe zone.";
-
         layoutSafeZoneStatus.classList.toggle("pl-layout-field-hint-safe", status.xStatus.inside && status.yStatus.inside);
         layoutSafeZoneStatus.classList.toggle("pl-layout-field-hint-unsafe", !status.xStatus.inside || !status.yStatus.inside);
-
         layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
         layoutXValue.textContent = status.xStatus.text;
         layoutYValue.textContent = status.yStatus.text;
@@ -911,7 +1212,23 @@
     }
 
     function refreshLayoutUi() {
+        ensureLayoutVariableControls();
+
         const assetKey = layoutAssetSelect.value;
+
+        if (isVariableAsset(assetKey)) {
+            setGeometryFieldsHidden(true);
+            previewLayoutAsset("home-scene");
+            applyAllAssetLayouts();
+            syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
+            updateLayoutCodePreview(assetKey);
+            updateLayoutStatusDisplay(assetKey);
+            refreshLayoutSelection();
+            return;
+        }
+
+        setGeometryFieldsHidden(false);
+
         const state = getEffectiveLayoutState(assetKey);
         const resolvedHeight = getResolvedHeight(assetKey, state);
         const ratioLocked = !!artMetrics[assetKey];
@@ -925,6 +1242,7 @@
         layoutY.value = String(Math.round(state.y));
         layoutWidth.value = String(Math.round(state.width));
         layoutHeight.value = String(Math.round(resolvedHeight));
+
         syncNumberPairs();
 
         layoutHeight.disabled = ratioLocked;
@@ -941,8 +1259,12 @@
 
     function buildPartialStateFromControls() {
         const assetKey = layoutAssetSelect.value;
-        const base = getEffectiveLayoutState(assetKey);
 
+        if (isVariableAsset(assetKey)) {
+            return null;
+        }
+
+        const base = getEffectiveLayoutState(assetKey);
         const partial = {
             scale: parseInt(layoutScaleNumber.value || layoutScale.value || String(base.scale), 10),
             x: parseInt(layoutXNumber.value || layoutX.value || String(base.x), 10),
@@ -958,19 +1280,109 @@
     }
 
     function pushLayoutControlValues() {
+        if (isVariableAsset(layoutAssetSelect.value)) {
+            return;
+        }
+
         const partial = buildPartialStateFromControls();
+
+        if (!partial) {
+            return;
+        }
+
         beginDraftForSelected(partial);
         updateLayoutSliderBounds(layoutAssetSelect.value);
 
         layoutScale.value = String(Math.round(currentDraftState.scale));
         layoutX.value = String(Math.round(currentDraftState.x));
         layoutY.value = String(Math.round(currentDraftState.y));
+
         syncNumberPairs();
 
         applyAssetLayout(layoutAssetSelect.value);
         updateLayoutCodePreview(layoutAssetSelect.value);
         updateLayoutStatusDisplay(layoutAssetSelect.value);
         refreshLayoutSelection();
+    }
+
+    async function saveSelectedLayoutAsset() {
+        const assetKey = layoutAssetSelect.value;
+
+        if (isVariableAsset(assetKey)) {
+            if (currentVariableDraftKey !== "appEdgeColor" || !currentVariableDraftValue) {
+                return;
+            }
+
+            sharedLayoutVariables.appEdgeColor = currentVariableDraftValue;
+            currentVariableDraftKey = null;
+            currentVariableDraftValue = null;
+
+            await saveSharedLayoutState();
+            applyLayoutVariables();
+            refreshLayoutUi();
+            return;
+        }
+
+        if (currentDraftAssetKey !== assetKey || !currentDraftState) {
+            return;
+        }
+
+        sharedLayoutState[assetKey] = {
+            x: currentDraftState.x,
+            y: currentDraftState.y,
+            width: currentDraftState.width,
+            height: currentDraftState.height,
+            scale: currentDraftState.scale
+        };
+
+        currentDraftAssetKey = null;
+        currentDraftState = null;
+
+        await saveSharedLayoutState();
+        applyAllAssetLayouts();
+        refreshLayoutUi();
+    }
+
+    function revertSelectedLayoutAsset() {
+        const assetKey = layoutAssetSelect.value;
+
+        if (isVariableAsset(assetKey)) {
+            discardVariableDraft();
+            refreshLayoutUi();
+            return;
+        }
+
+        discardCurrentDraft();
+        refreshLayoutUi();
+    }
+
+    function resetSelectedLayoutAsset() {
+        const assetKey = layoutAssetSelect.value;
+
+        if (isVariableAsset(assetKey)) {
+            beginVariableDraft("appEdgeColor", getCssLayoutVariableDefaults().appEdgeColor);
+            syncLayoutColorInputs(currentVariableDraftValue);
+            updateLayoutCodePreview(assetKey);
+            updateLayoutStatusDisplay(assetKey);
+            return;
+        }
+
+        beginDraftForSelected(getCssLayoutDefaults(assetKey));
+        applyAssetLayout(assetKey);
+        refreshLayoutUi();
+    }
+
+    async function resetAllLayoutAssets() {
+        sharedLayoutState = {};
+        sharedLayoutVariables = {};
+        currentDraftAssetKey = null;
+        currentDraftState = null;
+        currentVariableDraftKey = null;
+        currentVariableDraftValue = null;
+
+        await saveSharedLayoutState();
+        applyAllAssetLayouts();
+        refreshLayoutUi();
     }
 
     function handleLayoutAssetChange() {
@@ -980,11 +1392,15 @@
             discardCurrentDraft();
         }
 
+        if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
+            discardVariableDraft();
+        }
+
         refreshLayoutUi();
     }
 
     function beginDrag(assetKey, event) {
-        if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey) {
+        if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey || isVariableAsset(assetKey)) {
             return;
         }
 
@@ -997,43 +1413,31 @@
             offsetX: designPoint.x - state.x,
             offsetY: designPoint.y - state.y
         };
-
-        beginDraftForSelected(state);
-
-        try {
-            getAssetElement(assetKey)?.setPointerCapture(event.pointerId);
-        }
-        catch {
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
     }
 
     function handleDragMove(event) {
-        if (!dragState) {
+        if (!dragState || event.pointerId !== dragState.pointerId) {
             return;
         }
 
-        const designPoint = clientToAssetDesignPoint(dragState.assetKey, event.clientX, event.clientY);
+        const assetKey = dragState.assetKey;
+        const designPoint = clientToAssetDesignPoint(assetKey, event.clientX, event.clientY);
 
         beginDraftForSelected({
             x: Math.round(designPoint.x - dragState.offsetX),
             y: Math.round(designPoint.y - dragState.offsetY)
         });
 
-        updateLayoutSliderBounds(dragState.assetKey);
+        applyAssetLayout(assetKey);
+        updateLayoutSliderBounds(assetKey);
 
         layoutX.value = String(Math.round(currentDraftState.x));
         layoutY.value = String(Math.round(currentDraftState.y));
         syncNumberPairs();
 
-        applyAssetLayout(dragState.assetKey);
-        updateLayoutCodePreview(dragState.assetKey);
-        updateLayoutStatusDisplay(dragState.assetKey);
+        updateLayoutCodePreview(assetKey);
+        updateLayoutStatusDisplay(assetKey);
         refreshLayoutSelection();
-
-        event.preventDefault();
     }
 
     function endDrag(event) {
@@ -1041,20 +1445,19 @@
             return;
         }
 
-        const element = getAssetElement(dragState.assetKey);
-
-        if (element && dragState.pointerId === event.pointerId) {
-            try {
-                element.releasePointerCapture(dragState.pointerId);
-            }
-            catch {
-            }
+        if (event.pointerId !== undefined && event.pointerId !== dragState.pointerId) {
+            return;
         }
 
         dragState = null;
     }
 
-// SEGMENT B END — Home Canvas Layout
+    // SEGMENT B END — Home Canvas Layout
+
+
+
+
+
 
     // SEGMENT C START — Home Canvas App Flow
     function setSetupChildrenVisible(isVisible) {
