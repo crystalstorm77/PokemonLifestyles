@@ -703,3 +703,62 @@ body {
     }
 }
 /* SEGMENT A END — Home Canvas Styles */
+
+/* SEGMENT B START — Home Canvas Runtime Overrides */
+
+:root {
+    --pl-home-edge-background: #d9e8fb;
+}
+
+html,
+body,
+.app-shell,
+.pl-home-stage-shell,
+.pl-home-stage,
+.pl-home-screen,
+.pl-world-stage-shell,
+.pl-world-stage,
+.pl-home-scene-art {
+    background-color: var(--pl-home-edge-background) !important;
+}
+
+.app-shell,
+.pl-home-stage-shell,
+.pl-home-stage,
+.pl-home-screen {
+    min-width: 0;
+    width: 100%;
+}
+
+.pl-home-screen {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+    .pl-home-screen:not(.pl-desktop-preview-mode) {
+        max-height: none;
+    }
+
+@supports (height: 100svh) {
+    .app-shell,
+    .pl-home-stage-shell,
+    .pl-home-stage,
+    .pl-home-screen {
+        min-height: 100svh;
+        height: 100svh;
+    }
+}
+
+@supports (height: 100dvh) {
+    .app-shell,
+    .pl-home-stage-shell,
+    .pl-home-stage,
+    .pl-home-screen {
+        min-height: 100dvh;
+        height: 100dvh;
+    }
+}
+
+/* SEGMENT B END — Home Canvas Runtime Overrides */

@@ -360,68 +360,416 @@
     }, { once: true });
     // SEGMENT A END — Home Stage Bootstrap
 
+
     // SEGMENT B START — Home Stage Measurements
+
+    function readRuntimeViewport() {
+        const visualViewport = window.visualViewport;
+
+        if (
+            visualViewport &&
+            Number.isFinite(visualViewport.width) &&
+            Number.isFinite(visualViewport.height)
+        ) {
+            return {
+                width: Math.max(1, visualViewport.width),
+                height: Math.max(1, visualViewport.height)
+            };
+        }
+
+        return readViewportSize();
+    }
+
+    function buildSafeFrame(rootWidth, rootHeight, safeArea, uiAuthorTop) {
+        const safeFrameLeft = Math.max(0, safeArea.left);
+        const safeFrameTop = Math.max(uiAuthorTop, safeArea.top);
+        const safeFrameRightInset = Math.max(0, safeArea.right);
+        const safeFrameBottomInset = Math.max(0, safeArea.bottom);
+
+        return {
+            left: safeFrameLeft,
+            top: safeFrameTop,
+            width: Math.max(1, rootWidth - safeFrameLeft - safeFrameRightInset),
+            height: Math.max(1, rootHeight - safeFrameTop - safeFrameBottomInset)
+        };
+    }
+
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    let homeChromeTintSourceUrl = "";
+    let homeChromeTintRequestId = 0;
+
+    function clampByte(value) {
+        return Math.max(0, Math.min(255, Math.round(value)));
+    }
+
+    function byteToHex(value) {
+        return clampByte(value).toString(16).padStart(2, "0");
+    }
+
+    function rgbToHex(red, green, blue) {
+        return `#${byteToHex(red)}${byteToHex(green)}${byteToHex(blue)}`;
+    }
+
+    function parseBackgroundImageUrls(backgroundImageValue) {
+        if (!backgroundImageValue) {
+            return [];
+        }
+
+        const urls = [];
+        const urlPattern = /url\((['"]?)(.*?)\1\)/g;
+        let match = urlPattern.exec(backgroundImageValue);
+
+        while (match) {
+            if (match[2]) {
+                urls.push(match[2]);
+            }
+
+            match = urlPattern.exec(backgroundImageValue);
+        }
+
+        return urls;
+    }
+
+    function readOpaqueBackgroundColor(element) {
+        if (!element) {
+            return "";
+        }
+
+        const computed = window.getComputedStyle(element);
+        const backgroundColor = computed.backgroundColor || "";
+
+        if (
+            !backgroundColor ||
+            backgroundColor === "transparent" ||
+            backgroundColor === "rgba(0, 0, 0, 0)"
+        ) {
+            return "";
+        }
+
+        return backgroundColor;
+    }
+
+    function applyHomeChromeTint(colorValue) {
+        if (!colorValue) {
+            return;
+        }
+
+        document.documentElement.style.setProperty("--pl-home-edge-background", colorValue);
+        document.documentElement.style.backgroundColor = colorValue;
+        document.body.style.backgroundColor = colorValue;
+
+        if (appShell) {
+            appShell.style.backgroundColor = colorValue;
+        }
+
+        if (themeColorMeta) {
+            themeColorMeta.setAttribute("content", colorValue);
+        }
+    }
+
+    function applyFallbackHomeChromeTint() {
+        const fallbackColor =
+            readOpaqueBackgroundColor(homeRoot) ||
+            readOpaqueBackgroundColor(homeStageShell) ||
+            readOpaqueBackgroundColor(appShell) ||
+            readOpaqueBackgroundColor(document.body) ||
+            readOpaqueBackgroundColor(document.documentElement);
+
+        if (fallbackColor) {
+            applyHomeChromeTint(fallbackColor);
+        }
+    }
+
+    function syncHomeChromeTintFromSceneArt() {
+        const sceneArt = document.getElementById("pl-home-scene-art");
+
+        if (!sceneArt) {
+            applyFallbackHomeChromeTint();
+            return;
+        }
+
+        const computed = window.getComputedStyle(sceneArt);
+        const backgroundImageUrls = parseBackgroundImageUrls(computed.backgroundImage || "");
+
+        if (!backgroundImageUrls.length) {
+            applyFallbackHomeChromeTint();
+            return;
+        }
+
+        const imageUrl = backgroundImageUrls[0];
+
+        if (!imageUrl) {
+            applyFallbackHomeChromeTint();
+            return;
+        }
+
+        if (imageUrl === homeChromeTintSourceUrl) {
+            return;
+        }
+
+        homeChromeTintSourceUrl = imageUrl;
+        homeChromeTintRequestId += 1;
+
+        const requestId = homeChromeTintRequestId;
+        const image = new Image();
+
+        image.decoding = "async";
+
+        image.onload = function () {
+            if (requestId !== homeChromeTintRequestId) {
+                return;
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = 24;
+            canvas.height = 24;
+
+            const context = canvas.getContext("2d", { willReadFrequently: true });
+
+            if (!context) {
+                applyFallbackHomeChromeTint();
+                return;
+            }
+
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            const samplePoints = [
+                [1, 1],
+                [12, 1],
+                [22, 1],
+                [1, 12],
+                [22, 12],
+                [1, 22],
+                [12, 22],
+                [22, 22]
+            ];
+
+            let redTotal = 0;
+            let greenTotal = 0;
+            let blueTotal = 0;
+            let sampleCount = 0;
+
+            for (const [sampleX, sampleY] of samplePoints) {
+                const pixel = context.getImageData(sampleX, sampleY, 1, 1).data;
+                const alpha = pixel[3];
+
+                if (alpha < 16) {
+                    continue;
+                }
+
+                redTotal += pixel[0];
+                greenTotal += pixel[1];
+                blueTotal += pixel[2];
+                sampleCount += 1;
+            }
+
+            if (sampleCount === 0) {
+                applyFallbackHomeChromeTint();
+                return;
+            }
+
+            applyHomeChromeTint(
+                rgbToHex(
+                    redTotal / sampleCount,
+                    greenTotal / sampleCount,
+                    blueTotal / sampleCount
+                )
+            );
+        };
+
+        image.onerror = function () {
+            if (requestId !== homeChromeTintRequestId) {
+                return;
+            }
+
+            applyFallbackHomeChromeTint();
+        };
+
+        image.src = imageUrl;
+    }
+
+    function cloneStandaloneFrame(frame) {
+        return {
+            viewportWidth: frame.viewportWidth,
+            viewportHeight: frame.viewportHeight,
+            liveViewportWidth: frame.liveViewportWidth,
+            liveViewportHeight: frame.liveViewportHeight,
+            screenWidth: frame.screenWidth,
+            screenHeight: frame.screenHeight,
+            safeAreaTop: frame.safeAreaTop,
+            safeAreaRight: frame.safeAreaRight,
+            safeAreaBottom: frame.safeAreaBottom,
+            safeAreaLeft: frame.safeAreaLeft,
+            safeFrameLeft: frame.safeFrameLeft,
+            safeFrameTop: frame.safeFrameTop,
+            safeFrameWidth: frame.safeFrameWidth,
+            safeFrameHeight: frame.safeFrameHeight
+        };
+    }
+
+    function captureStandaloneRuntimeFrame() {
+        const designWidth = readDesignPx("--pl-home-screen-width", 428);
+        const designHeight = readDesignPx("--pl-home-screen-height", 926);
+        const uiAuthorTop = 47;
+        const viewport = readRuntimeViewport();
+        const safeArea = readSafeAreaInsets();
+        const safeFrame = buildSafeFrame(
+            viewport.width,
+            viewport.height,
+            safeArea,
+            uiAuthorTop
+        );
+
+        return {
+            viewportWidth: viewport.width,
+            viewportHeight: viewport.height,
+            liveViewportWidth: viewport.width,
+            liveViewportHeight: viewport.height,
+            screenWidth: Math.max(1, parsePx(window.screen?.width) || viewport.width),
+            screenHeight: Math.max(1, parsePx(window.screen?.height) || viewport.height),
+            safeAreaTop: safeArea.top,
+            safeAreaRight: safeArea.right,
+            safeAreaBottom: safeArea.bottom,
+            safeAreaLeft: safeArea.left,
+            safeFrameLeft: safeFrame.left,
+            safeFrameTop: safeFrame.top,
+            safeFrameWidth: safeFrame.width,
+            safeFrameHeight: safeFrame.height
+        };
+    }
+
+    function chooseBetterStandaloneFrame(currentBest, candidate) {
+        if (!currentBest) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        if (candidate.viewportHeight > currentBest.viewportHeight + 0.5) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        if (
+            Math.abs(candidate.viewportHeight - currentBest.viewportHeight) <= 0.5 &&
+            candidate.safeFrameHeight > currentBest.safeFrameHeight + 0.5
+        ) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        if (
+            Math.abs(candidate.viewportHeight - currentBest.viewportHeight) <= 0.5 &&
+            Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
+            candidate.viewportWidth > currentBest.viewportWidth + 0.5
+        ) {
+            return cloneStandaloneFrame(candidate);
+        }
+
+        return currentBest;
+    }
+
+    function beginStandaloneStartupLock() {
+        clearStandaloneStartupSampling();
+
+        standaloneStartupLock.sessionId += 1;
+        standaloneStartupLock.settleActive = true;
+
+        const sessionId = standaloneStartupLock.sessionId;
+        const initialFrame = captureStandaloneRuntimeFrame();
+
+        standaloneStartupLock.lockedFrame = cloneStandaloneFrame(initialFrame);
+        standaloneStartupLock.bestFrame = cloneStandaloneFrame(initialFrame);
+
+        applyHomeStageLayout();
+
+        let remainingFrames = 6;
+
+        function sampleFrame() {
+            if (sessionId !== standaloneStartupLock.sessionId) {
+                return;
+            }
+
+            const candidate = captureStandaloneRuntimeFrame();
+
+            standaloneStartupLock.bestFrame = chooseBetterStandaloneFrame(
+                standaloneStartupLock.bestFrame,
+                candidate
+            );
+
+            remainingFrames -= 1;
+
+            if (remainingFrames > 0) {
+                standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
+                return;
+            }
+
+            standaloneStartupLock.lockedFrame = cloneStandaloneFrame(
+                standaloneStartupLock.bestFrame || candidate
+            );
+            standaloneStartupLock.settleRafId = 0;
+            standaloneStartupLock.settleActive = false;
+            standaloneStartupLock.bestFrame = null;
+
+            applyHomeStageLayout();
+        }
+
+        standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
+    }
+
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
-
         const uiAuthorLeft = 0;
         const uiAuthorTop = 47;
         const uiAuthorWidth = designWidth;
         const uiAuthorHeight = designHeight - uiAuthorTop;
 
-        const liveViewport = readViewportSize();
+        const liveViewport = readRuntimeViewport();
         const liveSafeArea = readSafeAreaInsets();
         const displayMode = readDisplayMode();
         const desktopPreviewMode = shouldUseDesktopPreviewMode(displayMode);
         const desktopRuntimeEmulationMode = shouldUseDesktopRuntimeEmulationMode(displayMode);
         const standaloneDisplayMode = isStandaloneDisplayMode(displayMode);
-        const standaloneLockPending = standaloneDisplayMode && !standaloneStartupLock.lockedFrame;
 
-        const viewport = standaloneDisplayMode && standaloneStartupLock.lockedFrame
-            ? {
-                width: standaloneStartupLock.lockedFrame.viewportWidth,
-                height: standaloneStartupLock.lockedFrame.viewportHeight
-            }
-            : liveViewport;
+        const viewport =
+            standaloneDisplayMode && standaloneStartupLock.lockedFrame
+                ? {
+                    width: standaloneStartupLock.lockedFrame.viewportWidth,
+                    height: standaloneStartupLock.lockedFrame.viewportHeight
+                }
+                : liveViewport;
 
-        const safeArea = standaloneDisplayMode && standaloneStartupLock.lockedFrame
-            ? {
-                top: standaloneStartupLock.lockedFrame.safeAreaTop,
-                right: standaloneStartupLock.lockedFrame.safeAreaRight,
-                bottom: standaloneStartupLock.lockedFrame.safeAreaBottom,
-                left: standaloneStartupLock.lockedFrame.safeAreaLeft
-            }
-            : liveSafeArea;
+        const safeArea =
+            standaloneDisplayMode && standaloneStartupLock.lockedFrame
+                ? {
+                    top: standaloneStartupLock.lockedFrame.safeAreaTop,
+                    right: standaloneStartupLock.lockedFrame.safeAreaRight,
+                    bottom: standaloneStartupLock.lockedFrame.safeAreaBottom,
+                    left: standaloneStartupLock.lockedFrame.safeAreaLeft
+                }
+                : liveSafeArea;
 
-        const standaloneVisualOffsetTop = standaloneDisplayMode && standaloneStartupLock.lockedFrame
-            ? safeArea.top
-            : 0;
+        const standaloneLockPending =
+            standaloneDisplayMode && !standaloneStartupLock.lockedFrame;
+        const standaloneVisualOffsetTop = 0;
 
         setDesktopPreviewClasses(desktopPreviewMode);
 
         let rootWidth = designWidth;
         let rootHeight = designHeight;
-
         let worldScale = 1;
         let worldRenderWidth = designWidth;
         let worldRenderHeight = designHeight;
         let worldLeft = 0;
         let worldTop = 0;
         let worldStageMeasuredScale = 1;
-
         let safeFrameLeft = uiAuthorLeft;
         let safeFrameTop = uiAuthorTop;
         let safeFrameWidth = uiAuthorWidth;
         let safeFrameHeight = uiAuthorHeight;
-
         let safeUiRenderWidth = uiAuthorWidth;
         let safeUiRenderHeight = uiAuthorHeight;
         let safeUiLeft = uiAuthorLeft;
         let safeUiTop = uiAuthorTop;
         let safeUiStageMeasuredScale = 1;
         let uiProjectionScale = 1;
-
         let previewScale = 1;
 
         if (desktopPreviewMode) {
@@ -444,19 +792,16 @@
 
             rootWidth = designWidth;
             rootHeight = designHeight;
-
             worldScale = previewScale;
             worldRenderWidth = designWidth * previewScale;
             worldRenderHeight = designHeight * previewScale;
             worldLeft = 0;
             worldTop = 0;
             worldStageMeasuredScale = previewScale;
-
             safeFrameLeft = uiAuthorLeft;
             safeFrameTop = uiAuthorTop;
             safeFrameWidth = uiAuthorWidth;
             safeFrameHeight = uiAuthorHeight;
-
             safeUiRenderWidth = uiAuthorWidth;
             safeUiRenderHeight = uiAuthorHeight;
             safeUiLeft = uiAuthorLeft;
@@ -481,28 +826,32 @@
             worldLeft = (rootWidth - worldRenderWidth) / 2;
             worldTop = (rootHeight - worldRenderHeight) / 2;
             worldStageMeasuredScale = worldScale;
-
             safeFrameLeft = 0;
             safeFrameTop = uiAuthorTop;
             safeFrameWidth = rootWidth;
             safeFrameHeight = Math.max(1, rootHeight - uiAuthorTop);
-
             safeUiRenderWidth = safeFrameWidth;
             safeUiRenderHeight = safeFrameHeight;
             safeUiLeft = 0;
             safeUiTop = uiAuthorTop;
             safeUiStageMeasuredScale = 1;
-
             uiProjectionScale = Math.min(
                 safeFrameWidth / uiAuthorWidth,
                 safeFrameHeight / uiAuthorHeight
             );
         }
         else if (standaloneDisplayMode) {
+            const safeFrame = buildSafeFrame(
+                viewport.width,
+                viewport.height,
+                safeArea,
+                uiAuthorTop
+            );
+
             rootWidth = viewport.width;
             rootHeight = viewport.height;
 
-            applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, standaloneVisualOffsetTop);
+            applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, 0);
 
             worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
             worldRenderWidth = designWidth * worldScale;
@@ -511,15 +860,15 @@
             worldTop = (rootHeight - worldRenderHeight) / 2;
             worldStageMeasuredScale = worldScale;
 
-            safeFrameLeft = 0;
-            safeFrameTop = safeArea.top;
-            safeFrameWidth = rootWidth;
-            safeFrameHeight = Math.max(1, rootHeight - safeArea.top);
+            safeFrameLeft = safeFrame.left;
+            safeFrameTop = safeFrame.top;
+            safeFrameWidth = safeFrame.width;
+            safeFrameHeight = safeFrame.height;
 
             safeUiRenderWidth = safeFrameWidth;
             safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = 0;
-            safeUiTop = safeArea.top;
+            safeUiLeft = safeFrameLeft;
+            safeUiTop = safeFrameTop;
             safeUiStageMeasuredScale = 1;
 
             uiProjectionScale = Math.min(
@@ -528,6 +877,13 @@
             );
         }
         else {
+            const safeFrame = buildSafeFrame(
+                liveViewport.width,
+                liveViewport.height,
+                liveSafeArea,
+                uiAuthorTop
+            );
+
             resetRuntimeShellStyles();
 
             rootWidth = liveViewport.width;
@@ -540,14 +896,14 @@
             worldTop = (rootHeight - worldRenderHeight) / 2;
             worldStageMeasuredScale = worldScale;
 
-            safeFrameLeft = 0;
-            safeFrameTop = Math.max(uiAuthorTop, liveSafeArea.top);
-            safeFrameWidth = rootWidth;
-            safeFrameHeight = Math.max(1, rootHeight - safeFrameTop);
+            safeFrameLeft = safeFrame.left;
+            safeFrameTop = safeFrame.top;
+            safeFrameWidth = safeFrame.width;
+            safeFrameHeight = safeFrame.height;
 
             safeUiRenderWidth = safeFrameWidth;
             safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = 0;
+            safeUiLeft = safeFrameLeft;
             safeUiTop = safeFrameTop;
             safeUiStageMeasuredScale = 1;
 
@@ -572,6 +928,8 @@
         setShellBox(safeUiStageShell, safeUiLeft, safeUiTop, safeUiRenderWidth, safeUiRenderHeight);
         setShellBox(safeZoneOutline, safeFrameLeft, safeFrameTop, safeFrameWidth, safeFrameHeight);
 
+        syncHomeChromeTintFromSceneArt();
+
         homeRoot.dataset.stageDisplayMode = displayMode;
         homeRoot.dataset.desktopPreviewMode = desktopPreviewMode ? "true" : "false";
         homeRoot.dataset.desktopRuntimeEmulationMode = desktopRuntimeEmulationMode ? "true" : "false";
@@ -579,29 +937,23 @@
         homeRoot.dataset.standaloneFrameLocked = standaloneStartupLock.lockedFrame ? "true" : "false";
         homeRoot.dataset.standaloneVisualOffsetTop = String(round3(standaloneVisualOffsetTop));
         homeRoot.dataset.desktopPreviewScale = String(round3(previewScale));
-
         homeRoot.dataset.viewportWidth = String(round3(rootWidth));
         homeRoot.dataset.viewportHeight = String(round3(rootHeight));
-
         homeRoot.dataset.worldStageScale = String(round3(worldStageMeasuredScale));
         homeRoot.dataset.worldStageRenderWidth = String(round3(worldRenderWidth));
         homeRoot.dataset.worldStageRenderHeight = String(round3(worldRenderHeight));
-
         homeRoot.dataset.uiAuthorFrameLeft = String(round3(uiAuthorLeft));
         homeRoot.dataset.uiAuthorFrameTop = String(round3(uiAuthorTop));
         homeRoot.dataset.uiAuthorFrameWidth = String(round3(uiAuthorWidth));
         homeRoot.dataset.uiAuthorFrameHeight = String(round3(uiAuthorHeight));
-
         homeRoot.dataset.safeUiStageScale = String(round3(safeUiStageMeasuredScale));
         homeRoot.dataset.safeUiStageRenderWidth = String(round3(safeUiRenderWidth));
         homeRoot.dataset.safeUiStageRenderHeight = String(round3(safeUiRenderHeight));
         homeRoot.dataset.uiProjectionScale = String(round3(uiProjectionScale));
-
         homeRoot.dataset.safeFrameLeft = String(round3(safeFrameLeft));
         homeRoot.dataset.safeFrameTop = String(round3(safeFrameTop));
         homeRoot.dataset.safeFrameWidth = String(round3(safeFrameWidth));
         homeRoot.dataset.safeFrameHeight = String(round3(safeFrameHeight));
-
         homeRoot.dataset.safeAreaTop = String(round3(safeArea.top));
         homeRoot.dataset.safeAreaRight = String(round3(safeArea.right));
         homeRoot.dataset.safeAreaBottom = String(round3(safeArea.bottom));
@@ -649,9 +1001,15 @@
     function handleStageEnvironmentChange() {
         const displayMode = readDisplayMode();
 
-        if (isStandaloneDisplayMode(displayMode) && !standaloneStartupLock.lockedFrame) {
+        if (isStandaloneDisplayMode(displayMode)) {
             beginStandaloneStartupLock();
+            return;
         }
+
+        clearStandaloneStartupSampling();
+        standaloneStartupLock.lockedFrame = null;
+        standaloneStartupLock.bestFrame = null;
+        standaloneStartupLock.settleActive = false;
 
         applyHomeStageLayout();
     }
@@ -661,6 +1019,11 @@
 
         window.addEventListener("resize", handleStageEnvironmentChange);
         window.addEventListener("pageshow", handleStageEnvironmentChange);
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener("resize", handleStageEnvironmentChange);
+            window.visualViewport.addEventListener("scroll", handleStageEnvironmentChange);
+        }
 
         if (desktopPointerQuery.addEventListener) {
             desktopPointerQuery.addEventListener("change", handleStageEnvironmentChange);
@@ -676,5 +1039,5 @@
     else {
         initializeHomeStageLayout();
     }
-})();
+
 // SEGMENT B END — Home Stage Measurements

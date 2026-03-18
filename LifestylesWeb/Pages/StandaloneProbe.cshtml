@@ -6,8 +6,7 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<!-- SEGMENT A START — Standalone Probe Head -->
-<head>
+    <!-- SEGMENT A START — Standalone Probe Head -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -26,6 +25,9 @@
     <style>
             :root {
                 color-scheme: dark;
+                --probe-document-background: #020617;
+                --probe-stage-background: #0f172a;
+                --probe-world-opacity: 1;
             }
 
             html,
@@ -34,7 +36,7 @@
                 width: 100%;
                 height: 100%;
                 overflow: hidden;
-                background: #020617;
+                background: var(--probe-document-background);
                 font-family: Arial, Helvetica, sans-serif;
                 -webkit-text-size-adjust: 100%;
                 overscroll-behavior: none;
@@ -62,7 +64,7 @@
                 position: fixed;
                 inset: 0;
                 overflow: hidden;
-                background: #0f172a;
+                background: var(--probe-stage-background);
                 isolation: isolate;
             }
 
@@ -77,7 +79,9 @@
                 position: absolute;
                 inset: 0;
                 pointer-events: none;
+                opacity: var(--probe-world-opacity);
                 background: radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 26%), linear-gradient(180deg, #8ec5ff 0%, #2d6fa8 24%, #15263a 58%, #08111f 100%);
+                transition: opacity 160ms ease;
             }
 
                 .probe-world::before {
@@ -128,6 +132,15 @@
                 pointer-events: none;
                 background: #fef08a;
                 box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+            }
+
+            .probe-live-frame {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                border: 2px dashed rgba(56, 189, 248, 0.92);
+                border-radius: 0;
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
             }
 
             .probe-ui {
@@ -243,6 +256,15 @@
                 line-height: 1.35;
             }
 
+            .probe-section-label {
+                margin: 0 0 8px 0;
+                color: rgba(191, 219, 254, 0.96);
+                font-size: 0.74rem;
+                font-weight: 900;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
             .probe-mode-row {
                 display: flex;
                 flex-wrap: wrap;
@@ -321,19 +343,18 @@
                 height: 0;
             }
     </style>
-</head>
-<!-- SEGMENT A END — Standalone Probe Head -->
-<!-- SEGMENT B START — Standalone Probe Markup -->
-<body>
+    <!-- SEGMENT A END — Standalone Probe Head -->
+    <!-- SEGMENT B START — Standalone Probe Markup -->
     <div class="probe-stage" id="probe-stage">
         <div class="probe-world" id="probe-world" aria-hidden="true"></div>
         <div class="probe-top-bleed" aria-hidden="true"></div>
 
         <div class="probe-bottom-strip" id="probe-bottom-strip" aria-hidden="true">
-            Bottom strip test — mode: <span id="probe-strip-mode-text">viewport fit</span>
+            Bottom strip test — size: <span id="probe-strip-mode-text">viewport fit</span> — visual: <span id="probe-visual-mode-text">stage art</span>
         </div>
 
         <div class="probe-edge-line" id="probe-edge-line" aria-hidden="true"></div>
+        <div class="probe-live-frame" id="probe-live-frame" aria-hidden="true"></div>
 
         <div class="probe-ui">
             <button type="button" class="probe-button probe-button-top" id="probe-top-button">
@@ -351,16 +372,27 @@
                 </div>
 
                 <p class="probe-debug-note">
-                    This page is intentionally minimal: one fixed stage, one world layer, a visible bottom strip,
-                    a top button, a bottom button, and raw viewport diagnostics.
+                    This pass is specifically testing whether the black bottom band can be influenced by the
+                    document canvas background, even if live UI remains inset inside the actual viewport.
                 </p>
 
+                <p class="probe-section-label">Stage sizing</p>
                 <div class="probe-mode-row" role="group" aria-label="Stage sizing mode">
                     <button type="button" class="probe-mode-button is-active" id="probe-mode-viewport">
                         Viewport fit
                     </button>
                     <button type="button" class="probe-mode-button" id="probe-mode-screen">
                         Screen fit
+                    </button>
+                </div>
+
+                <p class="probe-section-label">Visual source test</p>
+                <div class="probe-mode-row" role="group" aria-label="Visual source mode">
+                    <button type="button" class="probe-mode-button is-active" id="probe-visual-stage">
+                        Stage art
+                    </button>
+                    <button type="button" class="probe-mode-button" id="probe-visual-document">
+                        Document art
                     </button>
                 </div>
 
@@ -390,18 +422,30 @@
                 const statusText = document.getElementById("probe-status-text");
                 const debugReadout = document.getElementById("probe-debug-readout");
                 const stripModeText = document.getElementById("probe-strip-mode-text");
+                const visualModeText = document.getElementById("probe-visual-mode-text");
                 const modeViewportButton = document.getElementById("probe-mode-viewport");
                 const modeScreenButton = document.getElementById("probe-mode-screen");
+                const visualStageButton = document.getElementById("probe-visual-stage");
+                const visualDocumentButton = document.getElementById("probe-visual-document");
+                const themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
                 const safeTop = document.getElementById("probe-safe-top");
                 const safeRight = document.getElementById("probe-safe-right");
                 const safeBottom = document.getElementById("probe-safe-bottom");
                 const safeLeft = document.getElementById("probe-safe-left");
 
+                const documentElement = document.documentElement;
+
+                const documentArtBackground =
+                    "repeating-linear-gradient(-45deg, #ff2d55 0px, #ff2d55 24px, #ffd60a 24px, #ffd60a 48px, #0ea5e9 48px, #0ea5e9 72px, #34d399 72px, #34d399 96px)";
+                const stageArtThemeColor = "#0f172a";
+                const documentArtThemeColor = "#ff2d55";
+
                 let topTapCount = 0;
                 let bottomTapCount = 0;
                 let lastTapSummary = "none";
                 let currentMode = "viewport-fit";
+                let currentVisualMode = "stage-art";
 
                 function round3(value) {
                     return Math.round(value * 1000) / 1000;
@@ -451,6 +495,14 @@
                     stripModeText.textContent = isScreenFit ? "screen fit" : "viewport fit";
                 }
 
+                function syncVisualUi() {
+                    const isDocumentArt = currentVisualMode === "document-art";
+
+                    visualStageButton.classList.toggle("is-active", !isDocumentArt);
+                    visualDocumentButton.classList.toggle("is-active", isDocumentArt);
+                    visualModeText.textContent = isDocumentArt ? "document art" : "stage art";
+                }
+
                 function syncStageGeometry() {
                     const isScreenFit = currentMode === "screen-fit";
 
@@ -464,11 +516,39 @@
                     }
                 }
 
+                function syncVisualMode() {
+                    const isDocumentArt = currentVisualMode === "document-art";
+
+                    if (isDocumentArt) {
+                        documentElement.style.setProperty("--probe-document-background", documentArtBackground);
+                        documentElement.style.setProperty("--probe-stage-background", "transparent");
+                        documentElement.style.setProperty("--probe-world-opacity", "0");
+                        if (themeColorMeta) {
+                            themeColorMeta.setAttribute("content", documentArtThemeColor);
+                        }
+                    } else {
+                        documentElement.style.setProperty("--probe-document-background", "#020617");
+                        documentElement.style.setProperty("--probe-stage-background", "#0f172a");
+                        documentElement.style.setProperty("--probe-world-opacity", "1");
+                        if (themeColorMeta) {
+                            themeColorMeta.setAttribute("content", stageArtThemeColor);
+                        }
+                    }
+                }
+
                 function setMode(mode) {
                     currentMode = mode;
                     syncModeUi();
                     syncStageGeometry();
                     updateStatus(mode === "screen-fit" ? "Screen fit ready" : "Viewport fit ready");
+                    refreshDebug();
+                }
+
+                function setVisualMode(mode) {
+                    currentVisualMode = mode;
+                    syncVisualUi();
+                    syncVisualMode();
+                    updateStatus(mode === "document-art" ? "Document art ready" : "Stage art ready");
                     refreshDebug();
                 }
 
@@ -486,7 +566,8 @@
                     };
 
                     const lines = [
-                        `mode = ${currentMode}`,
+                        `sizeMode = ${currentMode}`,
+                        `visualMode = ${currentVisualMode}`,
                         `path = ${window.location.pathname}`,
                         `screen = ${window.screen.width} x ${window.screen.height}`,
                         `window.inner = ${window.innerWidth} x ${window.innerHeight}`,
@@ -498,6 +579,9 @@
                         `stage.rect = ${formatNumber(stageRect.width)} x ${formatNumber(stageRect.height)} | top ${formatNumber(stageRect.top)} | bottom ${formatNumber(stageRect.bottom)}`,
                         `stage.computed.height = ${stageComputedStyle.height}`,
                         `stage.inline.height = ${stage.style.height || "(none)"}`,
+                        `stage.background = ${stageComputedStyle.backgroundImage === "none" ? stageComputedStyle.backgroundColor : stageComputedStyle.backgroundImage}`,
+                        `doc.background = ${getComputedStyle(document.body).backgroundImage === "none" ? getComputedStyle(document.body).backgroundColor : getComputedStyle(document.body).backgroundImage}`,
+                        `themeColor = ${themeColorMeta ? themeColorMeta.getAttribute("content") : "(missing)"}`,
                         `stage.bottom - innerHeight = ${formatNumber(stageRect.bottom - window.innerHeight)}`,
                         `stage.bottom - screen.height = ${formatNumber(stageRect.bottom - window.screen.height)}`,
                         `safeInsets = top ${formatNumber(safeInsets.top)} | right ${formatNumber(safeInsets.right)} | bottom ${formatNumber(safeInsets.bottom)} | left ${formatNumber(safeInsets.left)}`,
@@ -516,6 +600,7 @@
 
                 function refreshDebug() {
                     syncStageGeometry();
+                    syncVisualMode();
                     debugReadout.textContent = buildDebugLines();
                 }
 
@@ -533,6 +618,14 @@
 
                 modeScreenButton.addEventListener("click", () => {
                     setMode("screen-fit");
+                });
+
+                visualStageButton.addEventListener("click", () => {
+                    setVisualMode("stage-art");
+                });
+
+                visualDocumentButton.addEventListener("click", () => {
+                    setVisualMode("document-art");
                 });
 
                 topButton.addEventListener("click", () => {
@@ -557,6 +650,8 @@
 
                 updateCounts();
                 syncModeUi();
+                syncVisualUi();
+                syncVisualMode();
                 refreshDebug();
 
                 requestAnimationFrame(refreshDebug);
@@ -565,7 +660,7 @@
                 setInterval(refreshDebug, 1000);
             })();
     </script>
-</body>
-<!-- SEGMENT C END — Standalone Probe Script -->
+    <!-- SEGMENT C END — Standalone Probe Script -->
+
 
 </html>

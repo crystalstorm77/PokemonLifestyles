@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- SEGMENT A START — Layout Shell -->
+    <!-- SEGMENT A START — Layout Head -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -21,14 +21,13 @@
     <link rel="stylesheet" href="~/css/focus-canvas.css" asp-append-version="true" />
 
     <script src="~/js/pl-pwa-boot.js" asp-append-version="true"></script>
-    <!-- SEGMENT A END — Layout Shell -->
+    <!-- SEGMENT A END — Layout Head -->
 </head>
 <body>
-    <div class="app-shell">
-        @RenderBody()
-    </div>
+    <!-- SEGMENT B START — Layout Body -->
+    @RenderBody()
 
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <!-- SEGMENT B END — Layout Body -->
 </body>
 </html>
