@@ -5,299 +5,322 @@
 }
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<!-- SEGMENT A START — Standalone Probe Head -->
+
+    <!-- SEGMENT A START — Standalone Probe Head -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PL Probe" />
     <meta name="theme-color" content="#0f172a" />
-    <title>@ViewData["Title"] - Pokemon Lifestyles</title>
+    <title>@((string?)ViewData["Title"] ?? "Standalone Probe") - Pokemon Lifestyles</title>
 
     <style>
-        :root {
-            color-scheme: dark;
-        }
+            :root {
+                color-scheme: dark;
+            }
 
-        html,
-        body {
-            margin: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #020617;
-            font-family: Arial, Helvetica, sans-serif;
-            -webkit-text-size-adjust: 100%;
-            overscroll-behavior: none;
-        }
+            html,
+            body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: #020617;
+                font-family: Arial, Helvetica, sans-serif;
+                -webkit-text-size-adjust: 100%;
+                overscroll-behavior: none;
+            }
 
-        body {
-            position: relative;
-            color: #ffffff;
-        }
+            body {
+                position: relative;
+                color: #ffffff;
+            }
 
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-        }
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+            }
 
-        button,
-        input,
-        textarea,
-        select {
-            font: inherit;
-        }
+            button,
+            input,
+            textarea,
+            select {
+                font: inherit;
+            }
 
-        .probe-stage {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
-            background: #0f172a;
-            isolation: isolate;
-        }
+            .probe-stage {
+                position: fixed;
+                inset: 0;
+                overflow: hidden;
+                background: #0f172a;
+                isolation: isolate;
+            }
 
-        .probe-world {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background:
-                radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 26%),
-                linear-gradient(180deg, #8ec5ff 0%, #2d6fa8 24%, #15263a 58%, #08111f 100%);
-        }
+                .probe-stage.is-screen-fit {
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: auto;
+                }
 
-        .probe-world::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 16%),
-                linear-gradient(0deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 28%);
-        }
+            .probe-world {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background: radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 26%), linear-gradient(180deg, #8ec5ff 0%, #2d6fa8 24%, #15263a 58%, #08111f 100%);
+            }
 
-        .probe-top-bleed {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 0;
-            height: 108px;
-            pointer-events: none;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0));
-        }
+                .probe-world::before {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 16%), linear-gradient(0deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 28%);
+                }
 
-        .probe-bottom-strip {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: max(96px, calc(env(safe-area-inset-bottom) + 96px));
-            pointer-events: none;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 12px;
-            background:
-                repeating-linear-gradient(
-                    -45deg,
-                    rgba(16, 185, 129, 0.92) 0px,
-                    rgba(16, 185, 129, 0.92) 18px,
-                    rgba(5, 150, 105, 0.96) 18px,
-                    rgba(5, 150, 105, 0.96) 36px
-                );
-            border-top: 3px solid rgba(255, 255, 255, 0.82);
-            color: #052e16;
-            font-size: 0.82rem;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            text-align: center;
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-        }
+            .probe-top-bleed {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                height: 108px;
+                pointer-events: none;
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0));
+            }
 
-        .probe-edge-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 8px;
-            pointer-events: none;
-            background: #fef08a;
-            box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
-        }
+            .probe-bottom-strip {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: max(96px, calc(env(safe-area-inset-bottom) + 96px));
+                pointer-events: none;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                padding-top: 12px;
+                background: repeating-linear-gradient( -45deg, rgba(16, 185, 129, 0.92) 0px, rgba(16, 185, 129, 0.92) 18px, rgba(5, 150, 105, 0.96) 18px, rgba(5, 150, 105, 0.96) 36px );
+                border-top: 3px solid rgba(255, 255, 255, 0.82);
+                color: #052e16;
+                font-size: 0.82rem;
+                font-weight: 900;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                text-align: center;
+                text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+            }
 
-        .probe-ui {
-            position: absolute;
-            inset: 0;
-        }
+            .probe-edge-line {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 8px;
+                pointer-events: none;
+                background: #fef08a;
+                box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+            }
 
-        .probe-button {
-            position: absolute;
-            left: 16px;
-            right: 16px;
-            min-height: 64px;
-            border: 2px solid rgba(255, 255, 255, 0.92);
-            border-radius: 18px;
-            padding: 12px 16px;
-            color: #ffffff;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-            cursor: pointer;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
-            backdrop-filter: blur(10px);
-        }
+            .probe-ui {
+                position: absolute;
+                inset: 0;
+            }
 
-        .probe-button:active {
-            transform: translateY(1px);
-        }
+            .probe-button {
+                position: absolute;
+                left: 16px;
+                right: 16px;
+                min-height: 64px;
+                border: 2px solid rgba(255, 255, 255, 0.92);
+                border-radius: 18px;
+                padding: 12px 16px;
+                color: #ffffff;
+                font-weight: 800;
+                letter-spacing: 0.02em;
+                cursor: pointer;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+                backdrop-filter: blur(10px);
+            }
 
-        .probe-button-top {
-            top: max(16px, calc(env(safe-area-inset-top) + 16px));
-            background: rgba(30, 41, 59, 0.78);
-        }
+                .probe-button:active {
+                    transform: translateY(1px);
+                }
 
-        .probe-button-bottom {
-            bottom: max(10px, calc(env(safe-area-inset-bottom) + 10px));
-            background: rgba(124, 58, 237, 0.82);
-        }
+            .probe-button-top {
+                top: max(16px, calc(env(safe-area-inset-top) + 16px));
+                background: rgba(30, 41, 59, 0.78);
+            }
 
-        .probe-button-title {
-            display: block;
-            font-size: 1rem;
-            line-height: 1.15;
-        }
+            .probe-button-bottom {
+                bottom: max(10px, calc(env(safe-area-inset-bottom) + 10px));
+                background: rgba(124, 58, 237, 0.82);
+            }
 
-        .probe-button-subtitle {
-            display: block;
-            margin-top: 0.3rem;
-            font-size: 0.82rem;
-            line-height: 1.2;
-            opacity: 0.92;
-            font-weight: 700;
-        }
+            .probe-button-title {
+                display: block;
+                font-size: 1rem;
+                line-height: 1.15;
+            }
 
-        .probe-debug-card {
-            position: absolute;
-            left: 16px;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            border-radius: 20px;
-            padding: 16px;
-            background: rgba(15, 23, 42, 0.76);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
-            backdrop-filter: blur(14px);
-        }
+            .probe-button-subtitle {
+                display: block;
+                margin-top: 0.3rem;
+                font-size: 0.82rem;
+                line-height: 1.2;
+                opacity: 0.92;
+                font-weight: 700;
+            }
 
-        .probe-debug-title-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
+            .probe-debug-card {
+                position: absolute;
+                left: 16px;
+                right: 16px;
+                top: 50%;
+                transform: translateY(-50%);
+                border-radius: 20px;
+                padding: 16px;
+                background: rgba(15, 23, 42, 0.76);
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+                backdrop-filter: blur(14px);
+            }
 
-        .probe-debug-title {
-            margin: 0;
-            font-size: 1rem;
-            font-weight: 900;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
+            .probe-debug-title-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 10px;
+            }
 
-        .probe-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border-radius: 999px;
-            padding: 7px 12px;
-            background: rgba(15, 118, 110, 0.92);
-            color: #ecfeff;
-            font-size: 0.76rem;
-            font-weight: 900;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
+            .probe-debug-title {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 900;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
 
-        .probe-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: #99f6e4;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
-            flex: 0 0 auto;
-        }
+            .probe-status-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                border-radius: 999px;
+                padding: 7px 12px;
+                background: rgba(15, 118, 110, 0.92);
+                color: #ecfeff;
+                font-size: 0.76rem;
+                font-weight: 900;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
 
-        .probe-debug-note {
-            margin: 0 0 12px 0;
-            color: rgba(255, 255, 255, 0.88);
-            font-size: 0.9rem;
-            line-height: 1.35;
-        }
+            .probe-status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 999px;
+                background: #99f6e4;
+                box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+                flex: 0 0 auto;
+            }
 
-        .probe-debug-readout {
-            margin: 0;
-            border-radius: 14px;
-            padding: 12px;
-            background: rgba(2, 6, 23, 0.68);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #dbeafe;
-            font-size: 0.86rem;
-            line-height: 1.45;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-            font-family: Consolas, "Courier New", monospace;
-        }
+            .probe-debug-note {
+                margin: 0 0 12px 0;
+                color: rgba(255, 255, 255, 0.88);
+                font-size: 0.9rem;
+                line-height: 1.35;
+            }
 
-        .probe-safe-measure {
-            position: fixed;
-            visibility: hidden;
-            pointer-events: none;
-            z-index: -1;
-        }
+            .probe-mode-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 0 0 12px 0;
+            }
 
-        .probe-safe-top {
-            top: 0;
-            left: 0;
-            width: 0;
-            height: env(safe-area-inset-top);
-        }
+            .probe-mode-button {
+                appearance: none;
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                border-radius: 999px;
+                padding: 9px 14px;
+                background: rgba(15, 23, 42, 0.68);
+                color: rgba(255, 255, 255, 0.92);
+                font-size: 0.82rem;
+                font-weight: 800;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+                cursor: pointer;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
 
-        .probe-safe-right {
-            top: 0;
-            right: 0;
-            width: env(safe-area-inset-right);
-            height: 0;
-        }
+                .probe-mode-button.is-active {
+                    background: rgba(59, 130, 246, 0.88);
+                    border-color: rgba(255, 255, 255, 0.34);
+                    color: #eff6ff;
+                }
 
-        .probe-safe-bottom {
-            right: 0;
-            bottom: 0;
-            width: 0;
-            height: env(safe-area-inset-bottom);
-        }
+            .probe-debug-readout {
+                margin: 0;
+                border-radius: 14px;
+                padding: 12px;
+                background: rgba(2, 6, 23, 0.68);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #dbeafe;
+                font-size: 0.86rem;
+                line-height: 1.45;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                font-family: Consolas, "Courier New", monospace;
+            }
 
-        .probe-safe-left {
-            top: 0;
-            left: 0;
-            width: env(safe-area-inset-left);
-            height: 0;
-        }
+            .probe-safe-measure {
+                position: fixed;
+                visibility: hidden;
+                pointer-events: none;
+                z-index: -1;
+            }
+
+            .probe-safe-top {
+                top: 0;
+                left: 0;
+                width: 0;
+                height: env(safe-area-inset-top);
+            }
+
+            .probe-safe-right {
+                top: 0;
+                right: 0;
+                width: env(safe-area-inset-right);
+                height: 0;
+            }
+
+            .probe-safe-bottom {
+                right: 0;
+                bottom: 0;
+                width: 0;
+                height: env(safe-area-inset-bottom);
+            }
+
+            .probe-safe-left {
+                top: 0;
+                left: 0;
+                width: env(safe-area-inset-left);
+                height: 0;
+            }
     </style>
-<!-- SEGMENT A END — Standalone Probe Head -->
-</head>
-<body>
-<!-- SEGMENT B START — Standalone Probe Markup -->
+    <!-- SEGMENT A END — Standalone Probe Head -->
+    <!-- SEGMENT B START — Standalone Probe Markup -->
     <div class="probe-stage" id="probe-stage">
         <div class="probe-world" id="probe-world" aria-hidden="true"></div>
         <div class="probe-top-bleed" aria-hidden="true"></div>
 
         <div class="probe-bottom-strip" id="probe-bottom-strip" aria-hidden="true">
-            Bottom strip test — this should reach the visible bottom edge.
+            Bottom strip test — mode: <span id="probe-strip-mode-text">viewport fit</span>
         </div>
 
         <div class="probe-edge-line" id="probe-edge-line" aria-hidden="true"></div>
@@ -313,7 +336,7 @@
                     <h1 class="probe-debug-title">Standalone stage probe</h1>
                     <div class="probe-status-pill" id="probe-status-pill">
                         <span class="probe-status-dot" aria-hidden="true"></span>
-                        <span id="probe-status-text">Waiting for taps</span>
+                        <span id="probe-status-text">Viewport fit ready</span>
                     </div>
                 </div>
 
@@ -321,6 +344,15 @@
                     This page is intentionally minimal: one fixed stage, one world layer, a visible bottom strip,
                     a top button, a bottom button, and raw viewport diagnostics.
                 </p>
+
+                <div class="probe-mode-row" role="group" aria-label="Stage sizing mode">
+                    <button type="button" class="probe-mode-button is-active" id="probe-mode-viewport">
+                        Viewport fit
+                    </button>
+                    <button type="button" class="probe-mode-button" id="probe-mode-screen">
+                        Screen fit
+                    </button>
+                </div>
 
                 <pre class="probe-debug-readout" id="probe-debug-readout">Collecting viewport data…</pre>
             </div>
@@ -336,124 +368,172 @@
     <div class="probe-safe-measure probe-safe-right" id="probe-safe-right" aria-hidden="true"></div>
     <div class="probe-safe-measure probe-safe-bottom" id="probe-safe-bottom" aria-hidden="true"></div>
     <div class="probe-safe-measure probe-safe-left" id="probe-safe-left" aria-hidden="true"></div>
-<!-- SEGMENT B END — Standalone Probe Markup -->
-
-<!-- SEGMENT C START — Standalone Probe Script -->
+    <!-- SEGMENT B END — Standalone Probe Markup -->
+    <!-- SEGMENT C START — Standalone Probe Script -->
     <script>
-        (() => {
-            const stage = document.getElementById("probe-stage");
-            const topButton = document.getElementById("probe-top-button");
-            const bottomButton = document.getElementById("probe-bottom-button");
-            const topCountText = document.getElementById("probe-top-count");
-            const bottomCountText = document.getElementById("probe-bottom-count");
-            const statusText = document.getElementById("probe-status-text");
-            const debugReadout = document.getElementById("probe-debug-readout");
+            (() => {
+                const stage = document.getElementById("probe-stage");
+                const topButton = document.getElementById("probe-top-button");
+                const bottomButton = document.getElementById("probe-bottom-button");
+                const topCountText = document.getElementById("probe-top-count");
+                const bottomCountText = document.getElementById("probe-bottom-count");
+                const statusText = document.getElementById("probe-status-text");
+                const debugReadout = document.getElementById("probe-debug-readout");
+                const stripModeText = document.getElementById("probe-strip-mode-text");
+                const modeViewportButton = document.getElementById("probe-mode-viewport");
+                const modeScreenButton = document.getElementById("probe-mode-screen");
 
-            const safeTop = document.getElementById("probe-safe-top");
-            const safeRight = document.getElementById("probe-safe-right");
-            const safeBottom = document.getElementById("probe-safe-bottom");
-            const safeLeft = document.getElementById("probe-safe-left");
+                const safeTop = document.getElementById("probe-safe-top");
+                const safeRight = document.getElementById("probe-safe-right");
+                const safeBottom = document.getElementById("probe-safe-bottom");
+                const safeLeft = document.getElementById("probe-safe-left");
 
-            let topTapCount = 0;
-            let bottomTapCount = 0;
-            let lastTapSummary = "none";
+                let topTapCount = 0;
+                let bottomTapCount = 0;
+                let lastTapSummary = "none";
+                let currentMode = "viewport-fit";
 
-            function round3(value) {
-                return Math.round(value * 1000) / 1000;
-            }
-
-            function formatNumber(value) {
-                if (!Number.isFinite(value)) {
-                    return "n/a";
+                function round3(value) {
+                    return Math.round(value * 1000) / 1000;
                 }
 
-                return String(round3(value));
-            }
+                function formatNumber(value) {
+                    if (!Number.isFinite(value)) {
+                        return "n/a";
+                    }
 
-            function readMeasurePx(element, propertyName) {
-                const computedValue = getComputedStyle(element)[propertyName];
-                const parsed = parseFloat(computedValue);
-                return Number.isFinite(parsed) ? parsed : 0;
-            }
+                    return String(round3(value));
+                }
 
-            function updateStatus(text) {
-                statusText.textContent = text;
-            }
+                function readMeasurePx(element, propertyName) {
+                    const computedValue = getComputedStyle(element)[propertyName];
+                    const parsed = parseFloat(computedValue);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                }
 
-            function updateCounts() {
-                topCountText.textContent = String(topTapCount);
-                bottomCountText.textContent = String(bottomTapCount);
-            }
+                function updateStatus(text) {
+                    statusText.textContent = text;
+                }
 
-            function buildDebugLines() {
-                const stageRect = stage.getBoundingClientRect();
-                const visualViewport = window.visualViewport;
+                function updateCounts() {
+                    topCountText.textContent = String(topTapCount);
+                    bottomCountText.textContent = String(bottomTapCount);
+                }
 
-                const safeInsets = {
-                    top: readMeasurePx(safeTop, "height"),
-                    right: readMeasurePx(safeRight, "width"),
-                    bottom: readMeasurePx(safeBottom, "height"),
-                    left: readMeasurePx(safeLeft, "width")
-                };
+                function syncModeUi() {
+                    const isScreenFit = currentMode === "screen-fit";
 
-                const lines = [
-                    `path = ${window.location.pathname}`,
-                    `screen = ${window.screen.width} x ${window.screen.height}`,
-                    `window.inner = ${window.innerWidth} x ${window.innerHeight}`,
-                    `document.client = ${document.documentElement.clientWidth} x ${document.documentElement.clientHeight}`,
-                    visualViewport
-                        ? `visualViewport = ${formatNumber(visualViewport.width)} x ${formatNumber(visualViewport.height)} | offsetTop ${formatNumber(visualViewport.offsetTop)} | offsetLeft ${formatNumber(visualViewport.offsetLeft)} | pageTop ${formatNumber(visualViewport.pageTop)}`
-                        : "visualViewport = unavailable",
-                    `stage.rect = ${formatNumber(stageRect.width)} x ${formatNumber(stageRect.height)} | top ${formatNumber(stageRect.top)} | bottom ${formatNumber(stageRect.bottom)}`,
-                    `stage.bottom - innerHeight = ${formatNumber(stageRect.bottom - window.innerHeight)}`,
-                    `safeInsets = top ${formatNumber(safeInsets.top)} | right ${formatNumber(safeInsets.right)} | bottom ${formatNumber(safeInsets.bottom)} | left ${formatNumber(safeInsets.left)}`,
-                    `tapCounts = top ${topTapCount} | bottom ${bottomTapCount}`,
-                    `lastTap = ${lastTapSummary}`
-                ];
+                    modeViewportButton.classList.toggle("is-active", !isScreenFit);
+                    modeScreenButton.classList.toggle("is-active", isScreenFit);
+                    stripModeText.textContent = isScreenFit ? "screen fit" : "viewport fit";
+                }
 
-                return lines.join("\n");
-            }
+                function syncStageGeometry() {
+                    const isScreenFit = currentMode === "screen-fit";
 
-            function refreshDebug() {
-                debugReadout.textContent = buildDebugLines();
-            }
+                    stage.classList.toggle("is-screen-fit", isScreenFit);
 
-            function stampTap(label) {
-                const now = new Date();
-                lastTapSummary = `${label} @ ${now.toLocaleTimeString()}`;
-                updateStatus(`${label} registered`);
+                    if (isScreenFit) {
+                        const targetHeight = Math.max(window.screen.height || 0, window.innerHeight || 0);
+                        stage.style.height = `${targetHeight}px`;
+                    } else {
+                        stage.style.height = "";
+                    }
+                }
+
+                function setMode(mode) {
+                    currentMode = mode;
+                    syncModeUi();
+                    syncStageGeometry();
+                    updateStatus(mode === "screen-fit" ? "Screen fit ready" : "Viewport fit ready");
+                    refreshDebug();
+                }
+
+                function buildDebugLines() {
+                    const stageRect = stage.getBoundingClientRect();
+                    const stageComputedStyle = getComputedStyle(stage);
+                    const visualViewport = window.visualViewport;
+
+                    const safeInsets = {
+                        top: readMeasurePx(safeTop, "height"),
+                        right: readMeasurePx(safeRight, "width"),
+                        bottom: readMeasurePx(safeBottom, "height"),
+                        left: readMeasurePx(safeLeft, "width")
+                    };
+
+                    const lines = [
+                        `mode = ${currentMode}`,
+                        `path = ${window.location.pathname}`,
+                        `screen = ${window.screen.width} x ${window.screen.height}`,
+                        `window.inner = ${window.innerWidth} x ${window.innerHeight}`,
+                        `screen - innerHeight = ${formatNumber(window.screen.height - window.innerHeight)}`,
+                        `document.client = ${document.documentElement.clientWidth} x ${document.documentElement.clientHeight}`,
+                        visualViewport
+                            ? `visualViewport = ${formatNumber(visualViewport.width)} x ${formatNumber(visualViewport.height)} | offsetTop ${formatNumber(visualViewport.offsetTop)} | offsetLeft ${formatNumber(visualViewport.offsetLeft)} | pageTop ${formatNumber(visualViewport.pageTop)}`
+                            : "visualViewport = unavailable",
+                        `stage.rect = ${formatNumber(stageRect.width)} x ${formatNumber(stageRect.height)} | top ${formatNumber(stageRect.top)} | bottom ${formatNumber(stageRect.bottom)}`,
+                        `stage.computed.height = ${stageComputedStyle.height}`,
+                        `stage.inline.height = ${stage.style.height || "(none)"}`,
+                        `stage.bottom - innerHeight = ${formatNumber(stageRect.bottom - window.innerHeight)}`,
+                        `stage.bottom - screen.height = ${formatNumber(stageRect.bottom - window.screen.height)}`,
+                        `safeInsets = top ${formatNumber(safeInsets.top)} | right ${formatNumber(safeInsets.right)} | bottom ${formatNumber(safeInsets.bottom)} | left ${formatNumber(safeInsets.left)}`,
+                        `tapCounts = top ${topTapCount} | bottom ${bottomTapCount}`,
+                        `lastTap = ${lastTapSummary}`
+                    ];
+
+                    return lines.join("\n");
+                }
+
+                function refreshDebug() {
+                    syncStageGeometry();
+                    debugReadout.textContent = buildDebugLines();
+                }
+
+                function stampTap(label) {
+                    const now = new Date();
+                    lastTapSummary = `${label} \u0040 ${now.toLocaleTimeString()}`;
+                    updateStatus(`${label} registered`);
+                    updateCounts();
+                    refreshDebug();
+                }
+
+                modeViewportButton.addEventListener("click", () => {
+                    setMode("viewport-fit");
+                });
+
+                modeScreenButton.addEventListener("click", () => {
+                    setMode("screen-fit");
+                });
+
+                topButton.addEventListener("click", () => {
+                    topTapCount += 1;
+                    stampTap("Top tap");
+                });
+
+                bottomButton.addEventListener("click", () => {
+                    bottomTapCount += 1;
+                    stampTap("Bottom tap");
+                });
+
+                window.addEventListener("resize", refreshDebug, { passive: true });
+                window.addEventListener("orientationchange", refreshDebug, { passive: true });
+                window.addEventListener("pageshow", refreshDebug, { passive: true });
+
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener("resize", refreshDebug, { passive: true });
+                    window.visualViewport.addEventListener("scroll", refreshDebug, { passive: true });
+                }
+
                 updateCounts();
+                syncModeUi();
                 refreshDebug();
-            }
 
-            topButton.addEventListener("click", () => {
-                topTapCount += 1;
-                stampTap("Top tap");
-            });
-
-            bottomButton.addEventListener("click", () => {
-                bottomTapCount += 1;
-                stampTap("Bottom tap");
-            });
-
-            window.addEventListener("resize", refreshDebug, { passive: true });
-            window.addEventListener("orientationchange", refreshDebug, { passive: true });
-            window.addEventListener("pageshow", refreshDebug, { passive: true });
-
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener("resize", refreshDebug, { passive: true });
-                window.visualViewport.addEventListener("scroll", refreshDebug, { passive: true });
-            }
-
-            updateCounts();
-            refreshDebug();
-
-            requestAnimationFrame(refreshDebug);
-            setTimeout(refreshDebug, 150);
-            setTimeout(refreshDebug, 600);
-            setInterval(refreshDebug, 1000);
-        })();
+                requestAnimationFrame(refreshDebug);
+                setTimeout(refreshDebug, 150);
+                setTimeout(refreshDebug, 600);
+                setInterval(refreshDebug, 1000);
+            })();
     </script>
-<!-- SEGMENT C END — Standalone Probe Script -->
-</body>
+    <!-- SEGMENT C END — Standalone Probe Script -->
+
 </html>
