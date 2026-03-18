@@ -839,4 +839,6 @@
         initializeHomeStageLayout();
     }
 
-// SEGMENT B END — Home Stage Measurements
+    // SEGMENT B END — Home Stage Measurements
+
+})();

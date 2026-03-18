@@ -719,6 +719,7 @@
     // SEGMENT B START — Home Canvas Layout
 
     const layoutColorAssetKey = "app-edge-color";
+    const layoutColorAssetLabel = "shell-background";
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
@@ -883,8 +884,27 @@
         });
 
         if (layoutColorField) {
-            layoutColorField.hidden = !isHidden;
+            layoutColorField.hidden = false;
         }
+    }
+
+    function ensureLayoutColorAssetSelected() {
+        if (layoutAssetSelect.value === layoutColorAssetKey) {
+            return;
+        }
+
+        layoutAssetSelect.value = layoutColorAssetKey;
+        handleLayoutAssetChange();
+    }
+
+    function updateLayoutColorDraft(rawValue) {
+        const normalized = normalizeHexColor(rawValue, layoutColorPicker?.value || defaultLayoutEdgeColor);
+
+        ensureLayoutColorAssetSelected();
+        syncLayoutColorInputs(normalized);
+        beginVariableDraft("appEdgeColor", normalized);
+        updateLayoutCodePreview(layoutColorAssetKey);
+        updateLayoutStatusDisplay(layoutColorAssetKey);
     }
 
     function ensureLayoutVariableControls() {
@@ -892,14 +912,17 @@
             return;
         }
 
-        if (![...layoutAssetSelect.options].some(function (option) {
+        let variableOption = [...layoutAssetSelect.options].find(function (option) {
             return option.value === layoutColorAssetKey;
-        })) {
-            const option = document.createElement("option");
-            option.value = layoutColorAssetKey;
-            option.textContent = layoutColorAssetKey;
-            layoutAssetSelect.appendChild(option);
+        });
+
+        if (!variableOption) {
+            variableOption = document.createElement("option");
+            variableOption.value = layoutColorAssetKey;
+            layoutAssetSelect.insertBefore(variableOption, layoutAssetSelect.firstElementChild);
         }
+
+        variableOption.textContent = layoutColorAssetLabel;
 
         if (layoutColorField) {
             return;
@@ -907,14 +930,14 @@
 
         layoutColorField = document.createElement("label");
         layoutColorField.className = "pl-field";
-        layoutColorField.hidden = true;
+        layoutColorField.hidden = false;
         layoutColorField.innerHTML = `
-      <span class="pl-field-label">Edge color</span>
+      <span class="pl-field-label">Shell background</span>
       <div class="pl-layout-range-with-number">
         <input class="pl-input" id="pl-layout-edge-color-picker" type="color" value="${defaultLayoutEdgeColor}" />
         <input class="pl-input pl-layout-number-input" id="pl-layout-edge-color-text" type="text" value="${defaultLayoutEdgeColor.toUpperCase()}" spellcheck="false" autocomplete="off" />
       </div>
-      <span class="pl-field-hint" id="pl-layout-edge-color-hint">Tints the shell/background outside the authored canvas.</span>
+      <span class="pl-field-hint" id="pl-layout-edge-color-hint">Colors the outer shell/background around the authored canvas.</span>
     `;
 
         if (layoutAssetField && layoutAssetField.parentNode) {
@@ -928,19 +951,11 @@
         layoutColorHint = layoutColorField.querySelector("#pl-layout-edge-color-hint");
 
         layoutColorPicker.addEventListener("input", function () {
-            syncLayoutColorInputs(layoutColorPicker.value);
-            beginVariableDraft("appEdgeColor", layoutColorPicker.value);
-            updateLayoutCodePreview(layoutColorAssetKey);
-            updateLayoutStatusDisplay(layoutColorAssetKey);
+            updateLayoutColorDraft(layoutColorPicker.value);
         });
 
         const commitTextColorDraft = function () {
-            const normalized = normalizeHexColor(layoutColorText.value, layoutColorPicker.value || defaultLayoutEdgeColor);
-
-            syncLayoutColorInputs(normalized);
-            beginVariableDraft("appEdgeColor", normalized);
-            updateLayoutCodePreview(layoutColorAssetKey);
-            updateLayoutStatusDisplay(layoutColorAssetKey);
+            updateLayoutColorDraft(layoutColorText.value);
         };
 
         layoutColorText.addEventListener("change", commitTextColorDraft);
@@ -1173,8 +1188,8 @@
 
     function updateLayoutStatusDisplay(assetKey) {
         if (isVariableAsset(assetKey)) {
-            layoutStageStatus.textContent = "Shell tint · colors the edge fill outside the authored canvas.";
-            layoutSafeZoneStatus.textContent = "Used for the iPhone edge / bottom-bar tint fallback.";
+            layoutStageStatus.textContent = "Shell background · colors the edge fill outside the authored canvas.";
+            layoutSafeZoneStatus.textContent = "Used for desktop chrome and the iPhone edge / bottom-bar tint fallback.";
             layoutSafeZoneStatus.classList.remove("pl-layout-field-hint-safe");
             layoutSafeZoneStatus.classList.remove("pl-layout-field-hint-unsafe");
             layoutScaleValue.textContent = getEffectiveLayoutVariable("appEdgeColor").toUpperCase();
@@ -1182,7 +1197,7 @@
             layoutYValue.textContent = "Not position-based";
 
             if (layoutColorHint) {
-                layoutColorHint.textContent = "Saved through LayoutSync and mirrored into the theme-color meta.";
+                layoutColorHint.textContent = "Press Save Selected to keep this shell background color. It is saved through LayoutSync and mirrored into the theme-color meta.";
             }
 
             return;
@@ -1203,6 +1218,10 @@
         layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
         layoutXValue.textContent = status.xStatus.text;
         layoutYValue.textContent = status.yStatus.text;
+
+        if (layoutColorHint) {
+            layoutColorHint.textContent = "Outer shell/background around the canvas. Editing this will switch Asset to shell-background so Save Selected applies to it.";
+        }
     }
 
     function syncNumberPairs() {
@@ -1228,6 +1247,7 @@
         }
 
         setGeometryFieldsHidden(false);
+        syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
 
         const state = getEffectiveLayoutState(assetKey);
         const resolvedHeight = getResolvedHeight(assetKey, state);
@@ -1453,10 +1473,6 @@
     }
 
     // SEGMENT B END — Home Canvas Layout
-
-
-
-
 
 
     // SEGMENT C START — Home Canvas App Flow
@@ -1997,7 +2013,128 @@
         });
     }
 
+    function initializeLayoutPanelWorkspace() {
+        if (!layoutModeEnabled || !layoutPanel) {
+            return;
+        }
+
+        if (layoutPanel.dataset.workspaceReady === "true") {
+            return;
+        }
+
+        layoutPanel.dataset.workspaceReady = "true";
+
+        let style = document.getElementById("pl-layout-panel-runtime-style");
+
+        if (!style) {
+            style = document.createElement("style");
+            style.id = "pl-layout-panel-runtime-style";
+            style.textContent = `
+                .pl-layout-panel {
+                    max-height: calc(100dvh - 2rem);
+                    overflow: auto;
+                    overscroll-behavior: contain;
+                    scrollbar-gutter: stable;
+                }
+
+                .pl-layout-panel.pl-layout-panel-collapsed > :not(.pl-layout-header) {
+                    display: none;
+                }
+
+                .pl-layout-header {
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
+                    padding-bottom: 0.75rem;
+                    background: rgba(255, 255, 255, 0.97);
+                }
+
+                .pl-layout-header-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.45rem;
+                    margin-left: auto;
+                }
+
+                .pl-layout-header-button {
+                    border: 1px solid #cbd5e1;
+                    border-radius: 999px;
+                    padding: 0.35rem 0.7rem;
+                    background: #ffffff;
+                    color: #0f172a;
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    cursor: pointer;
+                }
+
+                @media (max-width: 640px) {
+                    .pl-layout-panel {
+                        max-height: calc(100dvh - 1.5rem);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const collapseStorageKey = "plLayoutPanelCollapsed";
+        const header = layoutPanel.querySelector(".pl-layout-header");
+
+        if (!header) {
+            return;
+        }
+
+        let actions = header.querySelector(".pl-layout-header-actions");
+
+        if (!actions) {
+            actions = document.createElement("div");
+            actions.className = "pl-layout-header-actions";
+            header.appendChild(actions);
+        }
+
+        let collapseButton = document.getElementById("pl-layout-panel-toggle");
+
+        if (!collapseButton) {
+            collapseButton = document.createElement("button");
+            collapseButton.type = "button";
+            collapseButton.id = "pl-layout-panel-toggle";
+            collapseButton.className = "pl-layout-header-button";
+            actions.appendChild(collapseButton);
+        }
+
+        function writeCollapsedPreference(isCollapsed) {
+            try {
+                window.sessionStorage.setItem(collapseStorageKey, isCollapsed ? "1" : "0");
+            }
+            catch {
+            }
+        }
+
+        function readCollapsedPreference() {
+            try {
+                return window.sessionStorage.getItem(collapseStorageKey) === "1";
+            }
+            catch {
+                return false;
+            }
+        }
+
+        function applyCollapsedState(isCollapsed) {
+            layoutPanel.classList.toggle("pl-layout-panel-collapsed", isCollapsed);
+            collapseButton.textContent = isCollapsed ? "Expand" : "Collapse";
+            collapseButton.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+        }
+
+        collapseButton.addEventListener("click", function () {
+            const nextCollapsed = !layoutPanel.classList.contains("pl-layout-panel-collapsed");
+            applyCollapsedState(nextCollapsed);
+            writeCollapsedPreference(nextCollapsed);
+        });
+
+        applyCollapsedState(readCollapsedPreference());
+    }
+
     async function initializeAsync() {
+        initializeLayoutPanelWorkspace();
         applyPanelArtStates();
 
         await Promise.all([
