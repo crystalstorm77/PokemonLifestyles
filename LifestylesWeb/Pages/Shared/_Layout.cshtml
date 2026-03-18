@@ -1,49 +1,26 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- SEGMENT A START — Layout Head -->
+    <!-- SEGMENT A START — Layout Shell -->
     <meta charset="utf-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
     <meta name="apple-mobile-web-app-capable" content="yes" />
-
-    <meta name="mobile-web-app-capable" content="yes" />
-
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-    <meta name="apple-mobile-web-app-title" content="Pokemon Lifestyles" />
-
-    <meta name="application-name" content="Pokemon Lifestyles" />
-
-    <meta name="theme-color" content="#01ff75" />
+    <meta name="theme-color" content="#d9e8fb" />
     <title>@ViewData["Title"] - Pokemon Lifestyles</title>
 
-    <link rel="manifest" href="@Url.Content("~/manifest.json")" />
-
-    <link rel="icon" href="~/favicon.ico" asp-append-version="true" sizes="any" />
-
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-
     <link rel="stylesheet" href="~/css/art-skin.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/focus-canvas.css" asp-append-version="true" />
-
-    <script src="~/js/pl-pwa-boot.js" asp-append-version="true"></script>
-
-    <!-- SEGMENT A END — Layout Head -->
+    <!-- SEGMENT A END — Layout Shell -->
 </head>
 <body>
-    <!-- SEGMENT B START — Layout Body -->
-
     <div class="app-shell">
         @RenderBody()
     </div>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
-
-    <!-- SEGMENT B END — Layout Body -->
 </body>
 </html>

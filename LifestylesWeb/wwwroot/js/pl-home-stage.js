@@ -1,8 +1,5 @@
 ﻿// SEGMENT A START — Home Stage Bootstrap
 (function () {
-    const appShell = document.querySelector(".app-shell");
-    const homeStageShell = document.getElementById("pl-home-stage-shell");
-    const homeStage = document.getElementById("pl-home-stage");
     const homeRoot = document.getElementById("pl-home-root");
     const worldStageShell = document.getElementById("pl-world-stage-shell");
     const worldStage = document.getElementById("pl-world-stage");
@@ -10,24 +7,9 @@
     const safeUiStage = document.getElementById("pl-safe-ui-stage");
     const safeZoneOutline = document.getElementById("pl-safe-zone-outline");
 
-    if (!homeStageShell || !homeStage || !homeRoot || !worldStageShell || !worldStage || !safeUiStageShell || !safeUiStage || !safeZoneOutline) {
+    if (!homeRoot || !worldStageShell || !worldStage || !safeUiStageShell || !safeUiStage || !safeZoneOutline) {
         return;
     }
-
-    const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
-    const desktopPointerQuery = window.matchMedia("(pointer:fine)");
-    const standaloneStartupLock = {
-        lockedFrame: null,
-        settleRafId: 0,
-        settleActive: false,
-        bestFrame: null,
-        sessionId: 0
-    };
-
-    let firstPaintReady = false;
-
-    homeStageShell.style.visibility = "hidden";
-    homeStageShell.dataset.stageReady = "false";
 
     function readDesignPx(varName, fallbackValue) {
         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
@@ -41,31 +23,16 @@
     }
 
     function readViewportSize() {
-        const width = window.innerWidth || document.documentElement.clientWidth || 0;
-        const height = window.innerHeight || document.documentElement.clientHeight || 0;
+        if (window.visualViewport) {
+            return {
+                width: window.visualViewport.width,
+                height: window.visualViewport.height
+            };
+        }
 
         return {
-            width: Math.max(1, width),
-            height: Math.max(1, height)
-        };
-    }
-
-    function readStandaloneScreenSize(fallbackViewport) {
-        const widthCandidates = [
-            parsePx(window.screen?.width),
-            parsePx(window.screen?.availWidth),
-            fallbackViewport.width
-        ];
-
-        const heightCandidates = [
-            parsePx(window.screen?.height),
-            parsePx(window.screen?.availHeight),
-            fallbackViewport.height
-        ];
-
-        return {
-            width: Math.max(1, ...widthCandidates),
-            height: Math.max(1, ...heightCandidates)
+            width: window.innerWidth,
+            height: window.innerHeight
         };
     }
 
@@ -83,10 +50,6 @@
         }
 
         return "browser";
-    }
-
-    function isStandaloneDisplayMode(displayMode) {
-        return displayMode === "standalone";
     }
 
     function parsePx(value) {
@@ -133,624 +96,59 @@
         element.style.width = `${round3(width)}px`;
         element.style.height = `${round3(height)}px`;
     }
-
-    function setDesktopPreviewClasses(isEnabled) {
-        homeStageShell.classList.toggle("pl-desktop-preview-mode", isEnabled);
-        homeStage.classList.toggle("pl-desktop-preview-mode", isEnabled);
-        homeRoot.classList.toggle("pl-desktop-preview-mode", isEnabled);
-    }
-
-    function resetRuntimeShellStyles() {
-        if (appShell) {
-            appShell.style.removeProperty("justify-content");
-            appShell.style.removeProperty("align-items");
-            appShell.style.removeProperty("padding");
-        }
-
-        homeStageShell.style.removeProperty("width");
-        homeStageShell.style.removeProperty("height");
-        homeStageShell.style.removeProperty("margin");
-        homeStageShell.style.removeProperty("flex");
-        homeStageShell.style.removeProperty("align-self");
-
-        homeStage.style.removeProperty("width");
-        homeStage.style.removeProperty("height");
-        homeStage.style.removeProperty("transform");
-        homeStage.style.removeProperty("transform-origin");
-    }
-
-    function applyDesktopPreviewShellStyles(renderWidth, renderHeight, previewScale, designWidth, designHeight) {
-        if (appShell) {
-            appShell.style.justifyContent = "center";
-            appShell.style.alignItems = "flex-start";
-            appShell.style.padding = "0";
-        }
-
-        homeStageShell.style.width = `${round3(renderWidth)}px`;
-        homeStageShell.style.height = `${round3(renderHeight)}px`;
-        homeStageShell.style.margin = "0 auto";
-        homeStageShell.style.flex = "0 0 auto";
-        homeStageShell.style.alignSelf = "flex-start";
-
-        homeStage.style.width = `${round3(designWidth)}px`;
-        homeStage.style.height = `${round3(designHeight)}px`;
-        homeStage.style.transformOrigin = "top left";
-        homeStage.style.transform = `scale(${round3(previewScale)})`;
-    }
-
-    function applyDesktopRuntimeShellStyles(renderWidth, renderHeight) {
-        if (appShell) {
-            appShell.style.justifyContent = "center";
-            appShell.style.alignItems = "flex-start";
-            appShell.style.padding = "0";
-        }
-
-        homeStageShell.style.width = `${round3(renderWidth)}px`;
-        homeStageShell.style.height = `${round3(renderHeight)}px`;
-        homeStageShell.style.margin = "0 auto";
-        homeStageShell.style.flex = "0 0 auto";
-        homeStageShell.style.alignSelf = "flex-start";
-
-        homeStage.style.width = `${round3(renderWidth)}px`;
-        homeStage.style.height = `${round3(renderHeight)}px`;
-        homeStage.style.transformOrigin = "top left";
-        homeStage.style.transform = "scale(1)";
-    }
-
-    function applyStandaloneRuntimeShellStyles(renderWidth, renderHeight, visualOffsetTop) {
-        if (appShell) {
-            appShell.style.justifyContent = "flex-start";
-            appShell.style.alignItems = "stretch";
-            appShell.style.padding = "0";
-        }
-
-        homeStageShell.style.width = `${round3(renderWidth)}px`;
-        homeStageShell.style.height = `${round3(renderHeight)}px`;
-        homeStageShell.style.margin = `${round3(-visualOffsetTop)}px 0 0 0`;
-        homeStageShell.style.flex = "0 0 auto";
-        homeStageShell.style.alignSelf = "stretch";
-
-        homeStage.style.width = `${round3(renderWidth)}px`;
-        homeStage.style.height = `${round3(renderHeight)}px`;
-        homeStage.style.transformOrigin = "top left";
-        homeStage.style.transform = "scale(1)";
-    }
-
-    function shouldUseDesktopPreviewMode(displayMode) {
-        return layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
-    }
-
-    function shouldUseDesktopRuntimeEmulationMode(displayMode) {
-        return !layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
-    }
-
-    function clearStandaloneStartupSampling() {
-        if (standaloneStartupLock.settleRafId) {
-            cancelAnimationFrame(standaloneStartupLock.settleRafId);
-            standaloneStartupLock.settleRafId = 0;
-        }
-
-        standaloneStartupLock.settleActive = false;
-        standaloneStartupLock.bestFrame = null;
-    }
-
-    function cloneStandaloneFrame(frame) {
-        return {
-            viewportWidth: frame.viewportWidth,
-            viewportHeight: frame.viewportHeight,
-            liveViewportWidth: frame.liveViewportWidth,
-            liveViewportHeight: frame.liveViewportHeight,
-            screenWidth: frame.screenWidth,
-            screenHeight: frame.screenHeight,
-            safeAreaTop: frame.safeAreaTop,
-            safeAreaRight: frame.safeAreaRight,
-            safeAreaBottom: frame.safeAreaBottom,
-            safeAreaLeft: frame.safeAreaLeft,
-            safeFrameLeft: frame.safeFrameLeft,
-            safeFrameTop: frame.safeFrameTop,
-            safeFrameWidth: frame.safeFrameWidth,
-            safeFrameHeight: frame.safeFrameHeight
-        };
-    }
-
-    function captureStandaloneRuntimeFrame() {
-        const liveViewport = readViewportSize();
-        const screenSize = readStandaloneScreenSize(liveViewport);
-        const topReserve = Math.max(0, screenSize.height - liveViewport.height);
-
-        return {
-            viewportWidth: screenSize.width,
-            viewportHeight: screenSize.height,
-            liveViewportWidth: liveViewport.width,
-            liveViewportHeight: liveViewport.height,
-            screenWidth: screenSize.width,
-            screenHeight: screenSize.height,
-            safeAreaTop: topReserve,
-            safeAreaRight: 0,
-            safeAreaBottom: 0,
-            safeAreaLeft: 0,
-            safeFrameLeft: 0,
-            safeFrameTop: topReserve,
-            safeFrameWidth: Math.max(1, screenSize.width),
-            safeFrameHeight: Math.max(1, screenSize.height - topReserve)
-        };
-    }
-
-    function chooseBetterStandaloneFrame(currentBest, candidate) {
-        if (!currentBest) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (candidate.safeFrameHeight > currentBest.safeFrameHeight + 0.5) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
-            candidate.safeFrameWidth > currentBest.safeFrameWidth + 0.5) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
-            Math.abs(candidate.safeFrameWidth - currentBest.safeFrameWidth) <= 0.5 &&
-            candidate.viewportHeight > currentBest.viewportHeight + 0.5) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        return currentBest;
-    }
-
-    function beginStandaloneStartupLock() {
-        if (standaloneStartupLock.lockedFrame || standaloneStartupLock.settleActive) {
-            return;
-        }
-
-        clearStandaloneStartupSampling();
-
-        standaloneStartupLock.sessionId += 1;
-        standaloneStartupLock.settleActive = true;
-        standaloneStartupLock.bestFrame = null;
-
-        const sessionId = standaloneStartupLock.sessionId;
-        let remainingFrames = 12;
-
-        function sampleFrame() {
-            if (sessionId !== standaloneStartupLock.sessionId || standaloneStartupLock.lockedFrame) {
-                return;
-            }
-
-            const candidate = captureStandaloneRuntimeFrame();
-            standaloneStartupLock.bestFrame = chooseBetterStandaloneFrame(standaloneStartupLock.bestFrame, candidate);
-
-            remainingFrames -= 1;
-
-            if (remainingFrames > 0) {
-                standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
-                return;
-            }
-
-            standaloneStartupLock.lockedFrame = cloneStandaloneFrame(standaloneStartupLock.bestFrame || candidate);
-            standaloneStartupLock.settleRafId = 0;
-            standaloneStartupLock.settleActive = false;
-            standaloneStartupLock.bestFrame = null;
-
-            applyHomeStageLayout();
-        }
-
-        sampleFrame();
-    }
-
-    function markStageReady() {
-        firstPaintReady = true;
-
-        const displayMode = readDisplayMode();
-        const standaloneLockPending = isStandaloneDisplayMode(displayMode) && !standaloneStartupLock.lockedFrame;
-
-        if (standaloneLockPending) {
-            homeStageShell.style.visibility = "hidden";
-            homeStageShell.dataset.stageReady = "false";
-            return;
-        }
-
-        homeStageShell.style.visibility = "visible";
-        homeStageShell.dataset.stageReady = "true";
-    }
-
-    window.addEventListener("pl-home-first-paint-ready", function () {
-        markStageReady();
-    }, { once: true });
     // SEGMENT A END — Home Stage Bootstrap
 
-
     // SEGMENT B START — Home Stage Measurements
-
-    function readRuntimeViewport() {
-        const visualViewport = window.visualViewport;
-
-        if (
-            visualViewport &&
-            Number.isFinite(visualViewport.width) &&
-            Number.isFinite(visualViewport.height)
-        ) {
-            return {
-                width: Math.max(1, visualViewport.width),
-                height: Math.max(1, visualViewport.height)
-            };
-        }
-
-        return readViewportSize();
-    }
-
-    function buildSafeFrame(rootWidth, rootHeight, safeArea, uiAuthorTop) {
-        const safeFrameLeft = Math.max(0, safeArea.left);
-        const safeFrameTop = Math.max(uiAuthorTop, safeArea.top);
-        const safeFrameRightInset = Math.max(0, safeArea.right);
-        const safeFrameBottomInset = Math.max(0, safeArea.bottom);
-
-        return {
-            left: safeFrameLeft,
-            top: safeFrameTop,
-            width: Math.max(1, rootWidth - safeFrameLeft - safeFrameRightInset),
-            height: Math.max(1, rootHeight - safeFrameTop - safeFrameBottomInset)
-        };
-    }
-
-    function cloneStandaloneFrame(frame) {
-        return {
-            viewportWidth: frame.viewportWidth,
-            viewportHeight: frame.viewportHeight,
-            liveViewportWidth: frame.liveViewportWidth,
-            liveViewportHeight: frame.liveViewportHeight,
-            screenWidth: frame.screenWidth,
-            screenHeight: frame.screenHeight,
-            safeAreaTop: frame.safeAreaTop,
-            safeAreaRight: frame.safeAreaRight,
-            safeAreaBottom: frame.safeAreaBottom,
-            safeAreaLeft: frame.safeAreaLeft,
-            safeFrameLeft: frame.safeFrameLeft,
-            safeFrameTop: frame.safeFrameTop,
-            safeFrameWidth: frame.safeFrameWidth,
-            safeFrameHeight: frame.safeFrameHeight
-        };
-    }
-
-    function captureStandaloneRuntimeFrame() {
-        const uiAuthorTop = 47;
-        const viewport = readRuntimeViewport();
-        const safeArea = readSafeAreaInsets();
-        const rootWidth = viewport.width;
-        const rootHeight = viewport.height + Math.max(0, safeArea.bottom);
-        const safeFrame = buildSafeFrame(
-            rootWidth,
-            rootHeight,
-            safeArea,
-            uiAuthorTop
-        );
-
-        return {
-            viewportWidth: rootWidth,
-            viewportHeight: rootHeight,
-            liveViewportWidth: viewport.width,
-            liveViewportHeight: viewport.height,
-            screenWidth: Math.max(1, parsePx(window.screen?.width) || viewport.width),
-            screenHeight: Math.max(1, parsePx(window.screen?.height) || rootHeight),
-            safeAreaTop: safeArea.top,
-            safeAreaRight: safeArea.right,
-            safeAreaBottom: safeArea.bottom,
-            safeAreaLeft: safeArea.left,
-            safeFrameLeft: safeFrame.left,
-            safeFrameTop: safeFrame.top,
-            safeFrameWidth: safeFrame.width,
-            safeFrameHeight: safeFrame.height
-        };
-    }
-
-    function chooseBetterStandaloneFrame(currentBest, candidate) {
-        if (!currentBest) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (candidate.viewportHeight > currentBest.viewportHeight + 0.5) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (
-            Math.abs(candidate.viewportHeight - currentBest.viewportHeight) <= 0.5 &&
-            candidate.safeFrameHeight > currentBest.safeFrameHeight + 0.5
-        ) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (
-            Math.abs(candidate.viewportHeight - currentBest.viewportHeight) <= 0.5 &&
-            Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
-            candidate.viewportWidth > currentBest.viewportWidth + 0.5
-        ) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        return currentBest;
-    }
-
-    function beginStandaloneStartupLock() {
-        clearStandaloneStartupSampling();
-
-        standaloneStartupLock.sessionId += 1;
-        standaloneStartupLock.settleActive = true;
-
-        const sessionId = standaloneStartupLock.sessionId;
-        const initialFrame = captureStandaloneRuntimeFrame();
-
-        standaloneStartupLock.lockedFrame = cloneStandaloneFrame(initialFrame);
-        standaloneStartupLock.bestFrame = cloneStandaloneFrame(initialFrame);
-
-        applyHomeStageLayout();
-
-        let remainingFrames = 6;
-
-        function sampleFrame() {
-            if (sessionId !== standaloneStartupLock.sessionId) {
-                return;
-            }
-
-            const candidate = captureStandaloneRuntimeFrame();
-
-            standaloneStartupLock.bestFrame = chooseBetterStandaloneFrame(
-                standaloneStartupLock.bestFrame,
-                candidate
-            );
-
-            remainingFrames -= 1;
-
-            if (remainingFrames > 0) {
-                standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
-                return;
-            }
-
-            standaloneStartupLock.lockedFrame = cloneStandaloneFrame(
-                standaloneStartupLock.bestFrame || candidate
-            );
-            standaloneStartupLock.settleRafId = 0;
-            standaloneStartupLock.settleActive = false;
-            standaloneStartupLock.bestFrame = null;
-
-            applyHomeStageLayout();
-        }
-
-        standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
-    }
-
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
-        const uiAuthorLeft = 0;
-        const uiAuthorTop = 47;
-        const uiAuthorWidth = designWidth;
-        const uiAuthorHeight = designHeight - uiAuthorTop;
-
-        const liveViewport = readRuntimeViewport();
-        const liveSafeArea = readSafeAreaInsets();
+        const viewport = readViewportSize();
+        const safeArea = readSafeAreaInsets();
         const displayMode = readDisplayMode();
-        const desktopPreviewMode = shouldUseDesktopPreviewMode(displayMode);
-        const desktopRuntimeEmulationMode = shouldUseDesktopRuntimeEmulationMode(displayMode);
-        const standaloneDisplayMode = isStandaloneDisplayMode(displayMode);
 
-        const viewport =
-            standaloneDisplayMode && standaloneStartupLock.lockedFrame
-                ? {
-                    width: standaloneStartupLock.lockedFrame.viewportWidth,
-                    height: standaloneStartupLock.lockedFrame.viewportHeight
-                }
-                : liveViewport;
+        const rootWidth = Math.max(1, viewport.width);
+        const rootHeight = Math.max(1, viewport.height);
 
-        const safeArea =
-            standaloneDisplayMode && standaloneStartupLock.lockedFrame
-                ? {
-                    top: standaloneStartupLock.lockedFrame.safeAreaTop,
-                    right: standaloneStartupLock.lockedFrame.safeAreaRight,
-                    bottom: standaloneStartupLock.lockedFrame.safeAreaBottom,
-                    left: standaloneStartupLock.lockedFrame.safeAreaLeft
-                }
-                : liveSafeArea;
+        const worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
+        const worldRenderWidth = designWidth * worldScale;
+        const worldRenderHeight = designHeight * worldScale;
+        const worldLeft = (rootWidth - worldRenderWidth) / 2;
+        const worldTop = (rootHeight - worldRenderHeight) / 2;
 
-        const standaloneLockPending =
-            standaloneDisplayMode && !standaloneStartupLock.lockedFrame;
-        const standaloneVisualOffsetTop = 0;
+        const safeFrameLeft = safeArea.left;
+        const safeFrameTop = safeArea.top;
+        const safeFrameWidth = Math.max(1, rootWidth - safeArea.left - safeArea.right);
+        const safeFrameHeight = Math.max(1, rootHeight - safeArea.top - safeArea.bottom);
 
-        setDesktopPreviewClasses(desktopPreviewMode);
-
-        let rootWidth = designWidth;
-        let rootHeight = designHeight;
-        let worldScale = 1;
-        let worldRenderWidth = designWidth;
-        let worldRenderHeight = designHeight;
-        let worldLeft = 0;
-        let worldTop = 0;
-        let worldStageMeasuredScale = 1;
-        let safeFrameLeft = uiAuthorLeft;
-        let safeFrameTop = uiAuthorTop;
-        let safeFrameWidth = uiAuthorWidth;
-        let safeFrameHeight = uiAuthorHeight;
-        let safeUiRenderWidth = uiAuthorWidth;
-        let safeUiRenderHeight = uiAuthorHeight;
-        let safeUiLeft = uiAuthorLeft;
-        let safeUiTop = uiAuthorTop;
-        let safeUiStageMeasuredScale = 1;
-        let uiProjectionScale = 1;
-        let previewScale = 1;
-
-        if (desktopPreviewMode) {
-            const previewHorizontalPadding = 72;
-            const previewVerticalPadding = 18;
-
-            previewScale = Math.min(
-                1,
-                Math.max(0.1, (liveViewport.width - (previewHorizontalPadding * 2)) / designWidth),
-                Math.max(0.1, (liveViewport.height - (previewVerticalPadding * 2)) / designHeight)
-            );
-
-            applyDesktopPreviewShellStyles(
-                designWidth * previewScale,
-                designHeight * previewScale,
-                previewScale,
-                designWidth,
-                designHeight
-            );
-
-            rootWidth = designWidth;
-            rootHeight = designHeight;
-            worldScale = previewScale;
-            worldRenderWidth = designWidth * previewScale;
-            worldRenderHeight = designHeight * previewScale;
-            worldLeft = 0;
-            worldTop = 0;
-            worldStageMeasuredScale = previewScale;
-            safeFrameLeft = uiAuthorLeft;
-            safeFrameTop = uiAuthorTop;
-            safeFrameWidth = uiAuthorWidth;
-            safeFrameHeight = uiAuthorHeight;
-            safeUiRenderWidth = uiAuthorWidth;
-            safeUiRenderHeight = uiAuthorHeight;
-            safeUiLeft = uiAuthorLeft;
-            safeUiTop = uiAuthorTop;
-            safeUiStageMeasuredScale = previewScale;
-            uiProjectionScale = 1;
-        } else if (desktopRuntimeEmulationMode) {
-            resetRuntimeShellStyles();
-
-            rootHeight = liveViewport.height;
-            rootWidth = Math.min(
-                liveViewport.width,
-                Math.round((rootHeight * designWidth) / designHeight)
-            );
-
-            applyDesktopRuntimeShellStyles(rootWidth, rootHeight);
-
-            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
-            worldRenderWidth = designWidth * worldScale;
-            worldRenderHeight = designHeight * worldScale;
-            worldLeft = (rootWidth - worldRenderWidth) / 2;
-            worldTop = (rootHeight - worldRenderHeight) / 2;
-            worldStageMeasuredScale = worldScale;
-            safeFrameLeft = 0;
-            safeFrameTop = uiAuthorTop;
-            safeFrameWidth = rootWidth;
-            safeFrameHeight = Math.max(1, rootHeight - uiAuthorTop);
-            safeUiRenderWidth = safeFrameWidth;
-            safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = 0;
-            safeUiTop = uiAuthorTop;
-            safeUiStageMeasuredScale = 1;
-            uiProjectionScale = Math.min(
-                safeFrameWidth / uiAuthorWidth,
-                safeFrameHeight / uiAuthorHeight
-            );
-        } else if (standaloneDisplayMode) {
-            const safeFrame = buildSafeFrame(
-                viewport.width,
-                viewport.height,
-                safeArea,
-                uiAuthorTop
-            );
-
-            rootWidth = viewport.width;
-            rootHeight = viewport.height;
-
-            applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, 0);
-
-            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
-            worldRenderWidth = designWidth * worldScale;
-            worldRenderHeight = designHeight * worldScale;
-            worldLeft = (rootWidth - worldRenderWidth) / 2;
-            worldTop = (rootHeight - worldRenderHeight) / 2;
-            worldStageMeasuredScale = worldScale;
-
-            safeFrameLeft = safeFrame.left;
-            safeFrameTop = safeFrame.top;
-            safeFrameWidth = safeFrame.width;
-            safeFrameHeight = safeFrame.height;
-
-            safeUiRenderWidth = safeFrameWidth;
-            safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = safeFrameLeft;
-            safeUiTop = safeFrameTop;
-            safeUiStageMeasuredScale = 1;
-
-            uiProjectionScale = Math.min(
-                safeFrameWidth / uiAuthorWidth,
-                safeFrameHeight / uiAuthorHeight
-            );
-        } else {
-            const safeFrame = buildSafeFrame(
-                liveViewport.width,
-                liveViewport.height,
-                liveSafeArea,
-                uiAuthorTop
-            );
-
-            resetRuntimeShellStyles();
-
-            rootWidth = liveViewport.width;
-            rootHeight = liveViewport.height;
-
-            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
-            worldRenderWidth = designWidth * worldScale;
-            worldRenderHeight = designHeight * worldScale;
-            worldLeft = (rootWidth - worldRenderWidth) / 2;
-            worldTop = (rootHeight - worldRenderHeight) / 2;
-            worldStageMeasuredScale = worldScale;
-
-            safeFrameLeft = safeFrame.left;
-            safeFrameTop = safeFrame.top;
-            safeFrameWidth = safeFrame.width;
-            safeFrameHeight = safeFrame.height;
-
-            safeUiRenderWidth = safeFrameWidth;
-            safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = safeFrameLeft;
-            safeUiTop = safeFrameTop;
-            safeUiStageMeasuredScale = 1;
-
-            uiProjectionScale = Math.min(
-                safeFrameWidth / uiAuthorWidth,
-                safeFrameHeight / uiAuthorHeight
-            );
-        }
+        const safeUiScale = Math.min(1, safeFrameWidth / designWidth, safeFrameHeight / designHeight);
+        const safeUiRenderWidth = designWidth * safeUiScale;
+        const safeUiRenderHeight = designHeight * safeUiScale;
+        const safeUiLeft = safeFrameLeft + ((safeFrameWidth - safeUiRenderWidth) / 2);
+        const safeUiTop = safeFrameTop;
 
         homeRoot.style.width = `${round3(rootWidth)}px`;
         homeRoot.style.height = `${round3(rootHeight)}px`;
 
-        worldStage.style.width = `${round3(designWidth)}px`;
-        worldStage.style.height = `${round3(designHeight)}px`;
+        setShellBox(worldStageShell, worldLeft, worldTop, worldRenderWidth, worldRenderHeight);
         worldStage.style.transform = `scale(${round3(worldScale)})`;
 
-        safeUiStage.style.width = `${round3(safeUiRenderWidth)}px`;
-        safeUiStage.style.height = `${round3(safeUiRenderHeight)}px`;
-        safeUiStage.style.transform = "scale(1)";
-
-        setShellBox(worldStageShell, worldLeft, worldTop, worldRenderWidth, worldRenderHeight);
         setShellBox(safeUiStageShell, safeUiLeft, safeUiTop, safeUiRenderWidth, safeUiRenderHeight);
+        safeUiStage.style.transform = `scale(${round3(safeUiScale)})`;
+
         setShellBox(safeZoneOutline, safeFrameLeft, safeFrameTop, safeFrameWidth, safeFrameHeight);
 
         homeRoot.dataset.stageDisplayMode = displayMode;
-        homeRoot.dataset.desktopPreviewMode = desktopPreviewMode ? "true" : "false";
-        homeRoot.dataset.desktopRuntimeEmulationMode = desktopRuntimeEmulationMode ? "true" : "false";
-        homeRoot.dataset.standaloneLockPending = standaloneLockPending ? "true" : "false";
-        homeRoot.dataset.standaloneFrameLocked = standaloneStartupLock.lockedFrame ? "true" : "false";
-        homeRoot.dataset.standaloneVisualOffsetTop = String(round3(standaloneVisualOffsetTop));
-        homeRoot.dataset.desktopPreviewScale = String(round3(previewScale));
         homeRoot.dataset.viewportWidth = String(round3(rootWidth));
         homeRoot.dataset.viewportHeight = String(round3(rootHeight));
-        homeRoot.dataset.worldStageScale = String(round3(worldStageMeasuredScale));
+
+        homeRoot.dataset.worldStageScale = String(round3(worldScale));
         homeRoot.dataset.worldStageRenderWidth = String(round3(worldRenderWidth));
         homeRoot.dataset.worldStageRenderHeight = String(round3(worldRenderHeight));
-        homeRoot.dataset.uiAuthorFrameLeft = String(round3(uiAuthorLeft));
-        homeRoot.dataset.uiAuthorFrameTop = String(round3(uiAuthorTop));
-        homeRoot.dataset.uiAuthorFrameWidth = String(round3(uiAuthorWidth));
-        homeRoot.dataset.uiAuthorFrameHeight = String(round3(uiAuthorHeight));
-        homeRoot.dataset.safeUiStageScale = String(round3(safeUiStageMeasuredScale));
+
+        homeRoot.dataset.safeUiStageScale = String(round3(safeUiScale));
         homeRoot.dataset.safeUiStageRenderWidth = String(round3(safeUiRenderWidth));
         homeRoot.dataset.safeUiStageRenderHeight = String(round3(safeUiRenderHeight));
-        homeRoot.dataset.uiProjectionScale = String(round3(uiProjectionScale));
+
         homeRoot.dataset.safeFrameLeft = String(round3(safeFrameLeft));
         homeRoot.dataset.safeFrameTop = String(round3(safeFrameTop));
         homeRoot.dataset.safeFrameWidth = String(round3(safeFrameWidth));
@@ -760,83 +158,38 @@
         homeRoot.dataset.safeAreaBottom = String(round3(safeArea.bottom));
         homeRoot.dataset.safeAreaLeft = String(round3(safeArea.left));
 
-        if (firstPaintReady && !standaloneLockPending) {
-            markStageReady();
-        } else {
-            homeStageShell.style.visibility = "hidden";
-            homeStageShell.dataset.stageReady = "false";
-        }
-
-        try {
-            window.scrollTo(0, 0);
-        } catch {
-        }
-
-        window.dispatchEvent(
-            new CustomEvent("pl-home-stage-resized", {
-                detail: {
-                    displayMode,
-                    desktopPreviewMode,
-                    desktopRuntimeEmulationMode,
-                    previewScale,
-                    viewportWidth: rootWidth,
-                    viewportHeight: rootHeight,
-                    worldScale: worldStageMeasuredScale,
-                    safeUiScale: safeUiStageMeasuredScale,
-                    safeFrameLeft,
-                    safeFrameTop,
-                    safeFrameWidth,
-                    safeFrameHeight,
-                    uiAuthorLeft,
-                    uiAuthorTop,
-                    uiAuthorWidth,
-                    uiAuthorHeight,
-                    uiProjectionScale,
-                    standaloneLockPending,
-                    standaloneVisualOffsetTop
-                }
-            })
-        );
-    }
-
-    function handleStageEnvironmentChange() {
-        const displayMode = readDisplayMode();
-
-        if (isStandaloneDisplayMode(displayMode)) {
-            beginStandaloneStartupLock();
-            return;
-        }
-
-        clearStandaloneStartupSampling();
-        standaloneStartupLock.lockedFrame = null;
-        standaloneStartupLock.bestFrame = null;
-        standaloneStartupLock.settleActive = false;
-
-        applyHomeStageLayout();
+        window.dispatchEvent(new CustomEvent("pl-home-stage-resized", {
+            detail: {
+                displayMode,
+                viewportWidth: rootWidth,
+                viewportHeight: rootHeight,
+                worldScale,
+                safeUiScale,
+                safeFrameLeft,
+                safeFrameTop,
+                safeFrameWidth,
+                safeFrameHeight
+            }
+        }));
     }
 
     function initializeHomeStageLayout() {
-        handleStageEnvironmentChange();
+        applyHomeStageLayout();
 
-        window.addEventListener("resize", handleStageEnvironmentChange);
-        window.addEventListener("pageshow", handleStageEnvironmentChange);
+        window.addEventListener("resize", applyHomeStageLayout);
+        window.addEventListener("orientationchange", applyHomeStageLayout);
 
         if (window.visualViewport) {
-            window.visualViewport.addEventListener("resize", handleStageEnvironmentChange);
-            window.visualViewport.addEventListener("scroll", handleStageEnvironmentChange);
-        }
-
-        if (desktopPointerQuery.addEventListener) {
-            desktopPointerQuery.addEventListener("change", handleStageEnvironmentChange);
-        } else if (desktopPointerQuery.addListener) {
-            desktopPointerQuery.addListener(handleStageEnvironmentChange);
+            window.visualViewport.addEventListener("resize", applyHomeStageLayout);
+            window.visualViewport.addEventListener("scroll", applyHomeStageLayout);
         }
     }
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initializeHomeStageLayout, { once: true });
-    } else {
+    }
+    else {
         initializeHomeStageLayout();
     }
-
+})();
 // SEGMENT B END — Home Stage Measurements
