@@ -25,9 +25,14 @@
 </head>
 <body>
     <!-- SEGMENT B START — Layout Body -->
-    @RenderBody()
 
+    <div class="app-shell">
+        @RenderBody()
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
     <!-- SEGMENT B END — Layout Body -->
 </body>
 </html>

@@ -394,200 +394,6 @@
         };
     }
 
-    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-    let homeChromeTintSourceUrl = "";
-    let homeChromeTintRequestId = 0;
-
-    function clampByte(value) {
-        return Math.max(0, Math.min(255, Math.round(value)));
-    }
-
-    function byteToHex(value) {
-        return clampByte(value).toString(16).padStart(2, "0");
-    }
-
-    function rgbToHex(red, green, blue) {
-        return `#${byteToHex(red)}${byteToHex(green)}${byteToHex(blue)}`;
-    }
-
-    function parseBackgroundImageUrls(backgroundImageValue) {
-        if (!backgroundImageValue) {
-            return [];
-        }
-
-        const urls = [];
-        const urlPattern = /url\((['"]?)(.*?)\1\)/g;
-        let match = urlPattern.exec(backgroundImageValue);
-
-        while (match) {
-            if (match[2]) {
-                urls.push(match[2]);
-            }
-
-            match = urlPattern.exec(backgroundImageValue);
-        }
-
-        return urls;
-    }
-
-    function readOpaqueBackgroundColor(element) {
-        if (!element) {
-            return "";
-        }
-
-        const computed = window.getComputedStyle(element);
-        const backgroundColor = computed.backgroundColor || "";
-
-        if (
-            !backgroundColor ||
-            backgroundColor === "transparent" ||
-            backgroundColor === "rgba(0, 0, 0, 0)"
-        ) {
-            return "";
-        }
-
-        return backgroundColor;
-    }
-
-    function applyHomeChromeTint(colorValue) {
-        if (!colorValue) {
-            return;
-        }
-
-        document.documentElement.style.setProperty("--pl-home-edge-background", colorValue);
-        document.documentElement.style.backgroundColor = colorValue;
-        document.body.style.backgroundColor = colorValue;
-
-        if (appShell) {
-            appShell.style.backgroundColor = colorValue;
-        }
-
-        if (themeColorMeta) {
-            themeColorMeta.setAttribute("content", colorValue);
-        }
-    }
-
-    function applyFallbackHomeChromeTint() {
-        const fallbackColor =
-            readOpaqueBackgroundColor(homeRoot) ||
-            readOpaqueBackgroundColor(homeStageShell) ||
-            readOpaqueBackgroundColor(appShell) ||
-            readOpaqueBackgroundColor(document.body) ||
-            readOpaqueBackgroundColor(document.documentElement);
-
-        if (fallbackColor) {
-            applyHomeChromeTint(fallbackColor);
-        }
-    }
-
-    function syncHomeChromeTintFromSceneArt() {
-        const sceneArt = document.getElementById("pl-home-scene-art");
-
-        if (!sceneArt) {
-            applyFallbackHomeChromeTint();
-            return;
-        }
-
-        const computed = window.getComputedStyle(sceneArt);
-        const backgroundImageUrls = parseBackgroundImageUrls(computed.backgroundImage || "");
-
-        if (!backgroundImageUrls.length) {
-            applyFallbackHomeChromeTint();
-            return;
-        }
-
-        const imageUrl = backgroundImageUrls[0];
-
-        if (!imageUrl) {
-            applyFallbackHomeChromeTint();
-            return;
-        }
-
-        if (imageUrl === homeChromeTintSourceUrl) {
-            return;
-        }
-
-        homeChromeTintSourceUrl = imageUrl;
-        homeChromeTintRequestId += 1;
-
-        const requestId = homeChromeTintRequestId;
-        const image = new Image();
-
-        image.decoding = "async";
-
-        image.onload = function () {
-            if (requestId !== homeChromeTintRequestId) {
-                return;
-            }
-
-            const canvas = document.createElement("canvas");
-            canvas.width = 24;
-            canvas.height = 24;
-
-            const context = canvas.getContext("2d", { willReadFrequently: true });
-
-            if (!context) {
-                applyFallbackHomeChromeTint();
-                return;
-            }
-
-            context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-            const samplePoints = [
-                [1, 1],
-                [12, 1],
-                [22, 1],
-                [1, 12],
-                [22, 12],
-                [1, 22],
-                [12, 22],
-                [22, 22]
-            ];
-
-            let redTotal = 0;
-            let greenTotal = 0;
-            let blueTotal = 0;
-            let sampleCount = 0;
-
-            for (const [sampleX, sampleY] of samplePoints) {
-                const pixel = context.getImageData(sampleX, sampleY, 1, 1).data;
-                const alpha = pixel[3];
-
-                if (alpha < 16) {
-                    continue;
-                }
-
-                redTotal += pixel[0];
-                greenTotal += pixel[1];
-                blueTotal += pixel[2];
-                sampleCount += 1;
-            }
-
-            if (sampleCount === 0) {
-                applyFallbackHomeChromeTint();
-                return;
-            }
-
-            applyHomeChromeTint(
-                rgbToHex(
-                    redTotal / sampleCount,
-                    greenTotal / sampleCount,
-                    blueTotal / sampleCount
-                )
-            );
-        };
-
-        image.onerror = function () {
-            if (requestId !== homeChromeTintRequestId) {
-                return;
-            }
-
-            applyFallbackHomeChromeTint();
-        };
-
-        image.src = imageUrl;
-    }
-
     function cloneStandaloneFrame(frame) {
         return {
             viewportWidth: frame.viewportWidth,
@@ -608,25 +414,25 @@
     }
 
     function captureStandaloneRuntimeFrame() {
-        const designWidth = readDesignPx("--pl-home-screen-width", 428);
-        const designHeight = readDesignPx("--pl-home-screen-height", 926);
         const uiAuthorTop = 47;
         const viewport = readRuntimeViewport();
         const safeArea = readSafeAreaInsets();
+        const rootWidth = viewport.width;
+        const rootHeight = viewport.height + Math.max(0, safeArea.bottom);
         const safeFrame = buildSafeFrame(
-            viewport.width,
-            viewport.height,
+            rootWidth,
+            rootHeight,
             safeArea,
             uiAuthorTop
         );
 
         return {
-            viewportWidth: viewport.width,
-            viewportHeight: viewport.height,
+            viewportWidth: rootWidth,
+            viewportHeight: rootHeight,
             liveViewportWidth: viewport.width,
             liveViewportHeight: viewport.height,
             screenWidth: Math.max(1, parsePx(window.screen?.width) || viewport.width),
-            screenHeight: Math.max(1, parsePx(window.screen?.height) || viewport.height),
+            screenHeight: Math.max(1, parsePx(window.screen?.height) || rootHeight),
             safeAreaTop: safeArea.top,
             safeAreaRight: safeArea.right,
             safeAreaBottom: safeArea.bottom,
@@ -808,8 +614,7 @@
             safeUiTop = uiAuthorTop;
             safeUiStageMeasuredScale = previewScale;
             uiProjectionScale = 1;
-        }
-        else if (desktopRuntimeEmulationMode) {
+        } else if (desktopRuntimeEmulationMode) {
             resetRuntimeShellStyles();
 
             rootHeight = liveViewport.height;
@@ -839,8 +644,7 @@
                 safeFrameWidth / uiAuthorWidth,
                 safeFrameHeight / uiAuthorHeight
             );
-        }
-        else if (standaloneDisplayMode) {
+        } else if (standaloneDisplayMode) {
             const safeFrame = buildSafeFrame(
                 viewport.width,
                 viewport.height,
@@ -875,8 +679,7 @@
                 safeFrameWidth / uiAuthorWidth,
                 safeFrameHeight / uiAuthorHeight
             );
-        }
-        else {
+        } else {
             const safeFrame = buildSafeFrame(
                 liveViewport.width,
                 liveViewport.height,
@@ -928,8 +731,6 @@
         setShellBox(safeUiStageShell, safeUiLeft, safeUiTop, safeUiRenderWidth, safeUiRenderHeight);
         setShellBox(safeZoneOutline, safeFrameLeft, safeFrameTop, safeFrameWidth, safeFrameHeight);
 
-        syncHomeChromeTintFromSceneArt();
-
         homeRoot.dataset.stageDisplayMode = displayMode;
         homeRoot.dataset.desktopPreviewMode = desktopPreviewMode ? "true" : "false";
         homeRoot.dataset.desktopRuntimeEmulationMode = desktopRuntimeEmulationMode ? "true" : "false";
@@ -961,41 +762,41 @@
 
         if (firstPaintReady && !standaloneLockPending) {
             markStageReady();
-        }
-        else {
+        } else {
             homeStageShell.style.visibility = "hidden";
             homeStageShell.dataset.stageReady = "false";
         }
 
         try {
             window.scrollTo(0, 0);
-        }
-        catch {
+        } catch {
         }
 
-        window.dispatchEvent(new CustomEvent("pl-home-stage-resized", {
-            detail: {
-                displayMode,
-                desktopPreviewMode,
-                desktopRuntimeEmulationMode,
-                previewScale,
-                viewportWidth: rootWidth,
-                viewportHeight: rootHeight,
-                worldScale: worldStageMeasuredScale,
-                safeUiScale: safeUiStageMeasuredScale,
-                safeFrameLeft,
-                safeFrameTop,
-                safeFrameWidth,
-                safeFrameHeight,
-                uiAuthorLeft,
-                uiAuthorTop,
-                uiAuthorWidth,
-                uiAuthorHeight,
-                uiProjectionScale,
-                standaloneLockPending,
-                standaloneVisualOffsetTop
-            }
-        }));
+        window.dispatchEvent(
+            new CustomEvent("pl-home-stage-resized", {
+                detail: {
+                    displayMode,
+                    desktopPreviewMode,
+                    desktopRuntimeEmulationMode,
+                    previewScale,
+                    viewportWidth: rootWidth,
+                    viewportHeight: rootHeight,
+                    worldScale: worldStageMeasuredScale,
+                    safeUiScale: safeUiStageMeasuredScale,
+                    safeFrameLeft,
+                    safeFrameTop,
+                    safeFrameWidth,
+                    safeFrameHeight,
+                    uiAuthorLeft,
+                    uiAuthorTop,
+                    uiAuthorWidth,
+                    uiAuthorHeight,
+                    uiProjectionScale,
+                    standaloneLockPending,
+                    standaloneVisualOffsetTop
+                }
+            })
+        );
     }
 
     function handleStageEnvironmentChange() {
@@ -1027,16 +828,14 @@
 
         if (desktopPointerQuery.addEventListener) {
             desktopPointerQuery.addEventListener("change", handleStageEnvironmentChange);
-        }
-        else if (desktopPointerQuery.addListener) {
+        } else if (desktopPointerQuery.addListener) {
             desktopPointerQuery.addListener(handleStageEnvironmentChange);
         }
     }
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initializeHomeStageLayout, { once: true });
-    }
-    else {
+    } else {
         initializeHomeStageLayout();
     }
 
