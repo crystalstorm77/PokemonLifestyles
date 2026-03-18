@@ -1,0 +1,666 @@
+﻿@page "/standalone-probe"
+@{
+    Layout = null;
+    ViewData["Title"] = "Standalone Probe";
+}
+<!DOCTYPE html>
+<html lang="en">
+
+    <!-- SEGMENT A START — Standalone Probe Head -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PL Probe" />
+    <meta name="application-name" content="PL Probe" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>@((string?)ViewData["Title"] ?? "Standalone Probe") - Pokemon Lifestyles</title>
+
+    <link rel="manifest" href="@Url.Content("~/standalone-probe-manifest.json")" />
+    <link rel="icon" href="~/favicon.ico" asp-append-version="true" sizes="any" />
+
+    <script src="~/js/pl-pwa-boot.js" asp-append-version="true"></script>
+
+    <style>
+            :root {
+                color-scheme: dark;
+                --probe-document-background: #020617;
+                --probe-stage-background: #0f172a;
+                --probe-world-opacity: 1;
+            }
+
+            html,
+            body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: var(--probe-document-background);
+                font-family: Arial, Helvetica, sans-serif;
+                -webkit-text-size-adjust: 100%;
+                overscroll-behavior: none;
+            }
+
+            body {
+                position: relative;
+                color: #ffffff;
+            }
+
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+            }
+
+            button,
+            input,
+            textarea,
+            select {
+                font: inherit;
+            }
+
+            .probe-stage {
+                position: fixed;
+                inset: 0;
+                overflow: hidden;
+                background: var(--probe-stage-background);
+                isolation: isolate;
+            }
+
+                .probe-stage.is-screen-fit {
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: auto;
+                }
+
+            .probe-world {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                opacity: var(--probe-world-opacity);
+                background: radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 26%), linear-gradient(180deg, #8ec5ff 0%, #2d6fa8 24%, #15263a 58%, #08111f 100%);
+                transition: opacity 160ms ease;
+            }
+
+                .probe-world::before {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 16%), linear-gradient(0deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 28%);
+                }
+
+            .probe-top-bleed {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                height: 108px;
+                pointer-events: none;
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0));
+            }
+
+            .probe-bottom-strip {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: max(96px, calc(env(safe-area-inset-bottom) + 96px));
+                pointer-events: none;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                padding-top: 12px;
+                background: repeating-linear-gradient( -45deg, rgba(16, 185, 129, 0.92) 0px, rgba(16, 185, 129, 0.92) 18px, rgba(5, 150, 105, 0.96) 18px, rgba(5, 150, 105, 0.96) 36px );
+                border-top: 3px solid rgba(255, 255, 255, 0.82);
+                color: #052e16;
+                font-size: 0.82rem;
+                font-weight: 900;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                text-align: center;
+                text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+            }
+
+            .probe-edge-line {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 8px;
+                pointer-events: none;
+                background: #fef08a;
+                box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+            }
+
+            .probe-live-frame {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                border: 2px dashed rgba(56, 189, 248, 0.92);
+                border-radius: 0;
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+            }
+
+            .probe-ui {
+                position: absolute;
+                inset: 0;
+            }
+
+            .probe-button {
+                position: absolute;
+                left: 16px;
+                right: 16px;
+                min-height: 64px;
+                border: 2px solid rgba(255, 255, 255, 0.92);
+                border-radius: 18px;
+                padding: 12px 16px;
+                color: #ffffff;
+                font-weight: 800;
+                letter-spacing: 0.02em;
+                cursor: pointer;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+                backdrop-filter: blur(10px);
+            }
+
+                .probe-button:active {
+                    transform: translateY(1px);
+                }
+
+            .probe-button-top {
+                top: max(16px, calc(env(safe-area-inset-top) + 16px));
+                background: rgba(30, 41, 59, 0.78);
+            }
+
+            .probe-button-bottom {
+                bottom: max(10px, calc(env(safe-area-inset-bottom) + 10px));
+                background: rgba(124, 58, 237, 0.82);
+            }
+
+            .probe-button-title {
+                display: block;
+                font-size: 1rem;
+                line-height: 1.15;
+            }
+
+            .probe-button-subtitle {
+                display: block;
+                margin-top: 0.3rem;
+                font-size: 0.82rem;
+                line-height: 1.2;
+                opacity: 0.92;
+                font-weight: 700;
+            }
+
+            .probe-debug-card {
+                position: absolute;
+                left: 16px;
+                right: 16px;
+                top: 50%;
+                transform: translateY(-50%);
+                border-radius: 20px;
+                padding: 16px;
+                background: rgba(15, 23, 42, 0.76);
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+                backdrop-filter: blur(14px);
+            }
+
+            .probe-debug-title-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 10px;
+            }
+
+            .probe-debug-title {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 900;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
+
+            .probe-status-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                border-radius: 999px;
+                padding: 7px 12px;
+                background: rgba(15, 118, 110, 0.92);
+                color: #ecfeff;
+                font-size: 0.76rem;
+                font-weight: 900;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
+
+            .probe-status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 999px;
+                background: #99f6e4;
+                box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+                flex: 0 0 auto;
+            }
+
+            .probe-debug-note {
+                margin: 0 0 12px 0;
+                color: rgba(255, 255, 255, 0.88);
+                font-size: 0.9rem;
+                line-height: 1.35;
+            }
+
+            .probe-section-label {
+                margin: 0 0 8px 0;
+                color: rgba(191, 219, 254, 0.96);
+                font-size: 0.74rem;
+                font-weight: 900;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .probe-mode-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 0 0 12px 0;
+            }
+
+            .probe-mode-button {
+                appearance: none;
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                border-radius: 999px;
+                padding: 9px 14px;
+                background: rgba(15, 23, 42, 0.68);
+                color: rgba(255, 255, 255, 0.92);
+                font-size: 0.82rem;
+                font-weight: 800;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+                cursor: pointer;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+                .probe-mode-button.is-active {
+                    background: rgba(59, 130, 246, 0.88);
+                    border-color: rgba(255, 255, 255, 0.34);
+                    color: #eff6ff;
+                }
+
+            .probe-debug-readout {
+                margin: 0;
+                border-radius: 14px;
+                padding: 12px;
+                background: rgba(2, 6, 23, 0.68);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: #dbeafe;
+                font-size: 0.86rem;
+                line-height: 1.45;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                font-family: Consolas, "Courier New", monospace;
+            }
+
+            .probe-safe-measure {
+                position: fixed;
+                visibility: hidden;
+                pointer-events: none;
+                z-index: -1;
+            }
+
+            .probe-safe-top {
+                top: 0;
+                left: 0;
+                width: 0;
+                height: env(safe-area-inset-top);
+            }
+
+            .probe-safe-right {
+                top: 0;
+                right: 0;
+                width: env(safe-area-inset-right);
+                height: 0;
+            }
+
+            .probe-safe-bottom {
+                right: 0;
+                bottom: 0;
+                width: 0;
+                height: env(safe-area-inset-bottom);
+            }
+
+            .probe-safe-left {
+                top: 0;
+                left: 0;
+                width: env(safe-area-inset-left);
+                height: 0;
+            }
+    </style>
+    <!-- SEGMENT A END — Standalone Probe Head -->
+    <!-- SEGMENT B START — Standalone Probe Markup -->
+    <div class="probe-stage" id="probe-stage">
+        <div class="probe-world" id="probe-world" aria-hidden="true"></div>
+        <div class="probe-top-bleed" aria-hidden="true"></div>
+
+        <div class="probe-bottom-strip" id="probe-bottom-strip" aria-hidden="true">
+            Bottom strip test — size: <span id="probe-strip-mode-text">viewport fit</span> — visual: <span id="probe-visual-mode-text">stage art</span>
+        </div>
+
+        <div class="probe-edge-line" id="probe-edge-line" aria-hidden="true"></div>
+        <div class="probe-live-frame" id="probe-live-frame" aria-hidden="true"></div>
+
+        <div class="probe-ui">
+            <button type="button" class="probe-button probe-button-top" id="probe-top-button">
+                <span class="probe-button-title">Top tap target</span>
+                <span class="probe-button-subtitle">Tap count: <span id="probe-top-count">0</span></span>
+            </button>
+
+            <div class="probe-debug-card">
+                <div class="probe-debug-title-row">
+                    <h1 class="probe-debug-title">Standalone stage probe</h1>
+                    <div class="probe-status-pill" id="probe-status-pill">
+                        <span class="probe-status-dot" aria-hidden="true"></span>
+                        <span id="probe-status-text">Viewport fit ready</span>
+                    </div>
+                </div>
+
+                <p class="probe-debug-note">
+                    This pass is specifically testing whether the black bottom band can be influenced by the
+                    document canvas background, even if live UI remains inset inside the actual viewport.
+                </p>
+
+                <p class="probe-section-label">Stage sizing</p>
+                <div class="probe-mode-row" role="group" aria-label="Stage sizing mode">
+                    <button type="button" class="probe-mode-button is-active" id="probe-mode-viewport">
+                        Viewport fit
+                    </button>
+                    <button type="button" class="probe-mode-button" id="probe-mode-screen">
+                        Screen fit
+                    </button>
+                </div>
+
+                <p class="probe-section-label">Visual source test</p>
+                <div class="probe-mode-row" role="group" aria-label="Visual source mode">
+                    <button type="button" class="probe-mode-button is-active" id="probe-visual-stage">
+                        Stage art
+                    </button>
+                    <button type="button" class="probe-mode-button" id="probe-visual-document">
+                        Document art
+                    </button>
+                </div>
+
+                <pre class="probe-debug-readout" id="probe-debug-readout">Collecting viewport data…</pre>
+            </div>
+
+            <button type="button" class="probe-button probe-button-bottom" id="probe-bottom-button">
+                <span class="probe-button-title">Bottom tap target</span>
+                <span class="probe-button-subtitle">Tap count: <span id="probe-bottom-count">0</span></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="probe-safe-measure probe-safe-top" id="probe-safe-top" aria-hidden="true"></div>
+    <div class="probe-safe-measure probe-safe-right" id="probe-safe-right" aria-hidden="true"></div>
+    <div class="probe-safe-measure probe-safe-bottom" id="probe-safe-bottom" aria-hidden="true"></div>
+    <div class="probe-safe-measure probe-safe-left" id="probe-safe-left" aria-hidden="true"></div>
+    <!-- SEGMENT B END — Standalone Probe Markup -->
+    <!-- SEGMENT C START — Standalone Probe Script -->
+    <script>
+            (() => {
+                const stage = document.getElementById("probe-stage");
+                const topButton = document.getElementById("probe-top-button");
+                const bottomButton = document.getElementById("probe-bottom-button");
+                const topCountText = document.getElementById("probe-top-count");
+                const bottomCountText = document.getElementById("probe-bottom-count");
+                const statusText = document.getElementById("probe-status-text");
+                const debugReadout = document.getElementById("probe-debug-readout");
+                const stripModeText = document.getElementById("probe-strip-mode-text");
+                const visualModeText = document.getElementById("probe-visual-mode-text");
+                const modeViewportButton = document.getElementById("probe-mode-viewport");
+                const modeScreenButton = document.getElementById("probe-mode-screen");
+                const visualStageButton = document.getElementById("probe-visual-stage");
+                const visualDocumentButton = document.getElementById("probe-visual-document");
+                const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+                const safeTop = document.getElementById("probe-safe-top");
+                const safeRight = document.getElementById("probe-safe-right");
+                const safeBottom = document.getElementById("probe-safe-bottom");
+                const safeLeft = document.getElementById("probe-safe-left");
+
+                const documentElement = document.documentElement;
+
+                const documentArtBackground =
+                    "repeating-linear-gradient(-45deg, #ff2d55 0px, #ff2d55 24px, #ffd60a 24px, #ffd60a 48px, #0ea5e9 48px, #0ea5e9 72px, #34d399 72px, #34d399 96px)";
+                const stageArtThemeColor = "#0f172a";
+                const documentArtThemeColor = "#ff2d55";
+
+                let topTapCount = 0;
+                let bottomTapCount = 0;
+                let lastTapSummary = "none";
+                let currentMode = "viewport-fit";
+                let currentVisualMode = "stage-art";
+
+                function round3(value) {
+                    return Math.round(value * 1000) / 1000;
+                }
+
+                function formatNumber(value) {
+                    if (!Number.isFinite(value)) {
+                        return "n/a";
+                    }
+
+                    return String(round3(value));
+                }
+
+                function readMeasurePx(element, propertyName) {
+                    const computedValue = getComputedStyle(element)[propertyName];
+                    const parsed = parseFloat(computedValue);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                }
+
+                function readPwaEnvironment() {
+                    return window.__plPwaEnv ?? {
+                        isStandalone: false,
+                        navigatorStandalone: false,
+                        displayModeStandalone: false,
+                        launchHref: window.location.href,
+                        launchPath: window.location.pathname,
+                        launchSearch: window.location.search,
+                        launchSource: "",
+                        referrer: document.referrer || ""
+                    };
+                }
+
+                function updateStatus(text) {
+                    statusText.textContent = text;
+                }
+
+                function updateCounts() {
+                    topCountText.textContent = String(topTapCount);
+                    bottomCountText.textContent = String(bottomTapCount);
+                }
+
+                function syncModeUi() {
+                    const isScreenFit = currentMode === "screen-fit";
+
+                    modeViewportButton.classList.toggle("is-active", !isScreenFit);
+                    modeScreenButton.classList.toggle("is-active", isScreenFit);
+                    stripModeText.textContent = isScreenFit ? "screen fit" : "viewport fit";
+                }
+
+                function syncVisualUi() {
+                    const isDocumentArt = currentVisualMode === "document-art";
+
+                    visualStageButton.classList.toggle("is-active", !isDocumentArt);
+                    visualDocumentButton.classList.toggle("is-active", isDocumentArt);
+                    visualModeText.textContent = isDocumentArt ? "document art" : "stage art";
+                }
+
+                function syncStageGeometry() {
+                    const isScreenFit = currentMode === "screen-fit";
+
+                    stage.classList.toggle("is-screen-fit", isScreenFit);
+
+                    if (isScreenFit) {
+                        const targetHeight = Math.max(window.screen.height || 0, window.innerHeight || 0);
+                        stage.style.height = `${targetHeight}px`;
+                    } else {
+                        stage.style.height = "";
+                    }
+                }
+
+                function syncVisualMode() {
+                    const isDocumentArt = currentVisualMode === "document-art";
+
+                    if (isDocumentArt) {
+                        documentElement.style.setProperty("--probe-document-background", documentArtBackground);
+                        documentElement.style.setProperty("--probe-stage-background", "transparent");
+                        documentElement.style.setProperty("--probe-world-opacity", "0");
+                        if (themeColorMeta) {
+                            themeColorMeta.setAttribute("content", documentArtThemeColor);
+                        }
+                    } else {
+                        documentElement.style.setProperty("--probe-document-background", "#020617");
+                        documentElement.style.setProperty("--probe-stage-background", "#0f172a");
+                        documentElement.style.setProperty("--probe-world-opacity", "1");
+                        if (themeColorMeta) {
+                            themeColorMeta.setAttribute("content", stageArtThemeColor);
+                        }
+                    }
+                }
+
+                function setMode(mode) {
+                    currentMode = mode;
+                    syncModeUi();
+                    syncStageGeometry();
+                    updateStatus(mode === "screen-fit" ? "Screen fit ready" : "Viewport fit ready");
+                    refreshDebug();
+                }
+
+                function setVisualMode(mode) {
+                    currentVisualMode = mode;
+                    syncVisualUi();
+                    syncVisualMode();
+                    updateStatus(mode === "document-art" ? "Document art ready" : "Stage art ready");
+                    refreshDebug();
+                }
+
+                function buildDebugLines() {
+                    const stageRect = stage.getBoundingClientRect();
+                    const stageComputedStyle = getComputedStyle(stage);
+                    const visualViewport = window.visualViewport;
+                    const pwaEnv = readPwaEnvironment();
+
+                    const safeInsets = {
+                        top: readMeasurePx(safeTop, "height"),
+                        right: readMeasurePx(safeRight, "width"),
+                        bottom: readMeasurePx(safeBottom, "height"),
+                        left: readMeasurePx(safeLeft, "width")
+                    };
+
+                    const lines = [
+                        `sizeMode = ${currentMode}`,
+                        `visualMode = ${currentVisualMode}`,
+                        `path = ${window.location.pathname}`,
+                        `screen = ${window.screen.width} x ${window.screen.height}`,
+                        `window.inner = ${window.innerWidth} x ${window.innerHeight}`,
+                        `screen - innerHeight = ${formatNumber(window.screen.height - window.innerHeight)}`,
+                        `document.client = ${document.documentElement.clientWidth} x ${document.documentElement.clientHeight}`,
+                        visualViewport
+                            ? `visualViewport = ${formatNumber(visualViewport.width)} x ${formatNumber(visualViewport.height)} | offsetTop ${formatNumber(visualViewport.offsetTop)} | offsetLeft ${formatNumber(visualViewport.offsetLeft)} | pageTop ${formatNumber(visualViewport.pageTop)}`
+                            : "visualViewport = unavailable",
+                        `stage.rect = ${formatNumber(stageRect.width)} x ${formatNumber(stageRect.height)} | top ${formatNumber(stageRect.top)} | bottom ${formatNumber(stageRect.bottom)}`,
+                        `stage.computed.height = ${stageComputedStyle.height}`,
+                        `stage.inline.height = ${stage.style.height || "(none)"}`,
+                        `stage.background = ${stageComputedStyle.backgroundImage === "none" ? stageComputedStyle.backgroundColor : stageComputedStyle.backgroundImage}`,
+                        `doc.background = ${getComputedStyle(document.body).backgroundImage === "none" ? getComputedStyle(document.body).backgroundColor : getComputedStyle(document.body).backgroundImage}`,
+                        `themeColor = ${themeColorMeta ? themeColorMeta.getAttribute("content") : "(missing)"}`,
+                        `stage.bottom - innerHeight = ${formatNumber(stageRect.bottom - window.innerHeight)}`,
+                        `stage.bottom - screen.height = ${formatNumber(stageRect.bottom - window.screen.height)}`,
+                        `safeInsets = top ${formatNumber(safeInsets.top)} | right ${formatNumber(safeInsets.right)} | bottom ${formatNumber(safeInsets.bottom)} | left ${formatNumber(safeInsets.left)}`,
+                        `pwa.isStandalone = ${pwaEnv.isStandalone}`,
+                        `pwa.navigatorStandalone = ${pwaEnv.navigatorStandalone}`,
+                        `pwa.displayModeStandalone = ${pwaEnv.displayModeStandalone}`,
+                        `pwa.launchSource = ${pwaEnv.launchSource || "(none)"}`,
+                        `pwa.launchHref = ${pwaEnv.launchHref}`,
+                        `pwa.referrer = ${pwaEnv.referrer || "(none)"}`,
+                        `tapCounts = top ${topTapCount} | bottom ${bottomTapCount}`,
+                        `lastTap = ${lastTapSummary}`
+                    ];
+
+                    return lines.join("\n");
+                }
+
+                function refreshDebug() {
+                    syncStageGeometry();
+                    syncVisualMode();
+                    debugReadout.textContent = buildDebugLines();
+                }
+
+                function stampTap(label) {
+                    const now = new Date();
+                    lastTapSummary = `${label} \u0040 ${now.toLocaleTimeString()}`;
+                    updateStatus(`${label} registered`);
+                    updateCounts();
+                    refreshDebug();
+                }
+
+                modeViewportButton.addEventListener("click", () => {
+                    setMode("viewport-fit");
+                });
+
+                modeScreenButton.addEventListener("click", () => {
+                    setMode("screen-fit");
+                });
+
+                visualStageButton.addEventListener("click", () => {
+                    setVisualMode("stage-art");
+                });
+
+                visualDocumentButton.addEventListener("click", () => {
+                    setVisualMode("document-art");
+                });
+
+                topButton.addEventListener("click", () => {
+                    topTapCount += 1;
+                    stampTap("Top tap");
+                });
+
+                bottomButton.addEventListener("click", () => {
+                    bottomTapCount += 1;
+                    stampTap("Bottom tap");
+                });
+
+                window.addEventListener("resize", refreshDebug, { passive: true });
+                window.addEventListener("orientationchange", refreshDebug, { passive: true });
+                window.addEventListener("pageshow", refreshDebug, { passive: true });
+                window.addEventListener("pl-pwa-env-changed", refreshDebug);
+
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener("resize", refreshDebug, { passive: true });
+                    window.visualViewport.addEventListener("scroll", refreshDebug, { passive: true });
+                }
+
+                updateCounts();
+                syncModeUi();
+                syncVisualUi();
+                syncVisualMode();
+                refreshDebug();
+
+                requestAnimationFrame(refreshDebug);
+                setTimeout(refreshDebug, 150);
+                setTimeout(refreshDebug, 600);
+                setInterval(refreshDebug, 1000);
+            })();
+    </script>
+    <!-- SEGMENT C END — Standalone Probe Script -->
+
+
+</html>

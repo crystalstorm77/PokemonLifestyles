@@ -2,6 +2,10 @@
 :root {
     --pl-home-screen-width: 428px;
     --pl-home-screen-height: 926px;
+    --pl-safe-ui-author-left: 0px;
+    --pl-safe-ui-author-top: 0px;
+    --pl-safe-ui-author-width: 428px;
+    --pl-safe-ui-author-height: 879px;
 }
 
 html,
@@ -43,11 +47,27 @@ body {
     overflow: hidden;
 }
 
+    .pl-home-stage-shell.pl-desktop-preview-mode {
+        overflow: hidden;
+    }
+
+    .pl-home-stage.pl-desktop-preview-mode {
+        overflow: hidden;
+    }
+
 .pl-home-screen {
     touch-action: pinch-zoom;
     isolation: isolate;
     background: #d9e8fb;
 }
+
+    .pl-home-screen.pl-desktop-preview-mode {
+        width: var(--pl-home-screen-width) !important;
+        height: var(--pl-home-screen-height) !important;
+        min-height: 0 !important;
+        max-height: var(--pl-home-screen-height) !important;
+        overflow: hidden !important;
+    }
 
 .pl-world-stage-shell,
 .pl-safe-ui-stage-shell,
@@ -86,6 +106,14 @@ body {
 
 .pl-safe-ui-stage-shell {
     z-index: 12;
+    overflow: visible;
+}
+
+.pl-home-screen:not(.pl-layout-mode) .pl-safe-ui-stage-shell {
+    overflow: hidden;
+}
+
+.pl-home-screen.pl-layout-mode .pl-safe-ui-stage-shell {
     overflow: visible;
 }
 
@@ -675,3 +703,55 @@ body {
     }
 }
 /* SEGMENT A END — Home Canvas Styles */
+
+/* SEGMENT B START — Home Canvas Runtime Overrides */
+
+:root {
+    --pl-app-edge-color: #01ff75;
+}
+
+html,
+body {
+    background-color: var(--pl-app-edge-color) !important;
+}
+
+.app-shell,
+.pl-home-stage-shell,
+.pl-home-stage {
+    min-width: 0;
+    width: 100%;
+    min-height: 100%;
+    height: 100%;
+    background-color: var(--pl-app-edge-color) !important;
+}
+
+.pl-home-screen {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+    .pl-home-screen:not(.pl-desktop-preview-mode) {
+        max-height: none;
+    }
+
+@supports (height: 100svh) {
+    .app-shell,
+    .pl-home-stage-shell,
+    .pl-home-stage {
+        min-height: calc(100svh + env(safe-area-inset-bottom, 0px));
+        height: calc(100svh + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@supports (height: 100dvh) {
+    .app-shell,
+    .pl-home-stage-shell,
+    .pl-home-stage {
+        min-height: calc(100dvh + env(safe-area-inset-bottom, 0px));
+        height: calc(100dvh + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* SEGMENT B END — Home Canvas Runtime Overrides */
