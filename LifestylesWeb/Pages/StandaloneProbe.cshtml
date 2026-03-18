@@ -6,14 +6,22 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <!-- SEGMENT A START — Standalone Probe Head -->
+<!-- SEGMENT A START — Standalone Probe Head -->
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PL Probe" />
+    <meta name="application-name" content="PL Probe" />
     <meta name="theme-color" content="#0f172a" />
     <title>@((string?)ViewData["Title"] ?? "Standalone Probe") - Pokemon Lifestyles</title>
+
+    <link rel="manifest" href="@Url.Content("~/standalone-probe-manifest.json")" />
+    <link rel="icon" href="~/favicon.ico" asp-append-version="true" sizes="any" />
+
+    <script src="~/js/pl-pwa-boot.js" asp-append-version="true"></script>
 
     <style>
             :root {
@@ -313,8 +321,10 @@
                 height: 0;
             }
     </style>
-    <!-- SEGMENT A END — Standalone Probe Head -->
-    <!-- SEGMENT B START — Standalone Probe Markup -->
+</head>
+<!-- SEGMENT A END — Standalone Probe Head -->
+<!-- SEGMENT B START — Standalone Probe Markup -->
+<body>
     <div class="probe-stage" id="probe-stage">
         <div class="probe-world" id="probe-world" aria-hidden="true"></div>
         <div class="probe-top-bleed" aria-hidden="true"></div>
@@ -411,6 +421,19 @@
                     return Number.isFinite(parsed) ? parsed : 0;
                 }
 
+                function readPwaEnvironment() {
+                    return window.__plPwaEnv ?? {
+                        isStandalone: false,
+                        navigatorStandalone: false,
+                        displayModeStandalone: false,
+                        launchHref: window.location.href,
+                        launchPath: window.location.pathname,
+                        launchSearch: window.location.search,
+                        launchSource: "",
+                        referrer: document.referrer || ""
+                    };
+                }
+
                 function updateStatus(text) {
                     statusText.textContent = text;
                 }
@@ -453,6 +476,7 @@
                     const stageRect = stage.getBoundingClientRect();
                     const stageComputedStyle = getComputedStyle(stage);
                     const visualViewport = window.visualViewport;
+                    const pwaEnv = readPwaEnvironment();
 
                     const safeInsets = {
                         top: readMeasurePx(safeTop, "height"),
@@ -477,6 +501,12 @@
                         `stage.bottom - innerHeight = ${formatNumber(stageRect.bottom - window.innerHeight)}`,
                         `stage.bottom - screen.height = ${formatNumber(stageRect.bottom - window.screen.height)}`,
                         `safeInsets = top ${formatNumber(safeInsets.top)} | right ${formatNumber(safeInsets.right)} | bottom ${formatNumber(safeInsets.bottom)} | left ${formatNumber(safeInsets.left)}`,
+                        `pwa.isStandalone = ${pwaEnv.isStandalone}`,
+                        `pwa.navigatorStandalone = ${pwaEnv.navigatorStandalone}`,
+                        `pwa.displayModeStandalone = ${pwaEnv.displayModeStandalone}`,
+                        `pwa.launchSource = ${pwaEnv.launchSource || "(none)"}`,
+                        `pwa.launchHref = ${pwaEnv.launchHref}`,
+                        `pwa.referrer = ${pwaEnv.referrer || "(none)"}`,
                         `tapCounts = top ${topTapCount} | bottom ${bottomTapCount}`,
                         `lastTap = ${lastTapSummary}`
                     ];
@@ -518,6 +548,7 @@
                 window.addEventListener("resize", refreshDebug, { passive: true });
                 window.addEventListener("orientationchange", refreshDebug, { passive: true });
                 window.addEventListener("pageshow", refreshDebug, { passive: true });
+                window.addEventListener("pl-pwa-env-changed", refreshDebug);
 
                 if (window.visualViewport) {
                     window.visualViewport.addEventListener("resize", refreshDebug, { passive: true });
@@ -534,6 +565,7 @@
                 setInterval(refreshDebug, 1000);
             })();
     </script>
-    <!-- SEGMENT C END — Standalone Probe Script -->
+</body>
+<!-- SEGMENT C END — Standalone Probe Script -->
 
 </html>
