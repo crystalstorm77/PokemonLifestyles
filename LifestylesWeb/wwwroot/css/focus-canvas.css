@@ -706,19 +706,20 @@ body {
 
 /* SEGMENT B START — Home Canvas Runtime Overrides */
 
-.app-shell {
-    min-width: 0;
-    width: 100%;
-    min-height: 100%;
-    height: 100%;
+html,
+body {
+    background-color: #ff2d55 !important;
+    background-image: none !important;
 }
 
+.app-shell,
 .pl-home-stage-shell,
 .pl-home-stage {
     min-width: 0;
     width: 100%;
     min-height: 100%;
     height: 100%;
+    background-color: #ff2d55 !important;
 }
 
 .pl-home-screen {
