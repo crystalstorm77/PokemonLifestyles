@@ -1,5 +1,5 @@
-﻿// SEGMENT A START — Home Stage Bootstrap
-(function () {
+﻿(function () {
+    // SEGMENT A1 — Home Stage Inputs + Safe Area Helpers START
     const appShell = document.querySelector(".app-shell");
     const homeStageShell = document.getElementById("pl-home-stage-shell");
     const homeStage = document.getElementById("pl-home-stage");
@@ -358,11 +358,11 @@
     window.addEventListener("pl-home-first-paint-ready", function () {
         markStageReady();
     }, { once: true });
-    // SEGMENT A END — Home Stage Bootstrap
 
 
-    // SEGMENT B START — Home Stage Measurements
 
+    // SEGMENT A1 — Home Stage Inputs + Safe Area Helpers END
+    // SEGMENT A2 — Home Stage Runtime Frame Sampling START
     function readRuntimeViewport() {
         const visualViewport = window.visualViewport;
 
@@ -519,6 +519,8 @@
         standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
     }
 
+    // SEGMENT A2 — Home Stage Runtime Frame Sampling END
+    // SEGMENT A3 — Home Stage Layout + Initialization START
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
@@ -839,6 +841,6 @@
         initializeHomeStageLayout();
     }
 
-    // SEGMENT B END — Home Stage Measurements
 
+    // SEGMENT A3 — Home Stage Layout + Initialization END
 })();

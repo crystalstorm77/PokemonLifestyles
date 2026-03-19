@@ -1,29 +1,4 @@
-﻿/* SEGMENT A START — Home Canvas Styles */
-:root {
-    --pl-home-screen-width: 428px;
-    --pl-home-screen-height: 926px;
-    --pl-safe-ui-author-left: 0px;
-    --pl-safe-ui-author-top: 0px;
-    --pl-safe-ui-author-width: 428px;
-    --pl-safe-ui-author-height: 879px;
-}
-
-html,
-body {
-    margin: 0;
-    width: 100%;
-    min-height: 100%;
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-    background: #d9e8fb;
-}
-
-body {
-    position: fixed;
-    inset: 0;
-}
-
+﻿/* SEGMENT A1 — Home Canvas Shell + Core Elements START */
 .app-shell {
     position: fixed;
     inset: 0;
@@ -298,6 +273,9 @@ body {
     color: #475569;
 }
 
+/* SEGMENT A1 — Home Canvas Shell + Core Elements END */
+
+/* SEGMENT A2 — Home Canvas Setup Copy + Field Styles START */
 .pl-title {
     margin: 0;
     font-size: 2.1rem;
@@ -431,6 +409,9 @@ body {
     touch-action: none;
 }
 
+/* SEGMENT A2 — Home Canvas Setup Copy + Field Styles END */
+
+/* SEGMENT A3 — Home Canvas Slider + Overlay Widgets START */
 .pl-slider-track-shell,
 .pl-slider-fill-shell,
 .pl-slider-input-overlay {
@@ -607,6 +588,9 @@ body {
     line-height: 1;
 }
 
+/* SEGMENT A3 — Home Canvas Slider + Overlay Widgets END */
+
+/* SEGMENT A4 — Home Canvas Layout Panel + Runtime Overrides START */
 .pl-layout-panel {
     position: fixed;
     top: 1rem;
@@ -702,9 +686,7 @@ body {
         grid-template-columns: 1fr;
     }
 }
-/* SEGMENT A END — Home Canvas Styles */
 
-/* SEGMENT B START — Home Canvas Runtime Overrides */
 
 :root {
     --pl-app-edge-color: var(--pl-art-app-edge-color, #01ff75);
@@ -758,4 +740,4 @@ body {
     }
 }
 
-/* SEGMENT B END — Home Canvas Runtime Overrides */
+/* SEGMENT A4 — Home Canvas Layout Panel + Runtime Overrides END */

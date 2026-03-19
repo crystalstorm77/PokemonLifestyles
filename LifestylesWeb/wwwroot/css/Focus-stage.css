@@ -1,4 +1,4 @@
-﻿/* SEGMENT A START — Focus Stage Styles */
+﻿/* SEGMENT A1 — Focus Stage Screen + Overlay Shell START */
 .pl-screen {
     width: 100%;
     min-height: 100vh;
@@ -191,6 +191,9 @@
     gap: 0.75rem;
 }
 
+/* SEGMENT A1 — Focus Stage Screen + Overlay Shell END */
+
+/* SEGMENT A2 — Focus Stage Typography + Control Surfaces START */
 .pl-link-button,
 .pl-badge,
 .pl-mode-chip,
@@ -378,6 +381,9 @@
     text-align: center;
 }
 
+/* SEGMENT A2 — Focus Stage Typography + Control Surfaces END */
+
+/* SEGMENT A3 — Focus Stage Timer + Layout Panel START */
 .pl-run-timer-caption {
     font-size: 0.85rem;
     font-weight: 700;
@@ -571,4 +577,4 @@
         width: min(94vw, 360px);
     }
 }
-/* SEGMENT A END — Focus Stage Styles */
+/* SEGMENT A3 — Focus Stage Timer + Layout Panel END */

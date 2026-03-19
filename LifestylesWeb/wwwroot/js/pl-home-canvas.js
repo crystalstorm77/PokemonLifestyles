@@ -1,5 +1,5 @@
-﻿// SEGMENT A START — Home Canvas Bootstrap
-(function () {
+﻿(function () {
+    // SEGMENT A1 — Home Canvas Element Cache + Early Exit START
     const homeRoot = document.getElementById("pl-home-root");
     const worldStage = document.getElementById("pl-world-stage");
     const safeUiStage = document.getElementById("pl-safe-ui-stage");
@@ -180,6 +180,8 @@
     let completionTonePlayed = false;
     let dragState = null;
 
+    // SEGMENT A1 — Home Canvas Element Cache + Early Exit END
+    // SEGMENT A2 — Home Canvas Asset Defaults + Measurement Helpers START
     function readCssPxVar(varName, fallbackValue) {
         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
 
@@ -332,6 +334,8 @@
         return result;
     }
 
+    // SEGMENT A2 — Home Canvas Asset Defaults + Measurement Helpers END
+    // SEGMENT A3 — Home Canvas Layout Sync + Draft Helpers START
     async function loadSharedLayoutState() {
         try {
             const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
@@ -712,12 +716,12 @@
         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
     }
 
-    // SEGMENT A END — Home Canvas Bootstrap
 
 
 
-    // SEGMENT B START — Home Canvas Layout
 
+    // SEGMENT A3 — Home Canvas Layout Sync + Draft Helpers END
+    // SEGMENT B1 — Home Canvas Scene + Variable Controls START
     const layoutColorAssetKey = "app-edge-color";
     const layoutColorAssetLabel = "shell-background";
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
@@ -1019,6 +1023,8 @@
         updateLayoutStatusDisplay(layoutColorAssetKey);
     }
 
+    // SEGMENT B1 — Home Canvas Scene + Variable Controls END
+    // SEGMENT B2 — Home Canvas Layout Variable Editors START
     function ensureLayoutVariableControls() {
         if (!layoutAssetSelect) {
             return;
@@ -1110,6 +1116,8 @@
         }
     }
 
+    // SEGMENT B2 — Home Canvas Layout Variable Editors END
+    // SEGMENT B3 — Home Canvas Layout Rendering + Status START
     function updateSliderVisuals() {
         const state = getEffectiveLayoutState("slider");
         const authorWidth = Math.max(20, state.width * (state.scale / 100));
@@ -1385,6 +1393,8 @@
         refreshLayoutSelection();
     }
 
+    // SEGMENT B3 — Home Canvas Layout Rendering + Status END
+    // SEGMENT B4 — Home Canvas Layout Actions + Dragging START
     function buildPartialStateFromControls() {
         const assetKey = layoutAssetSelect.value;
 
@@ -1600,10 +1610,10 @@
         layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
     }
 
-    // SEGMENT B END — Home Canvas Layout
 
 
-    // SEGMENT C START — Home Canvas App Flow
+    // SEGMENT B4 — Home Canvas Layout Actions + Dragging END
+    // SEGMENT C1 — Home Canvas View States + Reward Hydration START
     function setSetupChildrenVisible(isVisible) {
         focusTypeField.hidden = !isVisible;
         durationText.hidden = !isVisible;
@@ -1819,6 +1829,8 @@
         rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
     }
 
+    // SEGMENT C1 — Home Canvas View States + Reward Hydration END
+    // SEGMENT C2 — Home Canvas Runtime Save + Update Loop START
     function playCompletionTone() {
         if (completionTonePlayed) {
             return;
@@ -2064,6 +2076,8 @@
         }, true);
     });
 
+    // SEGMENT C2 — Home Canvas Runtime Save + Update Loop END
+    // SEGMENT C3 — Home Canvas Wiring + Initialization START
     function wireLayoutInputs() {
         const rangeToNumberPairs = [
             [layoutScale, layoutScaleNumber],
@@ -2299,5 +2313,5 @@
 
     initializeAsync();
     window.setInterval(updateUi, 250);
+    // SEGMENT C3 — Home Canvas Wiring + Initialization END
 })();
-// SEGMENT C END — Home Canvas App Flow

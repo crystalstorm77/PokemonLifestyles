@@ -1,5 +1,5 @@
-﻿// SEGMENT A START — Viewport Debug Bootstrap
-(function () {
+﻿(function () {
+    // SEGMENT A1 — Viewport Debug Bootstrap + Panel Creation START
     const searchParams = new URL(window.location.href).searchParams;
     const layoutModeEnabled = searchParams.get("layout") === "1";
 
@@ -222,6 +222,8 @@
         return panel;
     }
 
+    // SEGMENT A1 — Viewport Debug Bootstrap + Panel Creation END
+    // SEGMENT A2 — Viewport Debug Measurements + Layer Diagnostics START
     function parsePx(value) {
         const parsed = parseFloat(String(value || "").replace("px", "").trim());
         return Number.isFinite(parsed) ? parsed : 0;
@@ -414,8 +416,8 @@
             }
         });
     }
-    // SEGMENT A END — Viewport Debug Bootstrap
-    // SEGMENT B START — Viewport Debug Measurements
+    // SEGMENT A2 — Viewport Debug Measurements + Layer Diagnostics END
+    // SEGMENT A3 — Viewport Debug Output + Initialization START
     function buildOutput() {
         const html = document.documentElement;
         const safeArea = readSafeAreaInsets();
@@ -649,5 +651,5 @@
     else {
         init();
     }
+    // SEGMENT A3 — Viewport Debug Output + Initialization END
 })();
-// SEGMENT B END — Viewport Debug Measurements

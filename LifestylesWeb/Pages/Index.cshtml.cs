@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -14,7 +14,7 @@ public class IndexModel : PageModel
 {
     private readonly FocusSessionRepository _focusRepo = new();
 
-    #region SECTION A — Bound Input + Display State
+    #region SEGMENT A — Bound Input + Display State
     [BindProperty]
     public SaveFocusInput Input { get; set; } = new();
 
@@ -33,9 +33,9 @@ public class IndexModel : PageModel
     public bool RewardCompleted { get; private set; }
     public int RewardXp { get; private set; }
     public int RewardCoins { get; private set; }
-    #endregion // SECTION A — Bound Input + Display State
+    #endregion // SEGMENT A — Bound Input + Display State
 
-    #region SECTION B — Page Actions
+    #region SEGMENT B — Page Actions
     public async Task OnGetAsync(
         string? rewardFocusType = null,
         int? rewardDurationSeconds = null,
@@ -108,9 +108,9 @@ public class IndexModel : PageModel
             rewardCoins = coins
         });
     }
-    #endregion // SECTION B — Page Actions
+    #endregion // SEGMENT B — Page Actions
 
-    #region SECTION C — Load + Formatting Helpers
+    #region SEGMENT C — Load + Formatting Helpers
     private async Task LoadAsync()
     {
         DataFilePath = Db.GetDbPath();
@@ -230,9 +230,9 @@ public class IndexModel : PageModel
         TimeSpan offset = TimeZoneInfo.Local.GetUtcOffset(unspecified);
         return new DateTimeOffset(unspecified, offset);
     }
-    #endregion // SECTION C — Load + Formatting Helpers
+    #endregion // SEGMENT C — Load + Formatting Helpers
 
-    #region SECTION D — Input Model
+    #region SEGMENT D — Input Model
     public sealed class SaveFocusInput
     {
         [Required]
@@ -248,5 +248,5 @@ public class IndexModel : PageModel
         [StringLength(20)]
         public string SaveMode { get; set; } = "";
     }
-    #endregion // SECTION D — Input Model
+    #endregion // SEGMENT D — Input Model
 }

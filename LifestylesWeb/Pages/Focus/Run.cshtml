@@ -4,67 +4,7 @@
     ViewData["Title"] = "Focus Timer";
 }
 
-<!-- SECTION A START — Countdown Run Screen -->
-<div class="pl-screen">
-    <div class="pl-stack">
-        <section class="pl-card pl-run-card" id="pl-run-root" data-planned-seconds="@Model.PlannedDurationSeconds">
-            <div class="pl-card-header">
-                <a class="pl-link-button" asp-page="/Focus/Index">← Setup</a>
-                <span class="pl-badge">Countdown</span>
-            </div>
-
-            <p class="pl-eyebrow">Focus Session</p>
-            <h1 class="pl-title">Stay with it</h1>
-            <p class="pl-subtitle">
-                This first timer screen saves the duration from the live timer itself.
-                If you stop early, it saves exactly what the timer was showing at that moment.
-            </p>
-
-            <div class="pl-run-meta-grid">
-                <div class="pl-run-meta-card">
-                    <span class="pl-run-label">Focus type</span>
-                    <strong class="pl-run-value">@Model.FocusType</strong>
-                </div>
-
-                <div class="pl-run-meta-card">
-                    <span class="pl-run-label">Target</span>
-                    <strong class="pl-run-value">@Model.TargetDurationText</strong>
-                </div>
-            </div>
-
-            <div class="pl-run-timer-shell">
-                <div class="pl-run-timer-caption" id="pl-run-state-label">Time remaining</div>
-                <div class="pl-run-timer" id="pl-run-readout">@Model.InitialRemainingText</div>
-                <div class="pl-run-support">
-                    Elapsed:
-                    <span id="pl-run-elapsed">@Model.InitialElapsedText</span>
-                </div>
-            </div>
-
-            <div class="pl-progress-track" aria-hidden="true">
-                <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
-            </div>
-
-            <div class="pl-run-actions">
-                <button type="button" class="pl-primary-button" id="pl-pause-button">Pause</button>
-                <button type="button" class="pl-secondary-button" id="pl-stop-button">End &amp; Save</button>
-                <button type="button" class="pl-danger-button" id="pl-cancel-button">Discard</button>
-            </div>
-
-            <p class="pl-field-hint" id="pl-run-note">
-                When the timer reaches zero, it will save automatically as a completed session.
-            </p>
-
-            <form method="post" asp-page-handler="Save" id="pl-save-form">
-                <input type="hidden" asp-for="Input.FocusType" value="@Model.FocusType" />
-                <input type="hidden" asp-for="Input.PlannedDurationSeconds" value="@Model.PlannedDurationSeconds" />
-                <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-elapsed-seconds" value="0" />
-                <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
-            </form>
-        </section>
-    </div>
-</div>
-<!-- SECTION A START — Countdown Run Screen -->
+@* SEGMENT A START — Countdown Run Screen *@
 <div class="pl-screen">
     <div class="pl-stack">
         <section class="pl-card pl-run-card"
@@ -160,10 +100,11 @@
         </section>
     </div>
 </div>
-<!-- SECTION A END — Countdown Run Screen -->
+@* SEGMENT A END — Countdown Run Screen *@
+
 @section Scripts {
-    <!-- SECTION B START — Countdown Timer Script -->
     <script>
+        // SEGMENT B START — Countdown Timer Script
         (function () {
             const root = document.getElementById("pl-run-root");
             const readout = document.getElementById("pl-run-readout");
@@ -408,7 +349,6 @@
             updateUi();
             window.setInterval(updateUi, 250);
         })();
+        // SEGMENT B END — Countdown Timer Script
     </script>
-    <!-- SECTION B END — Countdown Timer Script -->
-}
 }

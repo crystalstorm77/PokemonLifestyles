@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using LifestyleCore.Data;
@@ -12,7 +12,7 @@ public class RunModel : PageModel
 {
     private readonly FocusSessionRepository _focusRepo = new();
 
-    #region SECTION A — Bound Input + Display State
+    #region SEGMENT A — Bound Input + Display State
     [BindProperty]
     public RunSaveInput Input { get; set; } = new();
 
@@ -23,9 +23,9 @@ public class RunModel : PageModel
     public string TargetDurationText { get; private set; } = "25 minutes";
     public string InitialRemainingText { get; private set; } = "00:25:00";
     public string InitialElapsedText { get; private set; } = "00:00:00";
-    #endregion // SECTION A — Bound Input + Display State
+    #endregion // SEGMENT A — Bound Input + Display State
 
-    #region SECTION B — Page Actions
+    #region SEGMENT B — Page Actions
     public IActionResult OnGet(string? focusType, int durationMinutes = 25)
     {
         string normalizedFocusType = NormalizeFocusType(focusType);
@@ -79,9 +79,9 @@ public class RunModel : PageModel
             savedDurationSeconds = session.DurationSeconds
         });
     }
-    #endregion // SECTION B — Page Actions
+    #endregion // SEGMENT B — Page Actions
 
-    #region SECTION C — Helpers
+    #region SEGMENT C — Helpers
     private void ApplyRunState(string focusType, int plannedDurationSeconds)
     {
         FocusType = focusType;
@@ -178,9 +178,9 @@ public class RunModel : PageModel
         TimeSpan offset = TimeZoneInfo.Local.GetUtcOffset(unspecified);
         return new DateTimeOffset(unspecified, offset);
     }
-    #endregion // SECTION C — Helpers
+    #endregion // SEGMENT C — Helpers
 
-    #region SECTION D — Input Model
+    #region SEGMENT D — Input Model
     public sealed class RunSaveInput
     {
         [Required]
@@ -196,5 +196,5 @@ public class RunModel : PageModel
         [StringLength(20)]
         public string SaveMode { get; set; } = "";
     }
-    #endregion // SECTION D — Input Model
+    #endregion // SEGMENT D — Input Model
 }

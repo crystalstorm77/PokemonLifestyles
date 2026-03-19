@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -14,7 +14,7 @@ public class IndexModel : PageModel
 {
     private readonly FocusSessionRepository _focusRepo = new();
 
-    #region SECTION A — Bound Input + Display State
+    #region SEGMENT A — Bound Input + Display State
     [BindProperty]
     public FocusSetupInput Input { get; set; } = CreateDefaultInput();
 
@@ -22,9 +22,9 @@ public class IndexModel : PageModel
     public string? StatusMessage { get; private set; }
     public string CurrentGameDayText { get; private set; } = "";
     public string DataFilePath { get; private set; } = "";
-    #endregion // SECTION A — Bound Input + Display State
+    #endregion // SEGMENT A — Bound Input + Display State
 
-    #region SECTION B — Page Actions
+    #region SEGMENT B — Page Actions
     public async Task OnGetAsync(string? savedFocusType = null, int? savedDurationSeconds = null)
     {
         Input = CreateDefaultInput(savedFocusType ?? "Focus");
@@ -57,9 +57,9 @@ public class IndexModel : PageModel
             durationMinutes = Input.DurationMinutes
         });
     }
-    #endregion // SECTION B — Page Actions
+    #endregion // SEGMENT B — Page Actions
 
-    #region SECTION C — Helpers
+    #region SEGMENT C — Helpers
     private static FocusSetupInput CreateDefaultInput(string focusType = "Focus")
     {
         return new FocusSetupInput
@@ -112,9 +112,9 @@ public class IndexModel : PageModel
     {
         return DateOnly.FromDateTime(localDateTime.AddHours(-3));
     }
-    #endregion // SECTION C — Helpers
+    #endregion // SEGMENT C — Helpers
 
-    #region SECTION D — Input Model
+    #region SEGMENT D — Input Model
     public sealed class FocusSetupInput
     {
         [Required]
@@ -124,5 +124,5 @@ public class IndexModel : PageModel
         [Range(5, 120)]
         public int DurationMinutes { get; set; } = 25;
     }
-    #endregion // SECTION D — Input Model
+    #endregion // SEGMENT D — Input Model
 }

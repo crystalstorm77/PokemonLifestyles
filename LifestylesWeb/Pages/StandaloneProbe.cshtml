@@ -6,7 +6,7 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <!-- SEGMENT A START — Standalone Probe Head -->
+    @* SEGMENT A1 START — Standalone Probe Meta + Boot Script *@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -22,7 +22,9 @@
 
     <script src="~/js/pl-pwa-boot.js" asp-append-version="true"></script>
 
+    @* SEGMENT A1 END — Standalone Probe Meta + Boot Script *@
     <style>
+            /* SEGMENT A2 START — Standalone Probe Inline Styles Part 1 */
             :root {
                 color-scheme: dark;
                 --probe-document-background: #020617;
@@ -195,6 +197,9 @@
                 font-weight: 700;
             }
 
+            /* SEGMENT A2 END — Standalone Probe Inline Styles Part 1 */
+
+            /* SEGMENT A3 START — Standalone Probe Inline Styles Part 2 */
             .probe-debug-card {
                 position: absolute;
                 left: 16px;
@@ -342,9 +347,9 @@
                 width: env(safe-area-inset-left);
                 height: 0;
             }
+            /* SEGMENT A3 END — Standalone Probe Inline Styles Part 2 */
     </style>
-    <!-- SEGMENT A END — Standalone Probe Head -->
-    <!-- SEGMENT B START — Standalone Probe Markup -->
+    @* SEGMENT B START — Standalone Probe Markup *@
     <div class="probe-stage" id="probe-stage">
         <div class="probe-world" id="probe-world" aria-hidden="true"></div>
         <div class="probe-top-bleed" aria-hidden="true"></div>
@@ -410,8 +415,8 @@
     <div class="probe-safe-measure probe-safe-right" id="probe-safe-right" aria-hidden="true"></div>
     <div class="probe-safe-measure probe-safe-bottom" id="probe-safe-bottom" aria-hidden="true"></div>
     <div class="probe-safe-measure probe-safe-left" id="probe-safe-left" aria-hidden="true"></div>
-    <!-- SEGMENT B END — Standalone Probe Markup -->
-    <!-- SEGMENT C START — Standalone Probe Script -->
+    @* SEGMENT B END — Standalone Probe Markup *@
+    @* SEGMENT C START — Standalone Probe Script *@
     <script>
             (() => {
                 const stage = document.getElementById("probe-stage");
@@ -660,7 +665,7 @@
                 setInterval(refreshDebug, 1000);
             })();
     </script>
-    <!-- SEGMENT C END — Standalone Probe Script -->
+    @* SEGMENT C END — Standalone Probe Script *@
 
 
 </html>

@@ -3,8 +3,8 @@
 @{
     ViewData["Title"] = "Home";
 }
+@* SEGMENT A1 START — Home Canvas Stage Markup *@
 
-<!-- SEGMENT A START — Home Canvas Markup -->
 <div class="pl-home-stage-shell" id="pl-home-stage-shell">
     <div class="pl-home-stage" id="pl-home-stage">
         <div class="pl-screen pl-home-screen"
@@ -254,6 +254,9 @@
     </div>
 </div>
 
+@* SEGMENT A1 END — Home Canvas Stage Markup *@
+
+@* SEGMENT A2 START — Layout Panel + Script References *@
 <aside class="pl-layout-panel" id="pl-layout-panel" hidden aria-label="Layout mode panel">
     <div class="pl-layout-header">
         <strong>Layout Mode</strong>
@@ -345,10 +348,10 @@
 </form>
 <script src="~/js/pl-home-stage.js" asp-append-version="true"></script>
 <script src="~/js/pl-viewport-debug.js" asp-append-version="true"></script>
-<!-- SEGMENT A END — Home Canvas Markup -->
-<!-- SEGMENT B START — Focus Stage Scripts -->
 @section Scripts {
-    <script>
+@* SEGMENT A2 END — Layout Panel + Script References *@
+<script>
+        // SEGMENT B1 — Focus Stage Bootstrap + Timer Helpers START
                 (function () {
                     const homeRoot = document.getElementById("pl-home-root");
                     const focusOverlay = document.getElementById("pl-focus-overlay");
@@ -746,6 +749,8 @@
                         }
                     }
 
+        // SEGMENT B1 — Focus Stage Bootstrap + Timer Helpers END
+        // SEGMENT B2 — Focus Stage Layout Storage + Geometry START
                     function getStoredLayoutState() {
                         try {
                             const raw = localStorage.getItem(layoutStorageKey);
@@ -883,6 +888,8 @@
         }`;
                     }
 
+        // SEGMENT B2 — Focus Stage Layout Storage + Geometry END
+        // SEGMENT B3 — Focus Stage Layout Editing + Dragging START
                     function hydrateLayoutControls() {
                         const assetKey = layoutAssetSelect.value;
                         const state = getMergedLayoutState(assetKey);
@@ -1139,6 +1146,6 @@
 
                     window.setInterval(updateUi, 250);
                 })();
-    </script>
+        // SEGMENT B3 — Focus Stage Layout Editing + Dragging END
+</script>
 }
-<!-- SEGMENT B END — Focus Stage Scripts -->
