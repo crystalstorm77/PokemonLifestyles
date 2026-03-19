@@ -2,6 +2,63 @@
 <html lang="en">
 <head>
     <!-- SEGMENT A START — Layout Head -->
+    @{
+        var shellThemeColor = "#01ff75";
+
+        try
+        {
+            var layoutFolderPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "Pokemon Lifestyles");
+
+            var layoutFilePath = Path.Combine(layoutFolderPath, "layout-overrides.json");
+
+            if (System.IO.File.Exists(layoutFilePath))
+            {
+                var rawLayout = System.IO.File.ReadAllText(layoutFilePath);
+
+                if (!string.IsNullOrWhiteSpace(rawLayout))
+                {
+                    using var document = System.Text.Json.JsonDocument.Parse(rawLayout);
+
+                    if (document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                        document.RootElement.TryGetProperty("variables", out var variablesElement) &&
+                        variablesElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    {
+                        string? candidate = null;
+
+                        if (variablesElement.TryGetProperty("appEdgeColor", out var appEdgeColorElement) &&
+                            appEdgeColorElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            candidate = appEdgeColorElement.GetString();
+                        }
+                        else if (variablesElement.TryGetProperty("AppEdgeColor", out var appEdgeColorPascalElement) &&
+                                 appEdgeColorPascalElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            candidate = appEdgeColorPascalElement.GetString();
+                        }
+                        else if (variablesElement.TryGetProperty("app-edge-color", out var appEdgeColorDashedElement) &&
+                                 appEdgeColorDashedElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            candidate = appEdgeColorDashedElement.GetString();
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(candidate) &&
+                            System.Text.RegularExpressions.Regex.IsMatch(
+                                candidate,
+                                "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"))
+                        {
+                            shellThemeColor = candidate;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
+
     <meta charset="utf-8" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -16,7 +73,14 @@
 
     <meta name="application-name" content="Pokemon Lifestyles" />
 
-    <meta name="theme-color" content="#01ff75" />
+    <meta name="theme-color" content="@shellThemeColor" />
+
+    <style>
+            :root {
+                --pl-art-app-edge-color: @shellThemeColor;
+            }
+    </style>
+
     <title>@ViewData["Title"] - Pokemon Lifestyles</title>
 
     <link rel="manifest" href="@Url.Content("~/manifest.json")" />
