@@ -267,6 +267,14 @@
         <span class="pl-field-hint" id="pl-layout-safe-zone-status">Inside safe zone.</span>
     </div>
 
+    <div class="pl-field" id="pl-layout-editor-toggle-field">
+        <label for="pl-layout-editor-enabled" style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;">
+            <input id="pl-layout-editor-enabled" type="checkbox" checked />
+            <span class="pl-field-label" style="margin:0;">Enable Layout Mode Editor</span>
+        </label>
+        <span class="pl-field-hint" id="pl-layout-editor-mode-status">Checked: click assets to select and move them. Unchecked: interact with the app normally.</span>
+    </div>
+
     <label class="pl-field">
         <span class="pl-field-label">Scene</span>
         <select class="pl-input" id="pl-layout-scene-select">
@@ -351,3 +359,4 @@
     <script src="~/js/pl-home-canvas.js" asp-append-version="true"></script>
 }
 @* SEGMENT A2 END — Layout Panel + Script References *@
+

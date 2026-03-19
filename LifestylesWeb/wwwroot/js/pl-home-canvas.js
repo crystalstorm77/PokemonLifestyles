@@ -65,6 +65,8 @@
     const saveMode = document.getElementById("pl-save-mode");
 
     const layoutPanel = document.getElementById("pl-layout-panel");
+    const layoutEditorToggle = document.getElementById("pl-layout-editor-enabled");
+    const layoutEditorModeStatus = document.getElementById("pl-layout-editor-mode-status");
     const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
     const layoutStageStatus = document.getElementById("pl-layout-stage-status");
     const layoutSafeZoneStatus = document.getElementById("pl-layout-safe-zone-status");
@@ -102,8 +104,9 @@
         !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
         !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
         !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
-        !saveElapsedSeconds || !saveMode || !layoutPanel || !layoutAssetSelect ||
-        !layoutStageStatus || !layoutSafeZoneStatus || !layoutScale || !layoutScaleNumber ||
+        !saveElapsedSeconds || !saveMode || !layoutPanel || !layoutEditorToggle ||
+        !layoutEditorModeStatus || !layoutAssetSelect || !layoutStageStatus ||
+        !layoutSafeZoneStatus || !layoutScale || !layoutScaleNumber ||
         !layoutX || !layoutXNumber || !layoutY || !layoutYNumber || !layoutWidth ||
         !layoutHeight || !layoutScaleValue || !layoutXValue || !layoutYValue ||
         !layoutHeightLabel || !layoutHeightHint || !layoutSaveSelected ||
@@ -113,6 +116,7 @@
 
     const stopThresholdSeconds = 60;
     const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
+    let layoutEditorEnabled = layoutModeEnabled;
     const layoutSyncReadUrl = "/LayoutSync?handler=Read";
     const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
 
@@ -1164,7 +1168,7 @@
         sliderNibVisual.style.height = `${projected.height}px`;
         sliderNibVisual.style.transform = `translateX(${translateX}px)`;
 
-        durationSlider.style.pointerEvents = layoutModeEnabled ? "none" : "auto";
+        durationSlider.style.pointerEvents = layoutEditorEnabled ? "none" : "auto";
     }
 
     function updateDurationReadout() {
@@ -1195,7 +1199,7 @@
             element.style.transform = `scale(${state.scale / 100})`;
 
             if (assetKey === "home-scene") {
-                element.style.pointerEvents = "none";
+                element.style.pointerEvents = layoutEditorEnabled ? "auto" : "none";
             }
 
             return;
@@ -1224,7 +1228,7 @@
         Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
             const state = getEffectiveLayoutState(assetKey);
             const status = getVisibilityStatus(assetKey, state);
-            const isSelected = layoutModeEnabled && assetKey === selectedAssetKey;
+            const isSelected = layoutEditorEnabled && assetKey === selectedAssetKey;
 
             config.element.classList.toggle("pl-layout-selected", isSelected);
             config.element.classList.toggle(
@@ -1338,9 +1342,69 @@
         layoutYNumber.value = layoutY.value;
     }
 
+    function getLayoutEditorManagedControls() {
+        return [
+            layoutSceneSelect,
+            layoutAssetSelect,
+            layoutScale,
+            layoutScaleNumber,
+            layoutX,
+            layoutXNumber,
+            layoutY,
+            layoutYNumber,
+            layoutWidth,
+            layoutHeight,
+            layoutSaveSelected,
+            layoutRevertSelected,
+            layoutResetSelected,
+            layoutResetAll,
+            layoutCode,
+            layoutColorPicker,
+            layoutColorText
+        ].filter(Boolean);
+    }
+
+    function updateLayoutEditorControlState() {
+        const isEnabled = layoutEditorEnabled;
+
+        getLayoutEditorManagedControls().forEach(function (control) {
+            control.disabled = !isEnabled;
+        });
+
+        if (layoutCode) {
+            layoutCode.readOnly = true;
+        }
+
+        if (layoutEditorToggle) {
+            layoutEditorToggle.checked = isEnabled;
+        }
+    }
+
+    function updateLayoutEditorModeStatus() {
+        if (!layoutEditorModeStatus) {
+            return;
+        }
+
+        layoutEditorModeStatus.textContent = layoutEditorEnabled
+            ? "Checked: click assets to select and move them. Unchecked: interact with the app normally."
+            : "Editor disabled. Interact with the app normally until you check this again.";
+    }
+
+    function setLayoutEditorEnabled(nextEnabled) {
+        if (!layoutModeEnabled) {
+            return;
+        }
+
+        layoutEditorEnabled = !!nextEnabled;
+        dragState = null;
+        refreshLayoutUi();
+    }
+
     function refreshLayoutUi() {
         ensureLayoutVariableControls();
         updateLayoutSceneHeader(layoutSceneSelect?.value || defaultLayoutSceneKey);
+        updateLayoutEditorControlState();
+        updateLayoutEditorModeStatus();
 
         const assetKey = layoutAssetSelect.value;
 
@@ -1381,8 +1445,8 @@
 
         syncNumberPairs();
 
-        layoutHeight.disabled = ratioLocked;
-        layoutHeight.readOnly = ratioLocked;
+        layoutHeight.disabled = !layoutEditorEnabled || ratioLocked;
+        layoutHeight.readOnly = !layoutEditorEnabled || ratioLocked;
         layoutHeightLabel.textContent = ratioLocked ? "Height (auto)" : "Height (px)";
         layoutHeightHint.textContent = ratioLocked
             ? "Image-backed assets keep their natural aspect ratio automatically."
@@ -1551,8 +1615,29 @@
         refreshLayoutUi();
     }
 
+    function handleLayoutEditorToggleChange() {
+        setLayoutEditorEnabled(layoutEditorToggle.checked);
+    }
+
+    function handleLayoutAssetCanvasClick(assetKey, event) {
+        if (!layoutEditorEnabled) {
+            return;
+        }
+
+        if (layoutAssetSelect.value !== assetKey) {
+            selectLayoutAsset(assetKey);
+            handleLayoutAssetChange();
+        }
+        else {
+            refreshLayoutSelection();
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     function beginDrag(assetKey, event) {
-        if (!layoutModeEnabled || layoutAssetSelect.value !== assetKey || isVariableAsset(assetKey)) {
+        if (!layoutEditorEnabled || layoutAssetSelect.value !== assetKey || isVariableAsset(assetKey)) {
             return;
         }
 
@@ -1713,7 +1798,7 @@
     }
 
     function previewLayoutAsset(assetKey) {
-        if (!layoutModeEnabled) {
+        if (!layoutEditorEnabled) {
             return;
         }
 
@@ -1934,7 +2019,7 @@
     }
 
     homeFocusButton.addEventListener("click", function () {
-        if (layoutModeEnabled && layoutAssetSelect.value === "home-focus") {
+        if (layoutEditorEnabled && layoutAssetSelect.value === "home-focus") {
             return;
         }
 
@@ -1942,7 +2027,7 @@
     });
 
     closeFocusButton.addEventListener("click", function () {
-        if (layoutModeEnabled && layoutAssetSelect.value === "back") {
+        if (layoutEditorEnabled && layoutAssetSelect.value === "back") {
             return;
         }
 
@@ -1954,7 +2039,7 @@
     });
 
     startFocusButton.addEventListener("click", function () {
-        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "start")) {
+        if (isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "start")) {
             return;
         }
 
@@ -1982,7 +2067,7 @@
     });
 
     pauseButton.addEventListener("click", function () {
-        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutModeEnabled && layoutAssetSelect.value === "pause")) {
+        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutEditorEnabled && layoutAssetSelect.value === "pause")) {
             return;
         }
 
@@ -1999,7 +2084,7 @@
     });
 
     exitButton.addEventListener("click", function () {
-        if (!isRunning || isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "exit")) {
+        if (!isRunning || isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "exit")) {
             return;
         }
 
@@ -2015,7 +2100,7 @@
     });
 
     confirmKeepGoingButton.addEventListener("click", function () {
-        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "keep-going")) {
+        if (isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "keep-going")) {
             return;
         }
 
@@ -2023,7 +2108,7 @@
     });
 
     confirmStopButton.addEventListener("click", function () {
-        if (isSubmitting || (layoutModeEnabled && layoutAssetSelect.value === "stop")) {
+        if (isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "stop")) {
             return;
         }
 
@@ -2031,7 +2116,7 @@
     });
 
     rewardCloseButton.addEventListener("click", function () {
-        if (layoutModeEnabled && layoutAssetSelect.value === "gotcha") {
+        if (layoutEditorEnabled && layoutAssetSelect.value === "gotcha") {
             return;
         }
 
@@ -2069,10 +2154,7 @@
         });
 
         config.element.addEventListener("click", function (event) {
-            if (layoutModeEnabled && layoutAssetSelect.value === assetKey) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+            handleLayoutAssetCanvasClick(assetKey, event);
         }, true);
     });
 
@@ -2099,6 +2181,7 @@
 
         layoutWidth.addEventListener("input", pushLayoutControlValues);
         layoutHeight.addEventListener("input", pushLayoutControlValues);
+        layoutEditorToggle.addEventListener("change", handleLayoutEditorToggleChange);
         layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
         layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
         layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
@@ -2209,6 +2292,14 @@
                     cursor: pointer;
                 }
 
+                #pl-layout-editor-toggle-field input[type="checkbox"] {
+                    width: 1rem;
+                    height: 1rem;
+                    margin: 0;
+                    accent-color: #2563eb;
+                    cursor: pointer;
+                }
+
                 @media (max-width: 640px) {
                     .pl-layout-panel {
                         max-height: calc(100dvh - 1.5rem);
@@ -2293,7 +2384,7 @@
         if (layoutModeEnabled) {
             layoutPanel.hidden = false;
             wireLayoutInputs();
-            refreshLayoutUi();
+            setLayoutEditorEnabled(layoutEditorToggle.checked);
             notifyFirstPaintReady();
             return;
         }
