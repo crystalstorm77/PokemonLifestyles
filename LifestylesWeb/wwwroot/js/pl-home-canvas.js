@@ -911,9 +911,11 @@
                 field.hidden = isHidden;
             }
         });
+    }
 
+    function setLayoutColorFieldHidden(isHidden) {
         if (layoutColorField) {
-            layoutColorField.hidden = false;
+            layoutColorField.hidden = isHidden;
         }
     }
 
@@ -1028,7 +1030,7 @@
 
         layoutColorField = document.createElement("label");
         layoutColorField.className = "pl-field";
-        layoutColorField.hidden = false;
+        layoutColorField.hidden = true;
         layoutColorField.innerHTML = `
       <span class="pl-field-label">Shell background</span>
       <div class="pl-layout-range-with-number">
@@ -1318,7 +1320,7 @@
         layoutYValue.textContent = status.yStatus.text;
 
         if (layoutColorHint) {
-            layoutColorHint.textContent = "Outer shell/background around the canvas. Editing this will switch Asset to shell-background so Save Selected applies to it.";
+            layoutColorHint.textContent = "Available only in the App shell scene.";
         }
     }
 
@@ -1335,11 +1337,13 @@
         const assetKey = layoutAssetSelect.value;
 
         if (!assetKey) {
+            setLayoutColorFieldHidden(true);
             return;
         }
 
         if (isVariableAsset(assetKey)) {
             setGeometryFieldsHidden(true);
+            setLayoutColorFieldHidden(false);
             previewLayoutAsset("home-scene");
             applyAllAssetLayouts();
             syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
@@ -1350,6 +1354,7 @@
         }
 
         setGeometryFieldsHidden(false);
+        setLayoutColorFieldHidden(true);
         syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
 
         const state = getEffectiveLayoutState(assetKey);
