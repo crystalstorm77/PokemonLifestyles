@@ -4,226 +4,177 @@
     ViewData["Title"] = "Home";
 }
 
-<!-- SEGMENT A START — Home Screen + Focus Stage -->
-<div class="pl-screen pl-home-screen"
-     id="pl-home-root"
-     data-reward-xp-per-minute="@Model.RewardPreviewFocusXpPerMinute"
-     data-reward-incomplete-multiplier="@Model.RewardPreviewIncompleteMultiplier"
-     data-reward-sleep-multiplier="@Model.RewardPreviewSleepMultiplier"
-     data-reward-window-eligible="@Model.RewardWindowEligible.ToString().ToLowerInvariant()"
-     data-show-reward-overlay="@Model.ShowRewardOverlay.ToString().ToLowerInvariant()"
-     data-reward-focus-type="@Model.RewardFocusType"
-     data-reward-duration="@Model.FormatDuration(Model.RewardDurationSeconds)"
-     data-reward-completed="@Model.RewardCompleted.ToString().ToLowerInvariant()"
-     data-reward-xp="@Model.RewardXp"
-     data-reward-coins="@Model.RewardCoins">
-    <section class="pl-home-card">
-        <p class="pl-eyebrow">Pokemon Lifestyles</p>
-        <h1 class="pl-title">Home</h1>
-        <p class="pl-subtitle">
-            Focus now opens as an overlay on this screen instead of navigating away to a separate page.
-            We are still building functionality first and art second.
-        </p>
+<!-- SEGMENT A START — Home Canvas Markup -->
+<div class="pl-home-stage-shell" id="pl-home-stage-shell">
+    <div class="pl-home-stage" id="pl-home-stage">
+        <div class="pl-screen pl-home-screen"
+             id="pl-home-root"
+             data-reward-xp-per-minute="@Model.RewardPreviewFocusXpPerMinute"
+             data-reward-incomplete-multiplier="@Model.RewardPreviewIncompleteMultiplier"
+             data-reward-sleep-multiplier="@Model.RewardPreviewSleepMultiplier"
+             data-reward-window-eligible="@Model.RewardWindowEligible.ToString().ToLowerInvariant()"
+             data-show-reward-overlay="@Model.ShowRewardOverlay.ToString().ToLowerInvariant()"
+             data-reward-focus-type="@Model.RewardFocusType"
+             data-reward-duration="@Model.FormatDuration(Model.RewardDurationSeconds)"
+             data-reward-completed="@Model.RewardCompleted.ToString().ToLowerInvariant()"
+             data-reward-xp="@Model.RewardXp"
+             data-reward-coins="@Model.RewardCoins">
 
-        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-        {
-            <div class="pl-success-banner">@Model.StatusMessage</div>
-        }
-    </section>
-
-    <section class="pl-dev-card">
-        <h2 class="pl-section-title">Saved sessions for this game day</h2>
-        <p class="pl-section-note">
-            Temporary debug view while we build the real overlay flow.
-        </p>
-
-        <div class="pl-info-note">
-            <strong>Shared data file</strong>
-            <span class="pl-code-path">@Model.DataFilePath</span>
-        </div>
-
-        @if (Model.Sessions.Count == 0)
-        {
-            <p class="pl-empty-state">No sessions saved yet for this game day.</p>
-        }
-        else
-        {
-            <div class="pl-session-list">
-                @foreach (var session in Model.Sessions)
-                {
-                    <article class="pl-session-item">
-                        <div class="pl-session-top">
-                            <strong class="pl-session-type">@session.FocusType</strong>
-                            <span class="pl-session-minutes">@Model.FormatDuration(session.DurationSeconds)</span>
-                        </div>
-
-                        <div class="pl-session-meta">
-                            <span>@session.LoggedAtUtc.ToLocalTime().ToString("ddd d MMM, h:mm tt")</span>
-                            <span>@(session.Completed ? "Completed" : "Incomplete")</span>
-                        </div>
-                    </article>
-                }
+            <div class="pl-world-stage-shell" id="pl-world-stage-shell" aria-hidden="true">
+                <div class="pl-world-stage" id="pl-world-stage">
+                    <div class="pl-canvas-item pl-home-scene-art" id="pl-home-scene-art" aria-hidden="true"></div>
+                </div>
             </div>
-        }
-    </section>
 
-    <nav class="pl-bottom-dock" aria-label="Main actions">
-        <button class="pl-dock-button pl-dock-button-active" type="button" id="pl-open-focus-button">
-            <span class="pl-dock-label">Focus</span>
-        </button>
+            <div class="pl-safe-zone-outline" id="pl-safe-zone-outline" hidden aria-hidden="true"></div>
 
-        <button class="pl-dock-button" type="button" disabled>
-            <span class="pl-dock-label">Sleep</span>
-            <span class="pl-dock-note">Later</span>
-        </button>
-    </nav>
+            <div class="pl-safe-ui-stage-shell" id="pl-safe-ui-stage-shell">
+                <div class="pl-safe-ui-stage" id="pl-safe-ui-stage">
+                    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+                    {
+                        <div class="pl-status-toast">@Model.StatusMessage</div>
+                    }
 
-    <div class="pl-focus-overlay" id="pl-focus-overlay" hidden aria-hidden="true">
-        <div class="pl-focus-overlay-backdrop"></div>
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-home-focus"
+                            id="pl-home-focus-button">
+                        <span class="pl-button-label">Focus</span>
+                    </button>
 
-        <div class="pl-focus-stage-shell" id="pl-focus-stage-shell">
-            <div class="pl-focus-stage" id="pl-focus-stage">
-                <div class="pl-stage-scene-art" aria-hidden="true"></div>
-                <div class="pl-stage-shell-art" aria-hidden="true"></div>
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-home-sleep"
+                            id="pl-home-sleep-button"
+                            disabled>
+                        <span class="pl-button-label">Sleep</span>
+                    </button>
 
-                <section class="pl-stage-layer" id="pl-stage-layer-setup">
-                    <div class="pl-stage-panel pl-stage-panel-setup">
-                        <div class="pl-stage-header">
-                            <button type="button" class="pl-link-button" id="pl-focus-back-link">← Back</button>
-                            <span class="pl-badge">Countdown</span>
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-setup" id="pl-setup-panel" hidden>
+                        <div class="pl-setup-copy">
+                            <div class="pl-panel-header">
+                                <span class="pl-eyebrow" style="margin:0;">Focus Session</span>
+                                <span class="pl-badge">Countdown</span>
+                            </div>
+
+                            <h2 class="pl-title" style="margin-top:0.55rem;">Stay with it</h2>
+                            <p class="pl-subtitle">
+                                This panel sits on the real home screen. It is not a second screen.
+                            </p>
                         </div>
 
-                        <p class="pl-eyebrow">Focus Session</p>
-                        <h2 class="pl-title">Stay with it</h2>
-                        <p class="pl-subtitle">
-                            Focus behaves like an app-stage now, not a popup panel that owns the buttons.
-                        </p>
+                        <div class="pl-setup-controls" id="pl-setup-controls">
+                            <div class="pl-mode-grid">
+                                <button class="pl-mode-chip pl-mode-chip-active" type="button">
+                                    <span>Countdown</span>
+                                    <small>Ready now</small>
+                                </button>
 
-                        <div class="pl-mode-grid">
-                            <button class="pl-mode-chip pl-mode-chip-active" type="button">
-                                <span>Countdown</span>
-                                <small>Ready now</small>
-                            </button>
-
-                            <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
-                                <span>Count Up</span>
-                                <small>Later</small>
-                            </button>
-                        </div>
-
-                        <label class="pl-field">
-                            <span class="pl-field-label">Focus type</span>
-                            <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
-                        </label>
-
-                        <div class="pl-field">
-                            <span class="pl-field-label">Countdown length</span>
-
-                            <div class="pl-duration-card">
-                                <strong class="pl-duration-readout" id="pl-duration-readout">5 minutes</strong>
-
-                                <input class="pl-slider"
-                                       id="pl-duration-slider"
-                                       type="range"
-                                       min="5"
-                                       max="120"
-                                       step="1"
-                                       value="5" />
-
-                                <div class="pl-slider-scale">
-                                    <span>5 min</span>
-                                    <span>2 hr</span>
-                                </div>
+                                <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
+                                    <span>Count Up</span>
+                                    <small>Later</small>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" class="pl-stage-button pl-stage-button-start" id="pl-start-focus-button">
+                    <label class="pl-canvas-item pl-canvas-form-field" id="pl-focus-type-field" hidden>
+                        <span class="pl-field-label">Focus type</span>
+                        <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="Focus" />
+                    </label>
+
+                    <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>5 minutes</div>
+
+                    <div class="pl-canvas-item pl-slider-group" id="pl-slider-group" hidden>
+                        <div class="pl-slider-track-shell" id="pl-slider-track-shell">
+                            <div class="pl-slider-track-empty-art" id="pl-slider-track-empty-art" aria-hidden="true"></div>
+                        </div>
+
+                        <div class="pl-slider-fill-shell" id="pl-slider-fill-shell">
+                            <div class="pl-slider-fill-art" id="pl-slider-fill-art" aria-hidden="true"></div>
+                        </div>
+
+                        <div class="pl-slider-nib-visual" id="pl-slider-nib-visual" aria-hidden="true"></div>
+
+                        <input class="pl-slider-input-overlay"
+                               id="pl-duration-slider"
+                               type="range"
+                               min="5"
+                               max="120"
+                               step="1"
+                               value="5"
+                               aria-label="Countdown length" />
+                    </div>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
+                            id="pl-start-focus-button"
+                            hidden>
                         <span class="pl-button-label">Start</span>
                     </button>
 
-                    <button type="button" class="pl-stage-button pl-stage-button-back" id="pl-close-focus-button">
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-back"
+                            id="pl-close-focus-button"
+                            hidden>
                         <span class="pl-button-label">Back</span>
                     </button>
-                </section>
 
-                <section class="pl-stage-layer" id="pl-stage-layer-run" hidden>
-                    <div class="pl-stage-panel pl-stage-panel-run">
-                        <div class="pl-stage-header">
-                            <button type="button" class="pl-link-button" id="pl-run-home-link">← Home</button>
-                            <span class="pl-badge">Countdown</span>
-                        </div>
-
-                        <p class="pl-eyebrow">Focus Session</p>
-                        <h2 class="pl-title">Stay with it</h2>
-                        <p class="pl-subtitle">
-                            Settings are locked while the session is active.
-                        </p>
-
-                        <div class="pl-run-meta-grid">
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Focus type</span>
-                                <strong class="pl-run-value" id="pl-run-focus-type">Focus</strong>
-                            </div>
-
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Target</span>
-                                <strong class="pl-run-value" id="pl-run-target">5 minutes</strong>
-                            </div>
-                        </div>
-
-                        <div class="pl-run-timer-shell">
-                            <div class="pl-run-timer-caption" id="pl-run-state-label">Time remaining</div>
-                            <div class="pl-run-timer" id="pl-run-readout">00:05:00</div>
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-run" id="pl-run-panel" hidden>
+                        <div class="pl-run-card">
+                            <div class="pl-run-caption" id="pl-run-state-label">Time remaining</div>
+                            <div class="pl-run-readout" id="pl-run-readout">00:05:00</div>
                             <div class="pl-run-support">
                                 Elapsed:
                                 <span id="pl-run-elapsed">00:00:00</span>
                             </div>
-                        </div>
 
-                        <div class="pl-progress-track" aria-hidden="true">
-                            <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
-                        </div>
+                            <div class="pl-progress-track" aria-hidden="true">
+                                <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
+                            </div>
 
-                        <p class="pl-field-hint" id="pl-run-note">
-                            Cancel before 1 minute to discard this session with no save.
-                        </p>
+                            <p class="pl-run-note" id="pl-run-note">
+                                Cancel before 1 minute to discard this session with no save.
+                            </p>
+                        </div>
                     </div>
 
-                    <button type="button" class="pl-stage-button pl-stage-button-pause" id="pl-pause-button">
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-pause"
+                            id="pl-pause-button"
+                            hidden>
                         <span class="pl-button-label">Pause</span>
                     </button>
 
-                    <button type="button" class="pl-stage-button pl-stage-button-exit" id="pl-exit-button">
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-exit"
+                            id="pl-exit-button"
+                            hidden>
                         <span class="pl-button-label">Cancel</span>
                     </button>
-                </section>
 
-                <section class="pl-stage-layer" id="pl-stage-layer-confirm" hidden>
-                    <div class="pl-stage-modal-dim"></div>
+                    <div class="pl-panel-dim pl-canvas-item" id="pl-confirm-dim" hidden></div>
 
-                    <div class="pl-stage-panel pl-stage-panel-confirm">
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-confirm" id="pl-confirm-panel" hidden>
                         <p class="pl-eyebrow">Stop Focusing</p>
                         <h2 class="pl-section-title">Are you sure?</h2>
                         <p class="pl-subtitle">
                             Session will be marked <strong>incomplete</strong>.
                         </p>
 
-                        <div class="pl-run-meta-grid">
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Current elapsed</span>
-                                <strong class="pl-run-value" id="pl-confirm-current-time">00:00:00</strong>
+                        <div class="pl-grid-two">
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Current elapsed</span>
+                                <strong class="pl-info-value" id="pl-confirm-current-time">00:00:00</strong>
                             </div>
 
-                            <div class="pl-run-meta-card">
-                                <span class="pl-run-label">Timer status</span>
-                                <strong class="pl-run-value" id="pl-confirm-timer-status">Still counting down</strong>
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Timer status</span>
+                                <strong class="pl-info-value" id="pl-confirm-timer-status">Still counting down</strong>
                             </div>
                         </div>
 
-                        <div class="pl-reward-compare-grid">
-                            <div class="pl-reward-compare-card">
-                                <span class="pl-run-label">If complete</span>
+                        <div class="pl-grid-two">
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">If complete</span>
 
                                 <div class="pl-reward-row">
                                     <span>XP</span>
@@ -236,8 +187,8 @@
                                 </div>
                             </div>
 
-                            <div class="pl-reward-compare-card">
-                                <span class="pl-run-label">Current</span>
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Current</span>
 
                                 <div class="pl-reward-row">
                                     <span>XP</span>
@@ -252,19 +203,23 @@
                         </div>
                     </div>
 
-                    <button type="button" class="pl-stage-button pl-stage-button-keep-going" id="pl-confirm-keep-going">
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-keep-going"
+                            id="pl-confirm-keep-going"
+                            hidden>
                         <span class="pl-button-label">Keep Going</span>
                     </button>
 
-                    <button type="button" class="pl-stage-button pl-stage-button-stop" id="pl-confirm-stop">
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-stop"
+                            id="pl-confirm-stop"
+                            hidden>
                         <span class="pl-button-label">Stop Focusing</span>
                     </button>
-                </section>
 
-                <section class="pl-stage-layer" id="pl-stage-layer-reward" hidden>
-                    <div class="pl-stage-modal-dim"></div>
+                    <div class="pl-panel-dim pl-canvas-item" id="pl-reward-dim" hidden></div>
 
-                    <div class="pl-stage-panel pl-stage-panel-reward">
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-reward" id="pl-reward-panel" hidden>
                         <p class="pl-eyebrow">Rewards</p>
                         <h2 class="pl-section-title">Rewards</h2>
                         <p class="pl-subtitle">
@@ -274,93 +229,123 @@
                             <strong id="pl-reward-duration-text">00:00:00</strong>.
                         </p>
 
-                        <div class="pl-reward-summary-grid">
-                            <div class="pl-reward-summary-card">
-                                <span class="pl-run-label">XP</span>
+                        <div class="pl-grid-two">
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">XP</span>
                                 <strong class="pl-reward-value-large" id="pl-reward-xp">0</strong>
                             </div>
 
-                            <div class="pl-reward-summary-card">
-                                <span class="pl-run-label">Coins</span>
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Coins</span>
                                 <strong class="pl-reward-value-large" id="pl-reward-coins">0</strong>
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" class="pl-stage-button pl-stage-button-gotcha" id="pl-reward-close-button">
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-gotcha"
+                            id="pl-reward-close-button"
+                            hidden>
                         <span class="pl-button-label">Gotcha!</span>
                     </button>
-                </section>
+                </div>
             </div>
         </div>
     </div>
-
-    <aside class="pl-layout-panel" id="pl-layout-panel" hidden aria-label="Layout mode panel">
-        <div class="pl-layout-panel-header">
-            <strong>Layout Mode</strong>
-            <span>Stage-relative</span>
-        </div>
-
-        <label class="pl-field">
-            <span class="pl-field-label">Asset</span>
-            <select class="pl-input" id="pl-layout-asset-select">
-                <option value="start">start</option>
-                <option value="back">back</option>
-                <option value="pause">pause</option>
-                <option value="exit">exit</option>
-                <option value="keep-going">keep-going</option>
-                <option value="stop">stop</option>
-                <option value="gotcha">gotcha</option>
-            </select>
-        </label>
-
-        <label class="pl-field">
-            <span class="pl-field-label">Scale</span>
-            <input class="pl-input" id="pl-layout-scale" type="range" min="20" max="250" step="1" value="100" />
-            <span class="pl-field-hint" id="pl-layout-scale-value">100%</span>
-        </label>
-
-        <label class="pl-field">
-            <span class="pl-field-label">X (px)</span>
-            <input class="pl-input" id="pl-layout-x" type="range" min="-300" max="700" step="1" value="0" />
-            <span class="pl-field-hint" id="pl-layout-x-value">0 px</span>
-        </label>
-
-        <label class="pl-field">
-            <span class="pl-field-label">Y (px)</span>
-            <input class="pl-input" id="pl-layout-y" type="range" min="-300" max="1200" step="1" value="0" />
-            <span class="pl-field-hint" id="pl-layout-y-value">0 px</span>
-        </label>
-
-        <label class="pl-field">
-            <span class="pl-field-label">Width (px)</span>
-            <input class="pl-input" id="pl-layout-width" type="number" min="20" max="700" step="1" value="170" />
-        </label>
-
-        <label class="pl-field">
-            <span class="pl-field-label">Height (px)</span>
-            <input class="pl-input" id="pl-layout-height" type="number" min="20" max="700" step="1" value="56" />
-        </label>
-
-        <div class="pl-layout-actions">
-            <button type="button" class="pl-secondary-button" id="pl-layout-reset-selected">Reset Selected</button>
-            <button type="button" class="pl-secondary-button" id="pl-layout-reset-all">Reset All</button>
-        </div>
-
-        <label class="pl-field">
-            <span class="pl-field-label">Copy back into art-skin.css</span>
-            <textarea class="pl-input pl-layout-code" id="pl-layout-code" readonly></textarea>
-        </label>
-    </aside>
-
-    <form method="post" asp-page-handler="SaveFocus" id="pl-save-form">
-        <input type="hidden" asp-for="Input.FocusType" id="pl-save-focus-type" value="Focus" />
-        <input type="hidden" asp-for="Input.PlannedDurationSeconds" id="pl-save-planned-seconds" value="300" />
-        <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-save-elapsed-seconds" value="0" />
-        <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
-    </form>
 </div>
-<!-- SEGMENT A END — Home Screen + Focus Stage -->
+
+<aside class="pl-layout-panel" id="pl-layout-panel" hidden aria-label="Layout mode panel">
+    <div class="pl-layout-header">
+        <strong>Layout Mode</strong>
+        <span id="pl-layout-scene-name">Home</span>
+    </div>
+
+    <div class="pl-layout-status-stack">
+        <span class="pl-field-hint" id="pl-layout-stage-status">Safe UI layer</span>
+        <span class="pl-field-hint" id="pl-layout-safe-zone-status">Inside safe zone.</span>
+    </div>
+
+    <label class="pl-field">
+        <span class="pl-field-label">Scene</span>
+        <select class="pl-input" id="pl-layout-scene-select">
+            <option value="home">Home</option>
+            <option value="focus-setup">Focus setup</option>
+            <option value="focus-running">Focus running</option>
+            <option value="stop-confirm">Stop confirm</option>
+            <option value="reward">Reward</option>
+            <option value="app-shell">App shell</option>
+        </select>
+    </label>
+
+    <label class="pl-field">
+        <span class="pl-field-label">Asset</span>
+        <select class="pl-input" id="pl-layout-asset-select">
+            <option value="home-scene">home-scene</option>
+            <option value="home-focus">home-focus</option>
+            <option value="home-sleep">home-sleep</option>
+        </select>
+    </label>
+
+    <label class="pl-field">
+        <span class="pl-field-label">Scale</span>
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-scale" type="range" min="20" max="250" step="1" value="100" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-scale-number" type="number" min="20" max="250" step="1" value="100" />
+        </div>
+        <span class="pl-field-hint" id="pl-layout-scale-value">100%</span>
+    </label>
+
+    <label class="pl-field">
+        <span class="pl-field-label">X (px)</span>
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-x" type="range" min="-300" max="700" step="1" value="0" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-x-number" type="number" min="-300" max="700" step="1" value="0" />
+        </div>
+        <span class="pl-field-hint" id="pl-layout-x-value">0 px (inside safe zone)</span>
+    </label>
+
+    <label class="pl-field">
+        <span class="pl-field-label">Y (px)</span>
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-y" type="range" min="-300" max="1200" step="1" value="0" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-y-number" type="number" min="-300" max="1200" step="1" value="0" />
+        </div>
+        <span class="pl-field-hint" id="pl-layout-y-value">0 px (inside safe zone)</span>
+    </label>
+
+    <label class="pl-field">
+        <span class="pl-field-label">Width (px)</span>
+        <input class="pl-input" id="pl-layout-width" type="number" min="20" max="700" step="1" value="170" />
+    </label>
+
+    <label class="pl-field">
+        <span class="pl-field-label" id="pl-layout-height-label">Height (px)</span>
+        <input class="pl-input" id="pl-layout-height" type="number" min="20" max="1200" step="1" value="56" />
+        <span class="pl-field-hint" id="pl-layout-height-hint"></span>
+    </label>
+
+    <div class="pl-layout-actions">
+        <button type="button" class="pl-home-action-button" id="pl-layout-save-selected">Save Selected</button>
+        <button type="button" class="pl-home-action-button" id="pl-layout-revert-selected">Revert Selected</button>
+        <button type="button" class="pl-home-action-button" id="pl-layout-reset-selected">Reset Selected</button>
+        <button type="button" class="pl-home-action-button" id="pl-layout-reset-all">Reset All</button>
+    </div>
+
+    <label class="pl-field">
+        <span class="pl-field-label">Copy back into art-skin.css</span>
+        <textarea class="pl-input pl-layout-code" id="pl-layout-code" readonly></textarea>
+    </label>
+</aside>
+
+<form method="post" asp-page-handler="SaveFocus" id="pl-save-form">
+    <input type="hidden" asp-for="Input.FocusType" id="pl-save-focus-type" value="Focus" />
+    <input type="hidden" asp-for="Input.PlannedDurationSeconds" id="pl-save-planned-seconds" value="300" />
+    <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-save-elapsed-seconds" value="0" />
+    <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
+</form>
+<script src="~/js/pl-home-stage.js" asp-append-version="true"></script>
+<script src="~/js/pl-viewport-debug.js" asp-append-version="true"></script>
+<!-- SEGMENT A END — Home Canvas Markup -->
 <!-- SEGMENT B START — Focus Stage Scripts -->
 @section Scripts {
     <script>

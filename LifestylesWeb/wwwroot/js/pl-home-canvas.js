@@ -722,6 +722,35 @@
     const layoutColorAssetLabel = "shell-background";
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    const layoutSceneSelect = document.getElementById("pl-layout-scene-select");
+    const layoutSceneName = document.getElementById("pl-layout-scene-name");
+    const defaultLayoutSceneKey = "home";
+    const layoutSceneDefinitions = {
+        "home": {
+            label: "Home",
+            assets: ["home-scene", "home-focus", "home-sleep"]
+        },
+        "focus-setup": {
+            label: "Focus setup",
+            assets: ["setup-panel", "focus-type-field", "duration-text", "slider", "start", "back"]
+        },
+        "focus-running": {
+            label: "Focus running",
+            assets: ["run-panel", "pause", "exit"]
+        },
+        "stop-confirm": {
+            label: "Stop confirm",
+            assets: ["confirm-panel", "keep-going", "stop"]
+        },
+        "reward": {
+            label: "Reward",
+            assets: ["reward-panel", "gotcha"]
+        },
+        "app-shell": {
+            label: "App shell",
+            assets: [layoutColorAssetKey]
+        }
+    };
 
     const layoutAssetField = layoutAssetSelect.closest(".pl-field");
     const layoutScaleField = layoutScale.closest(".pl-field");
@@ -888,12 +917,93 @@
         }
     }
 
+    function getLayoutSceneDefinition(sceneKey) {
+        return layoutSceneDefinitions[sceneKey] || layoutSceneDefinitions[defaultLayoutSceneKey];
+    }
+
+    function getLayoutSceneAssetKeys(sceneKey) {
+        return getLayoutSceneDefinition(sceneKey).assets.filter(function (assetKey) {
+            return isVariableAsset(assetKey) || !!layoutAssets[assetKey];
+        });
+    }
+
+    function findLayoutSceneKeyForAsset(assetKey) {
+        if (!assetKey) {
+            return defaultLayoutSceneKey;
+        }
+
+        const matchingSceneEntry = Object.entries(layoutSceneDefinitions).find(function ([, sceneDefinition]) {
+            return sceneDefinition.assets.includes(assetKey);
+        });
+
+        return matchingSceneEntry ? matchingSceneEntry[0] : defaultLayoutSceneKey;
+    }
+
+    function updateLayoutSceneHeader(sceneKey) {
+        if (!layoutSceneName) {
+            return;
+        }
+
+        layoutSceneName.textContent = getLayoutSceneDefinition(sceneKey).label;
+    }
+
+    function populateLayoutAssetSelectForScene(sceneKey, preferredAssetKey = null) {
+        if (!layoutAssetSelect) {
+            return "";
+        }
+
+        const assetKeys = getLayoutSceneAssetKeys(sceneKey);
+        const preservedAssetKey = assetKeys.includes(preferredAssetKey)
+            ? preferredAssetKey
+            : (assetKeys.includes(layoutAssetSelect.value) ? layoutAssetSelect.value : (assetKeys[0] || ""));
+
+        layoutAssetSelect.innerHTML = "";
+
+        assetKeys.forEach(function (assetKey) {
+            const option = document.createElement("option");
+            option.value = assetKey;
+            option.textContent = isVariableAsset(assetKey) ? layoutColorAssetLabel : assetKey;
+            layoutAssetSelect.appendChild(option);
+        });
+
+        layoutAssetSelect.disabled = assetKeys.length === 0;
+        layoutAssetSelect.value = preservedAssetKey;
+
+        return preservedAssetKey;
+    }
+
+    function setActiveLayoutScene(sceneKey, preferredAssetKey = null) {
+        const resolvedSceneKey = layoutSceneDefinitions[sceneKey]
+            ? sceneKey
+            : findLayoutSceneKeyForAsset(preferredAssetKey);
+
+        if (layoutSceneSelect) {
+            layoutSceneSelect.value = resolvedSceneKey;
+        }
+
+        updateLayoutSceneHeader(resolvedSceneKey);
+        return populateLayoutAssetSelectForScene(resolvedSceneKey, preferredAssetKey);
+    }
+
+    function initializeLayoutSceneControls() {
+        const initialAssetKey = layoutAssetSelect?.value || "home-scene";
+        const initialSceneKey = layoutSceneDefinitions[layoutSceneSelect?.value]
+            ? layoutSceneSelect.value
+            : findLayoutSceneKeyForAsset(initialAssetKey);
+
+        setActiveLayoutScene(initialSceneKey, initialAssetKey);
+    }
+
+    function selectLayoutAsset(assetKey) {
+        return setActiveLayoutScene(findLayoutSceneKeyForAsset(assetKey), assetKey);
+    }
+
     function ensureLayoutColorAssetSelected() {
         if (layoutAssetSelect.value === layoutColorAssetKey) {
             return;
         }
 
-        layoutAssetSelect.value = layoutColorAssetKey;
+        selectLayoutAsset(layoutColorAssetKey);
         handleLayoutAssetChange();
     }
 
@@ -911,18 +1021,6 @@
         if (!layoutAssetSelect) {
             return;
         }
-
-        let variableOption = [...layoutAssetSelect.options].find(function (option) {
-            return option.value === layoutColorAssetKey;
-        });
-
-        if (!variableOption) {
-            variableOption = document.createElement("option");
-            variableOption.value = layoutColorAssetKey;
-            layoutAssetSelect.insertBefore(variableOption, layoutAssetSelect.firstElementChild);
-        }
-
-        variableOption.textContent = layoutColorAssetLabel;
 
         if (layoutColorField) {
             return;
@@ -1232,8 +1330,13 @@
 
     function refreshLayoutUi() {
         ensureLayoutVariableControls();
+        updateLayoutSceneHeader(layoutSceneSelect?.value || defaultLayoutSceneKey);
 
         const assetKey = layoutAssetSelect.value;
+
+        if (!assetKey) {
+            return;
+        }
 
         if (isVariableAsset(assetKey)) {
             setGeometryFieldsHidden(true);
@@ -1405,6 +1508,20 @@
         refreshLayoutUi();
     }
 
+    function handleLayoutSceneChange() {
+        const newAssetKey = setActiveLayoutScene(layoutSceneSelect?.value || defaultLayoutSceneKey, layoutAssetSelect.value);
+
+        if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
+            discardCurrentDraft();
+        }
+
+        if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
+            discardVariableDraft();
+        }
+
+        refreshLayoutUi();
+    }
+
     function handleLayoutAssetChange() {
         const newAssetKey = layoutAssetSelect.value;
 
@@ -1470,6 +1587,12 @@
         }
 
         dragState = null;
+    }
+
+    initializeLayoutSceneControls();
+
+    if (layoutSceneSelect) {
+        layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
     }
 
     // SEGMENT B END — Home Canvas Layout
