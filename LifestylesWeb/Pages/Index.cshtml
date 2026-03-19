@@ -256,7 +256,7 @@
 <aside class="pl-layout-panel" id="pl-layout-panel" hidden aria-label="Layout mode panel">
     <div class="pl-layout-header">
         <strong>Layout Mode</strong>
-        <span>Home canvas</span>
+        <span id="pl-layout-scene-name">Home</span>
     </div>
 
     <div class="pl-layout-status-stack">
@@ -265,25 +265,23 @@
     </div>
 
     <label class="pl-field">
+        <span class="pl-field-label">Scene</span>
+        <select class="pl-input" id="pl-layout-scene-select">
+            <option value="home">Home</option>
+            <option value="focus-setup">Focus setup</option>
+            <option value="focus-running">Focus running</option>
+            <option value="stop-confirm">Stop confirm</option>
+            <option value="reward">Reward</option>
+            <option value="app-shell">App shell</option>
+        </select>
+    </label>
+
+    <label class="pl-field">
         <span class="pl-field-label">Asset</span>
         <select class="pl-input" id="pl-layout-asset-select">
             <option value="home-scene">home-scene</option>
             <option value="home-focus">home-focus</option>
             <option value="home-sleep">home-sleep</option>
-            <option value="setup-panel">setup-panel</option>
-            <option value="focus-type-field">focus-type-field</option>
-            <option value="duration-text">duration-text</option>
-            <option value="slider">slider</option>
-            <option value="start">start</option>
-            <option value="back">back</option>
-            <option value="run-panel">run-panel</option>
-            <option value="pause">pause</option>
-            <option value="exit">exit</option>
-            <option value="confirm-panel">confirm-panel</option>
-            <option value="keep-going">keep-going</option>
-            <option value="stop">stop</option>
-            <option value="reward-panel">reward-panel</option>
-            <option value="gotcha">gotcha</option>
         </select>
     </label>
 
