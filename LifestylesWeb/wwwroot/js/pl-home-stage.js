@@ -1,5 +1,5 @@
-﻿(function () {
-    // SEGMENT A1 — Home Stage Inputs + Safe Area Helpers START
+﻿// SEGMENT A START - Home Stage Layout Script
+(function () {
     const appShell = document.querySelector(".app-shell");
     const homeStageShell = document.getElementById("pl-home-stage-shell");
     const homeStage = document.getElementById("pl-home-stage");
@@ -359,10 +359,6 @@
         markStageReady();
     }, { once: true });
 
-
-
-    // SEGMENT A1 — Home Stage Inputs + Safe Area Helpers END
-    // SEGMENT A2 — Home Stage Runtime Frame Sampling START
     function readRuntimeViewport() {
         const visualViewport = window.visualViewport;
 
@@ -519,8 +515,6 @@
         standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
     }
 
-    // SEGMENT A2 — Home Stage Runtime Frame Sampling END
-    // SEGMENT A3 — Home Stage Layout + Initialization START
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
@@ -840,7 +834,5 @@
     } else {
         initializeHomeStageLayout();
     }
-
-
-    // SEGMENT A3 — Home Stage Layout + Initialization END
 })();
+// SEGMENT A END - Home Stage Layout Script

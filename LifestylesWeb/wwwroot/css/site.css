@@ -1,4 +1,4 @@
-/* SEGMENT A START — App Shell + Base */
+/* SEGMENT A START - App Shell + Base */
 @media all {
     html {
         font-size: 16px;
@@ -114,9 +114,9 @@
         overflow-wrap: anywhere;
     }
 }
-/* SEGMENT A END — App Shell + Base */
+/* SEGMENT A END - App Shell + Base */
 
-/* SEGMENT B START — Buttons + Inputs */
+/* SEGMENT B START - Buttons + Inputs */
 @media all {
     .pl-primary-button,
     .pl-secondary-button,
@@ -240,9 +240,9 @@
         font-weight: 700;
     }
 }
-/* SEGMENT B END — Buttons + Inputs */
+/* SEGMENT B END - Buttons + Inputs */
 
-/* SEGMENT C START — Home Dock + Session List */
+/* SEGMENT C START - Home Dock + Session List */
 @media all {
     .pl-bottom-dock {
         position: fixed;
@@ -336,9 +336,9 @@
         color: #6b7280;
     }
 }
-/* SEGMENT C END — Home Dock + Session List */
+/* SEGMENT C END - Home Dock + Session List */
 
-/* SEGMENT D START — Responsive Tweaks */
+/* SEGMENT D START - Responsive Tweaks */
 @media all {
     @media (min-width: 768px) {
         .pl-screen {
@@ -350,9 +350,9 @@
         }
     }
 }
-/* SEGMENT D END — Responsive Tweaks */
+/* SEGMENT D END - Responsive Tweaks */
 
-/* SEGMENT E1 START — Focus Home Scene + Overlay Shell */
+/* SEGMENT E1 START - Focus Home Scene + Overlay Shell */
 @media all {
     .pl-home-screen {
         padding-bottom: 7.5rem;
@@ -450,9 +450,9 @@
         margin-top: 1rem;
     }
 }
-/* SEGMENT E1 END — Focus Home Scene + Overlay Shell */
+/* SEGMENT E1 END - Focus Home Scene + Overlay Shell */
 
-/* SEGMENT E2 START — Focus Mode + Duration Controls */
+/* SEGMENT E2 START - Focus Mode + Duration Controls */
 @media all {
     .pl-mode-grid {
         display: grid;
@@ -525,9 +525,9 @@
         color: #64748b;
     }
 }
-/* SEGMENT E2 END — Focus Mode + Duration Controls */
+/* SEGMENT E2 END - Focus Mode + Duration Controls */
 
-/* SEGMENT E3 START — Focus Run Metrics + Progress */
+/* SEGMENT E3 START - Focus Run Metrics + Progress */
 @media all {
     .pl-run-meta-grid {
         display: grid;
@@ -622,9 +622,9 @@
             color: #991b1b;
         }
 }
-/* SEGMENT E3 END — Focus Run Metrics + Progress */
+/* SEGMENT E3 END - Focus Run Metrics + Progress */
 
-/* SEGMENT E4 START — Focus Run Overlay + Art Buttons */
+/* SEGMENT E4 START - Focus Run Overlay + Art Buttons */
 @media all {
     .pl-run-overlay {
         position: fixed;
@@ -748,9 +748,9 @@
         background-position: center center, center center !important;
     }
 }
-/* SEGMENT E4 END — Focus Run Overlay + Art Buttons */
+/* SEGMENT E4 END - Focus Run Overlay + Art Buttons */
 
-/* SEGMENT E5 START — Layout Selection + Reward Cards */
+/* SEGMENT E5 START - Layout Selection + Reward Cards */
 @media all {
     .pl-layout-selected {
         outline: 2px dashed #f59e0b;
@@ -809,9 +809,9 @@
         color: #111827;
     }
 }
-/* SEGMENT E5 END — Layout Selection + Reward Cards */
+/* SEGMENT E5 END - Layout Selection + Reward Cards */
 
-/* SEGMENT E6 START — Layout Panel + Mobile */
+/* SEGMENT E6 START - Layout Panel + Mobile */
 @media all {
     .pl-layout-panel {
         position: fixed;
@@ -864,4 +864,4 @@
         }
     }
 }
-/* SEGMENT E6 END — Layout Panel + Mobile */
+/* SEGMENT E6 END - Layout Panel + Mobile */

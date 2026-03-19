@@ -1,5 +1,5 @@
-﻿(function () {
-    // SEGMENT A1 — Home Canvas Element Cache + Early Exit START
+﻿// SEGMENT A START - Home Canvas Script
+(function () {
     const homeRoot = document.getElementById("pl-home-root");
     const worldStage = document.getElementById("pl-world-stage");
     const safeUiStage = document.getElementById("pl-safe-ui-stage");
@@ -184,8 +184,6 @@
     let completionTonePlayed = false;
     let dragState = null;
 
-    // SEGMENT A1 — Home Canvas Element Cache + Early Exit END
-    // SEGMENT A2 — Home Canvas Asset Defaults + Measurement Helpers START
     function readCssPxVar(varName, fallbackValue) {
         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
 
@@ -338,23 +336,29 @@
         return result;
     }
 
-    // SEGMENT A2 — Home Canvas Asset Defaults + Measurement Helpers END
-    // SEGMENT A3 — Home Canvas Layout Sync + Draft Helpers START
     async function loadSharedLayoutState() {
         try {
             const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
 
             if (!response.ok) {
                 sharedLayoutState = {};
+                sharedLayoutVariables = {};
+                applyLayoutVariables();
                 return;
             }
 
             const payload = await response.json();
             sharedLayoutState = normalizeLayoutItems(payload?.items ?? payload?.Items);
+            sharedLayoutVariables = normalizeLayoutVariables(payload?.variables ?? payload?.Variables);
         }
         catch {
             sharedLayoutState = {};
+            sharedLayoutVariables = {};
         }
+
+        currentVariableDraftKey = null;
+        currentVariableDraftValue = null;
+        applyLayoutVariables();
     }
 
     async function saveSharedLayoutState() {
@@ -364,7 +368,10 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ items: sharedLayoutState })
+                body: JSON.stringify({
+                    items: sharedLayoutState,
+                    variables: sharedLayoutVariables
+                })
             });
         }
         catch {
@@ -557,6 +564,21 @@
     async function saveSelectedLayoutAsset() {
         const assetKey = layoutAssetSelect.value;
 
+        if (isVariableAsset(assetKey)) {
+            if (currentVariableDraftKey !== "appEdgeColor" || !currentVariableDraftValue) {
+                return;
+            }
+
+            sharedLayoutVariables.appEdgeColor = currentVariableDraftValue;
+            currentVariableDraftKey = null;
+            currentVariableDraftValue = null;
+
+            await saveSharedLayoutState();
+            applyLayoutVariables();
+            refreshLayoutUi();
+            return;
+        }
+
         if (currentDraftAssetKey !== assetKey || !currentDraftState) {
             return;
         }
@@ -571,26 +593,49 @@
 
         currentDraftAssetKey = null;
         currentDraftState = null;
+
         await saveSharedLayoutState();
         applyAllAssetLayouts();
         refreshLayoutUi();
     }
 
     function revertSelectedLayoutAsset() {
+        const assetKey = layoutAssetSelect.value;
+
+        if (isVariableAsset(assetKey)) {
+            discardVariableDraft();
+            refreshLayoutUi();
+            return;
+        }
+
         discardCurrentDraft();
         refreshLayoutUi();
     }
 
     function resetSelectedLayoutAsset() {
-        beginDraftForSelected(getCssLayoutDefaults(layoutAssetSelect.value));
-        applyAssetLayout(layoutAssetSelect.value);
+        const assetKey = layoutAssetSelect.value;
+
+        if (isVariableAsset(assetKey)) {
+            beginVariableDraft("appEdgeColor", getCssLayoutVariableDefaults().appEdgeColor);
+            syncLayoutColorInputs(currentVariableDraftValue);
+            updateLayoutCodePreview(assetKey);
+            updateLayoutStatusDisplay(assetKey);
+            return;
+        }
+
+        beginDraftForSelected(getCssLayoutDefaults(assetKey));
+        applyAssetLayout(assetKey);
         refreshLayoutUi();
     }
 
     async function resetAllLayoutAssets() {
         sharedLayoutState = {};
+        sharedLayoutVariables = {};
         currentDraftAssetKey = null;
         currentDraftState = null;
+        currentVariableDraftKey = null;
+        currentVariableDraftValue = null;
+
         await saveSharedLayoutState();
         applyAllAssetLayouts();
         refreshLayoutUi();
@@ -720,12 +765,6 @@
         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
     }
 
-
-
-
-
-    // SEGMENT A3 — Home Canvas Layout Sync + Draft Helpers END
-    // SEGMENT B1 — Home Canvas Scene + Variable Controls START
     const layoutColorAssetKey = "app-edge-color";
     const layoutColorAssetLabel = "shell-background";
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
@@ -1027,8 +1066,6 @@
         updateLayoutStatusDisplay(layoutColorAssetKey);
     }
 
-    // SEGMENT B1 — Home Canvas Scene + Variable Controls END
-    // SEGMENT B2 — Home Canvas Layout Variable Editors START
     function ensureLayoutVariableControls() {
         if (!layoutAssetSelect) {
             return;
@@ -1078,50 +1115,6 @@
         });
     }
 
-    async function loadSharedLayoutState() {
-        try {
-            const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
-
-            if (!response.ok) {
-                sharedLayoutState = {};
-                sharedLayoutVariables = {};
-                applyLayoutVariables();
-                return;
-            }
-
-            const payload = await response.json();
-            sharedLayoutState = normalizeLayoutItems(payload?.items ?? payload?.Items);
-            sharedLayoutVariables = normalizeLayoutVariables(payload?.variables ?? payload?.Variables);
-        }
-        catch {
-            sharedLayoutState = {};
-            sharedLayoutVariables = {};
-        }
-
-        currentVariableDraftKey = null;
-        currentVariableDraftValue = null;
-        applyLayoutVariables();
-    }
-
-    async function saveSharedLayoutState() {
-        try {
-            await fetch(layoutSyncWriteUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    items: sharedLayoutState,
-                    variables: sharedLayoutVariables
-                })
-            });
-        }
-        catch {
-        }
-    }
-
-    // SEGMENT B2 — Home Canvas Layout Variable Editors END
-    // SEGMENT B3 — Home Canvas Layout Rendering + Status START
     function updateSliderVisuals() {
         const state = getEffectiveLayoutState("slider");
         const authorWidth = Math.max(20, state.width * (state.scale / 100));
@@ -1265,9 +1258,7 @@
     function updateLayoutCodePreview(assetKey) {
         if (isVariableAsset(assetKey)) {
             layoutCode.value =
-                `:root {
-  --pl-art-app-edge-color: ${getEffectiveLayoutVariable("appEdgeColor")};
-}`;
+                `:root {\n  --pl-art-app-edge-color: ${getEffectiveLayoutVariable("appEdgeColor")};\n}`;
             return;
         }
 
@@ -1277,25 +1268,12 @@
 
         if (ratioLocked) {
             layoutCode.value =
-                `.pl-home-screen {
-  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
-}
-
-/* Height auto from asset ratio: ${resolvedHeight}px */`;
+                `.pl-home-screen {\n  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;\n  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;\n  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;\n  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};\n}\n\n/* Height auto from asset ratio: ${resolvedHeight}px */`;
             return;
         }
 
         layoutCode.value =
-            `.pl-home-screen {
-  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;
-  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;
-  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;
-  --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;
-  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};
-}`;
+            `.pl-home-screen {\n  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;\n  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;\n  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;\n  --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;\n  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};\n}`;
     }
 
     function updateLayoutStatusDisplay(assetKey) {
@@ -1457,8 +1435,6 @@
         refreshLayoutSelection();
     }
 
-    // SEGMENT B3 — Home Canvas Layout Rendering + Status END
-    // SEGMENT B4 — Home Canvas Layout Actions + Dragging START
     function buildPartialStateFromControls() {
         const assetKey = layoutAssetSelect.value;
 
@@ -1505,86 +1481,6 @@
         updateLayoutCodePreview(layoutAssetSelect.value);
         updateLayoutStatusDisplay(layoutAssetSelect.value);
         refreshLayoutSelection();
-    }
-
-    async function saveSelectedLayoutAsset() {
-        const assetKey = layoutAssetSelect.value;
-
-        if (isVariableAsset(assetKey)) {
-            if (currentVariableDraftKey !== "appEdgeColor" || !currentVariableDraftValue) {
-                return;
-            }
-
-            sharedLayoutVariables.appEdgeColor = currentVariableDraftValue;
-            currentVariableDraftKey = null;
-            currentVariableDraftValue = null;
-
-            await saveSharedLayoutState();
-            applyLayoutVariables();
-            refreshLayoutUi();
-            return;
-        }
-
-        if (currentDraftAssetKey !== assetKey || !currentDraftState) {
-            return;
-        }
-
-        sharedLayoutState[assetKey] = {
-            x: currentDraftState.x,
-            y: currentDraftState.y,
-            width: currentDraftState.width,
-            height: currentDraftState.height,
-            scale: currentDraftState.scale
-        };
-
-        currentDraftAssetKey = null;
-        currentDraftState = null;
-
-        await saveSharedLayoutState();
-        applyAllAssetLayouts();
-        refreshLayoutUi();
-    }
-
-    function revertSelectedLayoutAsset() {
-        const assetKey = layoutAssetSelect.value;
-
-        if (isVariableAsset(assetKey)) {
-            discardVariableDraft();
-            refreshLayoutUi();
-            return;
-        }
-
-        discardCurrentDraft();
-        refreshLayoutUi();
-    }
-
-    function resetSelectedLayoutAsset() {
-        const assetKey = layoutAssetSelect.value;
-
-        if (isVariableAsset(assetKey)) {
-            beginVariableDraft("appEdgeColor", getCssLayoutVariableDefaults().appEdgeColor);
-            syncLayoutColorInputs(currentVariableDraftValue);
-            updateLayoutCodePreview(assetKey);
-            updateLayoutStatusDisplay(assetKey);
-            return;
-        }
-
-        beginDraftForSelected(getCssLayoutDefaults(assetKey));
-        applyAssetLayout(assetKey);
-        refreshLayoutUi();
-    }
-
-    async function resetAllLayoutAssets() {
-        sharedLayoutState = {};
-        sharedLayoutVariables = {};
-        currentDraftAssetKey = null;
-        currentDraftState = null;
-        currentVariableDraftKey = null;
-        currentVariableDraftValue = null;
-
-        await saveSharedLayoutState();
-        applyAllAssetLayouts();
-        refreshLayoutUi();
     }
 
     function handleLayoutSceneChange() {
@@ -1695,10 +1591,6 @@
         layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
     }
 
-
-
-    // SEGMENT B4 — Home Canvas Layout Actions + Dragging END
-    // SEGMENT C1 — Home Canvas View States + Reward Hydration START
     function setSetupChildrenVisible(isVisible) {
         focusTypeField.hidden = !isVisible;
         durationText.hidden = !isVisible;
@@ -1914,8 +1806,6 @@
         rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
     }
 
-    // SEGMENT C1 — Home Canvas View States + Reward Hydration END
-    // SEGMENT C2 — Home Canvas Runtime Save + Update Loop START
     function playCompletionTone() {
         if (completionTonePlayed) {
             return;
@@ -2158,8 +2048,6 @@
         }, true);
     });
 
-    // SEGMENT C2 — Home Canvas Runtime Save + Update Loop END
-    // SEGMENT C3 — Home Canvas Wiring + Initialization START
     function wireLayoutInputs() {
         const rangeToNumberPairs = [
             [layoutScale, layoutScaleNumber],
@@ -2404,5 +2292,5 @@
 
     initializeAsync();
     window.setInterval(updateUi, 250);
-    // SEGMENT C3 — Home Canvas Wiring + Initialization END
 })();
+// SEGMENT A END - Home Canvas Script

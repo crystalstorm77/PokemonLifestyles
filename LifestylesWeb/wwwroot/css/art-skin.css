@@ -1,4 +1,4 @@
-﻿/* SEGMENT A START — Asset Paths */
+﻿/* SEGMENT A START - Asset Paths */
 .pl-home-screen {
     --pl-home-scene-image: url('/assets/ui/backgrounds/home-scene.png');
     --pl-art-button-radius: 0.95rem;
@@ -31,9 +31,9 @@
     --pl-slider-nib-image: url('/assets/ui/buttons/slider-nib.png');
     --pl-slider-nib-fallback: none;
 }
-/* SEGMENT A END — Asset Paths */
+/* SEGMENT A END - Asset Paths */
 
-/* SEGMENT B START — Canvas Layout Defaults */
+/* SEGMENT B START - Canvas Layout Defaults */
 
 .pl-home-screen {
     --pl-layout-home-scene-x: 0px;
@@ -123,4 +123,4 @@
     --pl-layout-gotcha-scale: 100;
 }
 
-/* SEGMENT B END — Canvas Layout Defaults */
+/* SEGMENT B END - Canvas Layout Defaults */

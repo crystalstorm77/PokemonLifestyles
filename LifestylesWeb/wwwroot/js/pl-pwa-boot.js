@@ -1,5 +1,5 @@
-﻿(() => {
-    // SEGMENT A — PWA Boot START
+﻿// SEGMENT A START - PWA Boot
+(() => {
     function readPwaEnvironment() {
         const navigatorStandalone =
             typeof navigator !== "undefined" && navigator.standalone === true;
@@ -56,5 +56,5 @@
             standaloneMedia.addListener(applyPwaEnvironment);
         }
     }
-    // SEGMENT A — PWA Boot END
 })();
+// SEGMENT A END - PWA Boot

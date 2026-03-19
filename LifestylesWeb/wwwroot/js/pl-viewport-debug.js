@@ -1,5 +1,5 @@
-﻿(function () {
-    // SEGMENT A1 — Viewport Debug Bootstrap + Panel Creation START
+﻿// SEGMENT A START - Viewport Debug Script
+(function () {
     const searchParams = new URL(window.location.href).searchParams;
     const layoutModeEnabled = searchParams.get("layout") === "1";
 
@@ -222,8 +222,6 @@
         return panel;
     }
 
-    // SEGMENT A1 — Viewport Debug Bootstrap + Panel Creation END
-    // SEGMENT A2 — Viewport Debug Measurements + Layer Diagnostics START
     function parsePx(value) {
         const parsed = parseFloat(String(value || "").replace("px", "").trim());
         return Number.isFinite(parsed) ? parsed : 0;
@@ -345,7 +343,6 @@
             window.sessionStorage.setItem(layerToggleStorageKey, JSON.stringify(state));
         }
         catch {
-            // Ignore storage availability issues.
         }
     }
 
@@ -416,8 +413,7 @@
             }
         });
     }
-    // SEGMENT A2 — Viewport Debug Measurements + Layer Diagnostics END
-    // SEGMENT A3 — Viewport Debug Output + Initialization START
+
     function buildOutput() {
         const html = document.documentElement;
         const safeArea = readSafeAreaInsets();
@@ -554,7 +550,6 @@
             window.sessionStorage.setItem(collapsedStorageKey, collapsed ? "1" : "0");
         }
         catch {
-            // Ignore storage availability issues.
         }
     }
 
@@ -651,5 +646,5 @@
     else {
         init();
     }
-    // SEGMENT A3 — Viewport Debug Output + Initialization END
 })();
+// SEGMENT A END - Viewport Debug Script

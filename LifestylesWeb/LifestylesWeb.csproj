@@ -1,26 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <!-- SEGMENT A START — Core Build Settings -->
+  <!-- SEGMENT A START - Core Build Settings -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-  <!-- SEGMENT A END — Core Build Settings -->
+  <!-- SEGMENT A END - Core Build Settings -->
 
-  <!-- SEGMENT B START — Project References -->
+  <!-- SEGMENT B START - Project References -->
   <ItemGroup>
     <ProjectReference Include="..\LifestyleCore\LifestyleCore.csproj" />
   </ItemGroup>
-  <!-- SEGMENT B END — Project References -->
+  <!-- SEGMENT B END - Project References -->
 
-  <!-- SEGMENT C START — Scaffolded Asset Folders -->
+  <!-- SEGMENT C START - Scaffolded Asset Folders -->
   <ItemGroup>
     <Folder Include="wwwroot\Assets\UI\Backgrounds\" />
     <Folder Include="wwwroot\Assets\UI\Buttons\" />
     <Folder Include="wwwroot\Assets\UI\Icons\" />
     <Folder Include="wwwroot\Assets\UI\Panels\" />
   </ItemGroup>
-  <!-- SEGMENT C END — Scaffolded Asset Folders -->
+  <!-- SEGMENT C END - Scaffolded Asset Folders -->
 
 </Project>

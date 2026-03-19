@@ -1,6 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
-@* SEGMENT A START — Theme Bootstrap *@
+@* SEGMENT A START - Theme Bootstrap *@
 @{
     var shellThemeColor = "#01ff75";
 
@@ -57,9 +56,10 @@
     {
     }
 }
-@* SEGMENT A END — Theme Bootstrap *@
+@* SEGMENT A END - Theme Bootstrap *@
 
-@* SEGMENT B START — Layout Head *@
+@* SEGMENT B START - Full Layout Document *@
+<html lang="en">
 <head>
     <meta charset="utf-8" />
 
@@ -78,15 +78,15 @@
     <meta name="theme-color" content="@shellThemeColor" />
 
     <style>
-            :root {
-                --pl-art-app-edge-color: @shellThemeColor !important;
-            }
+        :root {
+            --pl-art-app-edge-color: @shellThemeColor !important;
+        }
 
-            html,
-            body,
-            .app-shell {
-                background-color: @shellThemeColor !important;
-            }
+        html,
+        body,
+        .app-shell {
+            background-color: @shellThemeColor !important;
+        }
     </style>
 
     <title>@ViewData["Title"] - Pokemon Lifestyles</title>
@@ -104,9 +104,6 @@
 
     <script src="~/js/pl-pwa-boot.js" asp-append-version="true"></script>
 </head>
-@* SEGMENT B END — Layout Head *@
-
-@* SEGMENT C START — Layout Body *@
 <body>
     <div class="app-shell">
         @RenderBody()
@@ -115,5 +112,5 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
-@* SEGMENT C END — Layout Body *@
 </html>
+@* SEGMENT B END - Full Layout Document *@
