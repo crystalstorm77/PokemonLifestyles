@@ -34,6 +34,9 @@
                         <div class="pl-status-toast">@Model.StatusMessage</div>
                     }
 
+                    <div class="pl-layout-component-outline" id="pl-layout-component-outline" hidden aria-hidden="true"></div>
+                    <div class="pl-layout-hit-outline" id="pl-layout-hit-outline" hidden aria-hidden="true"></div>
+
                     <button type="button"
                             class="pl-canvas-item pl-canvas-button pl-canvas-button-home-focus"
                             id="pl-home-focus-button">
@@ -297,6 +300,14 @@
     </label>
 
     <label class="pl-field">
+        <span class="pl-field-label">Component</span>
+        <select class="pl-input" id="pl-layout-component-select">
+            <option value="root">root</option>
+        </select>
+        <span class="pl-field-hint" id="pl-layout-component-status">Root controls the overall asset. Combined assets will expose additional components here.</span>
+    </label>
+
+    <label class="pl-field">
         <span class="pl-field-label">Scale</span>
         <div class="pl-layout-range-with-number">
             <input class="pl-input" id="pl-layout-scale" type="range" min="20" max="250" step="1" value="100" />
@@ -334,6 +345,15 @@
         <span class="pl-field-hint" id="pl-layout-height-hint"></span>
     </label>
 
+    <label class="pl-field" id="pl-layout-hit-scale-field" hidden>
+        <span class="pl-field-label">Interactable Area Scale</span>
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-hit-scale" type="range" min="100" max="200" step="1" value="100" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-number" type="number" min="100" max="200" step="1" value="100" />
+        </div>
+        <span class="pl-field-hint" id="pl-layout-hit-scale-status">100% = exact component bounds. 200% = double-size interactable area.</span>
+    </label>
+
     <div class="pl-layout-actions">
         <button type="button" class="pl-home-action-button" id="pl-layout-save-selected">Save Selected</button>
         <button type="button" class="pl-home-action-button" id="pl-layout-revert-selected">Revert Selected</button>
@@ -342,7 +362,7 @@
     </div>
 
     <label class="pl-field">
-        <span class="pl-field-label">Copy back into art-skin.css</span>
+        <span class="pl-field-label">Copy back into art-skin.css / layout-overrides.json</span>
         <textarea class="pl-input pl-layout-code" id="pl-layout-code" readonly></textarea>
     </label>
 </aside>

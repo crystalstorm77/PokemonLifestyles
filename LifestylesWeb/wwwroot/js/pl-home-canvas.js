@@ -1,4 +1,5 @@
-﻿// SEGMENT A START - Home Canvas Script
+﻿
+// SEGMENT A START - Home Canvas Script
 (function () {
     const homeRoot = document.getElementById("pl-home-root");
     const worldStage = document.getElementById("pl-world-stage");
@@ -68,6 +69,8 @@
     const layoutEditorToggle = document.getElementById("pl-layout-editor-enabled");
     const layoutEditorModeStatus = document.getElementById("pl-layout-editor-mode-status");
     const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
+    const layoutSceneSelect = document.getElementById("pl-layout-scene-select");
+    const layoutSceneName = document.getElementById("pl-layout-scene-name");
     const layoutStageStatus = document.getElementById("pl-layout-stage-status");
     const layoutSafeZoneStatus = document.getElementById("pl-layout-safe-zone-status");
 
@@ -105,10 +108,11 @@
         !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
         !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
         !saveElapsedSeconds || !saveMode || !layoutPanel || !layoutEditorToggle ||
-        !layoutEditorModeStatus || !layoutAssetSelect || !layoutStageStatus ||
-        !layoutSafeZoneStatus || !layoutScale || !layoutScaleNumber ||
-        !layoutX || !layoutXNumber || !layoutY || !layoutYNumber || !layoutWidth ||
-        !layoutHeight || !layoutScaleValue || !layoutXValue || !layoutYValue ||
+        !layoutEditorModeStatus || !layoutAssetSelect || !layoutSceneSelect ||
+        !layoutSceneName || !layoutStageStatus || !layoutSafeZoneStatus ||
+        !layoutScale || !layoutScaleNumber || !layoutX || !layoutXNumber ||
+        !layoutY || !layoutYNumber || !layoutWidth || !layoutHeight ||
+        !layoutScaleValue || !layoutXValue || !layoutYValue ||
         !layoutHeightLabel || !layoutHeightHint || !layoutSaveSelected ||
         !layoutRevertSelected || !layoutResetSelected || !layoutResetAll || !layoutCode) {
         return;
@@ -125,6 +129,11 @@
     const rewardSleepMultiplier = Math.max(1, parseFloat(homeRoot.dataset.rewardSleepMultiplier || "1") || 1);
     const rewardWindowEligible = String(homeRoot.dataset.rewardWindowEligible || "").toLowerCase() === "true";
     const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
+
+    const layoutColorAssetKey = "app-edge-color";
+    const layoutColorAssetLabel = "shell-background";
+    const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
     const artImageVars = {
         "home-scene": "--pl-home-scene-image",
@@ -146,23 +155,85 @@
     };
 
     const layoutAssets = {
-        "home-scene": { element: homeSceneArt, stage: "world" },
-        "home-focus": { element: homeFocusButton, stage: "ui" },
-        "home-sleep": { element: homeSleepButton, stage: "ui" },
-        "setup-panel": { element: setupPanel, stage: "ui" },
-        "focus-type-field": { element: focusTypeField, stage: "ui" },
-        "duration-text": { element: durationText, stage: "ui" },
-        "slider": { element: sliderGroup, stage: "ui" },
-        "start": { element: startFocusButton, stage: "ui" },
-        "back": { element: closeFocusButton, stage: "ui" },
-        "run-panel": { element: runPanel, stage: "ui" },
-        "pause": { element: pauseButton, stage: "ui" },
-        "exit": { element: exitButton, stage: "ui" },
-        "confirm-panel": { element: confirmPanel, stage: "ui" },
-        "keep-going": { element: confirmKeepGoingButton, stage: "ui" },
-        "stop": { element: confirmStopButton, stage: "ui" },
-        "reward-panel": { element: rewardPanel, stage: "ui" },
-        "gotcha": { element: rewardCloseButton, stage: "ui" }
+        "home-scene": { element: homeSceneArt, stage: "world", interactive: false },
+        "home-focus": { element: homeFocusButton, stage: "ui", interactive: true },
+        "home-sleep": { element: homeSleepButton, stage: "ui", interactive: true },
+        "setup-panel": { element: setupPanel, stage: "ui", interactive: false },
+        "focus-type-field": { element: focusTypeField, stage: "ui", interactive: false },
+        "duration-text": { element: durationText, stage: "ui", interactive: false },
+        "slider": { element: sliderGroup, stage: "ui", interactive: true, compound: true },
+        "start": { element: startFocusButton, stage: "ui", interactive: true },
+        "back": { element: closeFocusButton, stage: "ui", interactive: true },
+        "run-panel": { element: runPanel, stage: "ui", interactive: false },
+        "pause": { element: pauseButton, stage: "ui", interactive: true },
+        "exit": { element: exitButton, stage: "ui", interactive: true },
+        "confirm-panel": { element: confirmPanel, stage: "ui", interactive: false },
+        "keep-going": { element: confirmKeepGoingButton, stage: "ui", interactive: true },
+        "stop": { element: confirmStopButton, stage: "ui", interactive: true },
+        "reward-panel": { element: rewardPanel, stage: "ui", interactive: false },
+        "gotcha": { element: rewardCloseButton, stage: "ui", interactive: true }
+    };
+
+    const layoutSceneDefinitions = {
+        "home": {
+            label: "Home",
+            assets: ["home-scene", "home-focus", "home-sleep"]
+        },
+        "focus-setup": {
+            label: "Focus setup",
+            assets: ["setup-panel", "focus-type-field", "duration-text", "slider", "start", "back"]
+        },
+        "focus-running": {
+            label: "Focus running",
+            assets: ["run-panel", "pause", "exit"]
+        },
+        "stop-confirm": {
+            label: "Stop confirm",
+            assets: ["confirm-panel", "keep-going", "stop"]
+        },
+        "reward": {
+            label: "Reward",
+            assets: ["reward-panel", "gotcha"]
+        },
+        "app-shell": {
+            label: "App shell",
+            assets: [layoutColorAssetKey]
+        }
+    };
+
+    const assetComponentDefinitions = {
+        "slider": {
+            "root": {
+                label: "root",
+                geometryMode: "asset",
+                allowsHitScale: false,
+                status: "Controls the overall slider position, width, and scale."
+            },
+            "empty": {
+                label: "empty",
+                geometryMode: "component-scale",
+                allowsHitScale: false,
+                status: "Offsets the empty track art within the slider asset."
+            },
+            "fill": {
+                label: "fill",
+                geometryMode: "component-scale",
+                allowsHitScale: false,
+                status: "Offsets the full / filled track art within the slider asset."
+            },
+            "nib": {
+                label: "nib",
+                geometryMode: "component-scale",
+                allowsHitScale: false,
+                status: "Offsets the visual nib within the slider asset."
+            },
+            "nib-hit": {
+                label: "nib-hit",
+                geometryMode: "component-hit",
+                allowsHitScale: true,
+                status: "Controls the draggable nib interactable area without changing the nib art."
+            }
+        }
     };
 
     const setupInteractiveElements = [
@@ -171,9 +242,16 @@
     ];
 
     const artMetrics = {};
+    const runtimeComponentRects = {};
     let sharedLayoutState = {};
+    let sharedLayoutVariables = {};
+    let currentDraftKind = null;
     let currentDraftAssetKey = null;
+    let currentDraftComponentKey = null;
     let currentDraftState = null;
+    let currentVariableDraftKey = null;
+    let currentVariableDraftValue = null;
+
     let plannedSeconds = 300;
     let startedAtMs = 0;
     let pausedElapsedSeconds = 0;
@@ -182,6 +260,35 @@
     let isSubmitting = false;
     let completionTonePlayed = false;
     let dragState = null;
+    let sliderDragState = null;
+
+    const layoutAssetField = layoutAssetSelect.closest(".pl-field");
+    const layoutScaleField = layoutScale.closest(".pl-field");
+    const layoutXField = layoutX.closest(".pl-field");
+    const layoutYField = layoutY.closest(".pl-field");
+    const layoutWidthField = layoutWidth.closest(".pl-field");
+    const layoutHeightField = layoutHeight.closest(".pl-field");
+
+    let layoutComponentField = null;
+    let layoutComponentSelect = document.getElementById("pl-layout-component-select");
+    let layoutComponentStatus = document.getElementById("pl-layout-component-status");
+
+    let layoutHitScaleField = null;
+    let layoutHitScale = document.getElementById("pl-layout-hit-scale");
+    let layoutHitScaleNumber = document.getElementById("pl-layout-hit-scale-number");
+    let layoutHitScaleStatus = document.getElementById("pl-layout-hit-scale-status");
+
+    let layoutColorField = null;
+    let layoutColorPicker = null;
+    let layoutColorText = null;
+    let layoutColorHint = null;
+
+    let componentOutline = document.getElementById("pl-layout-component-outline");
+    let hitOutline = document.getElementById("pl-layout-hit-outline");
+
+    const defaultLayoutEdgeColor = normalizeHexColor(
+        getComputedStyle(document.documentElement).getPropertyValue(layoutEdgeColorVariableName),
+        "#01ff75");
 
     function readCssPxVar(varName, fallbackValue) {
         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
@@ -227,14 +334,6 @@
 
     function getDesignHeight() {
         return readCssPxVar("--pl-home-screen-height", 926);
-    }
-
-    function getUiAuthorFrameLeft() {
-        return readDatasetPx("uiAuthorFrameLeft", readCssPxVar("--pl-safe-ui-author-left", 0));
-    }
-
-    function getUiAuthorFrameTop() {
-        return readDatasetPx("uiAuthorFrameTop", readCssPxVar("--pl-safe-ui-author-top", 0));
     }
 
     function getUiAuthorFrameWidth() {
@@ -314,8 +413,41 @@
             y: value.y ?? value.Y,
             width: value.width ?? value.Width,
             height: value.height ?? value.Height,
-            scale: value.scale ?? value.Scale
+            scale: value.scale ?? value.Scale,
+            components: normalizeLayoutComponents(value.components ?? value.Components)
         };
+    }
+
+    function normalizeComponentOverride(value) {
+        if (!value || typeof value !== "object") {
+            return null;
+        }
+
+        return {
+            x: value.x ?? value.X,
+            y: value.y ?? value.Y,
+            width: value.width ?? value.Width,
+            height: value.height ?? value.Height,
+            scale: value.scale ?? value.Scale,
+            hitScale: value.hitScale ?? value.HitScale
+        };
+    }
+
+    function normalizeLayoutComponents(components) {
+        if (!components || typeof components !== "object") {
+            return {};
+        }
+
+        const result = {};
+
+        Object.entries(components).forEach(function ([key, value]) {
+            const normalized = normalizeComponentOverride(value);
+            if (normalized) {
+                result[key] = normalized;
+            }
+        });
+
+        return result;
     }
 
     function normalizeLayoutItems(items) {
@@ -448,7 +580,7 @@
     }
 
     function primeArtMetrics() {
-        Object.entries(artImageVars).forEach(([assetKey, cssVar]) => {
+        Object.entries(artImageVars).forEach(function ([assetKey, cssVar]) {
             const url = readCssUrlVar(cssVar);
 
             if (!url) {
@@ -483,7 +615,53 @@
             y: readCssPxVar(`--pl-layout-${assetKey}-y`, 0),
             width: defaultWidth,
             height: readCssPxVar(`--pl-layout-${assetKey}-height`, metrics && metrics.canvasRatio > 0 ? Math.round(defaultWidth / metrics.canvasRatio) : 56),
-            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100)
+            scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100),
+            components: {}
+        };
+    }
+
+    function getDefaultComponentState(assetKey, componentKey) {
+        if (assetKey === "slider") {
+            switch (componentKey) {
+                case "empty":
+                case "fill":
+                case "nib":
+                    return {
+                        x: 0,
+                        y: 0,
+                        width: null,
+                        height: null,
+                        scale: 100,
+                        hitScale: 100
+                    };
+                case "nib-hit":
+                    return {
+                        x: 0,
+                        y: 0,
+                        width: null,
+                        height: null,
+                        scale: 100,
+                        hitScale: 100
+                    };
+                default:
+                    return {
+                        x: 0,
+                        y: 0,
+                        width: null,
+                        height: null,
+                        scale: 100,
+                        hitScale: 100
+                    };
+            }
+        }
+
+        return {
+            x: 0,
+            y: 0,
+            width: null,
+            height: null,
+            scale: 100,
+            hitScale: 100
         };
     }
 
@@ -496,20 +674,56 @@
             y: stored.y ?? defaults.y,
             width: stored.width ?? defaults.width,
             height: stored.height ?? defaults.height,
-            scale: stored.scale ?? defaults.scale
+            scale: stored.scale ?? defaults.scale,
+            components: stored.components ?? {}
+        };
+    }
+
+    function getSavedComponentState(assetKey, componentKey) {
+        const base = getDefaultComponentState(assetKey, componentKey);
+        const stored = getSavedLayoutState(assetKey).components?.[componentKey] || {};
+
+        return {
+            x: stored.x ?? base.x,
+            y: stored.y ?? base.y,
+            width: stored.width ?? base.width,
+            height: stored.height ?? base.height,
+            scale: stored.scale ?? base.scale,
+            hitScale: stored.hitScale ?? base.hitScale
         };
     }
 
     function getEffectiveLayoutState(assetKey) {
         const saved = getSavedLayoutState(assetKey);
 
-        if (assetKey === currentDraftAssetKey && currentDraftState) {
+        if (currentDraftKind === "asset" && currentDraftAssetKey === assetKey && currentDraftState) {
             return {
                 x: currentDraftState.x ?? saved.x,
                 y: currentDraftState.y ?? saved.y,
                 width: currentDraftState.width ?? saved.width,
                 height: currentDraftState.height ?? saved.height,
-                scale: currentDraftState.scale ?? saved.scale
+                scale: currentDraftState.scale ?? saved.scale,
+                components: saved.components
+            };
+        }
+
+        return saved;
+    }
+
+    function getEffectiveComponentState(assetKey, componentKey) {
+        const saved = getSavedComponentState(assetKey, componentKey);
+
+        if (currentDraftKind === "component"
+            && currentDraftAssetKey === assetKey
+            && currentDraftComponentKey === componentKey
+            && currentDraftState) {
+            return {
+                x: currentDraftState.x ?? saved.x,
+                y: currentDraftState.y ?? saved.y,
+                width: currentDraftState.width ?? saved.width,
+                height: currentDraftState.height ?? saved.height,
+                scale: currentDraftState.scale ?? saved.scale,
+                hitScale: currentDraftState.hitScale ?? saved.hitScale
             };
         }
 
@@ -536,32 +750,82 @@
         };
     }
 
-    function beginDraftForSelected(partialState) {
-        const assetKey = layoutAssetSelect.value;
-        const baseState = getEffectiveLayoutState(assetKey);
+    function getSelectedAssetKey() {
+        return layoutAssetSelect.value;
+    }
 
+    function getSelectedComponentKey() {
+        return layoutComponentSelect ? layoutComponentSelect.value || "root" : "root";
+    }
+
+    function isRootComponent(componentKey) {
+        return !componentKey || componentKey === "root";
+    }
+
+    function beginDraftForSelected(partialState) {
+        const assetKey = getSelectedAssetKey();
+        const componentKey = getSelectedComponentKey();
+
+        if (isRootComponent(componentKey)) {
+            const baseState = getEffectiveLayoutState(assetKey);
+
+            currentDraftKind = "asset";
+            currentDraftAssetKey = assetKey;
+            currentDraftComponentKey = "root";
+            currentDraftState = {
+                x: partialState?.x ?? baseState.x,
+                y: partialState?.y ?? baseState.y,
+                width: partialState?.width ?? baseState.width,
+                height: partialState?.height ?? baseState.height,
+                scale: partialState?.scale ?? baseState.scale
+            };
+
+            return;
+        }
+
+        const baseState = getEffectiveComponentState(assetKey, componentKey);
+
+        currentDraftKind = "component";
         currentDraftAssetKey = assetKey;
+        currentDraftComponentKey = componentKey;
         currentDraftState = {
             x: partialState?.x ?? baseState.x,
             y: partialState?.y ?? baseState.y,
             width: partialState?.width ?? baseState.width,
             height: partialState?.height ?? baseState.height,
-            scale: partialState?.scale ?? baseState.scale
+            scale: partialState?.scale ?? baseState.scale,
+            hitScale: partialState?.hitScale ?? baseState.hitScale
         };
     }
 
     function discardCurrentDraft() {
         const assetKey = currentDraftAssetKey;
+        const componentKey = currentDraftComponentKey;
+
+        currentDraftKind = null;
         currentDraftAssetKey = null;
+        currentDraftComponentKey = null;
         currentDraftState = null;
 
-        if (assetKey) {
+        if (!assetKey) {
+            return;
+        }
+
+        if (assetKey === "slider") {
+            updateSliderVisuals();
+            refreshLayoutUi();
+            return;
+        }
+
+        if (isRootComponent(componentKey)) {
             applyAssetLayout(assetKey);
         }
+
+        refreshLayoutUi();
     }
 
     async function saveSelectedLayoutAsset() {
-        const assetKey = layoutAssetSelect.value;
+        const assetKey = getSelectedAssetKey();
 
         if (isVariableAsset(assetKey)) {
             if (currentVariableDraftKey !== "appEdgeColor" || !currentVariableDraftValue) {
@@ -578,19 +842,57 @@
             return;
         }
 
-        if (currentDraftAssetKey !== assetKey || !currentDraftState) {
-            return;
+        const componentKey = getSelectedComponentKey();
+
+        if (isRootComponent(componentKey)) {
+            if (currentDraftKind !== "asset" || currentDraftAssetKey !== assetKey || !currentDraftState) {
+                return;
+            }
+
+            const existing = getSavedLayoutState(assetKey);
+
+            sharedLayoutState[assetKey] = {
+                x: currentDraftState.x,
+                y: currentDraftState.y,
+                width: currentDraftState.width,
+                height: currentDraftState.height,
+                scale: currentDraftState.scale,
+                components: existing.components ?? {}
+            };
+        }
+        else {
+            if (currentDraftKind !== "component"
+                || currentDraftAssetKey !== assetKey
+                || currentDraftComponentKey !== componentKey
+                || !currentDraftState) {
+                return;
+            }
+
+            const existing = getSavedLayoutState(assetKey);
+            const nextComponents = Object.assign({}, existing.components || {});
+
+            nextComponents[componentKey] = {
+                x: currentDraftState.x,
+                y: currentDraftState.y,
+                width: currentDraftState.width,
+                height: currentDraftState.height,
+                scale: currentDraftState.scale,
+                hitScale: currentDraftState.hitScale
+            };
+
+            sharedLayoutState[assetKey] = {
+                x: existing.x,
+                y: existing.y,
+                width: existing.width,
+                height: existing.height,
+                scale: existing.scale,
+                components: nextComponents
+            };
         }
 
-        sharedLayoutState[assetKey] = {
-            x: currentDraftState.x,
-            y: currentDraftState.y,
-            width: currentDraftState.width,
-            height: currentDraftState.height,
-            scale: currentDraftState.scale
-        };
-
+        currentDraftKind = null;
         currentDraftAssetKey = null;
+        currentDraftComponentKey = null;
         currentDraftState = null;
 
         await saveSharedLayoutState();
@@ -599,7 +901,7 @@
     }
 
     function revertSelectedLayoutAsset() {
-        const assetKey = layoutAssetSelect.value;
+        const assetKey = getSelectedAssetKey();
 
         if (isVariableAsset(assetKey)) {
             discardVariableDraft();
@@ -608,11 +910,10 @@
         }
 
         discardCurrentDraft();
-        refreshLayoutUi();
     }
 
     function resetSelectedLayoutAsset() {
-        const assetKey = layoutAssetSelect.value;
+        const assetKey = getSelectedAssetKey();
 
         if (isVariableAsset(assetKey)) {
             beginVariableDraft("appEdgeColor", getCssLayoutVariableDefaults().appEdgeColor);
@@ -622,15 +923,25 @@
             return;
         }
 
-        beginDraftForSelected(getCssLayoutDefaults(assetKey));
-        applyAssetLayout(assetKey);
+        const componentKey = getSelectedComponentKey();
+
+        if (isRootComponent(componentKey)) {
+            beginDraftForSelected(getCssLayoutDefaults(assetKey));
+        }
+        else {
+            beginDraftForSelected(getDefaultComponentState(assetKey, componentKey));
+        }
+
+        applyAllAssetLayouts();
         refreshLayoutUi();
     }
 
     async function resetAllLayoutAssets() {
         sharedLayoutState = {};
         sharedLayoutVariables = {};
+        currentDraftKind = null;
         currentDraftAssetKey = null;
+        currentDraftComponentKey = null;
         currentDraftState = null;
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
@@ -780,60 +1091,6 @@
         durationText.style.cursor = layoutEditorEnabled ? "move" : "";
     }
 
-    const layoutColorAssetKey = "app-edge-color";
-    const layoutColorAssetLabel = "shell-background";
-    const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
-    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-    const layoutSceneSelect = document.getElementById("pl-layout-scene-select");
-    const layoutSceneName = document.getElementById("pl-layout-scene-name");
-    const defaultLayoutSceneKey = "home";
-    const layoutSceneDefinitions = {
-        "home": {
-            label: "Home",
-            assets: ["home-scene", "home-focus", "home-sleep"]
-        },
-        "focus-setup": {
-            label: "Focus setup",
-            assets: ["setup-panel", "focus-type-field", "duration-text", "slider", "start", "back"]
-        },
-        "focus-running": {
-            label: "Focus running",
-            assets: ["run-panel", "pause", "exit"]
-        },
-        "stop-confirm": {
-            label: "Stop confirm",
-            assets: ["confirm-panel", "keep-going", "stop"]
-        },
-        "reward": {
-            label: "Reward",
-            assets: ["reward-panel", "gotcha"]
-        },
-        "app-shell": {
-            label: "App shell",
-            assets: [layoutColorAssetKey]
-        }
-    };
-
-    const layoutAssetField = layoutAssetSelect.closest(".pl-field");
-    const layoutScaleField = layoutScale.closest(".pl-field");
-    const layoutXField = layoutX.closest(".pl-field");
-    const layoutYField = layoutY.closest(".pl-field");
-    const layoutWidthField = layoutWidth.closest(".pl-field");
-    const layoutHeightField = layoutHeight.closest(".pl-field");
-
-    const defaultLayoutEdgeColor = normalizeHexColor(
-        getComputedStyle(document.documentElement).getPropertyValue(layoutEdgeColorVariableName),
-        "#01ff75");
-
-    let sharedLayoutVariables = {};
-    let currentVariableDraftKey = null;
-    let currentVariableDraftValue = null;
-
-    let layoutColorField = null;
-    let layoutColorPicker = null;
-    let layoutColorText = null;
-    let layoutColorHint = null;
-
     function normalizeSimpleHexColor(rawValue) {
         const raw = String(rawValue || "").trim();
 
@@ -961,28 +1218,8 @@
         layoutColorText.value = normalized.toUpperCase();
     }
 
-    function setGeometryFieldsHidden(isHidden) {
-        [
-            layoutScaleField,
-            layoutXField,
-            layoutYField,
-            layoutWidthField,
-            layoutHeightField
-        ].forEach(function (field) {
-            if (field) {
-                field.hidden = isHidden;
-            }
-        });
-    }
-
-    function setLayoutColorFieldHidden(isHidden) {
-        if (layoutColorField) {
-            layoutColorField.hidden = isHidden;
-        }
-    }
-
     function getLayoutSceneDefinition(sceneKey) {
-        return layoutSceneDefinitions[sceneKey] || layoutSceneDefinitions[defaultLayoutSceneKey];
+        return layoutSceneDefinitions[sceneKey] || layoutSceneDefinitions.home;
     }
 
     function getLayoutSceneAssetKeys(sceneKey) {
@@ -993,29 +1230,32 @@
 
     function findLayoutSceneKeyForAsset(assetKey) {
         if (!assetKey) {
-            return defaultLayoutSceneKey;
+            return "home";
         }
 
         const matchingSceneEntry = Object.entries(layoutSceneDefinitions).find(function ([, sceneDefinition]) {
             return sceneDefinition.assets.includes(assetKey);
         });
 
-        return matchingSceneEntry ? matchingSceneEntry[0] : defaultLayoutSceneKey;
+        return matchingSceneEntry ? matchingSceneEntry[0] : "home";
     }
 
     function updateLayoutSceneHeader(sceneKey) {
-        if (!layoutSceneName) {
-            return;
-        }
-
         layoutSceneName.textContent = getLayoutSceneDefinition(sceneKey).label;
     }
 
-    function populateLayoutAssetSelectForScene(sceneKey, preferredAssetKey = null) {
-        if (!layoutAssetSelect) {
-            return "";
-        }
+    function getComponentDefinitionsForAsset(assetKey) {
+        return assetComponentDefinitions[assetKey] || {
+            root: {
+                label: "root",
+                geometryMode: "asset",
+                allowsHitScale: false,
+                status: "This asset currently exposes only root-level controls."
+            }
+        };
+    }
 
+    function populateLayoutAssetSelectForScene(sceneKey, preferredAssetKey = null) {
         const assetKeys = getLayoutSceneAssetKeys(sceneKey);
         const preservedAssetKey = assetKeys.includes(preferredAssetKey)
             ? preferredAssetKey
@@ -1036,30 +1276,58 @@
         return preservedAssetKey;
     }
 
-    function setActiveLayoutScene(sceneKey, preferredAssetKey = null) {
+    function populateLayoutComponentSelect(assetKey, preferredComponentKey = null) {
+        if (!layoutComponentSelect) {
+            return "root";
+        }
+
+        const definitions = getComponentDefinitionsForAsset(assetKey);
+        const componentKeys = Object.keys(definitions);
+        const preservedKey = componentKeys.includes(preferredComponentKey)
+            ? preferredComponentKey
+            : (componentKeys.includes(layoutComponentSelect.value) ? layoutComponentSelect.value : "root");
+
+        layoutComponentSelect.innerHTML = "";
+
+        componentKeys.forEach(function (componentKey) {
+            const option = document.createElement("option");
+            option.value = componentKey;
+            option.textContent = definitions[componentKey].label;
+            layoutComponentSelect.appendChild(option);
+        });
+
+        layoutComponentSelect.disabled = componentKeys.length <= 1 || isVariableAsset(assetKey);
+        layoutComponentSelect.value = preservedKey;
+        layoutComponentStatus.textContent = definitions[preservedKey]?.status || "";
+
+        return preservedKey;
+    }
+
+    function setActiveLayoutScene(sceneKey, preferredAssetKey = null, preferredComponentKey = null) {
         const resolvedSceneKey = layoutSceneDefinitions[sceneKey]
             ? sceneKey
             : findLayoutSceneKeyForAsset(preferredAssetKey);
 
-        if (layoutSceneSelect) {
-            layoutSceneSelect.value = resolvedSceneKey;
-        }
-
+        layoutSceneSelect.value = resolvedSceneKey;
         updateLayoutSceneHeader(resolvedSceneKey);
-        return populateLayoutAssetSelectForScene(resolvedSceneKey, preferredAssetKey);
+
+        const assetKey = populateLayoutAssetSelectForScene(resolvedSceneKey, preferredAssetKey);
+        populateLayoutComponentSelect(assetKey, preferredComponentKey);
+
+        return assetKey;
     }
 
     function initializeLayoutSceneControls() {
-        const initialAssetKey = layoutAssetSelect?.value || "home-scene";
-        const initialSceneKey = layoutSceneDefinitions[layoutSceneSelect?.value]
+        const initialAssetKey = layoutAssetSelect.value || "home-scene";
+        const initialSceneKey = layoutSceneDefinitions[layoutSceneSelect.value]
             ? layoutSceneSelect.value
             : findLayoutSceneKeyForAsset(initialAssetKey);
 
-        setActiveLayoutScene(initialSceneKey, initialAssetKey);
+        setActiveLayoutScene(initialSceneKey, initialAssetKey, "root");
     }
 
-    function selectLayoutAsset(assetKey) {
-        return setActiveLayoutScene(findLayoutSceneKeyForAsset(assetKey), assetKey);
+    function selectLayoutAsset(assetKey, componentKey = "root") {
+        return setActiveLayoutScene(findLayoutSceneKeyForAsset(assetKey), assetKey, componentKey);
     }
 
     function ensureLayoutColorAssetSelected() {
@@ -1067,7 +1335,7 @@
             return;
         }
 
-        selectLayoutAsset(layoutColorAssetKey);
+        selectLayoutAsset(layoutColorAssetKey, "root");
         handleLayoutAssetChange();
     }
 
@@ -1082,10 +1350,6 @@
     }
 
     function ensureLayoutVariableControls() {
-        if (!layoutAssetSelect) {
-            return;
-        }
-
         if (layoutColorField) {
             return;
         }
@@ -1104,7 +1368,8 @@
 
         if (layoutAssetField && layoutAssetField.parentNode) {
             layoutAssetField.parentNode.insertBefore(layoutColorField, layoutAssetField.nextSibling);
-        } else {
+        }
+        else {
             layoutPanel.appendChild(layoutColorField);
         }
 
@@ -1130,59 +1395,317 @@
         });
     }
 
-    function updateSliderVisuals() {
+    function ensureLayoutEditorExtensions() {
+        if (!componentOutline) {
+            componentOutline = document.createElement("div");
+            componentOutline.id = "pl-layout-component-outline";
+            componentOutline.className = "pl-layout-component-outline";
+            componentOutline.hidden = true;
+            componentOutline.setAttribute("aria-hidden", "true");
+            safeUiStage.appendChild(componentOutline);
+        }
+
+        if (!hitOutline) {
+            hitOutline = document.createElement("div");
+            hitOutline.id = "pl-layout-hit-outline";
+            hitOutline.className = "pl-layout-hit-outline";
+            hitOutline.hidden = true;
+            hitOutline.setAttribute("aria-hidden", "true");
+            safeUiStage.appendChild(hitOutline);
+        }
+
+        if (!layoutComponentSelect) {
+            layoutComponentField = document.createElement("label");
+            layoutComponentField.className = "pl-field";
+            layoutComponentField.innerHTML = `
+                <span class="pl-field-label">Component</span>
+                <select class="pl-input" id="pl-layout-component-select"></select>
+                <span class="pl-field-hint" id="pl-layout-component-status"></span>
+            `;
+
+            if (layoutAssetField && layoutAssetField.parentNode) {
+                layoutAssetField.parentNode.insertBefore(layoutComponentField, layoutAssetField.nextSibling);
+            }
+            else {
+                layoutPanel.appendChild(layoutComponentField);
+            }
+
+            layoutComponentSelect = layoutComponentField.querySelector("#pl-layout-component-select");
+            layoutComponentStatus = layoutComponentField.querySelector("#pl-layout-component-status");
+        }
+        else {
+            layoutComponentField = layoutComponentSelect.closest(".pl-field");
+        }
+
+        if (!layoutHitScale) {
+            layoutHitScaleField = document.createElement("label");
+            layoutHitScaleField.className = "pl-field";
+            layoutHitScaleField.hidden = true;
+            layoutHitScaleField.innerHTML = `
+                <span class="pl-field-label">Interactable Area Scale</span>
+                <div class="pl-layout-range-with-number">
+                    <input class="pl-input" id="pl-layout-hit-scale" type="range" min="100" max="200" step="1" value="100" />
+                    <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-number" type="number" min="100" max="200" step="1" value="100" />
+                </div>
+                <span class="pl-field-hint" id="pl-layout-hit-scale-status">100% = exact component bounds. 200% = double-size interactable area.</span>
+            `;
+
+            if (layoutHeightField && layoutHeightField.parentNode) {
+                layoutHeightField.parentNode.insertBefore(layoutHitScaleField, layoutHeightField.nextSibling);
+            }
+            else {
+                layoutPanel.appendChild(layoutHitScaleField);
+            }
+
+            layoutHitScale = layoutHitScaleField.querySelector("#pl-layout-hit-scale");
+            layoutHitScaleNumber = layoutHitScaleField.querySelector("#pl-layout-hit-scale-number");
+            layoutHitScaleStatus = layoutHitScaleField.querySelector("#pl-layout-hit-scale-status");
+        }
+        else {
+            layoutHitScaleField = layoutHitScale.closest(".pl-field");
+        }
+    }
+
+    function setGeometryFieldsHidden(isHidden) {
+        [
+            layoutScaleField,
+            layoutXField,
+            layoutYField,
+            layoutWidthField,
+            layoutHeightField
+        ].forEach(function (field) {
+            if (field) {
+                field.hidden = isHidden;
+            }
+        });
+    }
+
+    function setLayoutColorFieldHidden(isHidden) {
+        if (layoutColorField) {
+            layoutColorField.hidden = isHidden;
+        }
+    }
+
+    function setComponentFieldHidden(isHidden) {
+        if (layoutComponentField) {
+            layoutComponentField.hidden = isHidden;
+        }
+    }
+
+    function setHitScaleFieldHidden(isHidden) {
+        if (layoutHitScaleField) {
+            layoutHitScaleField.hidden = isHidden;
+        }
+    }
+
+    function hideSliderSpecificOutlines() {
+        if (componentOutline) {
+            componentOutline.hidden = true;
+        }
+
+        if (hitOutline) {
+            hitOutline.hidden = true;
+        }
+    }
+
+    function getSliderVisualMetrics() {
         const state = getEffectiveLayoutState("slider");
         const authorWidth = Math.max(20, state.width * (state.scale / 100));
         const authorHeight = getResolvedHeight("slider", state) * (state.scale / 100);
         const projected = projectUiAssetRect(state, authorWidth, authorHeight);
-        const sliderMetric = artMetrics["slider"];
+        const sliderMetric = artMetrics.slider;
         const nibMetric = artMetrics["slider-nib-art"];
         const min = parseInt(durationSlider.min || "5", 10);
         const max = parseInt(durationSlider.max || "120", 10);
         const value = parseInt(durationSlider.value || "5", 10);
         const progressRatio = max <= min ? 0 : (value - min) / (max - min);
+
         const trackLeft = sliderMetric && sliderMetric.hasVisibleBounds
             ? projected.width * sliderMetric.visibleLeftRatio
             : 0;
         const trackWidth = sliderMetric && sliderMetric.hasVisibleBounds
             ? projected.width * sliderMetric.visibleWidthRatio
             : projected.width;
+
         const targetCenter = trackLeft + (progressRatio * trackWidth);
-        const defaultNibCenter = nibMetric && nibMetric.hasVisibleBounds
-            ? projected.width * (nibMetric.visibleLeftRatio + (nibMetric.visibleWidthRatio / 2))
-            : projected.width / 2;
-        const translateX = Math.round(targetCenter - defaultNibCenter);
-        const fillWidth = Math.max(0, Math.min(projected.width, Math.round(targetCenter)));
 
-        sliderGroup.style.left = `${projected.left}px`;
-        sliderGroup.style.top = `${projected.top}px`;
-        sliderGroup.style.width = `${projected.width}px`;
-        sliderGroup.style.height = `${projected.height}px`;
+        const nibWidth = nibMetric && nibMetric.hasVisibleBounds
+            ? projected.width * nibMetric.visibleWidthRatio
+            : Math.max(44, projected.width * 0.12);
+
+        const nibHeight = nibMetric && nibMetric.hasVisibleBounds
+            ? projected.height * nibMetric.visibleHeightRatio
+            : projected.height;
+
+        const nibTop = nibMetric && nibMetric.hasVisibleBounds
+            ? projected.height * nibMetric.visibleTopRatio
+            : 0;
+
+        const nibLeft = targetCenter - (nibWidth / 2);
+
+        return {
+            projected,
+            sliderMetric,
+            nibMetric,
+            progressRatio,
+            trackLeft,
+            trackWidth,
+            targetCenter,
+            nibRect: {
+                left: nibLeft,
+                top: nibTop,
+                width: nibWidth,
+                height: nibHeight
+            }
+        };
+    }
+
+    function applyLocalRectTransform(baseRect, componentState, options = {}) {
+        const scaleRatio = Math.max(0.01, (componentState.scale || 100) / 100);
+        let width = Math.max(1, baseRect.width * scaleRatio);
+        let height = Math.max(1, baseRect.height * scaleRatio);
+        let left = baseRect.left + (componentState.x || 0);
+        let top = baseRect.top + (componentState.y || 0);
+
+        if (options.hitScale) {
+            const hitScaleRatio = Math.max(1, (componentState.hitScale || 100) / 100);
+            const expandedWidth = Math.max(1, width * hitScaleRatio);
+            const expandedHeight = Math.max(1, height * hitScaleRatio);
+            left -= (expandedWidth - width) / 2;
+            top -= (expandedHeight - height) / 2;
+            width = expandedWidth;
+            height = expandedHeight;
+        }
+
+        return {
+            left,
+            top,
+            width,
+            height
+        };
+    }
+
+    function cacheSliderRuntimeRects(metrics, emptyRect, fillShellRect, fullFillRect, nibRect, nibHitRect) {
+        runtimeComponentRects.slider = {
+            root: {
+                left: metrics.projected.left,
+                top: metrics.projected.top,
+                width: metrics.projected.width,
+                height: metrics.projected.height
+            },
+            empty: emptyRect,
+            fill: fillShellRect,
+            "fill-full": fullFillRect,
+            nib: nibRect,
+            "nib-hit": nibHitRect
+        };
+    }
+
+    function applyOutlineRect(outlineElement, rect) {
+        if (!outlineElement || !rect) {
+            return;
+        }
+
+        outlineElement.hidden = false;
+        outlineElement.style.left = `${rect.left}px`;
+        outlineElement.style.top = `${rect.top}px`;
+        outlineElement.style.width = `${rect.width}px`;
+        outlineElement.style.height = `${rect.height}px`;
+    }
+
+    function updateSliderVisuals() {
+        const metrics = getSliderVisualMetrics();
+
+        const emptyState = getEffectiveComponentState("slider", "empty");
+        const fillState = getEffectiveComponentState("slider", "fill");
+        const nibState = getEffectiveComponentState("slider", "nib");
+        const nibHitState = getEffectiveComponentState("slider", "nib-hit");
+
+        const emptyBaseRect = {
+            left: 0,
+            top: 0,
+            width: metrics.projected.width,
+            height: metrics.projected.height
+        };
+
+        const nibBaseRect = {
+            left: metrics.nibRect.left,
+            top: metrics.nibRect.top,
+            width: metrics.nibRect.width,
+            height: metrics.nibRect.height
+        };
+
+        const emptyRect = applyLocalRectTransform(emptyBaseRect, emptyState);
+        const fillFullRect = applyLocalRectTransform(emptyBaseRect, fillState);
+        const fillShellRect = {
+            left: fillFullRect.left,
+            top: fillFullRect.top,
+            width: Math.max(0, Math.min(fillFullRect.width, metrics.progressRatio * fillFullRect.width)),
+            height: fillFullRect.height
+        };
+        const nibRect = applyLocalRectTransform(nibBaseRect, nibState);
+        const nibHitBaseRect = {
+            left: nibRect.left,
+            top: nibRect.top,
+            width: nibRect.width,
+            height: nibRect.height
+        };
+        const nibHitRect = applyLocalRectTransform(nibHitBaseRect, {
+            x: nibHitState.x,
+            y: nibHitState.y,
+            width: nibHitState.width,
+            height: nibHitState.height,
+            scale: 100,
+            hitScale: nibHitState.hitScale
+        }, { hitScale: true });
+
+        sliderGroup.style.left = `${metrics.projected.left}px`;
+        sliderGroup.style.top = `${metrics.projected.top}px`;
+        sliderGroup.style.width = `${metrics.projected.width}px`;
+        sliderGroup.style.height = `${metrics.projected.height}px`;
         sliderGroup.style.transform = "scale(1)";
+        sliderGroup.style.overflow = "visible";
 
-        sliderTrackShell.style.width = `${projected.width}px`;
-        sliderTrackShell.style.height = `${projected.height}px`;
+        sliderTrackShell.style.left = `${emptyRect.left}px`;
+        sliderTrackShell.style.top = `${emptyRect.top}px`;
+        sliderTrackShell.style.width = `${emptyRect.width}px`;
+        sliderTrackShell.style.height = `${emptyRect.height}px`;
 
-        sliderTrackEmptyArt.style.width = `${projected.width}px`;
-        sliderTrackEmptyArt.style.height = `${projected.height}px`;
+        sliderTrackEmptyArt.style.left = "0px";
+        sliderTrackEmptyArt.style.top = "0px";
+        sliderTrackEmptyArt.style.width = `${emptyRect.width}px`;
+        sliderTrackEmptyArt.style.height = `${emptyRect.height}px`;
 
-        sliderFillShell.style.width = `${fillWidth}px`;
-        sliderFillShell.style.height = `${projected.height}px`;
+        sliderFillShell.style.left = `${fillShellRect.left}px`;
+        sliderFillShell.style.top = `${fillShellRect.top}px`;
+        sliderFillShell.style.width = `${fillShellRect.width}px`;
+        sliderFillShell.style.height = `${fillShellRect.height}px`;
 
-        sliderFillArt.style.width = `${projected.width}px`;
-        sliderFillArt.style.height = `${projected.height}px`;
+        sliderFillArt.style.left = "0px";
+        sliderFillArt.style.top = "0px";
+        sliderFillArt.style.width = `${fillFullRect.width}px`;
+        sliderFillArt.style.height = `${fillFullRect.height}px`;
 
-        sliderNibVisual.style.width = `${projected.width}px`;
-        sliderNibVisual.style.height = `${projected.height}px`;
-        sliderNibVisual.style.transform = `translateX(${translateX}px)`;
+        sliderNibVisual.style.left = `${nibRect.left}px`;
+        sliderNibVisual.style.top = `${nibRect.top}px`;
+        sliderNibVisual.style.width = `${nibRect.width}px`;
+        sliderNibVisual.style.height = `${nibRect.height}px`;
+        sliderNibVisual.style.transform = "none";
 
-        durationSlider.style.pointerEvents = layoutEditorEnabled ? "none" : "auto";
+        durationSlider.style.left = `${nibHitRect.left}px`;
+        durationSlider.style.top = `${nibHitRect.top}px`;
+        durationSlider.style.width = `${nibHitRect.width}px`;
+        durationSlider.style.height = `${nibHitRect.height}px`;
+        durationSlider.style.pointerEvents = "none";
+        durationSlider.style.opacity = "0";
+        durationSlider.style.background = "transparent";
+
+        cacheSliderRuntimeRects(metrics, emptyRect, fillShellRect, fillFullRect, nibRect, nibHitRect);
+        refreshComponentOutlines();
     }
 
     function updateDurationReadout() {
-        const selectedDurationSeconds = parseInt(durationSlider.value || "5", 10) * 60;
         const formatted = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
-
         durationText.textContent = formatted;
         runReadout.textContent = formatted;
         updateSliderVisuals();
@@ -1232,10 +1755,11 @@
         Object.keys(layoutAssets).forEach(applyAssetLayout);
         applyLayoutVariables();
         refreshLayoutSelection();
+        refreshComponentOutlines();
     }
 
     function refreshLayoutSelection() {
-        const selectedAssetKey = layoutAssetSelect.value;
+        const selectedAssetKey = getSelectedAssetKey();
 
         Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
             const state = getEffectiveLayoutState(assetKey);
@@ -1249,8 +1773,54 @@
         });
     }
 
-    function updateLayoutSliderBounds(assetKey) {
+    function refreshComponentOutlines() {
+        hideSliderSpecificOutlines();
+
+        if (!layoutEditorEnabled) {
+            return;
+        }
+
+        const assetKey = getSelectedAssetKey();
+        const componentKey = getSelectedComponentKey();
+
+        if (assetKey !== "slider" || isRootComponent(componentKey)) {
+            return;
+        }
+
+        const rects = runtimeComponentRects.slider;
+        if (!rects) {
+            return;
+        }
+
+        if (componentKey === "nib-hit") {
+            applyOutlineRect(componentOutline, rects.nib);
+            applyOutlineRect(hitOutline, rects["nib-hit"]);
+            return;
+        }
+
+        applyOutlineRect(componentOutline, rects[componentKey]);
+    }
+
+    function updateLayoutSliderBounds(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
+            return;
+        }
+
+        if (!isRootComponent(componentKey)) {
+            layoutScale.min = "20";
+            layoutScale.max = "250";
+            layoutScaleNumber.min = "20";
+            layoutScaleNumber.max = "250";
+
+            layoutX.min = "-300";
+            layoutX.max = "300";
+            layoutXNumber.min = "-300";
+            layoutXNumber.max = "300";
+
+            layoutY.min = "-300";
+            layoutY.max = "300";
+            layoutYNumber.min = "-300";
+            layoutYNumber.max = "300";
             return;
         }
 
@@ -1274,10 +1844,42 @@
         layoutYNumber.max = layoutY.max;
     }
 
-    function updateLayoutCodePreview(assetKey) {
+    function updateLayoutCodePreview(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
             layoutCode.value =
                 `:root {\n  --pl-art-app-edge-color: ${getEffectiveLayoutVariable("appEdgeColor")};\n}`;
+            return;
+        }
+
+        if (!isRootComponent(componentKey)) {
+            const componentState = getEffectiveComponentState(assetKey, componentKey);
+            const payload = {
+                items: {
+                    [assetKey]: {
+                        components: {
+                            [componentKey]: {}
+                        }
+                    }
+                }
+            };
+
+            if (componentState.x !== 0) {
+                payload.items[assetKey].components[componentKey].x = Math.round(componentState.x);
+            }
+
+            if (componentState.y !== 0) {
+                payload.items[assetKey].components[componentKey].y = Math.round(componentState.y);
+            }
+
+            if (componentState.scale !== 100 && componentKey !== "nib-hit") {
+                payload.items[assetKey].components[componentKey].scale = Math.round(componentState.scale);
+            }
+
+            if (componentKey === "nib-hit" && componentState.hitScale !== 100) {
+                payload.items[assetKey].components[componentKey].hitScale = Math.round(componentState.hitScale);
+            }
+
+            layoutCode.value = JSON.stringify(payload, null, 2);
             return;
         }
 
@@ -1295,12 +1897,10 @@
             `.pl-home-screen {\n  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;\n  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;\n  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;\n  --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;\n  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};\n}`;
     }
 
-    function updateLayoutStatusDisplay(assetKey) {
+    function updateLayoutStatusDisplay(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
             layoutStageStatus.textContent = "Shell background · colors the edge fill outside the authored canvas.";
             layoutSafeZoneStatus.textContent = "Used for desktop chrome and the iPhone edge / bottom-bar tint fallback.";
-            layoutSafeZoneStatus.classList.remove("pl-layout-field-hint-safe");
-            layoutSafeZoneStatus.classList.remove("pl-layout-field-hint-unsafe");
             layoutScaleValue.textContent = getEffectiveLayoutVariable("appEdgeColor").toUpperCase();
             layoutXValue.textContent = "Not position-based";
             layoutYValue.textContent = "Not position-based";
@@ -1309,6 +1909,18 @@
                 layoutColorHint.textContent = "Press Save Selected to keep this shell background color. It is saved through LayoutSync and mirrored into the theme-color meta.";
             }
 
+            return;
+        }
+
+        if (!isRootComponent(componentKey)) {
+            const definitions = getComponentDefinitionsForAsset(assetKey);
+            layoutStageStatus.textContent = `Component mode · ${definitions[componentKey]?.label || componentKey}`;
+            layoutSafeZoneStatus.textContent = definitions[componentKey]?.status || "Component tuning mode.";
+            layoutScaleValue.textContent = componentKey === "nib-hit"
+                ? `${Math.round(getEffectiveComponentState(assetKey, componentKey).hitScale)}% hit area`
+                : `${Math.round(getEffectiveComponentState(assetKey, componentKey).scale)}%`;
+            layoutXValue.textContent = `${Math.round(getEffectiveComponentState(assetKey, componentKey).x)} px local offset`;
+            layoutYValue.textContent = `${Math.round(getEffectiveComponentState(assetKey, componentKey).y)} px local offset`;
             return;
         }
 
@@ -1322,15 +1934,9 @@
         layoutSafeZoneStatus.textContent = (!status.xStatus.inside || !status.yStatus.inside)
             ? `Outside safe zone · ${status.xStatus.text}; ${status.yStatus.text}`
             : "Inside safe zone.";
-        layoutSafeZoneStatus.classList.toggle("pl-layout-field-hint-safe", status.xStatus.inside && status.yStatus.inside);
-        layoutSafeZoneStatus.classList.toggle("pl-layout-field-hint-unsafe", !status.xStatus.inside || !status.yStatus.inside);
         layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
         layoutXValue.textContent = status.xStatus.text;
         layoutYValue.textContent = status.yStatus.text;
-
-        if (layoutColorHint) {
-            layoutColorHint.textContent = "Available only in the App shell scene.";
-        }
     }
 
     function syncNumberPairs() {
@@ -1339,10 +1945,19 @@
         layoutYNumber.value = layoutY.value;
     }
 
+    function syncHitScalePairs() {
+        if (!layoutHitScale || !layoutHitScaleNumber) {
+            return;
+        }
+
+        layoutHitScaleNumber.value = layoutHitScale.value;
+    }
+
     function getLayoutEditorManagedControls() {
         return [
             layoutSceneSelect,
             layoutAssetSelect,
+            layoutComponentSelect,
             layoutScale,
             layoutScaleNumber,
             layoutX,
@@ -1351,6 +1966,8 @@
             layoutYNumber,
             layoutWidth,
             layoutHeight,
+            layoutHitScale,
+            layoutHitScaleNumber,
             layoutSaveSelected,
             layoutRevertSelected,
             layoutResetSelected,
@@ -1368,20 +1985,11 @@
             control.disabled = !isEnabled;
         });
 
-        if (layoutCode) {
-            layoutCode.readOnly = true;
-        }
-
-        if (layoutEditorToggle) {
-            layoutEditorToggle.checked = isEnabled;
-        }
+        layoutCode.readOnly = true;
+        layoutEditorToggle.checked = isEnabled;
     }
 
     function updateLayoutEditorModeStatus() {
-        if (!layoutEditorModeStatus) {
-            return;
-        }
-
         layoutEditorModeStatus.textContent = layoutEditorEnabled
             ? "Checked: click assets to select and move them. Unchecked: interact with the app normally."
             : "Editor disabled. Interact with the app normally until you check this again.";
@@ -1397,114 +2005,208 @@
         refreshLayoutUi();
     }
 
+    function applyGeometryModeForSelection(assetKey, componentKey) {
+        if (isVariableAsset(assetKey)) {
+            setGeometryFieldsHidden(true);
+            setComponentFieldHidden(false);
+            setHitScaleFieldHidden(true);
+            return;
+        }
+
+        const definitions = getComponentDefinitionsForAsset(assetKey);
+        const definition = definitions[componentKey] || definitions.root;
+
+        setGeometryFieldsHidden(false);
+        setComponentFieldHidden(false);
+
+        if (definition.geometryMode === "asset") {
+            layoutScaleField.hidden = false;
+            layoutXField.hidden = false;
+            layoutYField.hidden = false;
+            layoutWidthField.hidden = false;
+            layoutHeightField.hidden = false;
+            setHitScaleFieldHidden(true);
+            return;
+        }
+
+        if (definition.geometryMode === "component-scale") {
+            layoutScaleField.hidden = false;
+            layoutXField.hidden = false;
+            layoutYField.hidden = false;
+            layoutWidthField.hidden = true;
+            layoutHeightField.hidden = true;
+            setHitScaleFieldHidden(true);
+            return;
+        }
+
+        if (definition.geometryMode === "component-hit") {
+            layoutScaleField.hidden = true;
+            layoutXField.hidden = false;
+            layoutYField.hidden = false;
+            layoutWidthField.hidden = true;
+            layoutHeightField.hidden = true;
+            setHitScaleFieldHidden(false);
+            return;
+        }
+
+        setHitScaleFieldHidden(true);
+    }
+
     function refreshLayoutUi() {
         ensureLayoutVariableControls();
-        updateLayoutSceneHeader(layoutSceneSelect?.value || defaultLayoutSceneKey);
+        ensureLayoutEditorExtensions();
+        updateLayoutSceneHeader(layoutSceneSelect.value || "home");
         updateLayoutEditorControlState();
         updateLayoutEditorModeStatus();
         syncLayoutEditorSelectableStates();
 
-        const assetKey = layoutAssetSelect.value;
-
+        const assetKey = getSelectedAssetKey();
         if (!assetKey) {
             setLayoutColorFieldHidden(true);
+            setComponentFieldHidden(true);
+            setHitScaleFieldHidden(true);
+            hideSliderSpecificOutlines();
             return;
         }
 
+        const componentKey = populateLayoutComponentSelect(assetKey, getSelectedComponentKey());
+
         if (isVariableAsset(assetKey)) {
-            setGeometryFieldsHidden(true);
             setLayoutColorFieldHidden(false);
+            applyGeometryModeForSelection(assetKey, componentKey);
             previewLayoutAsset("home-scene");
             applyAllAssetLayouts();
             syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
-            updateLayoutCodePreview(assetKey);
-            updateLayoutStatusDisplay(assetKey);
+            updateLayoutCodePreview(assetKey, componentKey);
+            updateLayoutStatusDisplay(assetKey, componentKey);
             refreshLayoutSelection();
+            hideSliderSpecificOutlines();
             return;
         }
 
-        setGeometryFieldsHidden(false);
         setLayoutColorFieldHidden(true);
         syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
-
-        const state = getEffectiveLayoutState(assetKey);
-        const resolvedHeight = getResolvedHeight(assetKey, state);
-        const ratioLocked = !!artMetrics[assetKey];
-
         previewLayoutAsset(assetKey);
-        updateLayoutSliderBounds(assetKey);
+        updateLayoutSliderBounds(assetKey, componentKey);
         applyAllAssetLayouts();
+        applyGeometryModeForSelection(assetKey, componentKey);
 
-        layoutScale.value = String(Math.round(state.scale));
-        layoutX.value = String(Math.round(state.x));
-        layoutY.value = String(Math.round(state.y));
-        layoutWidth.value = String(Math.round(state.width));
-        layoutHeight.value = String(Math.round(resolvedHeight));
+        if (isRootComponent(componentKey)) {
+            const state = getEffectiveLayoutState(assetKey);
+            const resolvedHeight = getResolvedHeight(assetKey, state);
+            const ratioLocked = !!artMetrics[assetKey];
 
-        syncNumberPairs();
+            layoutScale.value = String(Math.round(state.scale));
+            layoutX.value = String(Math.round(state.x));
+            layoutY.value = String(Math.round(state.y));
+            layoutWidth.value = String(Math.round(state.width));
+            layoutHeight.value = String(Math.round(resolvedHeight));
+            syncNumberPairs();
 
-        layoutHeight.disabled = !layoutEditorEnabled || ratioLocked;
-        layoutHeight.readOnly = !layoutEditorEnabled || ratioLocked;
-        layoutHeightLabel.textContent = ratioLocked ? "Height (auto)" : "Height (px)";
-        layoutHeightHint.textContent = ratioLocked
-            ? "Image-backed assets keep their natural aspect ratio automatically."
-            : "";
+            layoutHeight.disabled = !layoutEditorEnabled || ratioLocked;
+            layoutHeight.readOnly = !layoutEditorEnabled || ratioLocked;
+            layoutHeightLabel.textContent = ratioLocked ? "Height (auto)" : "Height (px)";
+            layoutHeightHint.textContent = ratioLocked
+                ? "Image-backed assets keep their natural aspect ratio automatically."
+                : "";
+        }
+        else {
+            const componentState = getEffectiveComponentState(assetKey, componentKey);
 
-        updateLayoutCodePreview(assetKey);
-        updateLayoutStatusDisplay(assetKey);
+            layoutScale.value = String(Math.round(componentState.scale));
+            layoutX.value = String(Math.round(componentState.x));
+            layoutY.value = String(Math.round(componentState.y));
+            layoutWidth.value = "0";
+            layoutHeight.value = "0";
+            syncNumberPairs();
+
+            if (layoutHitScale) {
+                layoutHitScale.value = String(Math.round(componentState.hitScale));
+                syncHitScalePairs();
+            }
+
+            layoutHeightLabel.textContent = "Height";
+            layoutHeightHint.textContent = "";
+        }
+
+        updateLayoutCodePreview(assetKey, componentKey);
+        updateLayoutStatusDisplay(assetKey, componentKey);
         refreshLayoutSelection();
+        refreshComponentOutlines();
     }
 
     function buildPartialStateFromControls() {
-        const assetKey = layoutAssetSelect.value;
+        const assetKey = getSelectedAssetKey();
+        const componentKey = getSelectedComponentKey();
 
         if (isVariableAsset(assetKey)) {
             return null;
         }
 
-        const base = getEffectiveLayoutState(assetKey);
+        if (isRootComponent(componentKey)) {
+            const base = getEffectiveLayoutState(assetKey);
+            const partial = {
+                scale: parseInt(layoutScaleNumber.value || layoutScale.value || String(base.scale), 10),
+                x: parseInt(layoutXNumber.value || layoutX.value || String(base.x), 10),
+                y: parseInt(layoutYNumber.value || layoutY.value || String(base.y), 10),
+                width: parseInt(layoutWidth.value || String(base.width), 10)
+            };
+
+            if (!artMetrics[assetKey]) {
+                partial.height = parseInt(layoutHeight.value || String(base.height), 10);
+            }
+
+            return partial;
+        }
+
+        const base = getEffectiveComponentState(assetKey, componentKey);
         const partial = {
-            scale: parseInt(layoutScaleNumber.value || layoutScale.value || String(base.scale), 10),
             x: parseInt(layoutXNumber.value || layoutX.value || String(base.x), 10),
             y: parseInt(layoutYNumber.value || layoutY.value || String(base.y), 10),
-            width: parseInt(layoutWidth.value || String(base.width), 10)
+            scale: parseInt(layoutScaleNumber.value || layoutScale.value || String(base.scale), 10),
+            hitScale: parseInt(layoutHitScaleNumber?.value || layoutHitScale?.value || String(base.hitScale), 10)
         };
 
-        if (!artMetrics[assetKey]) {
-            partial.height = parseInt(layoutHeight.value || String(base.height), 10);
+        if (getComponentDefinitionsForAsset(assetKey)[componentKey]?.geometryMode === "component-hit") {
+            partial.scale = base.scale;
         }
 
         return partial;
     }
 
     function pushLayoutControlValues() {
-        if (isVariableAsset(layoutAssetSelect.value)) {
+        const assetKey = getSelectedAssetKey();
+        if (isVariableAsset(assetKey)) {
             return;
         }
 
         const partial = buildPartialStateFromControls();
-
         if (!partial) {
             return;
         }
 
         beginDraftForSelected(partial);
-        updateLayoutSliderBounds(layoutAssetSelect.value);
+        updateLayoutSliderBounds(assetKey, getSelectedComponentKey());
 
-        layoutScale.value = String(Math.round(currentDraftState.scale));
-        layoutX.value = String(Math.round(currentDraftState.x));
-        layoutY.value = String(Math.round(currentDraftState.y));
+        if (currentDraftState && currentDraftState.scale != null) {
+            layoutScale.value = String(Math.round(currentDraftState.scale));
+            syncNumberPairs();
+        }
 
-        syncNumberPairs();
+        if (currentDraftState && currentDraftState.hitScale != null && layoutHitScale) {
+            layoutHitScale.value = String(Math.round(currentDraftState.hitScale));
+            syncHitScalePairs();
+        }
 
-        applyAssetLayout(layoutAssetSelect.value);
-        updateLayoutCodePreview(layoutAssetSelect.value);
-        updateLayoutStatusDisplay(layoutAssetSelect.value);
+        applyAllAssetLayouts();
+        updateLayoutCodePreview(assetKey, getSelectedComponentKey());
+        updateLayoutStatusDisplay(assetKey, getSelectedComponentKey());
         refreshLayoutSelection();
+        refreshComponentOutlines();
     }
 
     function handleLayoutSceneChange() {
-        const newAssetKey = setActiveLayoutScene(layoutSceneSelect?.value || defaultLayoutSceneKey, layoutAssetSelect.value);
+        const newAssetKey = setActiveLayoutScene(layoutSceneSelect.value || "home", getSelectedAssetKey(), getSelectedComponentKey());
 
         if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
             discardCurrentDraft();
@@ -1518,7 +2220,7 @@
     }
 
     function handleLayoutAssetChange() {
-        const newAssetKey = layoutAssetSelect.value;
+        const newAssetKey = getSelectedAssetKey();
 
         if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
             discardCurrentDraft();
@@ -1526,6 +2228,17 @@
 
         if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
             discardVariableDraft();
+        }
+
+        populateLayoutComponentSelect(newAssetKey, "root");
+        refreshLayoutUi();
+    }
+
+    function handleLayoutComponentChange() {
+        const newComponentKey = getSelectedComponentKey();
+
+        if (currentDraftKind === "component" && currentDraftComponentKey !== newComponentKey) {
+            discardCurrentDraft();
         }
 
         refreshLayoutUi();
@@ -1540,8 +2253,8 @@
             return;
         }
 
-        if (layoutAssetSelect.value !== assetKey) {
-            selectLayoutAsset(assetKey);
+        if (getSelectedAssetKey() !== assetKey) {
+            selectLayoutAsset(assetKey, "root");
             handleLayoutAssetChange();
         }
         else {
@@ -1553,7 +2266,7 @@
     }
 
     function beginDrag(assetKey, event) {
-        if (!layoutEditorEnabled || layoutAssetSelect.value !== assetKey || isVariableAsset(assetKey)) {
+        if (!layoutEditorEnabled || getSelectedAssetKey() !== assetKey || !isRootComponent(getSelectedComponentKey()) || isVariableAsset(assetKey)) {
             return;
         }
 
@@ -1581,15 +2294,14 @@
             y: Math.round(designPoint.y - dragState.offsetY)
         });
 
-        applyAssetLayout(assetKey);
-        updateLayoutSliderBounds(assetKey);
+        applyAllAssetLayouts();
 
         layoutX.value = String(Math.round(currentDraftState.x));
         layoutY.value = String(Math.round(currentDraftState.y));
         syncNumberPairs();
 
-        updateLayoutCodePreview(assetKey);
-        updateLayoutStatusDisplay(assetKey);
+        updateLayoutCodePreview(assetKey, "root");
+        updateLayoutStatusDisplay(assetKey, "root");
         refreshLayoutSelection();
     }
 
@@ -1605,11 +2317,95 @@
         dragState = null;
     }
 
-    initializeLayoutSceneControls();
-
-    if (layoutSceneSelect) {
-        layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
+    function isPointInRect(clientX, clientY, rect) {
+        return clientX >= rect.left
+            && clientX <= rect.right
+            && clientY >= rect.top
+            && clientY <= rect.bottom;
     }
+
+    function getSliderTrackClientMetrics() {
+        const trackRect = sliderTrackEmptyArt.getBoundingClientRect();
+        const sliderMetric = artMetrics.slider;
+
+        const left = sliderMetric && sliderMetric.hasVisibleBounds
+            ? trackRect.left + (trackRect.width * sliderMetric.visibleLeftRatio)
+            : trackRect.left;
+
+        const width = sliderMetric && sliderMetric.hasVisibleBounds
+            ? trackRect.width * sliderMetric.visibleWidthRatio
+            : trackRect.width;
+
+        return { left, width };
+    }
+
+    function updateSliderValueFromClientX(clientX) {
+        const metrics = getSliderTrackClientMetrics();
+        if (metrics.width <= 0) {
+            return;
+        }
+
+        const min = parseInt(durationSlider.min || "5", 10);
+        const max = parseInt(durationSlider.max || "120", 10);
+        const step = Math.max(1, parseInt(durationSlider.step || "1", 10) || 1);
+
+        const ratio = Math.max(0, Math.min(1, (clientX - metrics.left) / metrics.width));
+        const raw = min + ((max - min) * ratio);
+        const snapped = min + (Math.round((raw - min) / step) * step);
+        const clamped = Math.max(min, Math.min(max, snapped));
+
+        durationSlider.value = String(clamped);
+        updateDurationReadout();
+    }
+
+    function handleSliderPointerDown(event) {
+        if (layoutEditorEnabled || durationSlider.disabled || sliderGroup.hidden || isRunning || setupPanel.classList.contains("pl-setup-panel-locked")) {
+            return;
+        }
+
+        const hitRect = durationSlider.getBoundingClientRect();
+        if (!isPointInRect(event.clientX, event.clientY, hitRect)) {
+            return;
+        }
+
+        sliderDragState = {
+            pointerId: event.pointerId
+        };
+
+        try {
+            sliderGroup.setPointerCapture(event.pointerId);
+        }
+        catch {
+        }
+
+        event.preventDefault();
+        updateSliderValueFromClientX(event.clientX);
+    }
+
+    function handleSliderPointerMove(event) {
+        if (!sliderDragState || event.pointerId !== sliderDragState.pointerId) {
+            return;
+        }
+
+        event.preventDefault();
+        updateSliderValueFromClientX(event.clientX);
+    }
+
+    function handleSliderPointerUp(event) {
+        if (!sliderDragState || event.pointerId !== sliderDragState.pointerId) {
+            return;
+        }
+
+        try {
+            sliderGroup.releasePointerCapture(event.pointerId);
+        }
+        catch {
+        }
+
+        sliderDragState = null;
+    }
+
+    initializeLayoutSceneControls();
 
     function setSetupChildrenVisible(isVisible) {
         focusTypeField.hidden = !isVisible;
@@ -1623,7 +2419,6 @@
         });
 
         focusTypeInput.disabled = isLocked;
-        durationSlider.disabled = isLocked;
     }
 
     function setHomeButtonsVisible(isVisible) {
@@ -1935,7 +2730,7 @@
     }
 
     homeFocusButton.addEventListener("click", function () {
-        if (layoutEditorEnabled && layoutAssetSelect.value === "home-focus") {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "home-focus") {
             return;
         }
 
@@ -1943,7 +2738,7 @@
     });
 
     closeFocusButton.addEventListener("click", function () {
-        if (layoutEditorEnabled && layoutAssetSelect.value === "back") {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "back") {
             return;
         }
 
@@ -1954,8 +2749,13 @@
         updateDurationReadout();
     });
 
+    sliderGroup.addEventListener("pointerdown", handleSliderPointerDown);
+    sliderGroup.addEventListener("pointermove", handleSliderPointerMove);
+    sliderGroup.addEventListener("pointerup", handleSliderPointerUp);
+    sliderGroup.addEventListener("pointercancel", handleSliderPointerUp);
+
     startFocusButton.addEventListener("click", function () {
-        if (isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "start")) {
+        if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "start")) {
             return;
         }
 
@@ -1981,7 +2781,7 @@
     });
 
     pauseButton.addEventListener("click", function () {
-        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutEditorEnabled && layoutAssetSelect.value === "pause")) {
+        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutEditorEnabled && getSelectedAssetKey() === "pause")) {
             return;
         }
 
@@ -1998,7 +2798,7 @@
     });
 
     exitButton.addEventListener("click", function () {
-        if (!isRunning || isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "exit")) {
+        if (!isRunning || isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "exit")) {
             return;
         }
 
@@ -2014,7 +2814,7 @@
     });
 
     confirmKeepGoingButton.addEventListener("click", function () {
-        if (isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "keep-going")) {
+        if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "keep-going")) {
             return;
         }
 
@@ -2022,7 +2822,7 @@
     });
 
     confirmStopButton.addEventListener("click", function () {
-        if (isSubmitting || (layoutEditorEnabled && layoutAssetSelect.value === "stop")) {
+        if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "stop")) {
             return;
         }
 
@@ -2030,7 +2830,7 @@
     });
 
     rewardCloseButton.addEventListener("click", function () {
-        if (layoutEditorEnabled && layoutAssetSelect.value === "gotcha") {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "gotcha") {
             return;
         }
 
@@ -2046,6 +2846,7 @@
     window.addEventListener("pointermove", handleDragMove);
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
+
     window.addEventListener("resize", function () {
         applyAllAssetLayouts();
 
@@ -2062,7 +2863,7 @@
         }
     });
 
-    Object.entries(layoutAssets).forEach(([assetKey, config]) => {
+    Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
         config.element.addEventListener("pointerdown", function (event) {
             beginDrag(assetKey, event);
         });
@@ -2079,7 +2880,7 @@
             [layoutY, layoutYNumber]
         ];
 
-        rangeToNumberPairs.forEach(([rangeInput, numberInput]) => {
+        rangeToNumberPairs.forEach(function ([rangeInput, numberInput]) {
             rangeInput.addEventListener("input", function () {
                 numberInput.value = rangeInput.value;
                 pushLayoutControlValues();
@@ -2091,10 +2892,28 @@
             });
         });
 
+        if (layoutHitScale && layoutHitScaleNumber) {
+            layoutHitScale.addEventListener("input", function () {
+                layoutHitScaleNumber.value = layoutHitScale.value;
+                pushLayoutControlValues();
+            });
+
+            layoutHitScaleNumber.addEventListener("input", function () {
+                layoutHitScale.value = layoutHitScaleNumber.value;
+                pushLayoutControlValues();
+            });
+        }
+
         layoutWidth.addEventListener("input", pushLayoutControlValues);
         layoutHeight.addEventListener("input", pushLayoutControlValues);
         layoutEditorToggle.addEventListener("change", handleLayoutEditorToggleChange);
+        layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
         layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
+
+        if (layoutComponentSelect) {
+            layoutComponentSelect.addEventListener("change", handleLayoutComponentChange);
+        }
+
         layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
         layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
         layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
@@ -2102,14 +2921,10 @@
     }
 
     async function awaitFirstPaintArtMetrics() {
-        const loadTasks = Object.entries(artImageVars).map(([assetKey, cssVar]) => {
+        const loadTasks = Object.entries(artImageVars).map(function ([assetKey, cssVar]) {
             const url = readCssUrlVar(cssVar);
 
-            if (!url) {
-                return Promise.resolve();
-            }
-
-            if (artMetrics[assetKey]) {
+            if (!url || artMetrics[assetKey]) {
                 return Promise.resolve();
             }
 
@@ -2212,6 +3027,25 @@
                     cursor: pointer;
                 }
 
+                .pl-layout-component-outline,
+                .pl-layout-hit-outline {
+                    position: absolute;
+                    z-index: 17;
+                    pointer-events: none;
+                }
+
+                .pl-layout-component-outline {
+                    border: 2px dashed rgba(59, 130, 246, 0.95);
+                    border-radius: 0.9rem;
+                    box-shadow: inset 0 0 0 9999px rgba(59, 130, 246, 0.08);
+                }
+
+                .pl-layout-hit-outline {
+                    border: 2px dotted rgba(6, 182, 212, 0.98);
+                    border-radius: 1rem;
+                    box-shadow: inset 0 0 0 9999px rgba(6, 182, 212, 0.08);
+                }
+
                 @media (max-width: 640px) {
                     .pl-layout-panel {
                         max-height: calc(100dvh - 1.5rem);
@@ -2220,6 +3054,8 @@
             `;
             document.head.appendChild(style);
         }
+
+        ensureLayoutEditorExtensions();
 
         const collapseStorageKey = "plLayoutPanelCollapsed";
         const header = layoutPanel.querySelector(".pl-layout-header");
@@ -2281,7 +3117,6 @@
     async function initializeAsync() {
         initializeLayoutPanelWorkspace();
         applyPanelArtStates();
-        runReadout.hidden = true;
 
         await Promise.all([
             loadSharedLayoutState(),
@@ -2291,6 +3126,7 @@
         homeRoot.classList.toggle("pl-layout-mode", layoutModeEnabled);
         safeZoneOutline.hidden = !layoutModeEnabled;
 
+        runReadout.hidden = true;
         applyAllAssetLayouts();
         updateDurationReadout();
 
