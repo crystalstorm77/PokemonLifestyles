@@ -468,18 +468,16 @@ body {
 /* SEGMENT A3 START - Home Canvas Slider + Overlay Widgets */
 .pl-slider-track-shell,
 .pl-slider-fill-shell,
-.pl-slider-input-overlay {
+.pl-slider-input-overlay,
+.pl-slider-nib-visual {
     position: absolute;
-    inset: 0;
 }
 
 .pl-slider-nib-visual {
-    position: absolute;
-    inset: 0;
     background-color: transparent;
     background-image: var(--pl-slider-nib-image), var(--pl-slider-nib-fallback);
     background-repeat: no-repeat, no-repeat;
-    background-position: left top, left top;
+    background-position: center center, center center;
     background-size: 100% 100%, 100% 100%;
     pointer-events: none;
     transform-origin: top left;
@@ -491,9 +489,13 @@ body {
     pointer-events: none;
 }
 
-.pl-slider-track-empty-art {
+.pl-slider-track-empty-art,
+.pl-slider-fill-art {
     position: absolute;
     inset: 0;
+}
+
+.pl-slider-track-empty-art {
     background-image: var(--pl-slider-track-empty-image), var(--pl-slider-track-empty-fallback);
     background-repeat: no-repeat, no-repeat;
     background-position: left center, left center;
@@ -501,8 +503,6 @@ body {
 }
 
 .pl-slider-fill-art {
-    position: absolute;
-    inset: 0;
     background-image: var(--pl-slider-track-fill-image), var(--pl-slider-track-fill-fallback);
     background-repeat: no-repeat, no-repeat;
     background-position: left center, left center;
@@ -516,6 +516,7 @@ body {
     background: transparent;
     cursor: ew-resize;
     touch-action: none;
+    pointer-events: none;
 }
 
     .pl-slider-input-overlay::-webkit-slider-thumb {
