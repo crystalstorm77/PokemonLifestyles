@@ -167,7 +167,6 @@
 
     const setupInteractiveElements = [
         focusTypeField,
-        durationText,
         sliderGroup
     ];
 
@@ -706,9 +705,19 @@
         return `${hours}:${minutes}:${seconds}`;
     }
 
+    function formatDurationLabel(totalSeconds) {
+        const clamped = Math.max(0, Math.floor(totalSeconds));
+        const hours = Math.floor(clamped / 3600);
+        const minutes = Math.floor((clamped % 3600) / 60);
+        const seconds = clamped % 60;
+        const hourLabel = hours === 1 ? "hour" : "hours";
+
+        return `${hours} ${hourLabel} ${minutes} min ${seconds} sec`;
+    }
+
     function formatDurationSelection(totalMinutes) {
         const minutes = Math.max(1, Math.floor(totalMinutes));
-        return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+        return formatDurationLabel(minutes * 60);
     }
 
     function calculateRewardPreview(elapsedSeconds, isComplete) {
@@ -763,6 +772,12 @@
         runPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("run-panel"));
         confirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("confirm-panel"));
         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
+    }
+
+    function syncLayoutEditorSelectableStates() {
+        homeSleepButton.disabled = !layoutEditorEnabled;
+        durationText.style.pointerEvents = layoutEditorEnabled ? "auto" : "none";
+        durationText.style.cursor = layoutEditorEnabled ? "move" : "";
     }
 
     const layoutColorAssetKey = "app-edge-color";
@@ -1165,7 +1180,11 @@
     }
 
     function updateDurationReadout() {
-        durationText.textContent = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
+        const selectedDurationSeconds = parseInt(durationSlider.value || "5", 10) * 60;
+        const formatted = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
+
+        durationText.textContent = formatted;
+        runReadout.textContent = formatted;
         updateSliderVisuals();
     }
 
@@ -1383,6 +1402,7 @@
         updateLayoutSceneHeader(layoutSceneSelect?.value || defaultLayoutSceneKey);
         updateLayoutEditorControlState();
         updateLayoutEditorModeStatus();
+        syncLayoutEditorSelectableStates();
 
         const assetKey = layoutAssetSelect.value;
 
@@ -1657,13 +1677,18 @@
     }
 
     function showRunStatePreview() {
+        const previewElapsedSeconds = 600;
+        const previewRemainingSeconds = 1500;
+        const previewRemainingLabel = formatDurationLabel(previewRemainingSeconds);
+
         showSetupState();
         setupPanel.classList.add("pl-setup-panel-locked");
         setSetupChildrenLocked(true);
         setRunVisible(true);
         runStateLabel.textContent = "Time remaining";
-        runReadout.textContent = "00:25:00";
-        runElapsed.textContent = "00:10:00";
+        durationText.textContent = previewRemainingLabel;
+        runReadout.textContent = previewRemainingLabel;
+        runElapsed.textContent = formatClock(previewElapsedSeconds);
         progressFill.style.width = "40%";
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Stop Focusing");
@@ -1752,11 +1777,10 @@
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Cancel");
         runStateLabel.textContent = "Time remaining";
-        runReadout.textContent = "00:05:00";
+        updateDurationReadout();
         runElapsed.textContent = "00:00:00";
         progressFill.style.width = "0%";
         runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
-        updateDurationReadout();
     }
 
     function getElapsedSeconds() {
@@ -1876,8 +1900,10 @@
         const elapsedSeconds = getElapsedSeconds();
         const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
         const progressPercent = plannedSeconds <= 0 ? 0 : (elapsedSeconds / plannedSeconds) * 100;
+        const remainingDurationLabel = formatDurationLabel(remainingSeconds);
 
-        runReadout.textContent = formatClock(remainingSeconds);
+        durationText.textContent = remainingDurationLabel;
+        runReadout.textContent = remainingDurationLabel;
         runElapsed.textContent = formatClock(elapsedSeconds);
         progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
 
@@ -1943,9 +1969,7 @@
 
         setupPanel.classList.add("pl-setup-panel-locked");
         setSetupChildrenLocked(true);
-        runPanel.hidden = false;
-        pauseButton.hidden = false;
-        exitButton.hidden = false;
+        setRunVisible(true);
         startFocusButton.hidden = true;
         closeFocusButton.hidden = true;
 
@@ -2257,6 +2281,7 @@
     async function initializeAsync() {
         initializeLayoutPanelWorkspace();
         applyPanelArtStates();
+        runReadout.hidden = true;
 
         await Promise.all([
             loadSharedLayoutState(),
