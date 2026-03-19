@@ -1508,11 +1508,16 @@
         }
     }
 
+
     function getSliderVisualMetrics() {
         const state = getEffectiveLayoutState("slider");
-        const authorWidth = Math.max(20, state.width * (state.scale / 100));
-        const authorHeight = getResolvedHeight("slider", state) * (state.scale / 100);
+        const resolvedHeight = getResolvedHeight("slider", state);
+        const assetScaleRatio = Math.max(0.01, (state.scale || 100) / 100);
+        const authorWidth = Math.max(20, state.width * assetScaleRatio);
+        const authorHeight = resolvedHeight * assetScaleRatio;
         const projected = projectUiAssetRect(state, authorWidth, authorHeight);
+        const localScaleX = projected.width / Math.max(1, state.width);
+        const localScaleY = projected.height / Math.max(1, resolvedHeight);
         const sliderMetric = artMetrics.slider;
         const nibMetric = artMetrics["slider-nib-art"];
         const min = parseInt(durationSlider.min || "5", 10);
@@ -1531,30 +1536,29 @@
 
         const visibleNibWidthPixels = nibMetric && nibMetric.hasVisibleBounds
             ? nibMetric.canvasWidth * nibMetric.visibleWidthRatio
-            : (nibMetric?.canvasWidth || 0);
+            : Math.max(1, nibMetric?.canvasWidth || 1);
 
         const visibleNibHeightPixels = nibMetric && nibMetric.hasVisibleBounds
             ? nibMetric.canvasHeight * nibMetric.visibleHeightRatio
-            : (nibMetric?.canvasHeight || 0);
+            : Math.max(1, nibMetric?.canvasHeight || 1);
 
-        const nibAspectRatio = visibleNibWidthPixels > 0 && visibleNibHeightPixels > 0
-            ? visibleNibWidthPixels / visibleNibHeightPixels
-            : ((nibMetric?.canvasWidth || 12) / Math.max(1, nibMetric?.canvasHeight || 100));
-
-        const nibHeight = nibMetric && nibMetric.hasVisibleBounds
+        const nibVisibleAspectRatio = visibleNibWidthPixels / Math.max(1, visibleNibHeightPixels);
+        const nibVisibleHeight = nibMetric && nibMetric.hasVisibleBounds
             ? projected.height * nibMetric.visibleHeightRatio
             : projected.height;
-
-        const nibWidth = Math.max(6, nibHeight * nibAspectRatio);
+        const nibVisibleWidth = Math.max(6, nibVisibleHeight * nibVisibleAspectRatio);
 
         const nibTop = nibMetric && nibMetric.hasVisibleBounds
             ? projected.height * nibMetric.visibleTopRatio
             : 0;
 
-        const nibLeft = targetCenter - (nibWidth / 2);
+        const nibLeft = targetCenter - (nibVisibleWidth / 2);
 
         return {
             projected,
+            resolvedHeight,
+            localScaleX,
+            localScaleY,
             sliderMetric,
             nibMetric,
             progressRatio,
@@ -1564,21 +1568,28 @@
             nibRect: {
                 left: nibLeft,
                 top: nibTop,
-                width: nibWidth,
-                height: nibHeight
+                width: nibVisibleWidth,
+                height: nibVisibleHeight
             }
         };
     }
 
+
     function applyLocalRectTransform(baseRect, componentState, options = {}) {
+        const localScaleX = options.localScaleX ?? 1;
+        const localScaleY = options.localScaleY ?? 1;
         const scaleRatio = Math.max(0.01, (componentState.scale || 100) / 100);
-        const baseWidth = componentState.width != null ? componentState.width : baseRect.width;
-        const baseHeight = componentState.height != null ? componentState.height : baseRect.height;
+        const baseWidth = componentState.width != null
+            ? componentState.width * localScaleX
+            : baseRect.width;
+        const baseHeight = componentState.height != null
+            ? componentState.height * localScaleY
+            : baseRect.height;
 
         let width = Math.max(1, baseWidth * scaleRatio);
         let height = Math.max(1, baseHeight * scaleRatio);
-        let left = baseRect.left + (componentState.x || 0);
-        let top = baseRect.top + (componentState.y || 0);
+        let left = baseRect.left + ((componentState.x || 0) * localScaleX);
+        let top = baseRect.top + ((componentState.y || 0) * localScaleY);
 
         if (options.hitScale) {
             const hitScaleRatio = Math.max(1, (componentState.hitScale || 100) / 100);
@@ -1596,6 +1607,42 @@
             width,
             height
         };
+    }
+
+
+    function applySliderNibBackground(nibRect, nibMetric) {
+        if (!nibMetric) {
+            sliderNibVisual.style.backgroundSize = "100% 100%, 100% 100%";
+            sliderNibVisual.style.backgroundPosition = "center center, center center";
+            return;
+        }
+
+        if (!nibMetric.hasVisibleBounds) {
+            sliderNibVisual.style.backgroundSize = "100% 100%, 100% 100%";
+            sliderNibVisual.style.backgroundPosition = "center center, center center";
+            return;
+        }
+
+        const fullBackgroundWidth = Math.max(1, nibRect.width / Math.max(0.0001, nibMetric.visibleWidthRatio));
+        const fullBackgroundHeight = Math.max(1, nibRect.height / Math.max(0.0001, nibMetric.visibleHeightRatio));
+        const backgroundX = -nibMetric.visibleLeftRatio * fullBackgroundWidth;
+        const backgroundY = -nibMetric.visibleTopRatio * fullBackgroundHeight;
+        const backgroundSize = `${fullBackgroundWidth}px ${fullBackgroundHeight}px`;
+        const backgroundPosition = `${backgroundX}px ${backgroundY}px`;
+
+        sliderNibVisual.style.backgroundSize = `${backgroundSize}, ${backgroundSize}`;
+        sliderNibVisual.style.backgroundPosition = `${backgroundPosition}, ${backgroundPosition}`;
+    }
+
+    function getSliderComponentLocalPreviewWidth(componentKey) {
+        const previewRect = runtimeComponentRects.slider?.[componentKey];
+
+        if (!previewRect) {
+            return 0;
+        }
+
+        const metrics = getSliderVisualMetrics();
+        return previewRect.width / Math.max(0.0001, metrics.localScaleX);
     }
 
     function cacheSliderRuntimeRects(metrics, emptyRect, fillShellRect, fullFillRect, nibRect, nibHitRect) {
@@ -1635,6 +1682,7 @@
         outlineElement.style.height = `${rect.height}px`;
     }
 
+
     function updateSliderVisuals() {
         const metrics = getSliderVisualMetrics();
 
@@ -1642,6 +1690,11 @@
         const fillState = getEffectiveComponentState("slider", "fill");
         const nibState = getEffectiveComponentState("slider", "nib");
         const nibHitState = getEffectiveComponentState("slider", "nib-hit");
+
+        const transformOptions = {
+            localScaleX: metrics.localScaleX,
+            localScaleY: metrics.localScaleY
+        };
 
         const emptyBaseRect = {
             left: 0,
@@ -1657,15 +1710,15 @@
             height: metrics.nibRect.height
         };
 
-        const emptyRect = applyLocalRectTransform(emptyBaseRect, emptyState);
-        const fillFullRect = applyLocalRectTransform(emptyBaseRect, fillState);
+        const emptyRect = applyLocalRectTransform(emptyBaseRect, emptyState, transformOptions);
+        const fillFullRect = applyLocalRectTransform(emptyBaseRect, fillState, transformOptions);
         const fillShellRect = {
             left: fillFullRect.left,
             top: fillFullRect.top,
             width: Math.max(0, Math.min(fillFullRect.width, metrics.progressRatio * fillFullRect.width)),
             height: fillFullRect.height
         };
-        const nibRect = applyLocalRectTransform(nibBaseRect, nibState);
+        const nibRect = applyLocalRectTransform(nibBaseRect, nibState, transformOptions);
         const nibHitBaseRect = {
             left: nibRect.left,
             top: nibRect.top,
@@ -1677,9 +1730,13 @@
             y: nibHitState.y,
             width: nibHitState.width,
             height: nibHitState.height,
-            scale: 100,
+            scale: nibHitState.scale,
             hitScale: nibHitState.hitScale
-        }, { hitScale: true });
+        }, {
+            localScaleX: metrics.localScaleX,
+            localScaleY: metrics.localScaleY,
+            hitScale: true
+        });
 
         sliderGroup.style.left = `${metrics.projected.left}px`;
         sliderGroup.style.top = `${metrics.projected.top}px`;
@@ -1713,6 +1770,7 @@
         sliderNibVisual.style.width = `${nibRect.width}px`;
         sliderNibVisual.style.height = `${nibRect.height}px`;
         sliderNibVisual.style.transform = "none";
+        applySliderNibBackground(nibRect, metrics.nibMetric);
 
         durationSlider.style.left = `${nibHitRect.left}px`;
         durationSlider.style.top = `${nibHitRect.top}px`;
@@ -2159,7 +2217,7 @@
             layoutX.value = String(Math.round(componentState.x));
             layoutY.value = String(Math.round(componentState.y));
             layoutWidth.value = geometryMode === "component-box"
-                ? String(Math.round(componentState.width ?? previewRect?.width ?? 0))
+                ? String(Math.round(componentState.width ?? getSliderComponentLocalPreviewWidth(componentKey) ?? 0))
                 : "0";
             layoutHeight.value = "0";
             syncNumberPairs();
