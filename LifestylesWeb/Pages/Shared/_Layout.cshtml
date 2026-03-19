@@ -1,64 +1,66 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-<head>
-    <!-- SEGMENT A START — Layout Head -->
-    @{
-        var shellThemeColor = "#01ff75";
+@* SEGMENT A START — Theme Bootstrap *@
+@{
+    var shellThemeColor = "#01ff75";
 
-        try
+    try
+    {
+        var layoutFolderPath = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "Pokemon Lifestyles");
+
+        var layoutFilePath = System.IO.Path.Combine(layoutFolderPath, "layout-overrides.json");
+
+        if (System.IO.File.Exists(layoutFilePath))
         {
-            var layoutFolderPath = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Pokemon Lifestyles");
+            var rawLayout = System.IO.File.ReadAllText(layoutFilePath);
 
-            var layoutFilePath = System.IO.Path.Combine(layoutFolderPath, "layout-overrides.json");
-
-            if (System.IO.File.Exists(layoutFilePath))
+            if (!string.IsNullOrWhiteSpace(rawLayout))
             {
-                var rawLayout = System.IO.File.ReadAllText(layoutFilePath);
+                using var document = System.Text.Json.JsonDocument.Parse(rawLayout);
 
-                if (!string.IsNullOrWhiteSpace(rawLayout))
+                if (document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                    document.RootElement.TryGetProperty("variables", out var variablesElement) &&
+                    variablesElement.ValueKind == System.Text.Json.JsonValueKind.Object)
                 {
-                    using var document = System.Text.Json.JsonDocument.Parse(rawLayout);
+                    string? candidate = null;
 
-                    if (document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object &&
-                        document.RootElement.TryGetProperty("variables", out var variablesElement) &&
-                        variablesElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    if (variablesElement.TryGetProperty("appEdgeColor", out var appEdgeColorElement) &&
+                        appEdgeColorElement.ValueKind == System.Text.Json.JsonValueKind.String)
                     {
-                        string? candidate = null;
+                        candidate = appEdgeColorElement.GetString();
+                    }
+                    else if (variablesElement.TryGetProperty("AppEdgeColor", out var appEdgeColorPascalElement) &&
+                             appEdgeColorPascalElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                    {
+                        candidate = appEdgeColorPascalElement.GetString();
+                    }
+                    else if (variablesElement.TryGetProperty("app-edge-color", out var appEdgeColorDashedElement) &&
+                             appEdgeColorDashedElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                    {
+                        candidate = appEdgeColorDashedElement.GetString();
+                    }
 
-                        if (variablesElement.TryGetProperty("appEdgeColor", out var appEdgeColorElement) &&
-                            appEdgeColorElement.ValueKind == System.Text.Json.JsonValueKind.String)
-                        {
-                            candidate = appEdgeColorElement.GetString();
-                        }
-                        else if (variablesElement.TryGetProperty("AppEdgeColor", out var appEdgeColorPascalElement) &&
-                                 appEdgeColorPascalElement.ValueKind == System.Text.Json.JsonValueKind.String)
-                        {
-                            candidate = appEdgeColorPascalElement.GetString();
-                        }
-                        else if (variablesElement.TryGetProperty("app-edge-color", out var appEdgeColorDashedElement) &&
-                                 appEdgeColorDashedElement.ValueKind == System.Text.Json.JsonValueKind.String)
-                        {
-                            candidate = appEdgeColorDashedElement.GetString();
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(candidate) &&
-                            System.Text.RegularExpressions.Regex.IsMatch(
-                                candidate,
-                                "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"))
-                        {
-                            shellThemeColor = candidate;
-                        }
+                    if (!string.IsNullOrWhiteSpace(candidate) &&
+                        System.Text.RegularExpressions.Regex.IsMatch(
+                            candidate,
+                            "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"))
+                    {
+                        shellThemeColor = candidate;
                     }
                 }
             }
         }
-        catch
-        {
-        }
     }
+    catch
+    {
+    }
+}
+@* SEGMENT A END — Theme Bootstrap *@
 
+@* SEGMENT B START — Layout Head *@
+<head>
     <meta charset="utf-8" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -101,19 +103,17 @@
     <link rel="stylesheet" href="~/css/focus-canvas.css" asp-append-version="true" />
 
     <script src="~/js/pl-pwa-boot.js" asp-append-version="true"></script>
-
-    <!-- SEGMENT A END — Layout Head -->
 </head>
-<body>
-    <!-- SEGMENT B START — Layout Body -->
+@* SEGMENT B END — Layout Head *@
 
+@* SEGMENT C START — Layout Body *@
+<body>
     <div class="app-shell">
         @RenderBody()
     </div>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
-
-    <!-- SEGMENT B END — Layout Body -->
 </body>
+@* SEGMENT C END — Layout Body *@
 </html>
