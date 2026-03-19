@@ -223,9 +223,9 @@
             },
             "nib": {
                 label: "nib",
-                geometryMode: "component-scale",
+                geometryMode: "component-box",
                 allowsHitScale: false,
-                status: "Offsets the visual nib within the slider asset."
+                status: "Offsets the visual nib within the slider asset and can override its width."
             },
             "nib-hit": {
                 label: "nib-hit",
@@ -1529,13 +1529,23 @@
 
         const targetCenter = trackLeft + (progressRatio * trackWidth);
 
-        const nibWidth = nibMetric && nibMetric.hasVisibleBounds
-            ? projected.width * nibMetric.visibleWidthRatio
-            : Math.max(44, projected.width * 0.12);
+        const visibleNibWidthPixels = nibMetric && nibMetric.hasVisibleBounds
+            ? nibMetric.canvasWidth * nibMetric.visibleWidthRatio
+            : (nibMetric?.canvasWidth || 0);
+
+        const visibleNibHeightPixels = nibMetric && nibMetric.hasVisibleBounds
+            ? nibMetric.canvasHeight * nibMetric.visibleHeightRatio
+            : (nibMetric?.canvasHeight || 0);
+
+        const nibAspectRatio = visibleNibWidthPixels > 0 && visibleNibHeightPixels > 0
+            ? visibleNibWidthPixels / visibleNibHeightPixels
+            : ((nibMetric?.canvasWidth || 12) / Math.max(1, nibMetric?.canvasHeight || 100));
 
         const nibHeight = nibMetric && nibMetric.hasVisibleBounds
             ? projected.height * nibMetric.visibleHeightRatio
             : projected.height;
+
+        const nibWidth = Math.max(6, nibHeight * nibAspectRatio);
 
         const nibTop = nibMetric && nibMetric.hasVisibleBounds
             ? projected.height * nibMetric.visibleTopRatio
@@ -1562,8 +1572,11 @@
 
     function applyLocalRectTransform(baseRect, componentState, options = {}) {
         const scaleRatio = Math.max(0.01, (componentState.scale || 100) / 100);
-        let width = Math.max(1, baseRect.width * scaleRatio);
-        let height = Math.max(1, baseRect.height * scaleRatio);
+        const baseWidth = componentState.width != null ? componentState.width : baseRect.width;
+        const baseHeight = componentState.height != null ? componentState.height : baseRect.height;
+
+        let width = Math.max(1, baseWidth * scaleRatio);
+        let height = Math.max(1, baseHeight * scaleRatio);
         let left = baseRect.left + (componentState.x || 0);
         let top = baseRect.top + (componentState.y || 0);
 
@@ -1586,6 +1599,15 @@
     }
 
     function cacheSliderRuntimeRects(metrics, emptyRect, fillShellRect, fullFillRect, nibRect, nibHitRect) {
+        const toStageRect = function (localRect) {
+            return {
+                left: metrics.projected.left + localRect.left,
+                top: metrics.projected.top + localRect.top,
+                width: localRect.width,
+                height: localRect.height
+            };
+        };
+
         runtimeComponentRects.slider = {
             root: {
                 left: metrics.projected.left,
@@ -1593,11 +1615,11 @@
                 width: metrics.projected.width,
                 height: metrics.projected.height
             },
-            empty: emptyRect,
-            fill: fillShellRect,
-            "fill-full": fullFillRect,
-            nib: nibRect,
-            "nib-hit": nibHitRect
+            empty: toStageRect(emptyRect),
+            fill: toStageRect(fillShellRect),
+            "fill-full": toStageRect(fullFillRect),
+            nib: toStageRect(nibRect),
+            "nib-hit": toStageRect(nibHitRect)
         };
     }
 
@@ -1875,6 +1897,14 @@
                 payload.items[assetKey].components[componentKey].scale = Math.round(componentState.scale);
             }
 
+            if (componentState.width != null) {
+                payload.items[assetKey].components[componentKey].width = Math.round(componentState.width);
+            }
+
+            if (componentState.height != null) {
+                payload.items[assetKey].components[componentKey].height = Math.round(componentState.height);
+            }
+
             if (componentKey === "nib-hit" && componentState.hitScale !== 100) {
                 payload.items[assetKey].components[componentKey].hitScale = Math.round(componentState.hitScale);
             }
@@ -2039,6 +2069,16 @@
             return;
         }
 
+        if (definition.geometryMode === "component-box") {
+            layoutScaleField.hidden = false;
+            layoutXField.hidden = false;
+            layoutYField.hidden = false;
+            layoutWidthField.hidden = false;
+            layoutHeightField.hidden = true;
+            setHitScaleFieldHidden(true);
+            return;
+        }
+
         if (definition.geometryMode === "component-hit") {
             layoutScaleField.hidden = true;
             layoutXField.hidden = false;
@@ -2112,11 +2152,15 @@
         }
         else {
             const componentState = getEffectiveComponentState(assetKey, componentKey);
+            const geometryMode = getComponentDefinitionsForAsset(assetKey)[componentKey]?.geometryMode;
+            const previewRect = runtimeComponentRects[assetKey]?.[componentKey];
 
             layoutScale.value = String(Math.round(componentState.scale));
             layoutX.value = String(Math.round(componentState.x));
             layoutY.value = String(Math.round(componentState.y));
-            layoutWidth.value = "0";
+            layoutWidth.value = geometryMode === "component-box"
+                ? String(Math.round(componentState.width ?? previewRect?.width ?? 0))
+                : "0";
             layoutHeight.value = "0";
             syncNumberPairs();
 
@@ -2126,7 +2170,9 @@
             }
 
             layoutHeightLabel.textContent = "Height";
-            layoutHeightHint.textContent = "";
+            layoutHeightHint.textContent = geometryMode === "component-box"
+                ? "Width lets you manually widen or narrow this component without changing the whole slider."
+                : "";
         }
 
         updateLayoutCodePreview(assetKey, componentKey);
@@ -2160,6 +2206,7 @@
         }
 
         const base = getEffectiveComponentState(assetKey, componentKey);
+        const geometryMode = getComponentDefinitionsForAsset(assetKey)[componentKey]?.geometryMode;
         const partial = {
             x: parseInt(layoutXNumber.value || layoutX.value || String(base.x), 10),
             y: parseInt(layoutYNumber.value || layoutY.value || String(base.y), 10),
@@ -2167,7 +2214,14 @@
             hitScale: parseInt(layoutHitScaleNumber?.value || layoutHitScale?.value || String(base.hitScale), 10)
         };
 
-        if (getComponentDefinitionsForAsset(assetKey)[componentKey]?.geometryMode === "component-hit") {
+        if (geometryMode === "component-box") {
+            const parsedWidth = parseInt(layoutWidth.value || String(base.width ?? 0), 10);
+            partial.width = Number.isFinite(parsedWidth) && parsedWidth > 0
+                ? parsedWidth
+                : null;
+        }
+
+        if (geometryMode === "component-hit") {
             partial.scale = base.scale;
         }
 
