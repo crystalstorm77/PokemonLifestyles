@@ -7,11 +7,11 @@
 
         try
         {
-            var layoutFolderPath = Path.Combine(
+            var layoutFolderPath = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 "Pokemon Lifestyles");
 
-            var layoutFilePath = Path.Combine(layoutFolderPath, "layout-overrides.json");
+            var layoutFilePath = System.IO.Path.Combine(layoutFolderPath, "layout-overrides.json");
 
             if (System.IO.File.Exists(layoutFilePath))
             {
@@ -77,7 +77,13 @@
 
     <style>
             :root {
-                --pl-art-app-edge-color: @shellThemeColor;
+                --pl-art-app-edge-color: @shellThemeColor !important;
+            }
+
+            html,
+            body,
+            .app-shell {
+                background-color: @shellThemeColor !important;
             }
     </style>
 
