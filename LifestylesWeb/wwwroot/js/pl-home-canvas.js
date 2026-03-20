@@ -3567,101 +3567,101 @@
     });
 
     rewardCloseButton.addEventListener("click", function () {
-        if (layoutEditorEnabled && getSelectedAssetKey() === "gotcha")) {
-        return;
-    }
+        if (layoutEditorEnabled && getSelectedAssetKey() === "gotcha") {
+            return;
+        }
 
-    window.location.href = "/Index";
-});
-
-document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
-        setConfirmVisible(false);
-    }
-});
-
-window.addEventListener("pointerdown", handleSliderPointerDown, true);
-window.addEventListener("pointermove", handleDragMove);
-window.addEventListener("pointermove", handleSliderPointerMove);
-window.addEventListener("pointerup", endDrag);
-window.addEventListener("pointerup", handleSliderPointerUp);
-window.addEventListener("pointercancel", endDrag);
-window.addEventListener("pointercancel", handleSliderPointerUp);
-
-window.addEventListener("resize", function () {
-    applyAllAssetLayouts();
-
-    if (layoutModeEnabled) {
-        refreshLayoutUi();
-    }
-});
-
-window.addEventListener("pl-home-stage-resized", function () {
-    applyAllAssetLayouts();
-
-    if (layoutModeEnabled) {
-        refreshLayoutUi();
-    }
-});
-
-Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
-    config.element.addEventListener("pointerdown", function (event) {
-        beginDrag(assetKey, event);
+        window.location.href = "/Index";
     });
 
-    config.element.addEventListener("click", function (event) {
-        handleLayoutAssetCanvasClick(assetKey, event);
-    }, true);
-});
-
-function wireLayoutInputs() {
-    const rangeToNumberPairs = [
-        [layoutScale, layoutScaleNumber],
-        [layoutX, layoutXNumber],
-        [layoutY, layoutYNumber]
-    ];
-
-    rangeToNumberPairs.forEach(function ([rangeInput, numberInput]) {
-        rangeInput.addEventListener("input", function () {
-            numberInput.value = rangeInput.value;
-            pushLayoutControlValues();
-        });
-
-        numberInput.addEventListener("input", function () {
-            rangeInput.value = numberInput.value;
-            pushLayoutControlValues();
-        });
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
+            setConfirmVisible(false);
+        }
     });
 
-    if (layoutHitScale && layoutHitScaleNumber) {
-        layoutHitScale.addEventListener("input", function () {
-            layoutHitScaleNumber.value = layoutHitScale.value;
-            pushLayoutControlValues();
+    window.addEventListener("pointerdown", handleSliderPointerDown, true);
+    window.addEventListener("pointermove", handleDragMove);
+    window.addEventListener("pointermove", handleSliderPointerMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointerup", handleSliderPointerUp);
+    window.addEventListener("pointercancel", endDrag);
+    window.addEventListener("pointercancel", handleSliderPointerUp);
+
+    window.addEventListener("resize", function () {
+        applyAllAssetLayouts();
+
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    window.addEventListener("pl-home-stage-resized", function () {
+        applyAllAssetLayouts();
+
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
+        config.element.addEventListener("pointerdown", function (event) {
+            beginDrag(assetKey, event);
         });
 
-        layoutHitScaleNumber.addEventListener("input", function () {
-            layoutHitScale.value = layoutHitScaleNumber.value;
-            pushLayoutControlValues();
+        config.element.addEventListener("click", function (event) {
+            handleLayoutAssetCanvasClick(assetKey, event);
+        }, true);
+    });
+
+    function wireLayoutInputs() {
+        const rangeToNumberPairs = [
+            [layoutScale, layoutScaleNumber],
+            [layoutX, layoutXNumber],
+            [layoutY, layoutYNumber]
+        ];
+
+        rangeToNumberPairs.forEach(function ([rangeInput, numberInput]) {
+            rangeInput.addEventListener("input", function () {
+                numberInput.value = rangeInput.value;
+                pushLayoutControlValues();
+            });
+
+            numberInput.addEventListener("input", function () {
+                rangeInput.value = numberInput.value;
+                pushLayoutControlValues();
+            });
         });
+
+        if (layoutHitScale && layoutHitScaleNumber) {
+            layoutHitScale.addEventListener("input", function () {
+                layoutHitScaleNumber.value = layoutHitScale.value;
+                pushLayoutControlValues();
+            });
+
+            layoutHitScaleNumber.addEventListener("input", function () {
+                layoutHitScale.value = layoutHitScaleNumber.value;
+                pushLayoutControlValues();
+            });
+        }
+
+        layoutWidth.addEventListener("input", pushLayoutControlValues);
+        layoutHeight.addEventListener("input", pushLayoutControlValues);
+        layoutEditorToggle.addEventListener("change", handleLayoutEditorToggleChange);
+        layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
+        layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
+
+        if (layoutComponentSelect) {
+            layoutComponentSelect.addEventListener("change", handleLayoutComponentChange);
+        }
+
+        layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
+        layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
+        layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
+        layoutResetAll.addEventListener("click", resetAllLayoutAssets);
     }
 
-    layoutWidth.addEventListener("input", pushLayoutControlValues);
-    layoutHeight.addEventListener("input", pushLayoutControlValues);
-    layoutEditorToggle.addEventListener("change", handleLayoutEditorToggleChange);
-    layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
-    layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
-
-    if (layoutComponentSelect) {
-        layoutComponentSelect.addEventListener("change", handleLayoutComponentChange);
-    }
-
-    layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
-    layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
-    layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
-    layoutResetAll.addEventListener("click", resetAllLayoutAssets);
-}
-
-//#endregion SEGMENT K1 - Event Wiring
+    //#endregion SEGMENT K1 - Event Wiring
 
     //#region SEGMENT K2 - Async Boot And Layout Workspace
     async function awaitFirstPaintArtMetrics() {
