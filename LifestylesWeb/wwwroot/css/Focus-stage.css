@@ -1,580 +1,587 @@
-﻿/* SEGMENT A1 — Focus Stage Screen + Overlay Shell START */
-.pl-screen {
-    width: 100%;
-    min-height: 100vh;
-}
-
-.pl-home-screen {
-    position: relative;
-    min-height: 100vh;
-    overflow: hidden;
-    background: radial-gradient(circle at top, rgba(219, 234, 254, 0.9), rgba(226, 232, 240, 0.9)), #e2e8f0;
-}
-
-.pl-home-status {
-    position: fixed;
-    top: 1rem;
-    left: 50%;
-    z-index: 12;
-    transform: translateX(-50%);
-    min-width: min(92vw, 360px);
-    padding: 0.85rem 1rem;
-    border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
-    color: #0f172a;
-    text-align: center;
-    font-weight: 800;
-}
-
-.pl-home-scene {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background: radial-gradient(circle at 50% 10%, rgba(255,255,255,0.45), transparent 30%), radial-gradient(circle at 20% 85%, rgba(255,255,255,0.55), transparent 20%), radial-gradient(circle at 85% 82%, rgba(255,255,255,0.55), transparent 22%);
-}
-
-.pl-home-actions {
-    position: fixed;
-    left: 50%;
-    bottom: 1rem;
-    z-index: 10;
-    display: flex;
-    gap: 0.9rem;
-    transform: translateX(-50%);
-}
-
-.pl-home-action-button {
-    min-width: 120px;
-    min-height: 60px;
-    border: none;
-    border-radius: 1.25rem;
-    padding: 0.85rem 1rem;
-    background: #ffffff;
-    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
-    color: #111827;
-    font-weight: 900;
-}
-
-.pl-home-action-button-primary {
-    background: #2563eb;
-    color: #ffffff;
-}
-
-.pl-home-action-note {
-    display: block;
-    margin-top: 0.15rem;
-    font-size: 0.78rem;
-    font-weight: 700;
-    opacity: 0.75;
-}
-
-.pl-focus-overlay[hidden] {
-    display: none;
-}
-
-.pl-focus-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    display: grid;
-    place-items: center;
-    padding: 1rem;
-}
-
-.pl-focus-overlay-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(2px);
-}
-
-.pl-focus-stage-shell {
-    position: relative;
-    z-index: 1;
-    width: min(calc((100vh - 2rem) * 428 / 926), calc(100vw - 2rem), 428px);
-    aspect-ratio: 428 / 926;
-}
-
-.pl-focus-stage {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 428px;
-    height: 926px;
-    transform-origin: top left;
-    overflow: hidden;
-    border-radius: 1.75rem;
-    background: #dbeafe;
-    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
-}
-
-.pl-stage-scene-art,
-.pl-stage-shell-art {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-}
-
-.pl-stage-scene-art {
-    z-index: 0;
-    background-image: var(--pl-home-scene-image);
-}
-
-.pl-stage-shell-art {
-    z-index: 1;
-    background-image: var(--pl-focus-shell-image);
-    background-size: contain;
-}
-
-.pl-stage-layer {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-}
-
-    .pl-stage-layer[hidden] {
-        display: none;
+﻿/* SEGMENT A1 START - Focus Stage Screen + Overlay Shell */
+@media all {
+    .pl-screen {
+        width: 100%;
+        min-height: 100vh;
     }
 
-.pl-stage-panel {
-    position: absolute;
-    border-radius: 1.75rem;
-    padding: 1.35rem;
-    background: rgba(255, 255, 255, 0.97);
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: 100% 100%;
-    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.14);
-}
-
-.pl-stage-panel-setup {
-    left: var(--pl-panel-setup-x);
-    top: var(--pl-panel-setup-y);
-    width: var(--pl-panel-setup-width);
-    height: var(--pl-panel-setup-height);
-    background-image: var(--pl-focus-setup-panel-image);
-}
-
-.pl-stage-panel-run {
-    left: var(--pl-panel-run-x);
-    top: var(--pl-panel-run-y);
-    width: var(--pl-panel-run-width);
-    height: var(--pl-panel-run-height);
-    background-image: var(--pl-focus-run-panel-image);
-}
-
-.pl-stage-panel-confirm {
-    left: var(--pl-panel-confirm-x);
-    top: var(--pl-panel-confirm-y);
-    width: var(--pl-panel-confirm-width);
-    height: var(--pl-panel-confirm-height);
-    background-image: var(--pl-focus-confirm-panel-image);
-}
-
-.pl-stage-panel-reward {
-    left: var(--pl-panel-reward-x);
-    top: var(--pl-panel-reward-y);
-    width: var(--pl-panel-reward-width);
-    height: var(--pl-panel-reward-height);
-    background-image: var(--pl-focus-reward-panel-image);
-}
-
-.pl-stage-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-}
-
-/* SEGMENT A1 — Focus Stage Screen + Overlay Shell END */
-
-/* SEGMENT A2 — Focus Stage Typography + Control Surfaces START */
-.pl-link-button,
-.pl-badge,
-.pl-mode-chip,
-.pl-primary-button,
-.pl-secondary-button,
-.pl-input {
-    border-radius: 1rem;
-}
-
-.pl-link-button {
-    border: none;
-    background: transparent;
-    padding: 0;
-    font-weight: 800;
-    color: #2563eb;
-}
-
-.pl-badge {
-    padding: 0.5rem 0.75rem;
-    background: #eef2ff;
-    color: #4338ca;
-    font-size: 0.8rem;
-    font-weight: 800;
-}
-
-.pl-eyebrow {
-    margin: 1rem 0 0.35rem;
-    font-size: 0.84rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #475569;
-}
-
-.pl-title {
-    margin: 0;
-    font-size: 3rem;
-    line-height: 0.95;
-    font-weight: 900;
-    color: #0f172a;
-}
-
-.pl-subtitle {
-    margin: 0.9rem 0 0;
-    font-size: 1rem;
-    line-height: 1.45;
-    color: #334155;
-}
-
-.pl-section-title {
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 900;
-    color: #111827;
-}
-
-.pl-field {
-    display: block;
-    margin-top: 1rem;
-}
-
-.pl-field-label {
-    display: block;
-    margin-bottom: 0.45rem;
-    font-size: 0.92rem;
-    font-weight: 800;
-    color: #0f172a;
-}
-
-.pl-input {
-    width: 100%;
-    border: 1px solid #cbd5e1;
-    padding: 0.8rem 0.9rem;
-    background: #ffffff;
-    color: #0f172a;
-}
-
-.pl-mode-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-.pl-mode-chip {
-    min-height: 4rem;
-    border: 1px solid #cbd5e1;
-    padding: 0.85rem 1rem;
-    text-align: left;
-    font-weight: 900;
-}
-
-    .pl-mode-chip small {
-        display: block;
-        margin-top: 0.15rem;
-        font-weight: 700;
-        opacity: 0.75;
+    .pl-home-screen {
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+        background: radial-gradient(circle at top, rgba(219, 234, 254, 0.9), rgba(226, 232, 240, 0.9)), #e2e8f0;
     }
 
-.pl-mode-chip-active {
-    background: #2563eb;
-    color: #ffffff;
-    border-color: #2563eb;
-}
+    .pl-home-status {
+        position: fixed;
+        top: 1rem;
+        left: 50%;
+        z-index: 12;
+        transform: translateX(-50%);
+        min-width: min(92vw, 360px);
+        padding: 0.85rem 1rem;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+        color: #0f172a;
+        text-align: center;
+        font-weight: 800;
+    }
 
-.pl-mode-chip-disabled {
-    background: #f8fafc;
-    color: #64748b;
-}
+    .pl-home-scene {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 10%, rgba(255,255,255,0.45), transparent 30%), radial-gradient(circle at 20% 85%, rgba(255,255,255,0.55), transparent 20%), radial-gradient(circle at 85% 82%, rgba(255,255,255,0.55), transparent 22%);
+    }
 
-.pl-duration-card,
-.pl-run-meta-card,
-.pl-reward-compare-card,
-.pl-reward-summary-card {
-    border: 1px solid #dbe4f0;
-    border-radius: 1rem;
-    background: #f8fafc;
-}
+    .pl-home-actions {
+        position: fixed;
+        left: 50%;
+        bottom: 1rem;
+        z-index: 10;
+        display: flex;
+        gap: 0.9rem;
+        transform: translateX(-50%);
+    }
 
-.pl-duration-card {
-    padding: 1rem;
-}
-
-.pl-duration-readout {
-    display: block;
-    margin-bottom: 0.9rem;
-    font-size: 1.45rem;
-    line-height: 1.1;
-    font-weight: 900;
-    color: #111827;
-}
-
-.pl-slider {
-    width: 100%;
-    margin: 0;
-}
-
-.pl-slider-scale {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 0.55rem;
-    font-size: 0.82rem;
-    color: #64748b;
-}
-
-.pl-run-meta-grid,
-.pl-reward-compare-grid,
-.pl-reward-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-.pl-run-meta-card,
-.pl-reward-compare-card,
-.pl-reward-summary-card {
-    padding: 0.85rem 0.95rem;
-}
-
-.pl-run-label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #6b7280;
-}
-
-.pl-run-value {
-    display: block;
-    margin-top: 0.3rem;
-    font-size: 1rem;
-    font-weight: 900;
-    color: #111827;
-}
-
-.pl-run-timer-shell {
-    margin-top: 1rem;
-    border-radius: 1.25rem;
-    padding: 1.2rem 1rem;
-    background: #111827;
-    color: #ffffff;
-    text-align: center;
-}
-
-/* SEGMENT A2 — Focus Stage Typography + Control Surfaces END */
-
-/* SEGMENT A3 — Focus Stage Timer + Layout Panel START */
-.pl-run-timer-caption {
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.72);
-}
-
-.pl-run-timer {
-    margin-top: 0.45rem;
-    font-size: 3rem;
-    line-height: 1;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    font-variant-numeric: tabular-nums;
-}
-
-.pl-run-support {
-    margin-top: 0.7rem;
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.82);
-    font-variant-numeric: tabular-nums;
-}
-
-.pl-progress-track {
-    width: 100%;
-    height: 0.8rem;
-    margin-top: 1rem;
-    border-radius: 999px;
-    overflow: hidden;
-    background: #dbeafe;
-}
-
-.pl-progress-fill {
-    height: 100%;
-    width: 0;
-    border-radius: 999px;
-    background: #2563eb;
-    transition: width 0.2s linear;
-}
-
-.pl-stage-modal-dim {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.42);
-    backdrop-filter: blur(2px);
-}
-
-.pl-reward-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 0.55rem;
-    font-size: 0.95rem;
-    color: #334155;
-}
-
-    .pl-reward-row strong,
-    .pl-reward-value-large {
+    .pl-home-action-button {
+        min-width: 120px;
+        min-height: 60px;
+        border: none;
+        border-radius: 1.25rem;
+        padding: 0.85rem 1rem;
+        background: #ffffff;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
         color: #111827;
         font-weight: 900;
     }
 
-.pl-reward-value-large {
-    display: block;
-    margin-top: 0.35rem;
-    font-size: 1.8rem;
-    line-height: 1;
-}
-
-.pl-stage-button {
-    position: absolute;
-    z-index: 6;
-    border: none !important;
-    box-shadow: none !important;
-    background-color: transparent !important;
-    background-repeat: no-repeat, no-repeat !important;
-    background-position: center center, center center !important;
-    background-size: 100% 100%, 100% 100% !important;
-    border-radius: var(--pl-art-button-radius);
-    overflow: hidden;
-    transform-origin: top left;
-}
-
-    .pl-stage-button .pl-button-label {
-        display: block;
-        width: 100%;
-        text-align: center;
-        font-weight: 900;
-        pointer-events: none;
+    .pl-home-action-button-primary {
+        background: #2563eb;
+        color: #ffffff;
     }
 
-.pl-stage-button-start,
-.pl-stage-button-pause,
-.pl-stage-button-stop,
-.pl-stage-button-gotcha {
-    color: #ffffff !important;
-}
+    .pl-home-action-note {
+        display: block;
+        margin-top: 0.15rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        opacity: 0.75;
+    }
 
-.pl-stage-button-back,
-.pl-stage-button-exit,
-.pl-stage-button-keep-going {
-    color: #111827 !important;
-}
-
-.pl-stage-button-start {
-    background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback) !important;
-}
-
-.pl-stage-button-back {
-    background-image: var(--pl-btn-back-image), var(--pl-btn-back-fallback) !important;
-}
-
-.pl-stage-button-pause {
-    background-image: var(--pl-btn-pause-image), var(--pl-btn-pause-fallback) !important;
-}
-
-.pl-stage-button-exit {
-    background-image: var(--pl-btn-exit-image), var(--pl-btn-exit-fallback) !important;
-}
-
-.pl-stage-button-keep-going {
-    background-image: var(--pl-btn-keep-going-image), var(--pl-btn-keep-going-fallback) !important;
-}
-
-.pl-stage-button-stop {
-    background-image: var(--pl-btn-stop-image), var(--pl-btn-stop-fallback) !important;
-}
-
-.pl-stage-button-gotcha {
-    background-image: var(--pl-btn-gotcha-image), var(--pl-btn-gotcha-fallback) !important;
-}
-
-.pl-layout-selected {
-    outline: 2px dashed #f59e0b;
-    outline-offset: 3px;
-}
-
-.pl-layout-panel {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 80;
-    width: min(92vw, 340px);
-    border-radius: 1rem;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.97);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(8px);
-}
-
-    .pl-layout-panel[hidden] {
+    .pl-focus-overlay[hidden] {
         display: none;
     }
 
-.pl-layout-panel-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    .pl-focus-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+    }
+
+    .pl-focus-overlay-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(2px);
+    }
+
+    .pl-focus-stage-shell {
+        position: relative;
+        z-index: 1;
+        width: min(calc((100vh - 2rem) * 428 / 926), calc(100vw - 2rem), 428px);
+        aspect-ratio: 428 / 926;
+    }
+
+    .pl-focus-stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 428px;
+        height: 926px;
+        transform-origin: top left;
+        overflow: hidden;
+        border-radius: 1.75rem;
+        background: #dbeafe;
+        box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+    }
+
+    .pl-stage-scene-art,
+    .pl-stage-shell-art {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+    }
+
+    .pl-stage-scene-art {
+        z-index: 0;
+        background-image: var(--pl-home-scene-image);
+    }
+
+    .pl-stage-shell-art {
+        z-index: 1;
+        background-image: var(--pl-focus-shell-image);
+        background-size: contain;
+    }
+
+    .pl-stage-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+    }
+
+        .pl-stage-layer[hidden] {
+            display: none;
+        }
+
+    .pl-stage-panel {
+        position: absolute;
+        border-radius: 1.75rem;
+        padding: 1.35rem;
+        background: rgba(255, 255, 255, 0.97);
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: 100% 100%;
+        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.14);
+    }
+
+    .pl-stage-panel-setup {
+        left: var(--pl-panel-setup-x);
+        top: var(--pl-panel-setup-y);
+        width: var(--pl-panel-setup-width);
+        height: var(--pl-panel-setup-height);
+        background-image: var(--pl-focus-setup-panel-image);
+    }
+
+    .pl-stage-panel-run {
+        left: var(--pl-panel-run-x);
+        top: var(--pl-panel-run-y);
+        width: var(--pl-panel-run-width);
+        height: var(--pl-panel-run-height);
+        background-image: var(--pl-focus-run-panel-image);
+    }
+
+    .pl-stage-panel-confirm {
+        left: var(--pl-panel-confirm-x);
+        top: var(--pl-panel-confirm-y);
+        width: var(--pl-panel-confirm-width);
+        height: var(--pl-panel-confirm-height);
+        background-image: var(--pl-focus-confirm-panel-image);
+    }
+
+    .pl-stage-panel-reward {
+        left: var(--pl-panel-reward-x);
+        top: var(--pl-panel-reward-y);
+        width: var(--pl-panel-reward-width);
+        height: var(--pl-panel-reward-height);
+        background-image: var(--pl-focus-reward-panel-image);
+    }
+
+    .pl-stage-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
 }
 
-    .pl-layout-panel-header span {
+/* SEGMENT A1 END - Focus Stage Screen + Overlay Shell */
+
+/* SEGMENT A2 START - Focus Stage Typography + Control Surfaces */
+@media all {
+    .pl-link-button,
+    .pl-badge,
+    .pl-mode-chip,
+    .pl-primary-button,
+    .pl-secondary-button,
+    .pl-input {
+        border-radius: 1rem;
+    }
+
+    .pl-link-button {
+        border: none;
+        background: transparent;
+        padding: 0;
+        font-weight: 800;
+        color: #2563eb;
+    }
+
+    .pl-badge {
+        padding: 0.5rem 0.75rem;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 0.8rem;
+        font-weight: 800;
+    }
+
+    .pl-eyebrow {
+        margin: 1rem 0 0.35rem;
+        font-size: 0.84rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #475569;
+    }
+
+    .pl-title {
+        margin: 0;
+        font-size: 3rem;
+        line-height: 0.95;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .pl-subtitle {
+        margin: 0.9rem 0 0;
+        font-size: 1rem;
+        line-height: 1.45;
+        color: #334155;
+    }
+
+    .pl-section-title {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: #111827;
+    }
+
+    .pl-field {
+        display: block;
+        margin-top: 1rem;
+    }
+
+    .pl-field-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        font-size: 0.92rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .pl-input {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        padding: 0.8rem 0.9rem;
+        background: #ffffff;
+        color: #0f172a;
+    }
+
+    .pl-mode-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .pl-mode-chip {
+        min-height: 4rem;
+        border: 1px solid #cbd5e1;
+        padding: 0.85rem 1rem;
+        text-align: left;
+        font-weight: 900;
+    }
+
+        .pl-mode-chip small {
+            display: block;
+            margin-top: 0.15rem;
+            font-weight: 700;
+            opacity: 0.75;
+        }
+
+    .pl-mode-chip-active {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+
+    .pl-mode-chip-disabled {
+        background: #f8fafc;
+        color: #64748b;
+    }
+
+    .pl-duration-card,
+    .pl-run-meta-card,
+    .pl-reward-compare-card,
+    .pl-reward-summary-card {
+        border: 1px solid #dbe4f0;
+        border-radius: 1rem;
+        background: #f8fafc;
+    }
+
+    .pl-duration-card {
+        padding: 1rem;
+    }
+
+    .pl-duration-readout {
+        display: block;
+        margin-bottom: 0.9rem;
+        font-size: 1.45rem;
+        line-height: 1.1;
+        font-weight: 900;
+        color: #111827;
+    }
+
+    .pl-slider {
+        width: 100%;
+        margin: 0;
+    }
+
+    .pl-slider-scale {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.55rem;
         font-size: 0.82rem;
         color: #64748b;
     }
 
-.pl-layout-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-}
+    .pl-run-meta-grid,
+    .pl-reward-compare-grid,
+    .pl-reward-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
 
-.pl-layout-code {
-    min-height: 11rem;
-    resize: vertical;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 0.82rem;
-    line-height: 1.45;
-}
+    .pl-run-meta-card,
+    .pl-reward-compare-card,
+    .pl-reward-summary-card {
+        padding: 0.85rem 0.95rem;
+    }
 
-@media (max-width: 640px) {
-    .pl-layout-panel {
-        top: auto;
-        bottom: 6.5rem;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-        width: min(94vw, 360px);
+    .pl-run-label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #6b7280;
+    }
+
+    .pl-run-value {
+        display: block;
+        margin-top: 0.3rem;
+        font-size: 1rem;
+        font-weight: 900;
+        color: #111827;
+    }
+
+    .pl-run-timer-shell {
+        margin-top: 1rem;
+        border-radius: 1.25rem;
+        padding: 1.2rem 1rem;
+        background: #111827;
+        color: #ffffff;
+        text-align: center;
     }
 }
-/* SEGMENT A3 — Focus Stage Timer + Layout Panel END */
+
+/* SEGMENT A2 END - Focus Stage Typography + Control Surfaces */
+
+/* SEGMENT A3 START - Focus Stage Timer + Layout Panel */
+@media all {
+    .pl-run-timer-caption {
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    .pl-run-timer {
+        margin-top: 0.45rem;
+        font-size: 3rem;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pl-run-support {
+        margin-top: 0.7rem;
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.82);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pl-progress-track {
+        width: 100%;
+        height: 0.8rem;
+        margin-top: 1rem;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #dbeafe;
+    }
+
+    .pl-progress-fill {
+        height: 100%;
+        width: 0;
+        border-radius: 999px;
+        background: #2563eb;
+        transition: width 0.2s linear;
+    }
+
+    .pl-stage-modal-dim {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.42);
+        backdrop-filter: blur(2px);
+    }
+
+    .pl-reward-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-top: 0.55rem;
+        font-size: 0.95rem;
+        color: #334155;
+    }
+
+        .pl-reward-row strong,
+        .pl-reward-value-large {
+            color: #111827;
+            font-weight: 900;
+        }
+
+    .pl-reward-value-large {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 1.8rem;
+        line-height: 1;
+    }
+
+    .pl-stage-button {
+        position: absolute;
+        z-index: 6;
+        border: none !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+        background-repeat: no-repeat, no-repeat !important;
+        background-position: center center, center center !important;
+        background-size: 100% 100%, 100% 100% !important;
+        border-radius: var(--pl-art-button-radius);
+        overflow: hidden;
+        transform-origin: top left;
+    }
+
+        .pl-stage-button .pl-button-label {
+            display: block;
+            width: 100%;
+            text-align: center;
+            font-weight: 900;
+            pointer-events: none;
+        }
+
+    .pl-stage-button-start,
+    .pl-stage-button-pause,
+    .pl-stage-button-stop,
+    .pl-stage-button-gotcha {
+        color: #ffffff !important;
+    }
+
+    .pl-stage-button-back,
+    .pl-stage-button-exit,
+    .pl-stage-button-keep-going {
+        color: #111827 !important;
+    }
+
+    .pl-stage-button-start {
+        background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback) !important;
+    }
+
+    .pl-stage-button-back {
+        background-image: var(--pl-btn-back-image), var(--pl-btn-back-fallback) !important;
+    }
+
+    .pl-stage-button-pause {
+        background-image: var(--pl-btn-pause-image), var(--pl-btn-pause-fallback) !important;
+    }
+
+    .pl-stage-button-exit {
+        background-image: var(--pl-btn-exit-image), var(--pl-btn-exit-fallback) !important;
+    }
+
+    .pl-stage-button-keep-going {
+        background-image: var(--pl-btn-keep-going-image), var(--pl-btn-keep-going-fallback) !important;
+    }
+
+    .pl-stage-button-stop {
+        background-image: var(--pl-btn-stop-image), var(--pl-btn-stop-fallback) !important;
+    }
+
+    .pl-stage-button-gotcha {
+        background-image: var(--pl-btn-gotcha-image), var(--pl-btn-gotcha-fallback) !important;
+    }
+
+    .pl-layout-selected {
+        outline: 2px dashed #f59e0b;
+        outline-offset: 3px;
+    }
+
+    .pl-layout-panel {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 80;
+        width: min(92vw, 340px);
+        border-radius: 1rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.97);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(8px);
+    }
+
+        .pl-layout-panel[hidden] {
+            display: none;
+        }
+
+    .pl-layout-panel-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+        .pl-layout-panel-header span {
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+
+    .pl-layout-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .pl-layout-code {
+        min-height: 11rem;
+        resize: vertical;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    @media (max-width: 640px) {
+        .pl-layout-panel {
+            top: auto;
+            bottom: 6.5rem;
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+            width: min(94vw, 360px);
+        }
+    }
+}
+
+/* SEGMENT A3 END - Focus Stage Timer + Layout Panel */
