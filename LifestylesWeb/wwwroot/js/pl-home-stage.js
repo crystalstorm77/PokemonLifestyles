@@ -25,6 +25,8 @@
     };
 
     let firstPaintReady = false;
+    let standaloneDeferredLayoutTimeoutId = 0;
+    let standaloneDeferredLayoutPassesRemaining = 0;
 
     homeStageShell.style.visibility = "hidden";
     homeStageShell.dataset.stageReady = "false";
@@ -231,7 +233,11 @@
         homeStage.style.transform = "scale(1)";
     }
 
-    function applyMobilePortraitLockShellStyles(viewportWidth, viewportHeight, renderWidth, renderHeight, previewScale, rotationDegrees, designWidth, designHeight) {
+    function applyMobilePortraitLockShellStyles(viewportWidth, viewportHeight, renderWidth, renderHeight, previewScale, rotationDegrees, designWidth, designHeight, centerYOffset) {
+        const resolvedCenterYOffset = Number.isFinite(centerYOffset)
+            ? centerYOffset
+            : 0;
+
         if (appShell) {
             appShell.style.justifyContent = "center";
             appShell.style.alignItems = "center";
@@ -245,7 +251,7 @@
         homeStageShell.style.alignSelf = "auto";
         homeStageShell.style.position = "absolute";
         homeStageShell.style.left = "50%";
-        homeStageShell.style.top = "50%";
+        homeStageShell.style.top = `calc(50% + ${round3(resolvedCenterYOffset)}px)`;
         homeStageShell.style.transformOrigin = "center center";
         homeStageShell.style.transform = `translate(-50%, -50%) rotate(${rotationDegrees}deg)`;
 
@@ -611,6 +617,9 @@
             );
         } else if (standaloneDisplayMode && activeStandaloneLockFrame) {
             if (standaloneLandscapeMode) {
+                const standaloneLandscapeCenterYOffset =
+                    (liveSafeArea.top - liveSafeArea.bottom) / 2;
+
                 previewScale = Math.min(
                     1,
                     Math.max(0.1, liveViewport.width / designHeight),
@@ -625,7 +634,8 @@
                     previewScale,
                     getMobileLandscapeRotationDegrees(),
                     designWidth,
-                    designHeight
+                    designHeight,
+                    standaloneLandscapeCenterYOffset
                 );
 
                 rootWidth = designWidth;
@@ -694,7 +704,8 @@
                 previewScale,
                 mobileLandscapeRotationDegrees,
                 designWidth,
-                designHeight
+                designHeight,
+                0
             );
 
             rootWidth = designWidth;
@@ -873,6 +884,37 @@
         );
     }
 
+    function scheduleStandaloneDeferredLayoutRefresh() {
+        if (standaloneDeferredLayoutTimeoutId) {
+            clearTimeout(standaloneDeferredLayoutTimeoutId);
+            standaloneDeferredLayoutTimeoutId = 0;
+        }
+
+        if (standaloneDeferredLayoutPassesRemaining <= 0) {
+            return;
+        }
+
+        standaloneDeferredLayoutTimeoutId = window.setTimeout(function () {
+            standaloneDeferredLayoutTimeoutId = 0;
+
+            if (
+                !isStandaloneDisplayMode(readDisplayMode()) ||
+                (
+                    window.visualViewport &&
+                    Number.isFinite(window.visualViewport.scale) &&
+                    window.visualViewport.scale > 1.01
+                )
+            ) {
+                standaloneDeferredLayoutPassesRemaining = 0;
+                return;
+            }
+
+            applyHomeStageLayout();
+            standaloneDeferredLayoutPassesRemaining -= 1;
+            scheduleStandaloneDeferredLayoutRefresh();
+        }, 180);
+    }
+
     function handleStageEnvironmentChange() {
         if (
             window.visualViewport &&
@@ -886,13 +928,27 @@
 
         if (isStandaloneDisplayMode(displayMode)) {
             if (firstPaintReady) {
+                if (standaloneDeferredLayoutTimeoutId) {
+                    clearTimeout(standaloneDeferredLayoutTimeoutId);
+                    standaloneDeferredLayoutTimeoutId = 0;
+                }
+
+                standaloneDeferredLayoutPassesRemaining = 2;
                 applyHomeStageLayout();
+                scheduleStandaloneDeferredLayoutRefresh();
+
                 return;
             }
 
             beginStandaloneStartupLock();
             return;
         }
+
+        if (standaloneDeferredLayoutTimeoutId) {
+            clearTimeout(standaloneDeferredLayoutTimeoutId);
+            standaloneDeferredLayoutTimeoutId = 0;
+        }
+        standaloneDeferredLayoutPassesRemaining = 0;
 
         clearStandaloneStartupSampling();
         standaloneStartupLock.lockedFrame = null;
