@@ -346,12 +346,26 @@
     </label>
 
     <div class="pl-field" id="pl-layout-hit-scale-field" hidden>
-        <label class="pl-field-label" for="pl-layout-hit-scale">Interactable Area Scale</label>
+        <span class="pl-field-label">Interactable Area Size</span>
+
+        <label class="pl-field-label" for="pl-layout-hit-scale-x" style="display:block;margin-top:0.45rem;">Width scale</label>
         <div class="pl-layout-range-with-number">
-            <input class="pl-input" id="pl-layout-hit-scale" type="range" min="100" max="200" step="1" value="100" />
-            <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-number" type="number" min="100" max="200" step="1" value="100" />
+            <input class="pl-input" id="pl-layout-hit-scale-x" type="range" min="100" max="200" step="1" value="100" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-x-number" type="number" min="100" max="200" step="1" value="100" />
         </div>
-        <span class="pl-field-hint" id="pl-layout-hit-scale-status">100% = exact component bounds. 200% = double-size interactable area.</span>
+
+        <label class="pl-field-label" for="pl-layout-hit-scale-y" style="display:block;margin-top:0.75rem;">Height scale</label>
+        <div class="pl-layout-range-with-number">
+            <input class="pl-input" id="pl-layout-hit-scale-y" type="range" min="100" max="200" step="1" value="100" />
+            <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-y-number" type="number" min="100" max="200" step="1" value="100" />
+        </div>
+
+        <label style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;margin-top:0.8rem;">
+            <input id="pl-layout-hit-scale-lock" type="checkbox" checked />
+            <span class="pl-field-label" style="margin:0;">Lock width + height together</span>
+        </label>
+
+        <span class="pl-field-hint" id="pl-layout-hit-scale-status">100% = exact nib-hit bounds on that axis. 200% = double-size interactable area on that axis.</span>
     </div>
 
     <div class="pl-layout-actions">

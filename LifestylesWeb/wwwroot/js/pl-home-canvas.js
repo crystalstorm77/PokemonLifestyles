@@ -302,9 +302,11 @@
     let layoutComponentSelect = document.getElementById("pl-layout-component-select");
     let layoutComponentStatus = document.getElementById("pl-layout-component-status");
 
-    let layoutHitScaleField = null;
-    let layoutHitScale = document.getElementById("pl-layout-hit-scale");
-    let layoutHitScaleNumber = document.getElementById("pl-layout-hit-scale-number");
+    let layoutHitScaleField = document.getElementById("pl-layout-hit-scale-field");
+    let layoutHitScaleX = document.getElementById("pl-layout-hit-scale-x");
+    let layoutHitScaleXNumber = document.getElementById("pl-layout-hit-scale-x-number");
+    let layoutHitScaleY = document.getElementById("pl-layout-hit-scale-y");
+    let layoutHitScaleYNumber = document.getElementById("pl-layout-hit-scale-y-number");
     let layoutHitScaleStatus = document.getElementById("pl-layout-hit-scale-status");
 
     let layoutColorField = null;
@@ -479,13 +481,16 @@
             return null;
         }
 
+        const legacyHitScale = value.hitScale ?? value.HitScale;
+
         return {
             x: value.x ?? value.X,
             y: value.y ?? value.Y,
             width: value.width ?? value.Width,
             height: value.height ?? value.Height,
             scale: value.scale ?? value.Scale,
-            hitScale: value.hitScale ?? value.HitScale
+            hitScaleX: value.hitScaleX ?? value.HitScaleX ?? legacyHitScale,
+            hitScaleY: value.hitScaleY ?? value.HitScaleY ?? legacyHitScale
         };
     }
 
@@ -732,7 +737,8 @@
                         width: null,
                         height: null,
                         scale: 100,
-                        hitScale: 100
+                        hitScaleX: 100,
+                        hitScaleY: 100
                     };
                 case "nib-hit":
                     return {
@@ -741,7 +747,8 @@
                         width: null,
                         height: null,
                         scale: 100,
-                        hitScale: 100
+                        hitScaleX: 100,
+                        hitScaleY: 100
                     };
                 default:
                     return {
@@ -750,7 +757,8 @@
                         width: null,
                         height: null,
                         scale: 100,
-                        hitScale: 100
+                        hitScaleX: 100,
+                        hitScaleY: 100
                     };
             }
         }
@@ -761,7 +769,8 @@
             width: null,
             height: null,
             scale: 100,
-            hitScale: 100
+            hitScaleX: 100,
+            hitScaleY: 100
         };
     }
 
@@ -889,7 +898,8 @@
             width: stored.width ?? base.width,
             height: stored.height ?? base.height,
             scale: stored.scale ?? base.scale,
-            hitScale: stored.hitScale ?? base.hitScale
+            hitScaleX: stored.hitScaleX ?? base.hitScaleX,
+            hitScaleY: stored.hitScaleY ?? base.hitScaleY
         };
     }
 
@@ -938,7 +948,8 @@
                 width: currentDraftState.width ?? saved.width,
                 height: currentDraftState.height ?? saved.height,
                 scale: currentDraftState.scale ?? saved.scale,
-                hitScale: currentDraftState.hitScale ?? saved.hitScale
+                hitScaleX: currentDraftState.hitScaleX ?? saved.hitScaleX,
+                hitScaleY: currentDraftState.hitScaleY ?? saved.hitScaleY
             };
         }
 
@@ -1009,7 +1020,8 @@
             width: partialState?.width ?? baseState.width,
             height: partialState?.height ?? baseState.height,
             scale: partialState?.scale ?? baseState.scale,
-            hitScale: partialState?.hitScale ?? baseState.hitScale
+            hitScaleX: partialState?.hitScaleX ?? baseState.hitScaleX,
+            hitScaleY: partialState?.hitScaleY ?? baseState.hitScaleY
         };
     }
 
@@ -1134,7 +1146,8 @@
                     width: currentDraftState.width,
                     height: currentDraftState.height,
                     scale: currentDraftState.scale,
-                    hitScale: currentDraftState.hitScale
+                    hitScaleX: currentDraftState.hitScaleX,
+                    hitScaleY: currentDraftState.hitScaleY
                 };
             }
 
@@ -1276,6 +1289,8 @@
         };
     }
     //#endregion SEGMENT D2 - Layout Asset Persistence And Visibility
+
+    
 
     
 
@@ -1858,17 +1873,32 @@
             layoutComponentField = layoutComponentSelect.closest(".pl-field");
         }
 
-        if (!layoutHitScale) {
-            layoutHitScaleField = document.createElement("label");
+        if (!layoutHitScaleX || !layoutHitScaleXNumber || !layoutHitScaleY || !layoutHitScaleYNumber) {
+            layoutHitScaleField = document.createElement("div");
             layoutHitScaleField.className = "pl-field";
+            layoutHitScaleField.id = "pl-layout-hit-scale-field";
             layoutHitScaleField.hidden = true;
             layoutHitScaleField.innerHTML = `
-                <span class="pl-field-label">Interactable Area Scale</span>
+                <span class="pl-field-label">Interactable Area Size</span>
+
+                <label class="pl-field-label" for="pl-layout-hit-scale-x" style="display:block;margin-top:0.45rem;">Width scale</label>
                 <div class="pl-layout-range-with-number">
-                    <input class="pl-input" id="pl-layout-hit-scale" type="range" min="100" max="200" step="1" value="100" />
-                    <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-number" type="number" min="100" max="200" step="1" value="100" />
+                    <input class="pl-input" id="pl-layout-hit-scale-x" type="range" min="100" max="200" step="1" value="100" />
+                    <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-x-number" type="number" min="100" max="200" step="1" value="100" />
                 </div>
-                <span class="pl-field-hint" id="pl-layout-hit-scale-status">100% = exact component bounds. 200% = double-size interactable area.</span>
+
+                <label class="pl-field-label" for="pl-layout-hit-scale-y" style="display:block;margin-top:0.75rem;">Height scale</label>
+                <div class="pl-layout-range-with-number">
+                    <input class="pl-input" id="pl-layout-hit-scale-y" type="range" min="100" max="200" step="1" value="100" />
+                    <input class="pl-input pl-layout-number-input" id="pl-layout-hit-scale-y-number" type="number" min="100" max="200" step="1" value="100" />
+                </div>
+
+                <label style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;margin-top:0.8rem;">
+                    <input id="pl-layout-hit-scale-lock" type="checkbox" checked />
+                    <span class="pl-field-label" style="margin:0;">Lock width + height together</span>
+                </label>
+
+                <span class="pl-field-hint" id="pl-layout-hit-scale-status">100% = exact nib-hit bounds on that axis. 200% = double-size interactable area on that axis.</span>
             `;
 
             if (layoutHeightField && layoutHeightField.parentNode) {
@@ -1878,12 +1908,14 @@
                 layoutPanel.appendChild(layoutHitScaleField);
             }
 
-            layoutHitScale = layoutHitScaleField.querySelector("#pl-layout-hit-scale");
-            layoutHitScaleNumber = layoutHitScaleField.querySelector("#pl-layout-hit-scale-number");
+            layoutHitScaleX = layoutHitScaleField.querySelector("#pl-layout-hit-scale-x");
+            layoutHitScaleXNumber = layoutHitScaleField.querySelector("#pl-layout-hit-scale-x-number");
+            layoutHitScaleY = layoutHitScaleField.querySelector("#pl-layout-hit-scale-y");
+            layoutHitScaleYNumber = layoutHitScaleField.querySelector("#pl-layout-hit-scale-y-number");
             layoutHitScaleStatus = layoutHitScaleField.querySelector("#pl-layout-hit-scale-status");
         }
         else {
-            layoutHitScaleField = layoutHitScale.closest(".pl-field");
+            layoutHitScaleField = document.getElementById("pl-layout-hit-scale-field") || layoutHitScaleX.closest(".pl-field");
         }
     }
 
@@ -2022,9 +2054,11 @@
         let top = baseRect.top + ((componentState.y || 0) * localScaleY);
 
         if (options.hitScale) {
-            const hitScaleRatio = Math.max(1, (componentState.hitScale || 100) / 100);
-            const expandedWidth = Math.max(1, width * hitScaleRatio);
-            const expandedHeight = Math.max(1, height * hitScaleRatio);
+            const hitScaleRatioX = Math.max(1, (componentState.hitScaleX || 100) / 100);
+            const hitScaleRatioY = Math.max(1, (componentState.hitScaleY || 100) / 100);
+            const expandedWidth = Math.max(1, width * hitScaleRatioX);
+            const expandedHeight = Math.max(1, height * hitScaleRatioY);
+
             left -= (expandedWidth - width) / 2;
             top -= (expandedHeight - height) / 2;
             width = expandedWidth;
@@ -2189,7 +2223,8 @@
             width: nibHitState.width,
             height: nibHitState.height,
             scale: nibHitState.scale,
-            hitScale: nibHitState.hitScale
+            hitScaleX: nibHitState.hitScaleX,
+            hitScaleY: nibHitState.hitScaleY
         }, {
             localScaleX: metrics.localScaleX,
             localScaleY: metrics.localScaleY,
@@ -2342,6 +2377,10 @@
     //#endregion SEGMENT G2 - Slider Rendering And Asset Layout
 
     //#region SEGMENT H1 - Layout Bounds And Status Controls
+    function getLayoutHitScaleLock() {
+        return document.getElementById("pl-layout-hit-scale-lock");
+    }
+
     function updateLayoutSliderBounds(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
             return;
@@ -2438,8 +2477,14 @@
                 payload.items[assetKey].components[componentKey].height = Math.round(componentState.height);
             }
 
-            if (componentKey === "nib-hit" && componentState.hitScale !== 100) {
-                payload.items[assetKey].components[componentKey].hitScale = Math.round(componentState.hitScale);
+            if (componentKey === "nib-hit") {
+                if (componentState.hitScaleX !== 100) {
+                    payload.items[assetKey].components[componentKey].hitScaleX = Math.round(componentState.hitScaleX);
+                }
+
+                if (componentState.hitScaleY !== 100) {
+                    payload.items[assetKey].components[componentKey].hitScaleY = Math.round(componentState.hitScaleY);
+                }
             }
 
             layoutCode.value = JSON.stringify(payload, null, 2);
@@ -2492,13 +2537,20 @@
 
         if (!isRootComponent(componentKey)) {
             const definitions = getComponentDefinitionsForAsset(assetKey);
+            const componentState = getEffectiveComponentState(assetKey, componentKey);
+
             layoutStageStatus.textContent = `Component mode · ${definitions[componentKey]?.label || componentKey}`;
             layoutSafeZoneStatus.textContent = definitions[componentKey]?.status || "Component tuning mode.";
             layoutScaleValue.textContent = componentKey === "nib-hit"
-                ? `${Math.round(getEffectiveComponentState(assetKey, componentKey).hitScale)}% hit area`
-                : `${Math.round(getEffectiveComponentState(assetKey, componentKey).scale)}%`;
-            layoutXValue.textContent = `${Math.round(getEffectiveComponentState(assetKey, componentKey).x)} px local offset`;
-            layoutYValue.textContent = `${Math.round(getEffectiveComponentState(assetKey, componentKey).y)} px local offset`;
+                ? `${Math.round(componentState.hitScaleX)}% width · ${Math.round(componentState.hitScaleY)}% height`
+                : `${Math.round(componentState.scale)}%`;
+            layoutXValue.textContent = `${Math.round(componentState.x)} px local offset`;
+            layoutYValue.textContent = `${Math.round(componentState.y)} px local offset`;
+
+            if (componentKey === "nib-hit" && layoutHitScaleStatus) {
+                layoutHitScaleStatus.textContent = "Width and height scales expand the nib's interactable area independently around its centre. Turn on the lock checkbox to scale both axes together again.";
+            }
+
             return;
         }
 
@@ -2524,11 +2576,13 @@
     }
 
     function syncHitScalePairs() {
-        if (!layoutHitScale || !layoutHitScaleNumber) {
-            return;
+        if (layoutHitScaleX && layoutHitScaleXNumber) {
+            layoutHitScaleXNumber.value = layoutHitScaleX.value;
         }
 
-        layoutHitScaleNumber.value = layoutHitScale.value;
+        if (layoutHitScaleY && layoutHitScaleYNumber) {
+            layoutHitScaleYNumber.value = layoutHitScaleY.value;
+        }
     }
 
     function getLayoutEditorManagedControls() {
@@ -2544,8 +2598,11 @@
             layoutYNumber,
             layoutWidth,
             layoutHeight,
-            layoutHitScale,
-            layoutHitScaleNumber,
+            layoutHitScaleX,
+            layoutHitScaleXNumber,
+            layoutHitScaleY,
+            layoutHitScaleYNumber,
+            getLayoutHitScaleLock(),
             layoutSaveSelected,
             layoutRevertSelected,
             layoutResetSelected,
@@ -2745,6 +2802,7 @@
         else {
             const componentState = getEffectiveComponentState(assetKey, componentKey);
             const geometryMode = getComponentDefinitionsForAsset(assetKey)[componentKey]?.geometryMode;
+            const hitScaleLock = getLayoutHitScaleLock();
 
             layoutScale.value = String(Math.round(componentState.scale));
             layoutX.value = String(Math.round(componentState.x));
@@ -2755,9 +2813,14 @@
             layoutHeight.value = "0";
             syncNumberPairs();
 
-            if (layoutHitScale) {
-                layoutHitScale.value = String(Math.round(componentState.hitScale));
+            if (layoutHitScaleX && layoutHitScaleY) {
+                layoutHitScaleX.value = String(Math.round(componentState.hitScaleX));
+                layoutHitScaleY.value = String(Math.round(componentState.hitScaleY));
                 syncHitScalePairs();
+            }
+
+            if (hitScaleLock && componentKey === "nib-hit") {
+                hitScaleLock.checked = Math.round(componentState.hitScaleX) === Math.round(componentState.hitScaleY);
             }
 
             layoutHeightLabel.textContent = "Height";
@@ -2775,6 +2838,26 @@
     //#endregion SEGMENT H2 - Layout UI Refresh
 
     //#region SEGMENT H3 - Layout Draft Control Values
+    function setLockedHitScaleUiValue(nextValue) {
+        const normalizedValue = String(Math.max(100, Math.min(200, parseInt(String(nextValue || "100"), 10) || 100)));
+
+        if (layoutHitScaleX) {
+            layoutHitScaleX.value = normalizedValue;
+        }
+
+        if (layoutHitScaleXNumber) {
+            layoutHitScaleXNumber.value = normalizedValue;
+        }
+
+        if (layoutHitScaleY) {
+            layoutHitScaleY.value = normalizedValue;
+        }
+
+        if (layoutHitScaleYNumber) {
+            layoutHitScaleYNumber.value = normalizedValue;
+        }
+    }
+
     function buildPartialStateFromControls() {
         const assetKey = getSelectedAssetKey();
         const componentKey = getSelectedComponentKey();
@@ -2805,7 +2888,8 @@
             x: parseInt(layoutXNumber.value || layoutX.value || String(base.x), 10),
             y: parseInt(layoutYNumber.value || layoutY.value || String(base.y), 10),
             scale: parseInt(layoutScaleNumber.value || layoutScale.value || String(base.scale), 10),
-            hitScale: parseInt(layoutHitScaleNumber?.value || layoutHitScale?.value || String(base.hitScale), 10)
+            hitScaleX: parseInt(layoutHitScaleXNumber?.value || layoutHitScaleX?.value || String(base.hitScaleX), 10),
+            hitScaleY: parseInt(layoutHitScaleYNumber?.value || layoutHitScaleY?.value || String(base.hitScaleY), 10)
         };
 
         if (geometryMode === "component-box") {
@@ -2910,8 +2994,15 @@
             syncNumberPairs();
         }
 
-        if (currentDraftState && currentDraftState.hitScale != null && layoutHitScale) {
-            layoutHitScale.value = String(Math.round(currentDraftState.hitScale));
+        if (currentDraftState) {
+            if (layoutHitScaleX) {
+                layoutHitScaleX.value = String(Math.round(currentDraftState.hitScaleX ?? 100));
+            }
+
+            if (layoutHitScaleY) {
+                layoutHitScaleY.value = String(Math.round(currentDraftState.hitScaleY ?? 100));
+            }
+
             syncHitScalePairs();
         }
 
@@ -3633,14 +3724,70 @@
             });
         });
 
-        if (layoutHitScale && layoutHitScaleNumber) {
-            layoutHitScale.addEventListener("input", function () {
-                layoutHitScaleNumber.value = layoutHitScale.value;
+        if (layoutHitScaleX && layoutHitScaleXNumber) {
+            layoutHitScaleX.addEventListener("input", function () {
+                const hitScaleLock = getLayoutHitScaleLock();
+
+                if (hitScaleLock && hitScaleLock.checked) {
+                    setLockedHitScaleUiValue(layoutHitScaleX.value);
+                } else {
+                    layoutHitScaleXNumber.value = layoutHitScaleX.value;
+                }
+
                 pushLayoutControlValues();
             });
 
-            layoutHitScaleNumber.addEventListener("input", function () {
-                layoutHitScale.value = layoutHitScaleNumber.value;
+            layoutHitScaleXNumber.addEventListener("input", function () {
+                const hitScaleLock = getLayoutHitScaleLock();
+
+                if (hitScaleLock && hitScaleLock.checked) {
+                    setLockedHitScaleUiValue(layoutHitScaleXNumber.value);
+                } else {
+                    layoutHitScaleX.value = layoutHitScaleXNumber.value;
+                }
+
+                pushLayoutControlValues();
+            });
+        }
+
+        if (layoutHitScaleY && layoutHitScaleYNumber) {
+            layoutHitScaleY.addEventListener("input", function () {
+                const hitScaleLock = getLayoutHitScaleLock();
+
+                if (hitScaleLock && hitScaleLock.checked) {
+                    setLockedHitScaleUiValue(layoutHitScaleY.value);
+                } else {
+                    layoutHitScaleYNumber.value = layoutHitScaleY.value;
+                }
+
+                pushLayoutControlValues();
+            });
+
+            layoutHitScaleYNumber.addEventListener("input", function () {
+                const hitScaleLock = getLayoutHitScaleLock();
+
+                if (hitScaleLock && hitScaleLock.checked) {
+                    setLockedHitScaleUiValue(layoutHitScaleYNumber.value);
+                } else {
+                    layoutHitScaleY.value = layoutHitScaleYNumber.value;
+                }
+
+                pushLayoutControlValues();
+            });
+        }
+
+        const hitScaleLock = getLayoutHitScaleLock();
+        if (hitScaleLock) {
+            hitScaleLock.addEventListener("change", function () {
+                if (!hitScaleLock.checked) {
+                    return;
+                }
+
+                const lockedValue = Math.max(
+                    parseInt(layoutHitScaleX?.value || "100", 10) || 100,
+                    parseInt(layoutHitScaleY?.value || "100", 10) || 100);
+
+                setLockedHitScaleUiValue(lockedValue);
                 pushLayoutControlValues();
             });
         }

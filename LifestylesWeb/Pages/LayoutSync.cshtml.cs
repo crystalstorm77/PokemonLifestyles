@@ -118,6 +118,9 @@ public sealed class LayoutComponentOverride
     public int? Width { get; set; }
     public int? Height { get; set; }
     public int? Scale { get; set; }
+
     public int? HitScale { get; set; }
+    public int? HitScaleX { get; set; }
+    public int? HitScaleY { get; set; }
     #endregion // SEGMENT E — Layout Component Override Values
 }
