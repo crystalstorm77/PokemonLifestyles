@@ -3,7 +3,13 @@ using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 #region SEGMENT A — Service Configuration
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AddPageRoute("/PagesIndex", "");
+    options.Conventions.AddPageRoute("/PagesIndex", "/Index");
+    options.Conventions.AddPageRoute("/Focus/FocusIndex", "/Focus");
+    options.Conventions.AddPageRoute("/Focus/FocusIndex", "/Focus/Index");
+});
 #endregion // SEGMENT A — Service Configuration
 
 var app = builder.Build();

@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LifestylesWeb.Pages.Focus;
 
-public class IndexModel : PageModel
+public class FocusIndexModel : PageModel
 {
     private readonly FocusSessionRepository _focusRepo = new();
 
