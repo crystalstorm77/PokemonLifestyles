@@ -1,5 +1,5 @@
-﻿// SEGMENT A START - Viewport Debug Script
-(function () {
+﻿(function () {
+    //#region SEGMENT A - Layout Gate And Defaults
     const searchParams = new URL(window.location.href).searchParams;
     const layoutModeEnabled = searchParams.get("layout") === "1";
 
@@ -21,7 +21,9 @@
             hideSafeUi: false
         };
     }
+    //#endregion SEGMENT A - Layout Gate And Defaults
 
+    //#region SEGMENT B - Panel Styles And Markup
     function injectStyles() {
         if (document.getElementById("pl-viewport-debug-style")) {
             return;
@@ -221,7 +223,9 @@
         document.body.appendChild(panel);
         return panel;
     }
+    //#endregion SEGMENT B - Panel Styles And Markup
 
+    //#region SEGMENT C - Measurement Helpers
     function parsePx(value) {
         const parsed = parseFloat(String(value || "").replace("px", "").trim());
         return Number.isFinite(parsed) ? parsed : 0;
@@ -297,7 +301,9 @@
 
         return `${label}: x=${round(rect.left)} y=${round(rect.top)} w=${round(rect.width)} h=${round(rect.height)} right=${round(rect.right)} bottom=${round(rect.bottom)}`;
     }
+    //#endregion SEGMENT C - Measurement Helpers
 
+    //#region SEGMENT D - Layer Diagnostics State
     function getLayerElements() {
         return {
             appShell: document.querySelector(".app-shell"),
@@ -413,7 +419,9 @@
             }
         });
     }
+    //#endregion SEGMENT D - Layer Diagnostics State
 
+    //#region SEGMENT E - Output Builder
     function buildOutput() {
         const html = document.documentElement;
         const safeArea = readSafeAreaInsets();
@@ -537,7 +545,9 @@
 
         return lines.join("\n");
     }
+    //#endregion SEGMENT E - Output Builder
 
+    //#region SEGMENT F - Panel Lifecycle And Boot
     function setCollapsed(panel, collapsed) {
         panel.classList.toggle("pl-viewport-debug-panel-collapsed", collapsed);
         const toggleButton = panel.querySelector("#pl-viewport-debug-toggle");
@@ -646,5 +656,5 @@
     else {
         init();
     }
+    //#endregion SEGMENT F - Panel Lifecycle And Boot
 })();
-// SEGMENT A END - Viewport Debug Script
