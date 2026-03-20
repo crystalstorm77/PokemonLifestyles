@@ -1217,8 +1217,20 @@
 
     function applyEdgeColorVariable(colorValue) {
         const normalized = normalizeHexColor(colorValue, defaultLayoutEdgeColor);
+        const appShell = document.querySelector(".app-shell");
+        const htmlElement = document.documentElement;
 
-        document.documentElement.style.setProperty(layoutEdgeColorVariableName, normalized);
+        htmlElement.style.setProperty(layoutEdgeColorVariableName, normalized, "important");
+        htmlElement.style.setProperty("--pl-app-edge-color", normalized, "important");
+        htmlElement.style.setProperty("background-color", normalized, "important");
+
+        if (document.body) {
+            document.body.style.setProperty("background-color", normalized, "important");
+        }
+
+        if (appShell) {
+            appShell.style.setProperty("background-color", normalized, "important");
+        }
 
         if (themeColorMeta) {
             themeColorMeta.setAttribute("content", normalized);
@@ -2580,7 +2592,7 @@
 
     //#region SEGMENT J1 - Screen State Previews And Visibility
     function syncLayoutSceneToVisibleState(sceneKey) {
-        if (!layoutModeEnabled) {
+        if (!layoutModeEnabled || layoutEditorEnabled) {
             return;
         }
 
