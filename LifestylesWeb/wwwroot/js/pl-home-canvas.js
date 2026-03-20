@@ -1,6 +1,5 @@
-﻿
-// SEGMENT A START - Home Canvas Script
-(function () {
+﻿(function () {
+    //#region SEGMENT A - Element References And Runtime State
     const homeRoot = document.getElementById("pl-home-root");
     const worldStage = document.getElementById("pl-world-stage");
     const safeUiStage = document.getElementById("pl-safe-ui-stage");
@@ -289,7 +288,9 @@
     const defaultLayoutEdgeColor = normalizeHexColor(
         getComputedStyle(document.documentElement).getPropertyValue(layoutEdgeColorVariableName),
         "#01ff75");
+    //#endregion SEGMENT A - Element References And Runtime State
 
+    //#region SEGMENT B - CSS Readers And Asset Helpers
     function readCssPxVar(varName, fallbackValue) {
         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
 
@@ -319,7 +320,7 @@
             return "";
         }
 
-        const match = raw.match(/^url\((['"]?)(.*?)\1\)$/);
+        const match = raw.match(/^url\((['"]?)(.*?)\)$/);
         return match ? match[2] : "";
     }
 
@@ -402,7 +403,9 @@
         const varName = artImageVars[assetKey];
         return !!(varName && readCssUrlVar(varName));
     }
+    //#endregion SEGMENT B - CSS Readers And Asset Helpers
 
+    //#region SEGMENT C - Layout State Normalizers And Persistence
     function normalizeLayoutOverride(value) {
         if (!value || typeof value !== "object") {
             return null;
@@ -605,7 +608,9 @@
             image.src = url;
         });
     }
+    //#endregion SEGMENT C - Layout State Normalizers And Persistence
 
+    //#region SEGMENT D1 - Asset State Resolvers And Draft Helpers
     function getCssLayoutDefaults(assetKey) {
         const metrics = artMetrics[assetKey];
         const defaultWidth = readCssPxVar(`--pl-layout-${assetKey}-width`, 160);
@@ -824,6 +829,9 @@
         refreshLayoutUi();
     }
 
+    //#endregion SEGMENT D1 - Asset State Resolvers And Draft Helpers
+
+    //#region SEGMENT D2 - Layout Asset Persistence And Visibility
     async function saveSelectedLayoutAsset() {
         const assetKey = getSelectedAssetKey();
 
@@ -999,7 +1007,9 @@
             yStatus: describeAxisPlacement("y", state.y, scaledSize.height, stageBounds.height)
         };
     }
+    //#endregion SEGMENT D2 - Layout Asset Persistence And Visibility
 
+    //#region SEGMENT E - Layout Variable And Scene Helpers
     function setButtonLabel(button, label) {
         const labelElement = button.querySelector(".pl-button-label");
 
@@ -1254,7 +1264,9 @@
             }
         };
     }
+    //#endregion SEGMENT E - Layout Variable And Scene Helpers
 
+    //#region SEGMENT F1 - Scene Selection And Editor Extensions
     function populateLayoutAssetSelectForScene(sceneKey, preferredAssetKey = null) {
         const assetKeys = getLayoutSceneAssetKeys(sceneKey);
         const preservedAssetKey = assetKeys.includes(preferredAssetKey)
@@ -1508,7 +1520,9 @@
         }
     }
 
+    //#endregion SEGMENT F1 - Scene Selection And Editor Extensions
 
+    //#region SEGMENT F2 - Slider Metrics
     function getSliderVisualMetrics() {
         const state = getEffectiveLayoutState("slider");
         const resolvedHeight = getResolvedHeight("slider", state);
@@ -1573,8 +1587,9 @@
             }
         };
     }
+    //#endregion SEGMENT F2 - Slider Metrics
 
-
+    //#region SEGMENT G1 - Slider Geometry Helpers
     function applyLocalRectTransform(baseRect, componentState, options = {}) {
         const localScaleX = options.localScaleX ?? 1;
         const localScaleY = options.localScaleY ?? 1;
@@ -1608,7 +1623,6 @@
             height
         };
     }
-
 
     function applySliderNibBackground(nibRect, nibMetric) {
         if (!nibMetric) {
@@ -1682,7 +1696,9 @@
         outlineElement.style.height = `${rect.height}px`;
     }
 
+    //#endregion SEGMENT G1 - Slider Geometry Helpers
 
+    //#region SEGMENT G2 - Slider Rendering And Asset Layout
     function updateSliderVisuals() {
         const metrics = getSliderVisualMetrics();
 
@@ -1880,7 +1896,9 @@
 
         applyOutlineRect(componentOutline, rects[componentKey]);
     }
+    //#endregion SEGMENT G2 - Slider Rendering And Asset Layout
 
+    //#region SEGMENT H1 - Layout Bounds And Status Controls
     function updateLayoutSliderBounds(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
             return;
@@ -1984,7 +2002,6 @@
         layoutCode.value =
             `.pl-home-screen {\n  --pl-layout-${assetKey}-x: ${Math.round(state.x)}px;\n  --pl-layout-${assetKey}-y: ${Math.round(state.y)}px;\n  --pl-layout-${assetKey}-width: ${Math.round(state.width)}px;\n  --pl-layout-${assetKey}-height: ${Math.round(state.height)}px;\n  --pl-layout-${assetKey}-scale: ${Math.round(state.scale)};\n}`;
     }
-
     function updateLayoutStatusDisplay(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
             layoutStageStatus.textContent = "Shell background · colors the edge fill outside the authored canvas.";
@@ -2150,6 +2167,9 @@
         setHitScaleFieldHidden(true);
     }
 
+    //#endregion SEGMENT H1 - Layout Bounds And Status Controls
+
+    //#region SEGMENT H2 - Layout UI Refresh
     function refreshLayoutUi() {
         ensureLayoutVariableControls();
         ensureLayoutEditorExtensions();
@@ -2239,6 +2259,9 @@
         refreshComponentOutlines();
     }
 
+    //#endregion SEGMENT H2 - Layout UI Refresh
+
+    //#region SEGMENT H3 - Layout Draft Control Values
     function buildPartialStateFromControls() {
         const assetKey = getSelectedAssetKey();
         const componentKey = getSelectedComponentKey();
@@ -2316,7 +2339,9 @@
         refreshLayoutSelection();
         refreshComponentOutlines();
     }
+    //#endregion SEGMENT H3 - Layout Draft Control Values
 
+    //#region SEGMENT I - Layout Selection, Drag, And Slider Pointer Handling
     function handleLayoutSceneChange() {
         const newAssetKey = setActiveLayoutScene(layoutSceneSelect.value || "home", getSelectedAssetKey(), getSelectedComponentKey());
 
@@ -2518,7 +2543,9 @@
     }
 
     initializeLayoutSceneControls();
+    //#endregion SEGMENT I - Layout Selection, Drag, And Slider Pointer Handling
 
+    //#region SEGMENT J1 - Screen State Previews And Visibility
     function setSetupChildrenVisible(isVisible) {
         focusTypeField.hidden = !isVisible;
         durationText.hidden = !isVisible;
@@ -2671,6 +2698,9 @@
         showHomeState();
     }
 
+    //#endregion SEGMENT J1 - Screen State Previews And Visibility
+
+    //#region SEGMENT J2 - Session Runtime And Rewards
     function resetRunState() {
         isRunning = false;
         isPaused = false;
@@ -2840,7 +2870,9 @@
             submitSave("complete");
         }
     }
+    //#endregion SEGMENT J2 - Session Runtime And Rewards
 
+    //#region SEGMENT K1 - Event Wiring
     homeFocusButton.addEventListener("click", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "home-focus") {
             return;
@@ -3032,6 +3064,9 @@
         layoutResetAll.addEventListener("click", resetAllLayoutAssets);
     }
 
+    //#endregion SEGMENT K1 - Event Wiring
+
+    //#region SEGMENT K2 - Async Boot And Layout Workspace
     async function awaitFirstPaintArtMetrics() {
         const loadTasks = Object.entries(artImageVars).map(function ([assetKey, cssVar]) {
             const url = readCssUrlVar(cssVar);
@@ -3265,6 +3300,5 @@
 
     initializeAsync();
     window.setInterval(updateUi, 250);
+    //#endregion SEGMENT K2 - Async Boot And Layout Workspace
 })();
-// SEGMENT A END - Home Canvas Script
-

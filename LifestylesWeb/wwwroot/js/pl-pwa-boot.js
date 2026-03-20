@@ -1,5 +1,5 @@
-﻿// SEGMENT A START - PWA Boot
-(() => {
+﻿(() => {
+    //#region SEGMENT A - PWA Environment Reader
     function readPwaEnvironment() {
         const navigatorStandalone =
             typeof navigator !== "undefined" && navigator.standalone === true;
@@ -21,7 +21,9 @@
             referrer: document.referrer || ""
         };
     }
+    //#endregion SEGMENT A - PWA Environment Reader
 
+    //#region SEGMENT B - PWA Environment Application
     function applyPwaEnvironment() {
         const env = readPwaEnvironment();
 
@@ -39,7 +41,9 @@
                 detail: env
             }));
     }
+    //#endregion SEGMENT B - PWA Environment Application
 
+    //#region SEGMENT C - Boot And Event Wiring
     applyPwaEnvironment();
 
     const standaloneMedia =
@@ -56,8 +60,5 @@
             standaloneMedia.addListener(applyPwaEnvironment);
         }
     }
+    //#endregion SEGMENT C - Boot And Event Wiring
 })();
-// SEGMENT A END - PWA Boot
-
-
-

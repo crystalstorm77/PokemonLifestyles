@@ -1,5 +1,5 @@
-﻿// SEGMENT A START - Home Stage Layout Script
-(function () {
+﻿(function () {
+    //#region SEGMENT A - Element Discovery And Runtime Flags
     const appShell = document.querySelector(".app-shell");
     const homeStageShell = document.getElementById("pl-home-stage-shell");
     const homeStage = document.getElementById("pl-home-stage");
@@ -28,7 +28,9 @@
 
     homeStageShell.style.visibility = "hidden";
     homeStageShell.dataset.stageReady = "false";
+    //#endregion SEGMENT A - Element Discovery And Runtime Flags
 
+    //#region SEGMENT B - Basic Measurement Helpers
     function readDesignPx(varName, fallbackValue) {
         const raw = getComputedStyle(homeRoot).getPropertyValue(varName).trim();
 
@@ -47,25 +49,6 @@
         return {
             width: Math.max(1, width),
             height: Math.max(1, height)
-        };
-    }
-
-    function readStandaloneScreenSize(fallbackViewport) {
-        const widthCandidates = [
-            parsePx(window.screen?.width),
-            parsePx(window.screen?.availWidth),
-            fallbackViewport.width
-        ];
-
-        const heightCandidates = [
-            parsePx(window.screen?.height),
-            parsePx(window.screen?.availHeight),
-            fallbackViewport.height
-        ];
-
-        return {
-            width: Math.max(1, ...widthCandidates),
-            height: Math.max(1, ...heightCandidates)
         };
     }
 
@@ -127,6 +110,22 @@
         return Math.round(value * 1000) / 1000;
     }
 
+    function buildSafeFrame(rootWidth, rootHeight, safeArea, uiAuthorTop) {
+        const safeFrameLeft = Math.max(0, safeArea.left);
+        const safeFrameTop = Math.max(uiAuthorTop, safeArea.top);
+        const safeFrameRightInset = Math.max(0, safeArea.right);
+        const safeFrameBottomInset = Math.max(0, safeArea.bottom);
+
+        return {
+            left: safeFrameLeft,
+            top: safeFrameTop,
+            width: Math.max(1, rootWidth - safeFrameLeft - safeFrameRightInset),
+            height: Math.max(1, rootHeight - safeFrameTop - safeFrameBottomInset)
+        };
+    }
+    //#endregion SEGMENT B - Basic Measurement Helpers
+
+    //#region SEGMENT C - Shell Style Helpers
     function setShellBox(element, left, top, width, height) {
         element.style.left = `${round3(left)}px`;
         element.style.top = `${round3(top)}px`;
@@ -223,7 +222,9 @@
     function shouldUseDesktopRuntimeEmulationMode(displayMode) {
         return !layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
     }
+    //#endregion SEGMENT C - Shell Style Helpers
 
+    //#region SEGMENT D - Standalone Startup Lock Helpers
     function clearStandaloneStartupSampling() {
         if (standaloneStartupLock.settleRafId) {
             cancelAnimationFrame(standaloneStartupLock.settleRafId);
@@ -253,112 +254,6 @@
         };
     }
 
-    function captureStandaloneRuntimeFrame() {
-        const liveViewport = readViewportSize();
-        const screenSize = readStandaloneScreenSize(liveViewport);
-        const topReserve = Math.max(0, screenSize.height - liveViewport.height);
-
-        return {
-            viewportWidth: screenSize.width,
-            viewportHeight: screenSize.height,
-            liveViewportWidth: liveViewport.width,
-            liveViewportHeight: liveViewport.height,
-            screenWidth: screenSize.width,
-            screenHeight: screenSize.height,
-            safeAreaTop: topReserve,
-            safeAreaRight: 0,
-            safeAreaBottom: 0,
-            safeAreaLeft: 0,
-            safeFrameLeft: 0,
-            safeFrameTop: topReserve,
-            safeFrameWidth: Math.max(1, screenSize.width),
-            safeFrameHeight: Math.max(1, screenSize.height - topReserve)
-        };
-    }
-
-    function chooseBetterStandaloneFrame(currentBest, candidate) {
-        if (!currentBest) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (candidate.safeFrameHeight > currentBest.safeFrameHeight + 0.5) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
-            candidate.safeFrameWidth > currentBest.safeFrameWidth + 0.5) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        if (Math.abs(candidate.safeFrameHeight - currentBest.safeFrameHeight) <= 0.5 &&
-            Math.abs(candidate.safeFrameWidth - currentBest.safeFrameWidth) <= 0.5 &&
-            candidate.viewportHeight > currentBest.viewportHeight + 0.5) {
-            return cloneStandaloneFrame(candidate);
-        }
-
-        return currentBest;
-    }
-
-    function beginStandaloneStartupLock() {
-        if (standaloneStartupLock.lockedFrame || standaloneStartupLock.settleActive) {
-            return;
-        }
-
-        clearStandaloneStartupSampling();
-
-        standaloneStartupLock.sessionId += 1;
-        standaloneStartupLock.settleActive = true;
-        standaloneStartupLock.bestFrame = null;
-
-        const sessionId = standaloneStartupLock.sessionId;
-        let remainingFrames = 12;
-
-        function sampleFrame() {
-            if (sessionId !== standaloneStartupLock.sessionId || standaloneStartupLock.lockedFrame) {
-                return;
-            }
-
-            const candidate = captureStandaloneRuntimeFrame();
-            standaloneStartupLock.bestFrame = chooseBetterStandaloneFrame(standaloneStartupLock.bestFrame, candidate);
-
-            remainingFrames -= 1;
-
-            if (remainingFrames > 0) {
-                standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
-                return;
-            }
-
-            standaloneStartupLock.lockedFrame = cloneStandaloneFrame(standaloneStartupLock.bestFrame || candidate);
-            standaloneStartupLock.settleRafId = 0;
-            standaloneStartupLock.settleActive = false;
-            standaloneStartupLock.bestFrame = null;
-
-            applyHomeStageLayout();
-        }
-
-        sampleFrame();
-    }
-
-    function markStageReady() {
-        firstPaintReady = true;
-
-        const displayMode = readDisplayMode();
-        const standaloneLockPending = isStandaloneDisplayMode(displayMode) && !standaloneStartupLock.lockedFrame;
-
-        if (standaloneLockPending) {
-            homeStageShell.style.visibility = "hidden";
-            homeStageShell.dataset.stageReady = "false";
-            return;
-        }
-
-        homeStageShell.style.visibility = "visible";
-        homeStageShell.dataset.stageReady = "true";
-    }
-
-    window.addEventListener("pl-home-first-paint-ready", function () {
-        markStageReady();
-    }, { once: true });
-
     function readRuntimeViewport() {
         const visualViewport = window.visualViewport;
 
@@ -374,39 +269,6 @@
         }
 
         return readViewportSize();
-    }
-
-    function buildSafeFrame(rootWidth, rootHeight, safeArea, uiAuthorTop) {
-        const safeFrameLeft = Math.max(0, safeArea.left);
-        const safeFrameTop = Math.max(uiAuthorTop, safeArea.top);
-        const safeFrameRightInset = Math.max(0, safeArea.right);
-        const safeFrameBottomInset = Math.max(0, safeArea.bottom);
-
-        return {
-            left: safeFrameLeft,
-            top: safeFrameTop,
-            width: Math.max(1, rootWidth - safeFrameLeft - safeFrameRightInset),
-            height: Math.max(1, rootHeight - safeFrameTop - safeFrameBottomInset)
-        };
-    }
-
-    function cloneStandaloneFrame(frame) {
-        return {
-            viewportWidth: frame.viewportWidth,
-            viewportHeight: frame.viewportHeight,
-            liveViewportWidth: frame.liveViewportWidth,
-            liveViewportHeight: frame.liveViewportHeight,
-            screenWidth: frame.screenWidth,
-            screenHeight: frame.screenHeight,
-            safeAreaTop: frame.safeAreaTop,
-            safeAreaRight: frame.safeAreaRight,
-            safeAreaBottom: frame.safeAreaBottom,
-            safeAreaLeft: frame.safeAreaLeft,
-            safeFrameLeft: frame.safeFrameLeft,
-            safeFrameTop: frame.safeFrameTop,
-            safeFrameWidth: frame.safeFrameWidth,
-            safeFrameHeight: frame.safeFrameHeight
-        };
     }
 
     function captureStandaloneRuntimeFrame() {
@@ -514,7 +376,31 @@
 
         standaloneStartupLock.settleRafId = requestAnimationFrame(sampleFrame);
     }
+    //#endregion SEGMENT D - Standalone Startup Lock Helpers
 
+    //#region SEGMENT E - Stage Readiness Helpers
+    function markStageReady() {
+        firstPaintReady = true;
+
+        const displayMode = readDisplayMode();
+        const standaloneLockPending = isStandaloneDisplayMode(displayMode) && !standaloneStartupLock.lockedFrame;
+
+        if (standaloneLockPending) {
+            homeStageShell.style.visibility = "hidden";
+            homeStageShell.dataset.stageReady = "false";
+            return;
+        }
+
+        homeStageShell.style.visibility = "visible";
+        homeStageShell.dataset.stageReady = "true";
+    }
+
+    window.addEventListener("pl-home-first-paint-ready", function () {
+        markStageReady();
+    }, { once: true });
+    //#endregion SEGMENT E - Stage Readiness Helpers
+
+    //#region SEGMENT F - Layout Application
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
         const designHeight = readDesignPx("--pl-home-screen-height", 926);
@@ -810,7 +696,9 @@
 
         applyHomeStageLayout();
     }
+    //#endregion SEGMENT F - Layout Application
 
+    //#region SEGMENT G - Boot
     function initializeHomeStageLayout() {
         handleStageEnvironmentChange();
 
@@ -834,5 +722,5 @@
     } else {
         initializeHomeStageLayout();
     }
+    //#endregion SEGMENT G - Boot
 })();
-// SEGMENT A END - Home Stage Layout Script
