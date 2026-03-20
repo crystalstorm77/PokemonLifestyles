@@ -75,6 +75,10 @@
     const layoutSceneName = document.getElementById("pl-layout-scene-name");
     const layoutStageStatus = document.getElementById("pl-layout-stage-status");
     const layoutSafeZoneStatus = document.getElementById("pl-layout-safe-zone-status");
+    const layoutArtPickerField = document.getElementById("pl-layout-art-picker-field");
+    const layoutArtPickerButton = document.getElementById("pl-layout-art-picker-button");
+    const layoutArtPickerInput = document.getElementById("pl-layout-art-picker-input");
+    const layoutArtPickerStatus = document.getElementById("pl-layout-art-picker-status");
 
     const layoutScale = document.getElementById("pl-layout-scale");
     const layoutScaleNumber = document.getElementById("pl-layout-scale-number");
@@ -115,6 +119,7 @@
         !saveElapsedSeconds || !saveTimerMode || !saveMode || !layoutPanel || !layoutEditorToggle ||
         !layoutEditorModeStatus || !layoutAssetSelect || !layoutSceneSelect ||
         !layoutSceneName || !layoutStageStatus || !layoutSafeZoneStatus ||
+        !layoutArtPickerField || !layoutArtPickerButton || !layoutArtPickerInput || !layoutArtPickerStatus ||
         !layoutScale || !layoutScaleNumber || !layoutX || !layoutXNumber ||
         !layoutY || !layoutYNumber || !layoutWidth || !layoutHeight ||
         !layoutScaleValue || !layoutXValue || !layoutYValue ||
@@ -129,6 +134,7 @@
     let layoutEditorEnabled = layoutModeEnabled;
     const layoutSyncReadUrl = "/LayoutSync?handler=Read";
     const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
+    const layoutSyncUploadArtUrl = "/LayoutSync?handler=UploadArt";
 
     const rewardXpPerMinute = Math.max(0, parseFloat(homeRoot.dataset.rewardXpPerMinute || "0") || 0);
     const rewardIncompleteMultiplier = Math.min(1, Math.max(0, parseFloat(homeRoot.dataset.rewardIncompleteMultiplier || "0.25") || 0.25));
@@ -297,6 +303,11 @@
     let currentVariableDraftValue = null;
     let currentTextDraftAssetKey = null;
     let currentTextDraftState = null;
+    let currentImageDraftAssetKey = null;
+    let currentImageDraftFile = null;
+    let currentImageDraftUrl = null;
+    let currentImageDraftLabel = null;
+    let currentImageDraftObjectUrl = null;
 
     let selectedTimerMode = "countdown";
     let plannedSeconds = 300;
@@ -476,6 +487,29 @@
     function assetHasArt(assetKey) {
         const varName = artImageVars[assetKey];
         return !!(varName && readCssUrlVar(varName));
+    }
+
+    function getLayoutAssetImageVariableKey(assetKey) {
+        return `assetImage:${assetKey}`;
+    }
+
+    function getFileNameFromAssetUrl(rawUrl) {
+        const value = String(rawUrl || "").trim();
+
+        if (!value) {
+            return "";
+        }
+
+        const withoutQuery = value.split("?")[0].split("#")[0];
+        const segments = withoutQuery.split("/");
+        const fileName = segments[segments.length - 1] || "";
+
+        try {
+            return decodeURIComponent(fileName);
+        }
+        catch {
+            return fileName;
+        }
     }
     //#endregion SEGMENT B - CSS Readers And Asset Helpers
 
@@ -1137,9 +1171,104 @@
         refreshLayoutUi();
     }
 
+    function clearCurrentImageDraftState() {
+        if (currentImageDraftObjectUrl) {
+            URL.revokeObjectURL(currentImageDraftObjectUrl);
+        }
+
+        currentImageDraftAssetKey = null;
+        currentImageDraftFile = null;
+        currentImageDraftUrl = null;
+        currentImageDraftLabel = null;
+        currentImageDraftObjectUrl = null;
+    }
+
     //#endregion SEGMENT D1 - Asset State Resolvers And Draft Helpers
 
     //#region SEGMENT D2 - Layout Asset Persistence And Visibility
+    async function refreshArtMetricsForAsset(assetKey, url) {
+        if (!assetKey || !url) {
+            delete artMetrics[assetKey];
+            return;
+        }
+
+        await new Promise(function (resolve) {
+            const image = new Image();
+            image.decoding = "async";
+
+            image.onload = function () {
+                artMetrics[assetKey] = analyzeImageMetrics(image);
+                resolve();
+            };
+
+            image.onerror = function () {
+                delete artMetrics[assetKey];
+                resolve();
+            };
+
+            image.src = url;
+        });
+    }
+
+    function beginImageDraft(assetKey, file) {
+        if (!assetKey || !file) {
+            return;
+        }
+
+        clearCurrentImageDraftState();
+
+        currentImageDraftAssetKey = assetKey;
+        currentImageDraftFile = file;
+        currentImageDraftLabel = file.name || "selected.png";
+        currentImageDraftObjectUrl = URL.createObjectURL(file);
+        currentImageDraftUrl = currentImageDraftObjectUrl;
+
+        applyLayoutVariables();
+        refreshArtMetricsForAsset(assetKey, currentImageDraftUrl).then(function () {
+            applyAllAssetLayouts();
+            refreshLayoutUi();
+        });
+    }
+
+    function discardCurrentImageDraft() {
+        const assetKey = currentImageDraftAssetKey;
+
+        clearCurrentImageDraftState();
+        applyLayoutVariables();
+
+        if (!assetKey) {
+            return;
+        }
+
+        refreshArtMetricsForAsset(assetKey, readCssUrlVar(artImageVars[assetKey])).then(function () {
+            applyAllAssetLayouts();
+            refreshLayoutUi();
+        });
+    }
+
+    async function uploadLayoutAssetArt(assetKey, file) {
+        const payload = new FormData();
+        payload.append("assetKey", assetKey);
+        payload.append("file", file, file.name || `${assetKey}.png`);
+
+        try {
+            const response = await fetch(layoutSyncUploadArtUrl, {
+                method: "POST",
+                body: payload
+            });
+
+            if (!response.ok) {
+                return null;
+            }
+
+            const result = await response.json();
+            return result?.ok && result?.path ? String(result.path) : null;
+        }
+        catch {
+            return null;
+        }
+    }
+
     async function saveSelectedLayoutAsset() {
         const assetKey = getSelectedAssetKey();
 
@@ -1162,13 +1291,30 @@
         const textDraftActive = assetSupportsEditableText(assetKey)
             && currentTextDraftAssetKey === assetKey
             && !!currentTextDraftState;
+        const imageDraftActive = isRootComponent(componentKey)
+            && currentImageDraftAssetKey === assetKey
+            && !!currentImageDraftFile;
+
+        if (imageDraftActive) {
+            const uploadedPath = await uploadLayoutAssetArt(assetKey, currentImageDraftFile);
+
+            if (!uploadedPath) {
+                refreshLayoutUi();
+                return;
+            }
+
+            sharedLayoutVariables[getLayoutAssetImageVariableKey(assetKey)] = uploadedPath;
+            clearCurrentImageDraftState();
+            applyLayoutVariables();
+            await refreshArtMetricsForAsset(assetKey, uploadedPath);
+        }
 
         if (isRootComponent(componentKey)) {
             const hasAssetDraft = currentDraftKind === "asset"
                 && currentDraftAssetKey === assetKey
                 && !!currentDraftState;
 
-            if (!hasAssetDraft && !textDraftActive) {
+            if (!hasAssetDraft && !textDraftActive && !imageDraftActive) {
                 return;
             }
 
@@ -1227,6 +1373,7 @@
         currentDraftState = null;
         currentTextDraftAssetKey = null;
         currentTextDraftState = null;
+        clearCurrentImageDraftState();
 
         await saveSharedLayoutState();
         applyAllAssetLayouts();
@@ -1243,11 +1390,16 @@
         }
 
         const shouldDiscardTextDraft = currentTextDraftAssetKey === assetKey;
+        const shouldDiscardImageDraft = currentImageDraftAssetKey === assetKey;
 
         discardCurrentDraft();
 
         if (shouldDiscardTextDraft) {
             discardCurrentTextDraft();
+        }
+
+        if (shouldDiscardImageDraft) {
+            discardCurrentImageDraft();
         }
     }
 
@@ -1283,6 +1435,9 @@
     }
 
     function clearAllLayoutDrafts() {
+        const imageDraftAssetKey = currentImageDraftAssetKey;
+        const hadImageDraft = !!currentImageDraftUrl;
+
         currentDraftKind = null;
         currentDraftAssetKey = null;
         currentDraftComponentKey = null;
@@ -1291,6 +1446,18 @@
         currentVariableDraftValue = null;
         currentTextDraftAssetKey = null;
         currentTextDraftState = null;
+        clearCurrentImageDraftState();
+
+        if (hadImageDraft) {
+            applyLayoutVariables();
+
+            if (imageDraftAssetKey && artImageVars[imageDraftAssetKey]) {
+                refreshArtMetricsForAsset(imageDraftAssetKey, readCssUrlVar(artImageVars[imageDraftAssetKey])).then(function () {
+                    applyAllAssetLayouts();
+                    refreshLayoutUi();
+                });
+            }
+        }
     }
 
     function buildPersistedLayoutSnapshotFromEditorState() {
@@ -1546,6 +1713,40 @@
         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
     }
 
+    function applyButtonArtStates() {
+        [
+            "home-focus",
+            "home-sleep",
+            "countdown-mode",
+            "countup-mode",
+            "start",
+            "back",
+            "pause",
+            "exit",
+            "keep-going",
+            "stop",
+            "gotcha"
+        ].forEach(function (assetKey) {
+            const element = layoutAssets[assetKey]?.element;
+            const imageUrl = readCssUrlVar(artImageVars[assetKey]);
+
+            if (!element) {
+                return;
+            }
+
+            if (imageUrl) {
+                const escapedUrl = String(imageUrl)
+                    .replace(/\\/g, "\\\\")
+                    .replace(/"/g, '\\"');
+
+                element.style.setProperty("background-image", `url("${escapedUrl}")`, "important");
+                return;
+            }
+
+            element.style.removeProperty("background-image");
+        });
+    }
+
     function syncLayoutEditorSelectableStates() {
         homeSleepButton.disabled = !layoutEditorEnabled;
         durationText.style.pointerEvents = layoutEditorEnabled ? "auto" : "none";
@@ -1612,6 +1813,18 @@
             result.appEdgeColor = appEdgeColor;
         }
 
+        Object.entries(variables).forEach(function ([key, value]) {
+            if (!key.startsWith("assetImage:")) {
+                return;
+            }
+
+            const normalizedValue = String(value || "").trim();
+
+            if (normalizedValue) {
+                result[key] = normalizedValue;
+            }
+        });
+
         return result;
     }
 
@@ -1631,6 +1844,30 @@
         }
 
         return getSavedLayoutVariable(key);
+    }
+
+    function getSavedAssetImageOverride(assetKey) {
+        return String(sharedLayoutVariables[getLayoutAssetImageVariableKey(assetKey)] || "").trim();
+    }
+
+    function getEffectiveAssetImageOverride(assetKey) {
+        if (currentImageDraftAssetKey === assetKey && currentImageDraftUrl) {
+            return currentImageDraftUrl;
+        }
+
+        return getSavedAssetImageOverride(assetKey);
+    }
+
+    function getAssetRootComponentLabel(assetKey) {
+        if (!artImageVars[assetKey]) {
+            return "Whole Asset";
+        }
+
+        if (currentImageDraftAssetKey === assetKey && currentImageDraftLabel) {
+            return currentImageDraftLabel;
+        }
+
+        return getFileNameFromAssetUrl(getEffectiveAssetImageOverride(assetKey)) || "wholeAssetRoot";
     }
 
     function applyEdgeColorVariable(colorValue) {
@@ -1655,8 +1892,31 @@
         }
     }
 
+    function applyAssetImageVariable(assetKey, rawUrl) {
+        const cssVariableName = artImageVars[assetKey];
+
+        if (!cssVariableName || !homeRoot) {
+            return;
+        }
+
+        if (!rawUrl) {
+            homeRoot.style.removeProperty(cssVariableName);
+            return;
+        }
+
+        const escapedUrl = String(rawUrl)
+            .replace(/\\/g, "\\\\")
+            .replace(/"/g, '\\"');
+
+        homeRoot.style.setProperty(cssVariableName, `url("${escapedUrl}")`, "important");
+    }
+
     function applyLayoutVariables() {
         applyEdgeColorVariable(getEffectiveLayoutVariable("appEdgeColor"));
+
+        Object.keys(artImageVars).forEach(function (assetKey) {
+            applyAssetImageVariable(assetKey, getEffectiveAssetImageOverride(assetKey));
+        });
     }
 
     function discardVariableDraft() {
@@ -1718,17 +1978,17 @@
     }
 
     function getComponentDefinitionsForAsset(assetKey) {
-        if (assetSupportsEditableText(assetKey)) {
-            const artLabel = layoutTextArtLabels[assetKey] || "Whole Asset";
+        const rootLabel = getAssetRootComponentLabel(assetKey);
 
+        if (assetSupportsEditableText(assetKey)) {
             return {
                 root: {
-                    label: artLabel,
+                    label: rootLabel,
                     geometryMode: "asset",
                     allowsHitScale: false,
-                    status: artLabel === "Whole Asset"
-                        ? "Moves, resizes, and scales the selected asset as a whole."
-                        : `Moves, resizes, and scales ${artLabel} as the button art area.`
+                    status: rootLabel === "wholeAssetRoot"
+                        ? "Moves, resizes, and scales the selected asset as a whole. Browse and save a PNG to label this root by file name."
+                        : `Moves, resizes, and scales ${rootLabel} as the button art area.`
                 },
                 text: {
                     label: "text",
@@ -1739,14 +1999,27 @@
             };
         }
 
-        return assetComponentDefinitions[assetKey] || {
+        const definitions = assetComponentDefinitions[assetKey] || {
             root: {
-                label: "Whole Asset",
+                label: rootLabel,
                 geometryMode: "asset",
                 allowsHitScale: false,
-                status: "This asset currently has no separate components."
+                status: rootLabel === "wholeAssetRoot"
+                    ? "This asset currently has no separate components."
+                    : `This asset currently uses ${rootLabel} as its root art.`
             }
         };
+
+        if (definitions.root) {
+            definitions.root = Object.assign({}, definitions.root, {
+                label: rootLabel,
+                status: rootLabel === "wholeAssetRoot"
+                    ? (definitions.root.status || "This asset currently has no separate components.")
+                    : `Moves, resizes, and scales ${rootLabel} as the root art area.`
+            });
+        }
+
+        return definitions;
     }
     //#endregion SEGMENT E - Layout Variable And Scene Helpers
 
@@ -2123,6 +2396,31 @@
         }
     }
 
+    function assetSupportsArtPicker(assetKey, componentKey) {
+        return !!artImageVars[assetKey] && !isVariableAsset(assetKey) && isRootComponent(componentKey);
+    }
+
+    function refreshLayoutArtPicker(assetKey, componentKey) {
+        const shouldShow = !!assetKey && assetSupportsArtPicker(assetKey, componentKey);
+        layoutArtPickerField.hidden = !shouldShow;
+
+        if (!shouldShow) {
+            layoutArtPickerStatus.textContent = "No PNG override selected.";
+            return;
+        }
+
+        if (currentImageDraftAssetKey === assetKey && currentImageDraftLabel) {
+            layoutArtPickerStatus.textContent = `Pending save: ${currentImageDraftLabel}`;
+            return;
+        }
+
+        const savedOverride = getSavedAssetImageOverride(assetKey);
+        const savedLabel = getFileNameFromAssetUrl(savedOverride);
+        layoutArtPickerStatus.textContent = savedLabel
+            ? `Saved override: ${savedLabel}`
+            : "No PNG override selected. Browse and then press Save Selected to remember one.";
+    }
+
     function hideSliderSpecificOutlines() {
         if (componentOutline) {
             componentOutline.hidden = true;
@@ -2496,6 +2794,7 @@
         Object.keys(layoutTextAssets).forEach(applyAssetTextStyle);
         applyLayoutVariables();
         refreshLayoutSelection();
+        applyButtonArtStates();
         refreshComponentOutlines();
     }
 
@@ -2757,6 +3056,7 @@
             layoutSceneSelect,
             layoutAssetSelect,
             layoutComponentSelect,
+            layoutArtPickerButton,
             layoutScale,
             layoutScaleNumber,
             layoutX,
@@ -2900,11 +3200,13 @@
             setLayoutTextControlsHidden(true);
             setComponentFieldHidden(true);
             setHitScaleFieldHidden(true);
+            layoutArtPickerField.hidden = true;
             hideSliderSpecificOutlines();
             return;
         }
 
         const componentKey = populateLayoutComponentSelect(assetKey, getSelectedComponentKey());
+        refreshLayoutArtPicker(assetKey, componentKey);
 
         if (isVariableAsset(assetKey)) {
             setLayoutColorFieldHidden(false);
@@ -3198,6 +3500,10 @@
             discardVariableDraft();
         }
 
+        if (currentImageDraftAssetKey && currentImageDraftAssetKey !== newAssetKey) {
+            discardCurrentImageDraft();
+        }
+
         refreshLayoutUi();
     }
 
@@ -3214,6 +3520,10 @@
 
         if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
             discardVariableDraft();
+        }
+
+        if (currentImageDraftAssetKey && currentImageDraftAssetKey !== newAssetKey) {
+            discardCurrentImageDraft();
         }
 
         populateLayoutComponentSelect(newAssetKey, "root");
@@ -3233,6 +3543,45 @@
         }
 
         refreshLayoutUi();
+    }
+
+    function handleLayoutArtPickerButtonClick() {
+        const assetKey = getSelectedAssetKey();
+        const componentKey = getSelectedComponentKey();
+
+        if (!assetSupportsArtPicker(assetKey, componentKey)) {
+            return;
+        }
+
+        layoutArtPickerInput.value = "";
+        layoutArtPickerInput.click();
+    }
+
+    function handleLayoutArtPickerInputChange() {
+        const assetKey = getSelectedAssetKey();
+        const componentKey = getSelectedComponentKey();
+
+        if (!assetSupportsArtPicker(assetKey, componentKey)) {
+            layoutArtPickerInput.value = "";
+            return;
+        }
+
+        const file = layoutArtPickerInput.files && layoutArtPickerInput.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        const fileName = String(file.name || "").toLowerCase();
+
+        if (!fileName.endsWith(".png")) {
+            layoutArtPickerStatus.textContent = "Only PNG files are supported.";
+            layoutArtPickerInput.value = "";
+            return;
+        }
+
+        beginImageDraft(assetKey, file);
+        layoutArtPickerInput.value = "";
     }
 
     function handleLayoutEditorToggleChange() {
@@ -4035,6 +4384,8 @@
         layoutEditorToggle.addEventListener("change", handleLayoutEditorToggleChange);
         layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
         layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
+        layoutArtPickerButton.addEventListener("click", handleLayoutArtPickerButtonClick);
+        layoutArtPickerInput.addEventListener("change", handleLayoutArtPickerInputChange);
 
         if (layoutComponentSelect) {
             layoutComponentSelect.addEventListener("change", handleLayoutComponentChange);

@@ -27,6 +27,7 @@
     let firstPaintReady = false;
     let standaloneDeferredLayoutTimeoutId = 0;
     let standaloneDeferredLayoutPassesRemaining = 0;
+    let keyboardDeferredLayoutTimeoutId = 0;
 
     homeStageShell.style.visibility = "hidden";
     homeStageShell.dataset.stageReady = "false";
@@ -110,6 +111,20 @@
 
     function round3(value) {
         return Math.round(value * 1000) / 1000;
+    }
+
+    function isEditableElement(element) {
+        if (!element) {
+            return false;
+        }
+
+        const tagName = String(element.tagName || "").toUpperCase();
+
+        if (tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT") {
+            return true;
+        }
+
+        return element.isContentEditable === true;
     }
 
     function buildSafeFrame(rootWidth, rootHeight, safeArea, uiAuthorTop) {
@@ -915,12 +930,42 @@
         }, 180);
     }
 
+    function scheduleKeyboardDeferredLayoutRefresh() {
+        if (keyboardDeferredLayoutTimeoutId) {
+            clearTimeout(keyboardDeferredLayoutTimeoutId);
+            keyboardDeferredLayoutTimeoutId = 0;
+        }
+
+        keyboardDeferredLayoutTimeoutId = window.setTimeout(function () {
+            keyboardDeferredLayoutTimeoutId = 0;
+
+            if (isEditableElement(document.activeElement)) {
+                return;
+            }
+
+            if (
+                window.visualViewport &&
+                Number.isFinite(window.visualViewport.scale) &&
+                window.visualViewport.scale > 1.01
+            ) {
+                return;
+            }
+
+            handleStageEnvironmentChange();
+        }, 240);
+    }
+
     function handleStageEnvironmentChange() {
         if (
             window.visualViewport &&
             Number.isFinite(window.visualViewport.scale) &&
             window.visualViewport.scale > 1.01
         ) {
+            return;
+        }
+
+        if (isEditableElement(document.activeElement)) {
+            scheduleKeyboardDeferredLayoutRefresh();
             return;
         }
 
@@ -988,6 +1033,8 @@
             window.visualViewport.addEventListener("resize", handleStageEnvironmentChange);
             window.visualViewport.addEventListener("scroll", handleStageEnvironmentChange);
         }
+
+        document.addEventListener("focusout", scheduleKeyboardDeferredLayoutRefresh, true);
 
         if (desktopPointerQuery.addEventListener) {
             desktopPointerQuery.addEventListener("change", handleStageEnvironmentChange);

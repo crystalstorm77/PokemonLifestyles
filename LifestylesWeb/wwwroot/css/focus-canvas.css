@@ -429,6 +429,12 @@
         color: #0f172a;
     }
 
+    .pl-home-screen .pl-input,
+    .pl-home-screen textarea.pl-input {
+        font-size: 16px;
+        line-height: 1.2;
+    }
+
     .pl-panel-header {
         display: flex;
         align-items: center;

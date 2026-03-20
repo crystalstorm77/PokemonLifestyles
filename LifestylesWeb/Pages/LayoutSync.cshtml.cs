@@ -1,6 +1,8 @@
+using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Hosting;
 
 namespace LifestylesWeb.Pages;
 
@@ -8,12 +10,19 @@ namespace LifestylesWeb.Pages;
 public sealed class LayoutSyncModel : PageModel
 {
     #region SEGMENT A — Layout Storage Paths
+    private readonly IWebHostEnvironment webHostEnvironment;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true
     };
+
+    public LayoutSyncModel(IWebHostEnvironment webHostEnvironment)
+    {
+        this.webHostEnvironment = webHostEnvironment;
+    }
 
     private static string LayoutFolderPath =>
         Path.Combine(
@@ -22,6 +31,12 @@ public sealed class LayoutSyncModel : PageModel
 
     private static string LayoutFilePath =>
         Path.Combine(LayoutFolderPath, "layout-overrides.json");
+
+    private string LayoutArtFolderPath =>
+        Path.Combine(
+            webHostEnvironment.WebRootPath,
+            "assets",
+            "layout-editor");
     #endregion // SEGMENT A — Layout Storage Paths
 
     #region SEGMENT B — JSON Handlers
@@ -58,6 +73,43 @@ public sealed class LayoutSyncModel : PageModel
         return new JsonResult(new { ok = true, itemCount = payload.Items.Count }, JsonOptions);
     }
 
+    public async Task<IActionResult> OnPostUploadArtAsync(IFormFile? file, string? assetKey)
+    {
+        if (file is null || file.Length <= 0)
+        {
+            return BadRequest(new { ok = false, error = "No PNG file was provided." });
+        }
+
+        if (!string.Equals(Path.GetExtension(file.FileName), ".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { ok = false, error = "Only PNG files are supported." });
+        }
+
+        var safeAssetKey = SanitizePathSegment(assetKey, "asset");
+        var safeFileName = SanitizeFileName(Path.GetFileName(file.FileName));
+
+        if (string.IsNullOrWhiteSpace(safeFileName))
+        {
+            safeFileName = "asset.png";
+        }
+
+        var assetFolderPath = Path.Combine(LayoutArtFolderPath, safeAssetKey);
+        Directory.CreateDirectory(assetFolderPath);
+
+        var savedFilePath = Path.Combine(assetFolderPath, safeFileName);
+
+        await using (var stream = System.IO.File.Create(savedFilePath))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return new JsonResult(new
+        {
+            ok = true,
+            path = $"/assets/layout-editor/{safeAssetKey}/{safeFileName}".Replace("\\", "/")
+        }, JsonOptions);
+    }
+
     private static LayoutOverridesPayload LoadPayload()
     {
         try
@@ -78,6 +130,33 @@ public sealed class LayoutSyncModel : PageModel
         {
             return new LayoutOverridesPayload();
         }
+    }
+
+    private static string SanitizePathSegment(string? value, string fallbackValue)
+    {
+        var raw = string.IsNullOrWhiteSpace(value) ? fallbackValue : value.Trim();
+        var cleanedChars = raw
+            .Select(ch => char.IsLetterOrDigit(ch) || ch == '-' || ch == '_' ? ch : '-')
+            .ToArray();
+        var cleaned = new string(cleanedChars).Trim('-');
+
+        return string.IsNullOrWhiteSpace(cleaned) ? fallbackValue : cleaned;
+    }
+
+    private static string SanitizeFileName(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return string.Empty;
+        }
+
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var cleanedChars = fileName
+            .Trim()
+            .Select(ch => invalidChars.Contains(ch) ? '_' : ch)
+            .ToArray();
+
+        return new string(cleanedChars);
     }
     #endregion // SEGMENT B — JSON Handlers
 }
