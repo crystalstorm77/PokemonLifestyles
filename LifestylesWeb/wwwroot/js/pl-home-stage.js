@@ -151,6 +151,11 @@
         homeStageShell.style.removeProperty("margin");
         homeStageShell.style.removeProperty("flex");
         homeStageShell.style.removeProperty("align-self");
+        homeStageShell.style.removeProperty("left");
+        homeStageShell.style.removeProperty("top");
+        homeStageShell.style.removeProperty("position");
+        homeStageShell.style.removeProperty("transform");
+        homeStageShell.style.removeProperty("transform-origin");
 
         homeStage.style.removeProperty("width");
         homeStage.style.removeProperty("height");
@@ -170,6 +175,9 @@
         homeStageShell.style.margin = "0 auto";
         homeStageShell.style.flex = "0 0 auto";
         homeStageShell.style.alignSelf = "flex-start";
+        homeStageShell.style.left = "";
+        homeStageShell.style.top = "";
+        homeStageShell.style.position = "";
 
         homeStage.style.width = `${round3(designWidth)}px`;
         homeStage.style.height = `${round3(designHeight)}px`;
@@ -189,6 +197,9 @@
         homeStageShell.style.margin = "0 auto";
         homeStageShell.style.flex = "0 0 auto";
         homeStageShell.style.alignSelf = "flex-start";
+        homeStageShell.style.left = "";
+        homeStageShell.style.top = "";
+        homeStageShell.style.position = "";
 
         homeStage.style.width = `${round3(renderWidth)}px`;
         homeStage.style.height = `${round3(renderHeight)}px`;
@@ -208,11 +219,40 @@
         homeStageShell.style.margin = `${round3(-visualOffsetTop)}px 0 0 0`;
         homeStageShell.style.flex = "0 0 auto";
         homeStageShell.style.alignSelf = "stretch";
+        homeStageShell.style.left = "";
+        homeStageShell.style.top = "";
+        homeStageShell.style.position = "";
+        homeStageShell.style.transform = "";
+        homeStageShell.style.transformOrigin = "";
 
         homeStage.style.width = `${round3(renderWidth)}px`;
         homeStage.style.height = `${round3(renderHeight)}px`;
         homeStage.style.transformOrigin = "top left";
         homeStage.style.transform = "scale(1)";
+    }
+
+    function applyMobilePortraitLockShellStyles(viewportWidth, viewportHeight, renderWidth, renderHeight, previewScale, rotationDegrees, designWidth, designHeight) {
+        if (appShell) {
+            appShell.style.justifyContent = "center";
+            appShell.style.alignItems = "center";
+            appShell.style.padding = "0";
+        }
+
+        homeStageShell.style.width = `${round3(renderWidth)}px`;
+        homeStageShell.style.height = `${round3(renderHeight)}px`;
+        homeStageShell.style.margin = "0";
+        homeStageShell.style.flex = "0 0 auto";
+        homeStageShell.style.alignSelf = "auto";
+        homeStageShell.style.position = "absolute";
+        homeStageShell.style.left = "50%";
+        homeStageShell.style.top = "50%";
+        homeStageShell.style.transformOrigin = "center center";
+        homeStageShell.style.transform = `translate(-50%, -50%) rotate(${rotationDegrees}deg)`;
+
+        homeStage.style.width = `${round3(designWidth)}px`;
+        homeStage.style.height = `${round3(designHeight)}px`;
+        homeStage.style.transformOrigin = "top left";
+        homeStage.style.transform = `scale(${round3(previewScale)})`;
     }
 
     function shouldUseDesktopPreviewMode(displayMode) {
@@ -221,6 +261,40 @@
 
     function shouldUseDesktopRuntimeEmulationMode(displayMode) {
         return !layoutModeEnabled && displayMode === "browser" && desktopPointerQuery.matches;
+    }
+
+    function getMobileLandscapeRotationDegrees() {
+        const screenAngle = Number(screen.orientation && typeof screen.orientation.angle === "number"
+            ? screen.orientation.angle
+            : NaN);
+
+        if (Number.isFinite(screenAngle)) {
+            const normalized = ((screenAngle % 360) + 360) % 360;
+
+            if (normalized === 90) {
+                return -90;
+            }
+
+            if (normalized === 270) {
+                return 90;
+            }
+        }
+
+        const windowAngle = Number(typeof window.orientation === "number"
+            ? window.orientation
+            : NaN);
+
+        if (Number.isFinite(windowAngle)) {
+            if (windowAngle === 90) {
+                return -90;
+            }
+
+            if (windowAngle === -90 || windowAngle === 270) {
+                return 90;
+            }
+        }
+
+        return -90;
     }
     //#endregion SEGMENT C - Shell Style Helpers
 
@@ -415,27 +489,36 @@
         const desktopPreviewMode = shouldUseDesktopPreviewMode(displayMode);
         const desktopRuntimeEmulationMode = shouldUseDesktopRuntimeEmulationMode(displayMode);
         const standaloneDisplayMode = isStandaloneDisplayMode(displayMode);
+        const standaloneLandscapeMode = standaloneDisplayMode && liveViewport.width > liveViewport.height;
+        const mobilePortraitLockMode = !standaloneDisplayMode && !desktopPointerQuery.matches && liveViewport.width > liveViewport.height;
+        const mobileLandscapeRotationDegrees = mobilePortraitLockMode
+            ? getMobileLandscapeRotationDegrees()
+            : 0;
+        const activeStandaloneLockFrame =
+            standaloneDisplayMode
+                ? standaloneStartupLock.lockedFrame
+                : null;
 
         const viewport =
-            standaloneDisplayMode && standaloneStartupLock.lockedFrame
+            activeStandaloneLockFrame
                 ? {
-                    width: standaloneStartupLock.lockedFrame.viewportWidth,
-                    height: standaloneStartupLock.lockedFrame.viewportHeight
+                    width: activeStandaloneLockFrame.viewportWidth,
+                    height: activeStandaloneLockFrame.viewportHeight
                 }
                 : liveViewport;
 
         const safeArea =
-            standaloneDisplayMode && standaloneStartupLock.lockedFrame
+            activeStandaloneLockFrame
                 ? {
-                    top: standaloneStartupLock.lockedFrame.safeAreaTop,
-                    right: standaloneStartupLock.lockedFrame.safeAreaRight,
-                    bottom: standaloneStartupLock.lockedFrame.safeAreaBottom,
-                    left: standaloneStartupLock.lockedFrame.safeAreaLeft
+                    top: activeStandaloneLockFrame.safeAreaTop,
+                    right: activeStandaloneLockFrame.safeAreaRight,
+                    bottom: activeStandaloneLockFrame.safeAreaBottom,
+                    left: activeStandaloneLockFrame.safeAreaLeft
                 }
                 : liveSafeArea;
 
         const standaloneLockPending =
-            standaloneDisplayMode && !standaloneStartupLock.lockedFrame;
+            standaloneDisplayMode && !activeStandaloneLockFrame;
         const standaloneVisualOffsetTop = 0;
 
         setDesktopPreviewClasses(desktopPreviewMode);
@@ -480,9 +563,9 @@
 
             rootWidth = designWidth;
             rootHeight = designHeight;
-            worldScale = previewScale;
-            worldRenderWidth = designWidth * previewScale;
-            worldRenderHeight = designHeight * previewScale;
+            worldScale = 1;
+            worldRenderWidth = designWidth;
+            worldRenderHeight = designHeight;
             worldLeft = 0;
             worldTop = 0;
             worldStageMeasuredScale = previewScale;
@@ -526,6 +609,112 @@
                 safeFrameWidth / uiAuthorWidth,
                 safeFrameHeight / uiAuthorHeight
             );
+        } else if (standaloneDisplayMode && activeStandaloneLockFrame) {
+            if (standaloneLandscapeMode) {
+                previewScale = Math.min(
+                    1,
+                    Math.max(0.1, liveViewport.width / designHeight),
+                    Math.max(0.1, liveViewport.height / designWidth)
+                );
+
+                applyMobilePortraitLockShellStyles(
+                    liveViewport.width,
+                    liveViewport.height,
+                    designWidth * previewScale,
+                    designHeight * previewScale,
+                    previewScale,
+                    getMobileLandscapeRotationDegrees(),
+                    designWidth,
+                    designHeight
+                );
+
+                rootWidth = designWidth;
+                rootHeight = designHeight;
+                worldScale = 1;
+                worldRenderWidth = designWidth;
+                worldRenderHeight = designHeight;
+                worldLeft = 0;
+                worldTop = 0;
+                worldStageMeasuredScale = previewScale;
+                safeFrameLeft = uiAuthorLeft;
+                safeFrameTop = uiAuthorTop;
+                safeFrameWidth = uiAuthorWidth;
+                safeFrameHeight = uiAuthorHeight;
+                safeUiRenderWidth = uiAuthorWidth;
+                safeUiRenderHeight = uiAuthorHeight;
+                safeUiLeft = uiAuthorLeft;
+                safeUiTop = uiAuthorTop;
+                safeUiStageMeasuredScale = previewScale;
+                uiProjectionScale = 1;
+            } else {
+                const safeFrame = {
+                    left: activeStandaloneLockFrame.safeFrameLeft,
+                    top: activeStandaloneLockFrame.safeFrameTop,
+                    width: activeStandaloneLockFrame.safeFrameWidth,
+                    height: activeStandaloneLockFrame.safeFrameHeight
+                };
+
+                rootWidth = activeStandaloneLockFrame.viewportWidth;
+                rootHeight = activeStandaloneLockFrame.viewportHeight;
+
+                applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, 0);
+
+                worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
+                worldRenderWidth = designWidth * worldScale;
+                worldRenderHeight = designHeight * worldScale;
+                worldLeft = (rootWidth - worldRenderWidth) / 2;
+                worldTop = (rootHeight - worldRenderHeight) / 2;
+                worldStageMeasuredScale = worldScale;
+                safeFrameLeft = safeFrame.left;
+                safeFrameTop = safeFrame.top;
+                safeFrameWidth = safeFrame.width;
+                safeFrameHeight = safeFrame.height;
+                safeUiRenderWidth = safeFrameWidth;
+                safeUiRenderHeight = safeFrameHeight;
+                safeUiLeft = safeFrameLeft;
+                safeUiTop = safeFrameTop;
+                safeUiStageMeasuredScale = 1;
+                uiProjectionScale = Math.min(
+                    safeFrameWidth / uiAuthorWidth,
+                    safeFrameHeight / uiAuthorHeight
+                );
+            }
+        } else if (mobilePortraitLockMode) {
+            previewScale = Math.min(
+                1,
+                Math.max(0.1, liveViewport.width / designHeight),
+                Math.max(0.1, liveViewport.height / designWidth)
+            );
+
+            applyMobilePortraitLockShellStyles(
+                liveViewport.width,
+                liveViewport.height,
+                designWidth * previewScale,
+                designHeight * previewScale,
+                previewScale,
+                mobileLandscapeRotationDegrees,
+                designWidth,
+                designHeight
+            );
+
+            rootWidth = designWidth;
+            rootHeight = designHeight;
+            worldScale = 1;
+            worldRenderWidth = designWidth;
+            worldRenderHeight = designHeight;
+            worldLeft = 0;
+            worldTop = 0;
+            worldStageMeasuredScale = previewScale;
+            safeFrameLeft = uiAuthorLeft;
+            safeFrameTop = uiAuthorTop;
+            safeFrameWidth = uiAuthorWidth;
+            safeFrameHeight = uiAuthorHeight;
+            safeUiRenderWidth = uiAuthorWidth;
+            safeUiRenderHeight = uiAuthorHeight;
+            safeUiLeft = uiAuthorLeft;
+            safeUiTop = uiAuthorTop;
+            safeUiStageMeasuredScale = previewScale;
+            uiProjectionScale = 1;
         } else if (standaloneDisplayMode) {
             const safeFrame = buildSafeFrame(
                 viewport.width,
@@ -616,6 +805,9 @@
         homeRoot.dataset.stageDisplayMode = displayMode;
         homeRoot.dataset.desktopPreviewMode = desktopPreviewMode ? "true" : "false";
         homeRoot.dataset.desktopRuntimeEmulationMode = desktopRuntimeEmulationMode ? "true" : "false";
+        homeRoot.dataset.mobilePortraitLockMode = mobilePortraitLockMode ? "true" : "false";
+        homeRoot.dataset.standaloneLandscapeMode = standaloneLandscapeMode ? "true" : "false";
+        homeRoot.dataset.mobileLandscapeRotationDegrees = String(mobileLandscapeRotationDegrees);
         homeRoot.dataset.standaloneLockPending = standaloneLockPending ? "true" : "false";
         homeRoot.dataset.standaloneFrameLocked = standaloneStartupLock.lockedFrame ? "true" : "false";
         homeRoot.dataset.standaloneVisualOffsetTop = String(round3(standaloneVisualOffsetTop));
@@ -682,9 +874,22 @@
     }
 
     function handleStageEnvironmentChange() {
+        if (
+            window.visualViewport &&
+            Number.isFinite(window.visualViewport.scale) &&
+            window.visualViewport.scale > 1.01
+        ) {
+            return;
+        }
+
         const displayMode = readDisplayMode();
 
         if (isStandaloneDisplayMode(displayMode)) {
+            if (firstPaintReady) {
+                applyHomeStageLayout();
+                return;
+            }
+
             beginStandaloneStartupLock();
             return;
         }
@@ -699,11 +904,29 @@
     //#endregion SEGMENT F - Layout Application
 
     //#region SEGMENT G - Boot
+    function tryLockStandaloneOrientation() {
+        const displayMode = readDisplayMode();
+
+        if (!isStandaloneDisplayMode(displayMode)) {
+            return;
+        }
+
+        if (!screen.orientation || typeof screen.orientation.lock !== "function") {
+            return;
+        }
+
+        Promise.resolve(screen.orientation.lock("portrait")).catch(function () {
+        });
+    }
+
     function initializeHomeStageLayout() {
+        tryLockStandaloneOrientation();
         handleStageEnvironmentChange();
 
         window.addEventListener("resize", handleStageEnvironmentChange);
+        window.addEventListener("orientationchange", handleStageEnvironmentChange);
         window.addEventListener("pageshow", handleStageEnvironmentChange);
+        window.addEventListener("pageshow", tryLockStandaloneOrientation);
 
         if (window.visualViewport) {
             window.visualViewport.addEventListener("resize", handleStageEnvironmentChange);

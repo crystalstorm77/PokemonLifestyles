@@ -260,6 +260,20 @@
         color: #111827;
     }
 
+    .pl-canvas-button-countdown-mode {
+        color: #ffffff;
+        background-image: var(--pl-btn-countdown-mode-image), var(--pl-btn-countdown-mode-fallback) !important;
+    }
+
+    .pl-canvas-button-countup-mode {
+        color: #0f172a;
+        background-image: var(--pl-btn-countup-mode-image), var(--pl-btn-countup-mode-fallback) !important;
+    }
+
+    .pl-canvas-button-mode-selected {
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.55) !important;
+    }
+
     .pl-canvas-button-start {
         background-image: var(--pl-btn-start-image), var(--pl-btn-start-fallback) !important;
     }

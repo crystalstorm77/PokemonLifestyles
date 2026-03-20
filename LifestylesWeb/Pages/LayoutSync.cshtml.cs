@@ -90,6 +90,12 @@ public sealed class LayoutOverridesPayload
 
     public Dictionary<string, string> Variables { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, LayoutAssetOverride> DefaultItems { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, string> DefaultVariables { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
     #endregion // SEGMENT C — Layout Override Collection
 }
 

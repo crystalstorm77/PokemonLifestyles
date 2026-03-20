@@ -23,8 +23,9 @@
 
     const startFocusButton = document.getElementById("pl-start-focus-button");
     const closeFocusButton = document.getElementById("pl-close-focus-button");
+    const countdownModeButton = document.getElementById("pl-countdown-mode-button");
+    const countUpModeButton = document.getElementById("pl-countup-mode-button");
 
-    const runPanel = document.getElementById("pl-run-panel");
     const pauseButton = document.getElementById("pl-pause-button");
     const exitButton = document.getElementById("pl-exit-button");
 
@@ -38,17 +39,18 @@
     const rewardCloseButton = document.getElementById("pl-reward-close-button");
 
     const focusTypeInput = document.getElementById("pl-focus-type-input");
+    const setupModeBadge = document.getElementById("pl-setup-mode-badge");
+    const setupModeHint = document.getElementById("pl-setup-mode-hint");
 
-    const runStateLabel = document.getElementById("pl-run-state-label");
-    const runReadout = document.getElementById("pl-run-readout");
-    const runElapsed = document.getElementById("pl-run-elapsed");
-    const runNote = document.getElementById("pl-run-note");
-    const progressFill = document.getElementById("pl-progress-fill");
-
+    const confirmEyebrow = document.getElementById("pl-confirm-eyebrow");
+    const confirmTitle = document.getElementById("pl-confirm-title");
+    const confirmSubtitle = document.getElementById("pl-confirm-subtitle");
     const confirmCurrentTime = document.getElementById("pl-confirm-current-time");
     const confirmTimerStatus = document.getElementById("pl-confirm-timer-status");
+    const confirmCompleteLabel = document.getElementById("pl-confirm-complete-label");
     const confirmCompleteXp = document.getElementById("pl-confirm-complete-xp");
     const confirmCompleteCoins = document.getElementById("pl-confirm-complete-coins");
+    const confirmCurrentLabel = document.getElementById("pl-confirm-current-label");
     const confirmCurrentXp = document.getElementById("pl-confirm-current-xp");
     const confirmCurrentCoins = document.getElementById("pl-confirm-current-coins");
 
@@ -62,6 +64,7 @@
     const saveFocusType = document.getElementById("pl-save-focus-type");
     const savePlannedSeconds = document.getElementById("pl-save-planned-seconds");
     const saveElapsedSeconds = document.getElementById("pl-save-elapsed-seconds");
+    const saveTimerMode = document.getElementById("pl-save-timer-mode");
     const saveMode = document.getElementById("pl-save-mode");
 
     const layoutPanel = document.getElementById("pl-layout-panel");
@@ -90,7 +93,8 @@
     const layoutSaveSelected = document.getElementById("pl-layout-save-selected");
     const layoutRevertSelected = document.getElementById("pl-layout-revert-selected");
     const layoutResetSelected = document.getElementById("pl-layout-reset-selected");
-    const layoutResetAll = document.getElementById("pl-layout-reset-all");
+    const layoutSaveDefault = document.getElementById("pl-layout-save-default");
+    const layoutResetDefault = document.getElementById("pl-layout-reset-default");
     const layoutCode = document.getElementById("pl-layout-code");
 
     if (!homeRoot || !worldStage || !safeUiStage || !safeZoneOutline ||
@@ -98,22 +102,25 @@
         !setupPanel || !setupControls || !focusTypeField || !durationText ||
         !sliderGroup || !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell ||
         !sliderFillArt || !sliderNibVisual || !durationSlider || !startFocusButton ||
-        !closeFocusButton || !runPanel || !pauseButton || !exitButton ||
+        !countdownModeButton || !countUpModeButton ||
+        !closeFocusButton || !pauseButton || !exitButton ||
         !confirmDim || !confirmPanel || !confirmKeepGoingButton || !confirmStopButton ||
         !rewardDim || !rewardPanel || !rewardCloseButton || !focusTypeInput ||
-        !runStateLabel || !runReadout || !runElapsed || !runNote || !progressFill ||
-        !confirmCurrentTime || !confirmTimerStatus || !confirmCompleteXp ||
-        !confirmCompleteCoins || !confirmCurrentXp || !confirmCurrentCoins ||
+        !setupModeBadge || !setupModeHint || !confirmEyebrow || !confirmTitle ||
+        !confirmSubtitle || !confirmCurrentTime || !confirmTimerStatus ||
+        !confirmCompleteLabel || !confirmCompleteXp || !confirmCompleteCoins ||
+        !confirmCurrentLabel || !confirmCurrentXp || !confirmCurrentCoins ||
         !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
         !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
-        !saveElapsedSeconds || !saveMode || !layoutPanel || !layoutEditorToggle ||
+        !saveElapsedSeconds || !saveTimerMode || !saveMode || !layoutPanel || !layoutEditorToggle ||
         !layoutEditorModeStatus || !layoutAssetSelect || !layoutSceneSelect ||
         !layoutSceneName || !layoutStageStatus || !layoutSafeZoneStatus ||
         !layoutScale || !layoutScaleNumber || !layoutX || !layoutXNumber ||
         !layoutY || !layoutYNumber || !layoutWidth || !layoutHeight ||
         !layoutScaleValue || !layoutXValue || !layoutYValue ||
         !layoutHeightLabel || !layoutHeightHint || !layoutSaveSelected ||
-        !layoutRevertSelected || !layoutResetSelected || !layoutResetAll || !layoutCode) {
+        !layoutRevertSelected || !layoutResetSelected || !layoutSaveDefault ||
+        !layoutResetDefault || !layoutCode) {
         return;
     }
 
@@ -139,9 +146,10 @@
         "home-focus": "--pl-btn-home-focus-image",
         "home-sleep": "--pl-btn-home-sleep-image",
         "setup-panel": "--pl-focus-setup-panel-image",
-        "run-panel": "--pl-focus-run-panel-image",
         "confirm-panel": "--pl-focus-confirm-panel-image",
         "reward-panel": "--pl-focus-reward-panel-image",
+        "countdown-mode": "--pl-btn-countdown-mode-image",
+        "countup-mode": "--pl-btn-countup-mode-image",
         "start": "--pl-btn-start-image",
         "back": "--pl-btn-back-image",
         "pause": "--pl-btn-pause-image",
@@ -158,12 +166,13 @@
         "home-focus": { element: homeFocusButton, stage: "ui", interactive: true },
         "home-sleep": { element: homeSleepButton, stage: "ui", interactive: true },
         "setup-panel": { element: setupPanel, stage: "ui", interactive: false },
+        "countdown-mode": { element: countdownModeButton, stage: "ui", interactive: true },
+        "countup-mode": { element: countUpModeButton, stage: "ui", interactive: true },
         "focus-type-field": { element: focusTypeField, stage: "ui", interactive: false },
         "duration-text": { element: durationText, stage: "ui", interactive: false },
         "slider": { element: sliderGroup, stage: "ui", interactive: true, compound: true },
         "start": { element: startFocusButton, stage: "ui", interactive: true },
         "back": { element: closeFocusButton, stage: "ui", interactive: true },
-        "run-panel": { element: runPanel, stage: "ui", interactive: false },
         "pause": { element: pauseButton, stage: "ui", interactive: true },
         "exit": { element: exitButton, stage: "ui", interactive: true },
         "confirm-panel": { element: confirmPanel, stage: "ui", interactive: false },
@@ -176,6 +185,8 @@
     const layoutTextAssets = {
         "home-focus": homeFocusButton.querySelector(".pl-button-label"),
         "home-sleep": homeSleepButton.querySelector(".pl-button-label"),
+        "countdown-mode": countdownModeButton.querySelector(".pl-button-label"),
+        "countup-mode": countUpModeButton.querySelector(".pl-button-label"),
         "start": startFocusButton.querySelector(".pl-button-label"),
         "back": closeFocusButton.querySelector(".pl-button-label"),
         "keep-going": confirmKeepGoingButton.querySelector(".pl-button-label"),
@@ -186,6 +197,8 @@
     const layoutTextArtLabels = {
         "home-focus": "focus-start.png",
         "home-sleep": "sleep.png",
+        "countdown-mode": "countdown-mode.png",
+        "countup-mode": "countup-mode.png",
         "start": "focus-start.png",
         "back": "back.png",
         "gotcha": "gotcha.png"
@@ -208,11 +221,11 @@
         },
         "focus-setup": {
             label: "Focus setup",
-            assets: ["setup-panel", "focus-type-field", "duration-text", "slider", "start", "back"]
+            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-field", "duration-text", "slider", "start", "back"]
         },
         "focus-running": {
             label: "Focus running",
-            assets: ["run-panel", "pause", "exit"]
+            assets: ["duration-text", "pause", "exit"]
         },
         "stop-confirm": {
             label: "Stop confirm",
@@ -264,6 +277,8 @@
     };
 
     const setupInteractiveElements = [
+        countdownModeButton,
+        countUpModeButton,
         focusTypeField,
         sliderGroup
     ];
@@ -272,6 +287,8 @@
     const runtimeComponentRects = {};
     let sharedLayoutState = {};
     let sharedLayoutVariables = {};
+    let sharedDefaultLayoutState = {};
+    let sharedDefaultLayoutVariables = {};
     let currentDraftKind = null;
     let currentDraftAssetKey = null;
     let currentDraftComponentKey = null;
@@ -281,13 +298,16 @@
     let currentTextDraftAssetKey = null;
     let currentTextDraftState = null;
 
+    let selectedTimerMode = "countdown";
     let plannedSeconds = 300;
     let startedAtMs = 0;
     let pausedElapsedSeconds = 0;
+    let nextCountUpCheckpointSeconds = 7200;
     let isRunning = false;
     let isPaused = false;
     let isSubmitting = false;
     let completionTonePlayed = false;
+    let activeConfirmContext = "stop";
     let dragState = null;
     let sliderDragState = null;
 
@@ -555,14 +575,34 @@
         return normalizeHexColor(metaColor || cssColor, defaultLayoutEdgeColor);
     }
 
-    function ensureSharedLayoutVariableDefaults() {
-        if (!sharedLayoutVariables || typeof sharedLayoutVariables !== "object") {
-            sharedLayoutVariables = {};
+    function cloneJsonCompatibleObject(value) {
+        if (!value || typeof value !== "object") {
+            return {};
         }
 
-        if (!sharedLayoutVariables.appEdgeColor) {
-            sharedLayoutVariables.appEdgeColor = getRenderedShellThemeColor();
+        return JSON.parse(JSON.stringify(value));
+    }
+
+    function ensureLayoutVariableDefaults(variables, fallbackColor = null) {
+        const result = normalizeLayoutVariables(variables);
+
+        if (!result.appEdgeColor) {
+            result.appEdgeColor = normalizeHexColor(fallbackColor, getRenderedShellThemeColor());
         }
+
+        return result;
+    }
+
+    function cloneNormalizedLayoutItems(items) {
+        return normalizeLayoutItems(cloneJsonCompatibleObject(items));
+    }
+
+    function cloneNormalizedLayoutVariables(variables, fallbackColor = null) {
+        return ensureLayoutVariableDefaults(cloneJsonCompatibleObject(variables), fallbackColor);
+    }
+
+    function ensureSharedLayoutVariableDefaults() {
+        sharedLayoutVariables = ensureLayoutVariableDefaults(sharedLayoutVariables);
     }
 
     async function loadSharedLayoutState() {
@@ -572,6 +612,8 @@
             if (!response.ok) {
                 sharedLayoutState = {};
                 sharedLayoutVariables = {};
+                sharedDefaultLayoutState = {};
+                sharedDefaultLayoutVariables = {};
                 ensureSharedLayoutVariableDefaults();
                 applyLayoutVariables();
                 return;
@@ -580,13 +622,28 @@
             const payload = await response.json();
             sharedLayoutState = normalizeLayoutItems(payload?.items ?? payload?.Items);
             sharedLayoutVariables = normalizeLayoutVariables(payload?.variables ?? payload?.Variables);
+            sharedDefaultLayoutState = normalizeLayoutItems(
+                payload?.defaultItems
+                ?? payload?.DefaultItems
+                ?? payload?.items
+                ?? payload?.Items);
+            sharedDefaultLayoutVariables = normalizeLayoutVariables(
+                payload?.defaultVariables
+                ?? payload?.DefaultVariables
+                ?? payload?.variables
+                ?? payload?.Variables);
         }
         catch {
             sharedLayoutState = {};
             sharedLayoutVariables = {};
+            sharedDefaultLayoutState = {};
+            sharedDefaultLayoutVariables = {};
         }
 
         ensureSharedLayoutVariableDefaults();
+        sharedDefaultLayoutVariables = ensureLayoutVariableDefaults(
+            sharedDefaultLayoutVariables,
+            sharedLayoutVariables.appEdgeColor);
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
         applyLayoutVariables();
@@ -603,7 +660,9 @@
                 },
                 body: JSON.stringify({
                     items: sharedLayoutState,
-                    variables: sharedLayoutVariables
+                    variables: sharedLayoutVariables,
+                    defaultItems: sharedDefaultLayoutState,
+                    defaultVariables: sharedDefaultLayoutVariables
                 })
             });
         }
@@ -1223,9 +1282,7 @@
         refreshLayoutUi();
     }
 
-    async function resetAllLayoutAssets() {
-        sharedLayoutState = {};
-        sharedLayoutVariables = {};
+    function clearAllLayoutDrafts() {
         currentDraftKind = null;
         currentDraftAssetKey = null;
         currentDraftComponentKey = null;
@@ -1234,6 +1291,93 @@
         currentVariableDraftValue = null;
         currentTextDraftAssetKey = null;
         currentTextDraftState = null;
+    }
+
+    function buildPersistedLayoutSnapshotFromEditorState() {
+        const snapshotItems = cloneNormalizedLayoutItems(sharedLayoutState);
+        const snapshotVariables = cloneNormalizedLayoutVariables(sharedLayoutVariables);
+
+        if (currentVariableDraftKey === "appEdgeColor" && currentVariableDraftValue) {
+            snapshotVariables.appEdgeColor = currentVariableDraftValue;
+        }
+
+        if (currentDraftAssetKey && currentDraftState) {
+            const existing = snapshotItems[currentDraftAssetKey] || getSavedLayoutState(currentDraftAssetKey);
+
+            if (currentDraftKind === "asset") {
+                snapshotItems[currentDraftAssetKey] = {
+                    x: currentDraftState.x,
+                    y: currentDraftState.y,
+                    width: currentDraftState.width,
+                    height: currentDraftState.height,
+                    scale: currentDraftState.scale,
+                    components: existing.components ?? {},
+                    text: existing.text ?? {}
+                };
+            }
+            else if (currentDraftKind === "component" && currentDraftComponentKey) {
+                const nextComponents = Object.assign({}, existing.components || {});
+                nextComponents[currentDraftComponentKey] = {
+                    x: currentDraftState.x,
+                    y: currentDraftState.y,
+                    width: currentDraftState.width,
+                    height: currentDraftState.height,
+                    scale: currentDraftState.scale,
+                    hitScaleX: currentDraftState.hitScaleX,
+                    hitScaleY: currentDraftState.hitScaleY
+                };
+
+                snapshotItems[currentDraftAssetKey] = {
+                    x: existing.x,
+                    y: existing.y,
+                    width: existing.width,
+                    height: existing.height,
+                    scale: existing.scale,
+                    components: nextComponents,
+                    text: existing.text ?? {}
+                };
+            }
+        }
+
+        if (currentTextDraftAssetKey && currentTextDraftState) {
+            const existing = snapshotItems[currentTextDraftAssetKey] || getSavedLayoutState(currentTextDraftAssetKey);
+            snapshotItems[currentTextDraftAssetKey] = {
+                x: existing.x,
+                y: existing.y,
+                width: existing.width,
+                height: existing.height,
+                scale: existing.scale,
+                components: existing.components ?? {},
+                text: serializeTextState(currentTextDraftState)
+            };
+        }
+ 
+        return {
+            items: snapshotItems,
+            variables: snapshotVariables
+        };
+    }
+
+    async function saveLayoutAsDefault() {
+        const snapshot = buildPersistedLayoutSnapshotFromEditorState();
+
+        sharedLayoutState = cloneNormalizedLayoutItems(snapshot.items);
+        sharedLayoutVariables = cloneNormalizedLayoutVariables(snapshot.variables);
+        sharedDefaultLayoutState = cloneNormalizedLayoutItems(snapshot.items);
+        sharedDefaultLayoutVariables = cloneNormalizedLayoutVariables(snapshot.variables);
+        clearAllLayoutDrafts();
+
+        await saveSharedLayoutState();
+        applyAllAssetLayouts();
+        refreshLayoutUi();
+    }
+
+    async function resetLayoutToDefault() {
+        sharedLayoutState = cloneNormalizedLayoutItems(sharedDefaultLayoutState);
+        sharedLayoutVariables = cloneNormalizedLayoutVariables(
+            sharedDefaultLayoutVariables,
+            sharedLayoutVariables.appEdgeColor);
+        clearAllLayoutDrafts();
 
         await saveSharedLayoutState();
         applyAllAssetLayouts();
@@ -1303,6 +1447,10 @@
         }
     }
 
+    function isCountUpModeSelected() {
+        return selectedTimerMode === "countup";
+    }
+
     function formatClock(totalSeconds) {
         const clamped = Math.max(0, Math.floor(totalSeconds));
         const hours = String(Math.floor(clamped / 3600)).padStart(2, "0");
@@ -1326,6 +1474,11 @@
         return formatDurationLabel(minutes * 60);
     }
 
+    function formatMinutesLabel(totalMinutes) {
+        const roundedMinutes = Math.max(0, Math.floor(totalMinutes));
+        return roundedMinutes === 1 ? "1 minute" : `${roundedMinutes} minutes`;
+    }
+
     function calculateRewardPreview(elapsedSeconds, isComplete) {
         const roundedMinutes = Math.max(0, Math.round(elapsedSeconds / 60));
         const baseXp = Math.round(roundedMinutes * rewardXpPerMinute);
@@ -1336,6 +1489,20 @@
             : 0;
 
         return { xp, coins };
+    }
+
+    function syncTimerModeUi() {
+        const countUpSelected = isCountUpModeSelected();
+
+        setupModeBadge.textContent = countUpSelected ? "Count Up" : "Count Down";
+        setupModeHint.textContent = countUpSelected
+            ? "Count Up starts a stopwatch and pauses every 2 hours so you can confirm it is still intentional."
+            : "Count Down uses the slider so you can set a target between 5 and 120 minutes.";
+
+        countdownModeButton.classList.toggle("pl-canvas-button-mode-selected", !countUpSelected);
+        countUpModeButton.classList.toggle("pl-canvas-button-mode-selected", countUpSelected);
+        setButtonLabel(countdownModeButton, "Count Down");
+        setButtonLabel(countUpModeButton, "Count Up");
     }
 
     function projectAxis(authorPosition, authorBoxSize, authorFrameSize, runtimeFrameSize, uiScale) {
@@ -1375,7 +1542,6 @@
 
     function applyPanelArtStates() {
         setupPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("setup-panel"));
-        runPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("run-panel"));
         confirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("confirm-panel"));
         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
     }
@@ -2278,9 +2444,10 @@
     }
 
     function updateDurationReadout() {
-        const formatted = formatDurationSelection(parseInt(durationSlider.value || "5", 10));
+        const formatted = isCountUpModeSelected()
+            ? formatClock(0)
+            : formatDurationSelection(parseInt(durationSlider.value || "5", 10));
         durationText.textContent = formatted;
-        runReadout.textContent = formatted;
         updateSliderVisuals();
     }
 
@@ -2606,7 +2773,8 @@
             layoutSaveSelected,
             layoutRevertSelected,
             layoutResetSelected,
-            layoutResetAll,
+            layoutSaveDefault,
+            layoutResetDefault,
             layoutCode,
             layoutColorPicker,
             layoutColorText,
@@ -3234,7 +3402,9 @@
     function setSetupChildrenVisible(isVisible) {
         focusTypeField.hidden = !isVisible;
         durationText.hidden = !isVisible;
-        sliderGroup.hidden = !isVisible;
+        sliderGroup.hidden = !isVisible || isCountUpModeSelected();
+        countdownModeButton.hidden = !isVisible;
+        countUpModeButton.hidden = !isVisible;
     }
 
     function setSetupChildrenLocked(isLocked) {
@@ -3255,10 +3425,10 @@
         startFocusButton.hidden = !isVisible;
         closeFocusButton.hidden = !isVisible;
         setSetupChildrenVisible(isVisible);
+        syncTimerModeUi();
     }
 
     function setRunVisible(isVisible) {
-        runPanel.hidden = !isVisible;
         pauseButton.hidden = !isVisible;
         exitButton.hidden = !isVisible;
     }
@@ -3298,28 +3468,27 @@
     }
 
     function showRunStatePreview() {
-        const previewElapsedSeconds = 600;
-        const previewRemainingSeconds = 1500;
-        const previewRemainingLabel = formatDurationLabel(previewRemainingSeconds);
+        const previewSeconds = isCountUpModeSelected() ? 4800 : 1500;
+        const previewLabel = isCountUpModeSelected()
+            ? formatClock(previewSeconds)
+            : formatDurationLabel(previewSeconds);
 
         showSetupState();
         setupPanel.classList.add("pl-setup-panel-locked");
         setSetupChildrenLocked(true);
         setRunVisible(true);
-        runStateLabel.textContent = "Time remaining";
-        durationText.textContent = previewRemainingLabel;
-        runReadout.textContent = previewRemainingLabel;
-        runElapsed.textContent = formatClock(previewElapsedSeconds);
-        progressFill.style.width = "40%";
+        countdownModeButton.hidden = true;
+        countUpModeButton.hidden = true;
+        durationText.textContent = previewLabel;
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Stop Focusing");
-        runNote.textContent = "You have reached 1 minute. Stopping now will save the current session as incomplete.";
         syncLayoutSceneToVisibleState("focus-running");
     }
 
     function showConfirmStatePreview() {
         showRunStatePreview();
         setConfirmVisible(true);
+        activeConfirmContext = "stop";
         updateConfirmPanel(600);
         syncLayoutSceneToVisibleState("stop-confirm");
     }
@@ -3350,6 +3519,8 @@
                 showHomeState();
                 break;
             case "setup-panel":
+            case "countdown-mode":
+            case "countup-mode":
             case "focus-type-field":
             case "duration-text":
             case "slider":
@@ -3357,7 +3528,7 @@
             case "back":
                 showSetupState();
                 break;
-            case "run-panel":
+            case "duration-text":
             case "pause":
             case "exit":
                 showRunStatePreview();
@@ -3397,32 +3568,32 @@
         completionTonePlayed = false;
         pausedElapsedSeconds = 0;
         startedAtMs = 0;
+        nextCountUpCheckpointSeconds = 7200;
+        activeConfirmContext = "stop";
 
         setupPanel.classList.remove("pl-setup-panel-locked");
         setSetupChildrenLocked(false);
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Cancel");
-        runStateLabel.textContent = "Time remaining";
         updateDurationReadout();
-        runElapsed.textContent = "00:00:00";
-        progressFill.style.width = "0%";
-        runNote.textContent = "Cancel before 1 minute to discard this session with no save.";
     }
 
     function getElapsedSeconds() {
-        if (!isRunning) {
+        if (!isRunning && !isPaused) {
             return 0;
         }
 
         if (isPaused) {
-            return Math.min(plannedSeconds, pausedElapsedSeconds);
+            return Math.max(0, pausedElapsedSeconds);
         }
 
         const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
-        return Math.min(plannedSeconds, Math.max(0, liveElapsed));
+        return Math.max(0, liveElapsed);
     }
 
     function setButtonsDisabled(isDisabled) {
+        countdownModeButton.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
+        countUpModeButton.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
         startFocusButton.disabled = isDisabled;
         pauseButton.disabled = isDisabled;
         exitButton.disabled = isDisabled;
@@ -3430,19 +3601,50 @@
         confirmStopButton.disabled = isDisabled;
         rewardCloseButton.disabled = isDisabled;
         focusTypeInput.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
-        durationSlider.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
+        durationSlider.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked") || isCountUpModeSelected();
+    }
+
+    function openConfirmPanel(context, elapsedSeconds) {
+        activeConfirmContext = context;
+        setConfirmVisible(true);
+        updateConfirmPanel(elapsedSeconds);
     }
 
     function updateConfirmPanel(elapsedSeconds) {
-        const completePreview = calculateRewardPreview(plannedSeconds, true);
-        const currentPreview = calculateRewardPreview(elapsedSeconds, false);
+        const countUpSelected = isCountUpModeSelected();
+        const countUpCheckpoint = activeConfirmContext === "countup-checkpoint";
+        const countUpEligibleForCompletion = countUpSelected && elapsedSeconds >= 300;
+        const completedPreviewSeconds = countUpCheckpoint
+            ? elapsedSeconds
+            : (countUpSelected ? elapsedSeconds : plannedSeconds);
+        const completePreview = calculateRewardPreview(completedPreviewSeconds, true);
+        const currentPreview = calculateRewardPreview(elapsedSeconds, countUpEligibleForCompletion);
 
         confirmCurrentTime.textContent = formatClock(elapsedSeconds);
-        confirmTimerStatus.textContent = isPaused ? "Paused" : "Still counting down";
+        confirmTimerStatus.textContent = countUpCheckpoint
+            ? "Paused at checkpoint"
+            : (isPaused ? "Paused" : (countUpSelected ? "Still counting up" : "Still counting down"));
+        confirmEyebrow.textContent = countUpCheckpoint ? "Count Up Checkpoint" : "Stop Focusing";
+        confirmTitle.textContent = countUpCheckpoint ? "Continue tracking?" : "Are you sure?";
+        confirmSubtitle.innerHTML = countUpCheckpoint
+            ? "The stopwatch paused automatically at the 2-hour checkpoint to make sure it was not left running by accident."
+            : (countUpEligibleForCompletion
+                ? "This will save the current stopwatch session as <strong>completed</strong>."
+                : (countUpSelected
+                    ? "Under 5 minutes will still save, but the stopwatch session will be marked <strong>incomplete</strong>."
+                    : "Session will be marked <strong>incomplete</strong>."));
+        confirmCompleteLabel.textContent = countUpCheckpoint
+            ? "Take a break"
+            : (countUpSelected ? "Stop now" : "If complete");
+        confirmCurrentLabel.textContent = countUpCheckpoint
+            ? "Keep going"
+            : (countUpSelected ? "Current result" : "Current");
         confirmCompleteXp.textContent = String(completePreview.xp);
         confirmCompleteCoins.textContent = String(completePreview.coins);
         confirmCurrentXp.textContent = String(currentPreview.xp);
         confirmCurrentCoins.textContent = String(currentPreview.coins);
+        setButtonLabel(confirmKeepGoingButton, "Keep Going");
+        setButtonLabel(confirmStopButton, countUpCheckpoint ? "Take a Break" : "Stop Focusing");
     }
 
     function hydrateRewardPanelFromDataset() {
@@ -3495,15 +3697,18 @@
             return;
         }
 
-        const elapsedSeconds = mode === "complete" ? plannedSeconds : getElapsedSeconds();
+        const elapsedSeconds = mode === "complete" && !isCountUpModeSelected()
+            ? plannedSeconds
+            : getElapsedSeconds();
         if (elapsedSeconds <= 0) {
             return;
         }
 
         isSubmitting = true;
         saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
-        savePlannedSeconds.value = String(plannedSeconds);
+        savePlannedSeconds.value = String(Math.max(plannedSeconds, elapsedSeconds));
         saveElapsedSeconds.value = String(elapsedSeconds);
+        saveTimerMode.value = selectedTimerMode;
         saveMode.value = mode;
         setButtonsDisabled(true);
         saveForm.submit();
@@ -3525,13 +3730,9 @@
 
         const elapsedSeconds = getElapsedSeconds();
         const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
-        const progressPercent = plannedSeconds <= 0 ? 0 : (elapsedSeconds / plannedSeconds) * 100;
-        const remainingDurationLabel = formatDurationLabel(remainingSeconds);
-
-        durationText.textContent = remainingDurationLabel;
-        runReadout.textContent = remainingDurationLabel;
-        runElapsed.textContent = formatClock(elapsedSeconds);
-        progressFill.style.width = `${Math.max(0, Math.min(100, progressPercent))}%`;
+        durationText.textContent = isCountUpModeSelected()
+            ? formatClock(elapsedSeconds)
+            : formatDurationLabel(remainingSeconds);
 
         updateExitButton(elapsedSeconds);
 
@@ -3540,18 +3741,20 @@
         }
 
         if (isPaused) {
-            runStateLabel.textContent = "Paused";
             setButtonLabel(pauseButton, "Keep Going?");
-            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
-                ? "Session paused. You can keep going, or stop focusing and save the current incomplete session."
-                : "Session paused. Cancel before 1 minute to discard this session with no save.";
         }
         else {
-            runStateLabel.textContent = "Time remaining";
             setButtonLabel(pauseButton, "Pause");
-            runNote.textContent = elapsedSeconds >= stopThresholdSeconds
-                ? "You have reached 1 minute. Stopping now will save the current session as incomplete."
-                : "Cancel before 1 minute to discard this session with no save.";
+        }
+
+        if (isCountUpModeSelected()) {
+            if (elapsedSeconds >= nextCountUpCheckpointSeconds && confirmPanel.hidden && !isSubmitting) {
+                pausedElapsedSeconds = elapsedSeconds;
+                isRunning = false;
+                isPaused = true;
+                openConfirmPanel("countup-checkpoint", elapsedSeconds);
+            }
+            return;
         }
 
         if (remainingSeconds <= 0 && !isSubmitting) {
@@ -3582,26 +3785,53 @@
         updateDurationReadout();
     });
 
+    countdownModeButton.addEventListener("click", function () {
+        if (isRunning || isPaused || isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "countdown-mode")) {
+            return;
+        }
+
+        selectedTimerMode = "countdown";
+        syncTimerModeUi();
+        updateDurationReadout();
+        refreshLayoutUi();
+    });
+
+    countUpModeButton.addEventListener("click", function () {
+        if (isRunning || isPaused || isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "countup-mode")) {
+            return;
+        }
+
+        selectedTimerMode = "countup";
+        syncTimerModeUi();
+        updateDurationReadout();
+        refreshLayoutUi();
+    });
+
     startFocusButton.addEventListener("click", function () {
         if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "start")) {
             return;
         }
 
-        plannedSeconds = Math.max(300, Math.min(7200, parseInt(durationSlider.value || "5", 10) * 60));
+        plannedSeconds = isCountUpModeSelected()
+            ? 7200
+            : Math.max(300, Math.min(7200, parseInt(durationSlider.value || "5", 10) * 60));
+        nextCountUpCheckpointSeconds = 7200;
         startedAtMs = Date.now();
         pausedElapsedSeconds = 0;
         isRunning = true;
         isPaused = false;
         isSubmitting = false;
         completionTonePlayed = false;
+        activeConfirmContext = "stop";
 
         setupPanel.classList.add("pl-setup-panel-locked");
         setSetupChildrenLocked(true);
         setRunVisible(true);
+        countdownModeButton.hidden = true;
+        countUpModeButton.hidden = true;
         startFocusButton.hidden = true;
         closeFocusButton.hidden = true;
 
-        runStateLabel.textContent = "Time remaining";
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Cancel");
 
@@ -3609,7 +3839,7 @@
     });
 
     pauseButton.addEventListener("click", function () {
-        if (!isRunning || isSubmitting || !confirmPanel.hidden || (layoutEditorEnabled && getSelectedAssetKey() === "pause")) {
+        if ((!isRunning && !isPaused) || isSubmitting || !confirmPanel.hidden || (layoutEditorEnabled && getSelectedAssetKey() === "pause")) {
             return;
         }
 
@@ -3637,8 +3867,7 @@
             return;
         }
 
-        updateConfirmPanel(elapsedSeconds);
-        setConfirmVisible(true);
+        openConfirmPanel("stop", elapsedSeconds);
     });
 
     confirmKeepGoingButton.addEventListener("click", function () {
@@ -3647,6 +3876,15 @@
         }
 
         setConfirmVisible(false);
+
+        if (activeConfirmContext === "countup-checkpoint" && isPaused && !isRunning) {
+            nextCountUpCheckpointSeconds += 7200;
+            startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+            isPaused = false;
+            isRunning = true;
+            activeConfirmContext = "stop";
+            updateUi();
+        }
     });
 
     confirmStopButton.addEventListener("click", function () {
@@ -3654,7 +3892,7 @@
             return;
         }
 
-        submitSave("stop");
+        submitSave(activeConfirmContext === "countup-checkpoint" ? "break" : "stop");
     });
 
     rewardCloseButton.addEventListener("click", function () {
@@ -3805,7 +4043,8 @@
         layoutSaveSelected.addEventListener("click", saveSelectedLayoutAsset);
         layoutRevertSelected.addEventListener("click", revertSelectedLayoutAsset);
         layoutResetSelected.addEventListener("click", resetSelectedLayoutAsset);
-        layoutResetAll.addEventListener("click", resetAllLayoutAssets);
+        layoutSaveDefault.addEventListener("click", saveLayoutAsDefault);
+        layoutResetDefault.addEventListener("click", resetLayoutToDefault);
     }
 
     //#endregion SEGMENT K1 - Event Wiring
@@ -4017,7 +4256,6 @@
         homeRoot.classList.toggle("pl-layout-mode", layoutModeEnabled);
         safeZoneOutline.hidden = !layoutModeEnabled;
 
-        runReadout.hidden = true;
         applyAllAssetLayouts();
         updateDurationReadout();
 

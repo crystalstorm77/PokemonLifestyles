@@ -11,6 +11,10 @@
         --pl-focus-run-panel-image: none;
         --pl-focus-confirm-panel-image: none;
         --pl-focus-reward-panel-image: none;
+        --pl-btn-countdown-mode-image: none;
+        --pl-btn-countdown-mode-fallback: linear-gradient(180deg, #2563eb, #1d4ed8);
+        --pl-btn-countup-mode-image: none;
+        --pl-btn-countup-mode-fallback: linear-gradient(180deg, #e5e7eb, #cbd5e1);
         --pl-btn-start-image: url('/assets/ui/buttons/focus-start.png');
         --pl-btn-start-fallback: none;
         --pl-btn-back-image: url('/assets/ui/buttons/back.png');
@@ -59,6 +63,16 @@
         --pl-layout-setup-panel-width: 396px;
         --pl-layout-setup-panel-height: 620px;
         --pl-layout-setup-panel-scale: 100;
+        --pl-layout-countdown-mode-x: 40px;
+        --pl-layout-countdown-mode-y: 320px;
+        --pl-layout-countdown-mode-width: 166px;
+        --pl-layout-countdown-mode-height: 56px;
+        --pl-layout-countdown-mode-scale: 100;
+        --pl-layout-countup-mode-x: 222px;
+        --pl-layout-countup-mode-y: 320px;
+        --pl-layout-countup-mode-width: 166px;
+        --pl-layout-countup-mode-height: 56px;
+        --pl-layout-countup-mode-scale: 100;
         --pl-layout-focus-type-field-x: 40px;
         --pl-layout-focus-type-field-y: 402px;
         --pl-layout-focus-type-field-width: 348px;

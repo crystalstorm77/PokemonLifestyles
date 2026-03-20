@@ -54,29 +54,31 @@
                         <div class="pl-setup-copy">
                             <div class="pl-panel-header">
                                 <span class="pl-eyebrow" style="margin:0;">Focus Session</span>
-                                <span class="pl-badge">Countdown</span>
+                                <span class="pl-badge" id="pl-setup-mode-badge">Count Down</span>
                             </div>
 
                             <h2 class="pl-title" style="margin-top:0.55rem;">Stay with it</h2>
-                            <p class="pl-subtitle">
-                                This panel sits on the real home screen. It is not a second screen.
+                            <p class="pl-subtitle" id="pl-setup-mode-hint">
+                                Count Down uses the slider. Count Up starts a stopwatch that checkpoints every 2 hours.
                             </p>
                         </div>
 
-                        <div class="pl-setup-controls" id="pl-setup-controls">
-                            <div class="pl-mode-grid">
-                                <button class="pl-mode-chip pl-mode-chip-active" type="button">
-                                    <span>Countdown</span>
-                                    <small>Ready now</small>
-                                </button>
-
-                                <button class="pl-mode-chip pl-mode-chip-disabled" type="button" disabled>
-                                    <span>Count Up</span>
-                                    <small>Later</small>
-                                </button>
-                            </div>
-                        </div>
+                        <div class="pl-setup-controls" id="pl-setup-controls"></div>
                     </div>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-countdown-mode"
+                            id="pl-countdown-mode-button"
+                            hidden>
+                        <span class="pl-button-label">Count Down</span>
+                    </button>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-countup-mode"
+                            id="pl-countup-mode-button"
+                            hidden>
+                        <span class="pl-button-label">Count Up</span>
+                    </button>
 
                     <label class="pl-canvas-item pl-canvas-form-field" id="pl-focus-type-field" hidden>
                         <span class="pl-field-label">Focus type</span>
@@ -120,25 +122,6 @@
                         <span class="pl-button-label">Back</span>
                     </button>
 
-                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-run" id="pl-run-panel" hidden>
-                        <div class="pl-run-card">
-                            <div class="pl-run-caption" id="pl-run-state-label">Time remaining</div>
-                            <div class="pl-run-readout" id="pl-run-readout">00:05:00</div>
-                            <div class="pl-run-support">
-                                Elapsed:
-                                <span id="pl-run-elapsed">00:00:00</span>
-                            </div>
-
-                            <div class="pl-progress-track" aria-hidden="true">
-                                <div class="pl-progress-fill" id="pl-progress-fill" style="width: 0%;"></div>
-                            </div>
-
-                            <p class="pl-run-note" id="pl-run-note">
-                                Cancel before 1 minute to discard this session with no save.
-                            </p>
-                        </div>
-                    </div>
-
                     <button type="button"
                             class="pl-canvas-item pl-canvas-button pl-canvas-button-pause"
                             id="pl-pause-button"
@@ -156,9 +139,9 @@
                     <div class="pl-panel-dim pl-canvas-item" id="pl-confirm-dim" hidden></div>
 
                     <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-confirm" id="pl-confirm-panel" hidden>
-                        <p class="pl-eyebrow">Stop Focusing</p>
-                        <h2 class="pl-section-title">Are you sure?</h2>
-                        <p class="pl-subtitle">
+                        <p class="pl-eyebrow" id="pl-confirm-eyebrow">Stop Focusing</p>
+                        <h2 class="pl-section-title" id="pl-confirm-title">Are you sure?</h2>
+                        <p class="pl-subtitle" id="pl-confirm-subtitle">
                             Session will be marked <strong>incomplete</strong>.
                         </p>
 
@@ -176,7 +159,7 @@
 
                         <div class="pl-grid-two">
                             <div class="pl-info-box">
-                                <span class="pl-info-label">If complete</span>
+                                <span class="pl-info-label" id="pl-confirm-complete-label">If complete</span>
 
                                 <div class="pl-reward-row">
                                     <span>XP</span>
@@ -190,7 +173,7 @@
                             </div>
 
                             <div class="pl-info-box">
-                                <span class="pl-info-label">Current</span>
+                                <span class="pl-info-label" id="pl-confirm-current-label">Current</span>
 
                                 <div class="pl-reward-row">
                                     <span>XP</span>
@@ -372,7 +355,8 @@
         <button type="button" class="pl-home-action-button" id="pl-layout-save-selected">Save Selected</button>
         <button type="button" class="pl-home-action-button" id="pl-layout-revert-selected">Revert Selected</button>
         <button type="button" class="pl-home-action-button" id="pl-layout-reset-selected">Reset Selected</button>
-        <button type="button" class="pl-home-action-button" id="pl-layout-reset-all">Reset All</button>
+        <button type="button" class="pl-home-action-button" id="pl-layout-save-default">Save as Default</button>
+        <button type="button" class="pl-home-action-button" id="pl-layout-reset-default">Reset to Default</button>
     </div>
 
     <label class="pl-field">
@@ -385,6 +369,7 @@
     <input type="hidden" asp-for="Input.FocusType" id="pl-save-focus-type" value="Focus" />
     <input type="hidden" asp-for="Input.PlannedDurationSeconds" id="pl-save-planned-seconds" value="300" />
     <input type="hidden" asp-for="Input.ElapsedSeconds" id="pl-save-elapsed-seconds" value="0" />
+    <input type="hidden" asp-for="Input.TimerMode" id="pl-save-timer-mode" value="countdown" />
     <input type="hidden" asp-for="Input.SaveMode" id="pl-save-mode" value="" />
 </form>
 <script src="~/js/pl-home-stage.js" asp-append-version="true"></script>

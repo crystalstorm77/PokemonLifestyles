@@ -1,0 +1,46 @@
+# Allow only the exact project build commands we want Codex to run outside the sandbox.
+
+prefix_rule(
+    pattern = ["dotnet", "build", "LifestyleCore/LifestyleCore.csproj"],
+    decision = "allow",
+    justification = "Allow Codex to build LifestyleCore for compile verification in this repo only.",
+    match = [
+        "dotnet build LifestyleCore/LifestyleCore.csproj",
+    ],
+)
+
+prefix_rule(
+    pattern = ["dotnet", "build", "LifestylesDesktop/LifestylesDesktop.csproj"],
+    decision = "allow",
+    justification = "Allow Codex to build LifestylesDesktop for compile verification in this repo only.",
+    match = [
+        "dotnet build LifestylesDesktop/LifestylesDesktop.csproj",
+    ],
+)
+
+prefix_rule(
+    pattern = ["dotnet", "build", "LifestylesWeb/LifestylesWeb.csproj"],
+    decision = "allow",
+    justification = "Allow Codex to build LifestylesWeb for compile verification in this repo only.",
+    match = [
+        "dotnet build LifestylesWeb/LifestylesWeb.csproj",
+    ],
+)
+
+prefix_rule(
+    pattern = ["dotnet", "run", "--project", "LifestylesDesktop/LifestylesDesktop.csproj"],
+    decision = "allow",
+    justification = "Allow Codex to run LifestylesDesktop in this repo only when asked.",
+    match = [
+        "dotnet run --project LifestylesDesktop/LifestylesDesktop.csproj",
+    ],
+)
+
+prefix_rule(
+    pattern = ["dotnet", "run", "--project", "LifestylesWeb/LifestylesWeb.csproj"],
+    decision = "allow",
+    justification = "Allow Codex to run LifestylesWeb in this repo only when asked.",
+    match = [
+        "dotnet run --project LifestylesWeb/LifestylesWeb.csproj",
+    ],
+)

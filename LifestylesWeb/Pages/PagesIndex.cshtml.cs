@@ -71,9 +71,22 @@ public class PagesIndexModel : PageModel
             return RedirectToPage();
         }
 
-        int plannedDurationSeconds = Math.Clamp(Input.PlannedDurationSeconds, 300, 7200);
-        int elapsedSeconds = Math.Clamp(Input.ElapsedSeconds, 0, plannedDurationSeconds);
+        string timerMode = (Input.TimerMode ?? "").Trim().ToLowerInvariant();
         string saveMode = (Input.SaveMode ?? "").Trim().ToLowerInvariant();
+        bool isCountUp = timerMode == "countup";
+
+        int plannedDurationSeconds = isCountUp
+            ? Math.Clamp(Input.PlannedDurationSeconds, 0, 86400)
+            : Math.Clamp(Input.PlannedDurationSeconds, 300, 7200);
+
+        if (isCountUp && plannedDurationSeconds <= 0)
+        {
+            plannedDurationSeconds = 7200;
+        }
+
+        int elapsedSeconds = isCountUp
+            ? Math.Clamp(Input.ElapsedSeconds, 0, 86400)
+            : Math.Clamp(Input.ElapsedSeconds, 0, plannedDurationSeconds);
 
         if (elapsedSeconds <= 0)
         {
@@ -81,6 +94,11 @@ public class PagesIndexModel : PageModel
         }
 
         bool completed = saveMode == "complete" && elapsedSeconds >= plannedDurationSeconds;
+
+        if (isCountUp && (saveMode == "stop" || saveMode == "break"))
+        {
+            completed = elapsedSeconds >= 300;
+        }
 
         DateTime localDateTime = DateTime.Now;
         DateOnly logDate = GetGameDayForLocal(localDateTime);
@@ -239,11 +257,14 @@ public class PagesIndexModel : PageModel
         [StringLength(40)]
         public string FocusType { get; set; } = "Focus";
 
-        [Range(300, 7200)]
+        [Range(0, 86400)]
         public int PlannedDurationSeconds { get; set; } = 300;
 
-        [Range(0, 7200)]
+        [Range(0, 86400)]
         public int ElapsedSeconds { get; set; }
+
+        [StringLength(20)]
+        public string TimerMode { get; set; } = "countdown";
 
         [StringLength(20)]
         public string SaveMode { get; set; } = "";
