@@ -302,9 +302,9 @@
     <label class="pl-field">
         <span class="pl-field-label">Component</span>
         <select class="pl-input" id="pl-layout-component-select">
-            <option value="root">root</option>
+            <option value="root">Whole Asset</option>
         </select>
-        <span class="pl-field-hint" id="pl-layout-component-status">Root controls the overall asset. Combined assets will expose additional components here.</span>
+        <span class="pl-field-hint" id="pl-layout-component-status">This asset currently has no separate components.</span>
     </label>
 
     <div class="pl-field">
@@ -377,5 +377,87 @@
 <script src="~/js/pl-viewport-debug.js" asp-append-version="true"></script>
 @section Scripts {
     <script src="~/js/pl-home-canvas.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            let componentPresentationWired = false;
+
+            function refreshLayoutComponentPresentation() {
+                const assetSelect = document.getElementById("pl-layout-asset-select");
+                const componentSelect = document.getElementById("pl-layout-component-select");
+                const componentStatus = document.getElementById("pl-layout-component-status");
+
+                if (!componentSelect || !componentStatus) {
+                    return;
+                }
+
+                Array.from(componentSelect.options).forEach(function (option) {
+                    if (option.value === "root") {
+                        option.textContent = "Whole Asset";
+                    }
+                });
+
+                const selectedAssetKey = assetSelect ? assetSelect.value : "";
+                const isRootSelected = componentSelect.value === "root";
+                const isSingleRootOnly =
+                    isRootSelected &&
+                    componentSelect.disabled &&
+                    componentSelect.options.length === 1 &&
+                    selectedAssetKey !== "app-edge-color";
+
+                if (isSingleRootOnly) {
+                    componentStatus.textContent = "This asset currently has no separate components.";
+                    return;
+                }
+
+                if (isRootSelected && selectedAssetKey !== "app-edge-color") {
+                    componentStatus.textContent = "Moves, resizes, and scales the selected asset as a whole.";
+                }
+            }
+
+            function wireLayoutComponentPresentation() {
+                if (componentPresentationWired) {
+                    return;
+                }
+
+                const assetSelect = document.getElementById("pl-layout-asset-select");
+                const sceneSelect = document.getElementById("pl-layout-scene-select");
+                const componentSelect = document.getElementById("pl-layout-component-select");
+
+                if (!componentSelect) {
+                    window.requestAnimationFrame(wireLayoutComponentPresentation);
+                    return;
+                }
+
+                componentPresentationWired = true;
+
+                const refreshSoon = function () {
+                    window.requestAnimationFrame(refreshLayoutComponentPresentation);
+                };
+
+                componentSelect.addEventListener("change", refreshSoon);
+
+                if (assetSelect) {
+                    assetSelect.addEventListener("change", refreshSoon);
+                }
+
+                if (sceneSelect) {
+                    sceneSelect.addEventListener("change", refreshSoon);
+                }
+
+                const observer = new MutationObserver(refreshSoon);
+                observer.observe(componentSelect, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ["disabled"]
+                });
+
+                refreshLayoutComponentPresentation();
+            }
+
+            wireLayoutComponentPresentation();
+            window.addEventListener("pl-home-first-paint-ready", refreshLayoutComponentPresentation);
+        })();
+    </script>
 }
 @* SEGMENT A2 END - Layout Panel + Script References *@
