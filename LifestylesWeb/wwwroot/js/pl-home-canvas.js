@@ -203,10 +203,10 @@
     const assetComponentDefinitions = {
         "slider": {
             "root": {
-                label: "root",
+                label: "Whole Asset",
                 geometryMode: "asset",
                 allowsHitScale: false,
-                status: "Controls the overall slider position, width, and scale."
+                status: "Moves, resizes, and scales the selected asset as a whole."
             },
             "empty": {
                 label: "empty",
@@ -320,8 +320,20 @@
             return "";
         }
 
-        const match = raw.match(/^url\((['"]?)(.*?)\)$/);
-        return match ? match[2] : "";
+        if (!raw.startsWith("url(") || !raw.endsWith(")")) {
+            return "";
+        }
+
+        let inner = raw.slice(4, -1).trim();
+
+        if (
+            (inner.startsWith('"') && inner.endsWith('"'))
+            || (inner.startsWith("'") && inner.endsWith("'"))
+        ) {
+            inner = inner.slice(1, -1);
+        }
+
+        return inner;
     }
 
     function readDatasetPx(name, fallbackValue) {
@@ -470,6 +482,23 @@
         return result;
     }
 
+    function getRenderedShellThemeColor() {
+        const metaColor = themeColorMeta ? themeColorMeta.getAttribute("content") : "";
+        const cssColor = getComputedStyle(document.documentElement).getPropertyValue(layoutEdgeColorVariableName);
+
+        return normalizeHexColor(metaColor || cssColor, defaultLayoutEdgeColor);
+    }
+
+    function ensureSharedLayoutVariableDefaults() {
+        if (!sharedLayoutVariables || typeof sharedLayoutVariables !== "object") {
+            sharedLayoutVariables = {};
+        }
+
+        if (!sharedLayoutVariables.appEdgeColor) {
+            sharedLayoutVariables.appEdgeColor = getRenderedShellThemeColor();
+        }
+    }
+
     async function loadSharedLayoutState() {
         try {
             const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
@@ -477,6 +506,7 @@
             if (!response.ok) {
                 sharedLayoutState = {};
                 sharedLayoutVariables = {};
+                ensureSharedLayoutVariableDefaults();
                 applyLayoutVariables();
                 return;
             }
@@ -490,12 +520,15 @@
             sharedLayoutVariables = {};
         }
 
+        ensureSharedLayoutVariableDefaults();
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
         applyLayoutVariables();
     }
 
     async function saveSharedLayoutState() {
+        ensureSharedLayoutVariableDefaults();
+
         try {
             await fetch(layoutSyncWriteUrl, {
                 method: "POST",
@@ -1257,10 +1290,10 @@
     function getComponentDefinitionsForAsset(assetKey) {
         return assetComponentDefinitions[assetKey] || {
             root: {
-                label: "root",
+                label: "Whole Asset",
                 geometryMode: "asset",
                 allowsHitScale: false,
-                status: "This asset currently exposes only root-level controls."
+                status: "This asset currently has no separate components."
             }
         };
     }
@@ -2546,6 +2579,17 @@
     //#endregion SEGMENT I - Layout Selection, Drag, And Slider Pointer Handling
 
     //#region SEGMENT J1 - Screen State Previews And Visibility
+    function syncLayoutSceneToVisibleState(sceneKey) {
+        if (!layoutModeEnabled) {
+            return;
+        }
+
+        const preservedAssetKey = getSelectedAssetKey();
+        const preservedComponentKey = getSelectedComponentKey();
+
+        setActiveLayoutScene(sceneKey, preservedAssetKey, preservedComponentKey);
+    }
+
     function setSetupChildrenVisible(isVisible) {
         focusTypeField.hidden = !isVisible;
         durationText.hidden = !isVisible;
@@ -2597,6 +2641,7 @@
         setRunVisible(false);
         setConfirmVisible(false);
         setRewardVisible(false);
+        syncLayoutSceneToVisibleState("home");
     }
 
     function showSetupState() {
@@ -2608,6 +2653,7 @@
         setupPanel.classList.remove("pl-setup-panel-locked");
         setSetupChildrenLocked(false);
         updateDurationReadout();
+        syncLayoutSceneToVisibleState("focus-setup");
     }
 
     function showRunStatePreview() {
@@ -2627,12 +2673,14 @@
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Stop Focusing");
         runNote.textContent = "You have reached 1 minute. Stopping now will save the current session as incomplete.";
+        syncLayoutSceneToVisibleState("focus-running");
     }
 
     function showConfirmStatePreview() {
         showRunStatePreview();
         setConfirmVisible(true);
         updateConfirmPanel(600);
+        syncLayoutSceneToVisibleState("stop-confirm");
     }
 
     function showRewardStatePreview() {
@@ -2646,6 +2694,7 @@
         rewardDurationText.textContent = "00:25:00";
         rewardXp.textContent = "2500";
         rewardCoins.textContent = "25";
+        syncLayoutSceneToVisibleState("reward");
     }
 
     function previewLayoutAsset(assetKey) {
@@ -2697,7 +2746,6 @@
         resetRunState();
         showHomeState();
     }
-
     //#endregion SEGMENT J1 - Screen State Previews And Visibility
 
     //#region SEGMENT J2 - Session Runtime And Rewards
