@@ -104,6 +104,9 @@ public sealed class LayoutAssetOverride
 
     public Dictionary<string, LayoutComponentOverride> Components { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, string> Text { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
     #endregion // SEGMENT D — Layout Override Values
 }
 

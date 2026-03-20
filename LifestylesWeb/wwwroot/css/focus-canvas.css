@@ -70,6 +70,35 @@
             overflow: hidden !important;
         }
 
+    .pl-home-stage-shell,
+    .pl-home-stage,
+    .pl-home-screen,
+    .pl-world-stage-shell,
+    .pl-world-stage,
+    .pl-safe-ui-stage-shell,
+    .pl-safe-ui-stage,
+    .pl-canvas-item,
+    .pl-canvas-item *,
+    .pl-status-toast,
+    .pl-status-toast * {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+        .pl-home-screen input,
+        .pl-home-screen textarea,
+        .pl-home-screen [contenteditable="true"],
+        .pl-home-screen [contenteditable="plaintext-only"],
+        .pl-layout-panel input,
+        .pl-layout-panel textarea,
+        .pl-layout-panel [contenteditable="true"],
+        .pl-layout-panel [contenteditable="plaintext-only"] {
+            -webkit-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+        }
+
     .pl-world-stage-shell,
     .pl-safe-ui-stage-shell,
     .pl-safe-zone-outline {
@@ -740,6 +769,36 @@
         box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.22);
     }
 
+    .pl-layout-text-toggle-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    .pl-layout-toggle-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 1rem;
+        padding: 0.8rem 0.9rem;
+        background: #ffffff;
+        cursor: pointer;
+    }
+
+        .pl-layout-toggle-chip input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            margin: 0;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+
+        .pl-layout-toggle-chip .pl-field-label {
+            margin: 0;
+        }
+
     :root {
         --pl-app-edge-color: var(--pl-art-app-edge-color, #01ff75);
     }
@@ -785,7 +844,8 @@
             width: min(94vw, 360px);
         }
 
-        .pl-layout-range-with-number {
+        .pl-layout-range-with-number,
+        .pl-layout-text-toggle-row {
             grid-template-columns: 1fr;
         }
     }

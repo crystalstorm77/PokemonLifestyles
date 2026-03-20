@@ -173,6 +173,34 @@
         "gotcha": { element: rewardCloseButton, stage: "ui", interactive: true }
     };
 
+    const layoutTextAssets = {
+        "home-focus": homeFocusButton.querySelector(".pl-button-label"),
+        "home-sleep": homeSleepButton.querySelector(".pl-button-label"),
+        "start": startFocusButton.querySelector(".pl-button-label"),
+        "back": closeFocusButton.querySelector(".pl-button-label"),
+        "keep-going": confirmKeepGoingButton.querySelector(".pl-button-label"),
+        "stop": confirmStopButton.querySelector(".pl-button-label"),
+        "gotcha": rewardCloseButton.querySelector(".pl-button-label")
+    };
+
+    const layoutTextArtLabels = {
+        "home-focus": "focus-start.png",
+        "home-sleep": "sleep.png",
+        "start": "focus-start.png",
+        "back": "back.png",
+        "gotcha": "gotcha.png"
+    };
+
+    const layoutTextFontFamilyOptions = [
+        { label: "System UI", value: "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif" },
+        { label: "Arial", value: "Arial, Helvetica, sans-serif" },
+        { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
+        { label: "Trebuchet MS", value: "\"Trebuchet MS\", Helvetica, sans-serif" },
+        { label: "Georgia", value: "Georgia, serif" },
+        { label: "Times New Roman", value: "\"Times New Roman\", Times, serif" },
+        { label: "Courier New", value: "\"Courier New\", Courier, monospace" }
+    ];
+
     const layoutSceneDefinitions = {
         "home": {
             label: "Home",
@@ -250,6 +278,8 @@
     let currentDraftState = null;
     let currentVariableDraftKey = null;
     let currentVariableDraftValue = null;
+    let currentTextDraftAssetKey = null;
+    let currentTextDraftState = null;
 
     let plannedSeconds = 300;
     let startedAtMs = 0;
@@ -281,6 +311,16 @@
     let layoutColorPicker = null;
     let layoutColorText = null;
     let layoutColorHint = null;
+
+    let layoutTextControls = null;
+    let layoutTextContent = null;
+    let layoutTextFontFamily = null;
+    let layoutTextFontSize = null;
+    let layoutTextColorPicker = null;
+    let layoutTextColorText = null;
+    let layoutTextBold = null;
+    let layoutTextItalic = null;
+    let layoutTextStyleStatus = null;
 
     let componentOutline = document.getElementById("pl-layout-component-outline");
     let hitOutline = document.getElementById("pl-layout-hit-outline");
@@ -429,7 +469,8 @@
             width: value.width ?? value.Width,
             height: value.height ?? value.Height,
             scale: value.scale ?? value.Scale,
-            components: normalizeLayoutComponents(value.components ?? value.Components)
+            components: normalizeLayoutComponents(value.components ?? value.Components),
+            text: normalizeLayoutTextStorage(value.text ?? value.Text)
         };
     }
 
@@ -459,6 +500,26 @@
             const normalized = normalizeComponentOverride(value);
             if (normalized) {
                 result[key] = normalized;
+            }
+        });
+
+        return result;
+    }
+
+    function normalizeLayoutTextStorage(value) {
+        if (!value || typeof value !== "object") {
+            return {};
+        }
+
+        const result = {};
+        const keys = ["content", "fontFamily", "fontSize", "color", "bold", "italic", "x", "y"];
+
+        keys.forEach(function (key) {
+            const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+            const rawValue = value[key] ?? value[pascalKey];
+
+            if (rawValue != null) {
+                result[key] = String(rawValue);
             }
         });
 
@@ -654,7 +715,8 @@
             width: defaultWidth,
             height: readCssPxVar(`--pl-layout-${assetKey}-height`, metrics && metrics.canvasRatio > 0 ? Math.round(defaultWidth / metrics.canvasRatio) : 56),
             scale: readCssNumberVar(`--pl-layout-${assetKey}-scale`, 100),
-            components: {}
+            components: {},
+            text: {}
         };
     }
 
@@ -703,6 +765,94 @@
         };
     }
 
+    function getTextLabelElement(assetKey) {
+        return layoutTextAssets[assetKey] || null;
+    }
+
+    function assetSupportsEditableText(assetKey) {
+        return !!getTextLabelElement(assetKey);
+    }
+
+    function isTextComponent(assetKey, componentKey) {
+        return assetSupportsEditableText(assetKey) && componentKey === "text";
+    }
+
+    function readTextStorageInt(value, fallbackValue) {
+        const parsed = parseInt(String(value ?? ""), 10);
+        return Number.isFinite(parsed) ? parsed : fallbackValue;
+    }
+
+    function readTextStorageBoolean(value, fallbackValue) {
+        if (typeof value === "boolean") {
+            return value;
+        }
+
+        const normalized = String(value ?? "").trim().toLowerCase();
+
+        if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
+            return true;
+        }
+
+        if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
+            return false;
+        }
+
+        return fallbackValue;
+    }
+
+    function normalizeEditableTextState(rawState, fallbackState) {
+        return {
+            content: typeof rawState?.content === "string" ? rawState.content : fallbackState.content,
+            fontFamily: typeof rawState?.fontFamily === "string" && rawState.fontFamily.trim()
+                ? rawState.fontFamily.trim()
+                : fallbackState.fontFamily,
+            fontSize: Math.max(8, readTextStorageInt(rawState?.fontSize, fallbackState.fontSize)),
+            color: normalizeHexColor(rawState?.color, fallbackState.color),
+            bold: readTextStorageBoolean(rawState?.bold, fallbackState.bold),
+            italic: readTextStorageBoolean(rawState?.italic, fallbackState.italic),
+            x: readTextStorageInt(rawState?.x, fallbackState.x),
+            y: readTextStorageInt(rawState?.y, fallbackState.y)
+        };
+    }
+
+    function serializeTextState(textState) {
+        return {
+            content: String(textState.content ?? ""),
+            fontFamily: String(textState.fontFamily ?? layoutTextFontFamilyOptions[0].value),
+            fontSize: String(Math.max(8, Math.round(textState.fontSize || 16))),
+            color: normalizeHexColor(textState.color, "#ffffff"),
+            bold: textState.bold ? "true" : "false",
+            italic: textState.italic ? "true" : "false",
+            x: String(Math.round(textState.x || 0)),
+            y: String(Math.round(textState.y || 0))
+        };
+    }
+
+    function getCssTextDefaults(assetKey) {
+        const labelElement = getTextLabelElement(assetKey);
+
+        if (!labelElement) {
+            return null;
+        }
+
+        const computedStyle = getComputedStyle(labelElement);
+        const parsedFontSize = parseInt(computedStyle.fontSize || "", 10);
+        const parsedFontWeight = parseInt(computedStyle.fontWeight || "", 10);
+
+        return {
+            content: labelElement.textContent || "",
+            fontFamily: computedStyle.fontFamily || layoutTextFontFamilyOptions[0].value,
+            fontSize: Number.isFinite(parsedFontSize) && parsedFontSize > 0 ? parsedFontSize : 16,
+            color: normalizeHexColor(computedStyle.color, "#ffffff"),
+            bold: Number.isFinite(parsedFontWeight)
+                ? parsedFontWeight >= 700
+                : /bold/i.test(String(computedStyle.fontWeight || "")),
+            italic: String(computedStyle.fontStyle || "").toLowerCase().includes("italic"),
+            x: 0,
+            y: 0
+        };
+    }
+
     function getSavedLayoutState(assetKey) {
         const defaults = getCssLayoutDefaults(assetKey);
         const stored = sharedLayoutState[assetKey] || {};
@@ -713,8 +863,20 @@
             width: stored.width ?? defaults.width,
             height: stored.height ?? defaults.height,
             scale: stored.scale ?? defaults.scale,
-            components: stored.components ?? {}
+            components: stored.components ?? {},
+            text: stored.text ?? {}
         };
+    }
+
+    function getSavedTextState(assetKey) {
+        if (!assetSupportsEditableText(assetKey)) {
+            return null;
+        }
+
+        const defaults = getCssTextDefaults(assetKey);
+        const stored = getSavedLayoutState(assetKey).text || {};
+
+        return normalizeEditableTextState(stored, defaults);
     }
 
     function getSavedComponentState(assetKey, componentKey) {
@@ -741,8 +903,23 @@
                 width: currentDraftState.width ?? saved.width,
                 height: currentDraftState.height ?? saved.height,
                 scale: currentDraftState.scale ?? saved.scale,
-                components: saved.components
+                components: saved.components,
+                text: saved.text
             };
+        }
+
+        return saved;
+    }
+
+    function getEffectiveTextState(assetKey) {
+        const saved = getSavedTextState(assetKey);
+
+        if (!saved) {
+            return null;
+        }
+
+        if (currentTextDraftAssetKey === assetKey && currentTextDraftState) {
+            return normalizeEditableTextState(currentTextDraftState, saved);
         }
 
         return saved;
@@ -836,6 +1013,19 @@
         };
     }
 
+    function beginTextDraft(assetKey, partialState) {
+        const baseState = getEffectiveTextState(assetKey);
+
+        if (!baseState) {
+            return;
+        }
+
+        currentTextDraftAssetKey = assetKey;
+        currentTextDraftState = normalizeEditableTextState(
+            Object.assign({}, baseState, partialState || {}),
+            baseState);
+    }
+
     function discardCurrentDraft() {
         const assetKey = currentDraftAssetKey;
         const componentKey = currentDraftComponentKey;
@@ -862,6 +1052,20 @@
         refreshLayoutUi();
     }
 
+    function discardCurrentTextDraft() {
+        const assetKey = currentTextDraftAssetKey;
+
+        currentTextDraftAssetKey = null;
+        currentTextDraftState = null;
+
+        if (!assetKey) {
+            return;
+        }
+
+        applyAssetTextStyle(assetKey);
+        refreshLayoutUi();
+    }
+
     //#endregion SEGMENT D1 - Asset State Resolvers And Draft Helpers
 
     //#region SEGMENT D2 - Layout Asset Persistence And Visibility
@@ -884,42 +1088,55 @@
         }
 
         const componentKey = getSelectedComponentKey();
+        const textDraftActive = assetSupportsEditableText(assetKey)
+            && currentTextDraftAssetKey === assetKey
+            && !!currentTextDraftState;
 
         if (isRootComponent(componentKey)) {
-            if (currentDraftKind !== "asset" || currentDraftAssetKey !== assetKey || !currentDraftState) {
+            const hasAssetDraft = currentDraftKind === "asset"
+                && currentDraftAssetKey === assetKey
+                && !!currentDraftState;
+
+            if (!hasAssetDraft && !textDraftActive) {
                 return;
             }
 
             const existing = getSavedLayoutState(assetKey);
 
             sharedLayoutState[assetKey] = {
-                x: currentDraftState.x,
-                y: currentDraftState.y,
-                width: currentDraftState.width,
-                height: currentDraftState.height,
-                scale: currentDraftState.scale,
-                components: existing.components ?? {}
+                x: hasAssetDraft ? currentDraftState.x : existing.x,
+                y: hasAssetDraft ? currentDraftState.y : existing.y,
+                width: hasAssetDraft ? currentDraftState.width : existing.width,
+                height: hasAssetDraft ? currentDraftState.height : existing.height,
+                scale: hasAssetDraft ? currentDraftState.scale : existing.scale,
+                components: existing.components ?? {},
+                text: textDraftActive ? serializeTextState(currentTextDraftState) : (existing.text ?? {})
             };
         }
         else {
-            if (currentDraftKind !== "component"
-                || currentDraftAssetKey !== assetKey
-                || currentDraftComponentKey !== componentKey
-                || !currentDraftState) {
+            const hasComponentDraft = !isTextComponent(assetKey, componentKey)
+                && currentDraftKind === "component"
+                && currentDraftAssetKey === assetKey
+                && currentDraftComponentKey === componentKey
+                && !!currentDraftState;
+
+            if (!hasComponentDraft && !textDraftActive) {
                 return;
             }
 
             const existing = getSavedLayoutState(assetKey);
             const nextComponents = Object.assign({}, existing.components || {});
 
-            nextComponents[componentKey] = {
-                x: currentDraftState.x,
-                y: currentDraftState.y,
-                width: currentDraftState.width,
-                height: currentDraftState.height,
-                scale: currentDraftState.scale,
-                hitScale: currentDraftState.hitScale
-            };
+            if (hasComponentDraft) {
+                nextComponents[componentKey] = {
+                    x: currentDraftState.x,
+                    y: currentDraftState.y,
+                    width: currentDraftState.width,
+                    height: currentDraftState.height,
+                    scale: currentDraftState.scale,
+                    hitScale: currentDraftState.hitScale
+                };
+            }
 
             sharedLayoutState[assetKey] = {
                 x: existing.x,
@@ -927,7 +1144,8 @@
                 width: existing.width,
                 height: existing.height,
                 scale: existing.scale,
-                components: nextComponents
+                components: nextComponents,
+                text: textDraftActive ? serializeTextState(currentTextDraftState) : (existing.text ?? {})
             };
         }
 
@@ -935,6 +1153,8 @@
         currentDraftAssetKey = null;
         currentDraftComponentKey = null;
         currentDraftState = null;
+        currentTextDraftAssetKey = null;
+        currentTextDraftState = null;
 
         await saveSharedLayoutState();
         applyAllAssetLayouts();
@@ -950,7 +1170,13 @@
             return;
         }
 
+        const shouldDiscardTextDraft = currentTextDraftAssetKey === assetKey;
+
         discardCurrentDraft();
+
+        if (shouldDiscardTextDraft) {
+            discardCurrentTextDraft();
+        }
     }
 
     function resetSelectedLayoutAsset() {
@@ -959,12 +1185,19 @@
         if (isVariableAsset(assetKey)) {
             beginVariableDraft("appEdgeColor", getCssLayoutVariableDefaults().appEdgeColor);
             syncLayoutColorInputs(currentVariableDraftValue);
-            updateLayoutCodePreview(assetKey);
-            updateLayoutStatusDisplay(assetKey);
+            updateLayoutCodePreview(assetKey, "root");
+            updateLayoutStatusDisplay(assetKey, "root");
             return;
         }
 
         const componentKey = getSelectedComponentKey();
+
+        if (isTextComponent(assetKey, componentKey)) {
+            beginTextDraft(assetKey, getCssTextDefaults(assetKey));
+            applyAssetTextStyle(assetKey);
+            refreshLayoutUi();
+            return;
+        }
 
         if (isRootComponent(componentKey)) {
             beginDraftForSelected(getCssLayoutDefaults(assetKey));
@@ -986,6 +1219,8 @@
         currentDraftState = null;
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
+        currentTextDraftAssetKey = null;
+        currentTextDraftState = null;
 
         await saveSharedLayoutState();
         applyAllAssetLayouts();
@@ -1041,6 +1276,8 @@
         };
     }
     //#endregion SEGMENT D2 - Layout Asset Persistence And Visibility
+
+    
 
     //#region SEGMENT E - Layout Variable And Scene Helpers
     function setButtonLabel(button, label) {
@@ -1300,6 +1537,27 @@
     }
 
     function getComponentDefinitionsForAsset(assetKey) {
+        if (assetSupportsEditableText(assetKey)) {
+            const artLabel = layoutTextArtLabels[assetKey] || "Whole Asset";
+
+            return {
+                root: {
+                    label: artLabel,
+                    geometryMode: "asset",
+                    allowsHitScale: false,
+                    status: artLabel === "Whole Asset"
+                        ? "Moves, resizes, and scales the selected asset as a whole."
+                        : `Moves, resizes, and scales ${artLabel} as the button art area.`
+                },
+                text: {
+                    label: "text",
+                    geometryMode: "text",
+                    allowsHitScale: false,
+                    status: "Moves and styles the overlaid text independently inside this asset."
+                }
+            };
+        }
+
         return assetComponentDefinitions[assetKey] || {
             root: {
                 label: "Whole Asset",
@@ -1340,9 +1598,10 @@
 
         const definitions = getComponentDefinitionsForAsset(assetKey);
         const componentKeys = Object.keys(definitions);
+        const defaultComponentKey = componentKeys.includes("root") ? "root" : (componentKeys[0] || "");
         const preservedKey = componentKeys.includes(preferredComponentKey)
             ? preferredComponentKey
-            : (componentKeys.includes(layoutComponentSelect.value) ? layoutComponentSelect.value : "root");
+            : (componentKeys.includes(layoutComponentSelect.value) ? layoutComponentSelect.value : defaultComponentKey);
 
         layoutComponentSelect.innerHTML = "";
 
@@ -1402,8 +1661,8 @@
         ensureLayoutColorAssetSelected();
         syncLayoutColorInputs(normalized);
         beginVariableDraft("appEdgeColor", normalized);
-        updateLayoutCodePreview(layoutColorAssetKey);
-        updateLayoutStatusDisplay(layoutColorAssetKey);
+        updateLayoutCodePreview(layoutColorAssetKey, "root");
+        updateLayoutStatusDisplay(layoutColorAssetKey, "root");
     }
 
     function ensureLayoutVariableControls() {
@@ -1450,6 +1709,111 @@
                 commitTextColorDraft();
             }
         });
+    }
+
+    function ensureLayoutTextControls() {
+        if (layoutTextControls) {
+            return;
+        }
+
+        layoutTextControls = document.createElement("div");
+        layoutTextControls.hidden = true;
+        layoutTextControls.innerHTML = `
+        <label class="pl-field">
+            <span class="pl-field-label">Text</span>
+            <input class="pl-input" id="pl-layout-text-content" type="text" maxlength="40" />
+            <span class="pl-field-hint">Updates the label rendered over this asset.</span>
+        </label>
+
+        <label class="pl-field">
+            <span class="pl-field-label">Font</span>
+            <select class="pl-input" id="pl-layout-text-font-family"></select>
+        </label>
+
+        <label class="pl-field">
+            <span class="pl-field-label">Font size (px)</span>
+            <input class="pl-input" id="pl-layout-text-font-size" type="number" min="8" max="96" step="1" />
+        </label>
+
+        <div class="pl-field">
+            <span class="pl-field-label">Text color</span>
+            <div class="pl-layout-range-with-number">
+                <input class="pl-input" id="pl-layout-text-color-picker" type="color" value="#FFFFFF" />
+                <input class="pl-input pl-layout-number-input" id="pl-layout-text-color-text" type="text" value="#FFFFFF" spellcheck="false" autocomplete="off" />
+            </div>
+        </div>
+
+        <div class="pl-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <label style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;">
+                <input id="pl-layout-text-bold" type="checkbox" />
+                <span class="pl-field-label" style="margin:0;">Bold</span>
+            </label>
+
+            <label style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;">
+                <input id="pl-layout-text-italic" type="checkbox" />
+                <span class="pl-field-label" style="margin:0;">Italic</span>
+            </label>
+        </div>
+
+        <span class="pl-field-hint" id="pl-layout-text-style-status">These controls affect only the overlaid text component.</span>
+    `;
+
+        if (layoutScaleField && layoutScaleField.parentNode) {
+            layoutScaleField.parentNode.insertBefore(layoutTextControls, layoutScaleField);
+        }
+        else {
+            layoutPanel.appendChild(layoutTextControls);
+        }
+
+        layoutTextContent = layoutTextControls.querySelector("#pl-layout-text-content");
+        layoutTextFontFamily = layoutTextControls.querySelector("#pl-layout-text-font-family");
+        layoutTextFontSize = layoutTextControls.querySelector("#pl-layout-text-font-size");
+        layoutTextColorPicker = layoutTextControls.querySelector("#pl-layout-text-color-picker");
+        layoutTextColorText = layoutTextControls.querySelector("#pl-layout-text-color-text");
+        layoutTextBold = layoutTextControls.querySelector("#pl-layout-text-bold");
+        layoutTextItalic = layoutTextControls.querySelector("#pl-layout-text-italic");
+        layoutTextStyleStatus = layoutTextControls.querySelector("#pl-layout-text-style-status");
+
+        layoutTextFontFamily.innerHTML = "";
+        layoutTextFontFamilyOptions.forEach(function (optionDefinition) {
+            layoutTextFontFamily.appendChild(new Option(optionDefinition.label, optionDefinition.value));
+        });
+
+        layoutTextContent.addEventListener("input", pushTextControlValues);
+        layoutTextFontFamily.addEventListener("change", pushTextControlValues);
+        layoutTextFontSize.addEventListener("input", pushTextControlValues);
+
+        layoutTextColorPicker.addEventListener("input", function () {
+            syncLayoutTextColorInputs(layoutTextColorPicker.value);
+            pushTextControlValues();
+        });
+
+        const commitTextColorChange = function () {
+            syncLayoutTextColorInputs(layoutTextColorText.value);
+            pushTextControlValues();
+        };
+
+        layoutTextColorText.addEventListener("change", commitTextColorChange);
+        layoutTextColorText.addEventListener("blur", commitTextColorChange);
+        layoutTextColorText.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                commitTextColorChange();
+            }
+        });
+
+        layoutTextBold.addEventListener("change", pushTextControlValues);
+        layoutTextItalic.addEventListener("change", pushTextControlValues);
+    }
+
+    function syncLayoutTextColorInputs(colorValue) {
+        if (!layoutTextColorPicker || !layoutTextColorText) {
+            return;
+        }
+
+        const normalized = normalizeHexColor(colorValue, "#ffffff");
+        layoutTextColorPicker.value = normalized;
+        layoutTextColorText.value = normalized.toUpperCase();
     }
 
     function ensureLayoutEditorExtensions() {
@@ -1540,6 +1904,12 @@
     function setLayoutColorFieldHidden(isHidden) {
         if (layoutColorField) {
             layoutColorField.hidden = isHidden;
+        }
+    }
+
+    function setLayoutTextControlsHidden(isHidden) {
+        if (layoutTextControls) {
+            layoutTextControls.hidden = isHidden;
         }
     }
 
@@ -1744,6 +2114,33 @@
     //#endregion SEGMENT G1 - Slider Geometry Helpers
 
     //#region SEGMENT G2 - Slider Rendering And Asset Layout
+    function applyAssetTextStyle(assetKey) {
+        const labelElement = getTextLabelElement(assetKey);
+        const textState = getEffectiveTextState(assetKey);
+
+        if (!labelElement || !textState) {
+            return;
+        }
+
+        labelElement.textContent = textState.content;
+        labelElement.style.position = "absolute";
+        labelElement.style.left = "50%";
+        labelElement.style.top = "50%";
+        labelElement.style.transform = `translate(-50%, -50%) translate(${Math.round(textState.x)}px, ${Math.round(textState.y)}px)`;
+        labelElement.style.display = "block";
+        labelElement.style.width = "max-content";
+        labelElement.style.maxWidth = "90%";
+        labelElement.style.whiteSpace = "nowrap";
+        labelElement.style.lineHeight = "1";
+        labelElement.style.textAlign = "center";
+        labelElement.style.pointerEvents = "none";
+        labelElement.style.fontFamily = textState.fontFamily || layoutTextFontFamilyOptions[0].value;
+        labelElement.style.fontSize = `${Math.max(8, Math.round(textState.fontSize || 16))}px`;
+        labelElement.style.fontWeight = textState.bold ? "900" : "400";
+        labelElement.style.fontStyle = textState.italic ? "italic" : "normal";
+        labelElement.style.color = normalizeHexColor(textState.color, "#ffffff");
+    }
+
     function updateSliderVisuals() {
         const metrics = getSliderVisualMetrics();
 
@@ -1894,6 +2291,7 @@
 
     function applyAllAssetLayouts() {
         Object.keys(layoutAssets).forEach(applyAssetLayout);
+        Object.keys(layoutTextAssets).forEach(applyAssetTextStyle);
         applyLayoutVariables();
         refreshLayoutSelection();
         refreshComponentOutlines();
@@ -1994,6 +2392,20 @@
             return;
         }
 
+        if (isTextComponent(assetKey, componentKey)) {
+            const textState = getEffectiveTextState(assetKey);
+            const payload = {
+                items: {
+                    [assetKey]: {
+                        text: serializeTextState(textState)
+                    }
+                }
+            };
+
+            layoutCode.value = JSON.stringify(payload, null, 2);
+            return;
+        }
+
         if (!isRootComponent(componentKey)) {
             const componentState = getEffectiveComponentState(assetKey, componentKey);
             const payload = {
@@ -2062,6 +2474,22 @@
             return;
         }
 
+        if (isTextComponent(assetKey, componentKey)) {
+            const textState = getEffectiveTextState(assetKey);
+
+            layoutStageStatus.textContent = "Text component · overlaid label";
+            layoutSafeZoneStatus.textContent = "Moves and styles the overlaid text independently inside this asset.";
+            layoutScaleValue.textContent = `${Math.round(textState.fontSize)} px`;
+            layoutXValue.textContent = `${Math.round(textState.x)} px local offset`;
+            layoutYValue.textContent = `${Math.round(textState.y)} px local offset`;
+
+            if (layoutTextStyleStatus) {
+                layoutTextStyleStatus.textContent = "Position comes from X/Y. Font controls below affect only this text component.";
+            }
+
+            return;
+        }
+
         if (!isRootComponent(componentKey)) {
             const definitions = getComponentDefinitionsForAsset(assetKey);
             layoutStageStatus.textContent = `Component mode · ${definitions[componentKey]?.label || componentKey}`;
@@ -2124,7 +2552,14 @@
             layoutResetAll,
             layoutCode,
             layoutColorPicker,
-            layoutColorText
+            layoutColorText,
+            layoutTextContent,
+            layoutTextFontFamily,
+            layoutTextFontSize,
+            layoutTextColorPicker,
+            layoutTextColorText,
+            layoutTextBold,
+            layoutTextItalic
         ].filter(Boolean);
     }
 
@@ -2179,6 +2614,16 @@
             return;
         }
 
+        if (definition.geometryMode === "text") {
+            layoutScaleField.hidden = true;
+            layoutXField.hidden = false;
+            layoutYField.hidden = false;
+            layoutWidthField.hidden = true;
+            layoutHeightField.hidden = true;
+            setHitScaleFieldHidden(true);
+            return;
+        }
+
         if (definition.geometryMode === "component-scale") {
             layoutScaleField.hidden = false;
             layoutXField.hidden = false;
@@ -2218,6 +2663,7 @@
     function refreshLayoutUi() {
         ensureLayoutVariableControls();
         ensureLayoutEditorExtensions();
+        ensureLayoutTextControls();
         updateLayoutSceneHeader(layoutSceneSelect.value || "home");
         updateLayoutEditorControlState();
         updateLayoutEditorModeStatus();
@@ -2226,6 +2672,7 @@
         const assetKey = getSelectedAssetKey();
         if (!assetKey) {
             setLayoutColorFieldHidden(true);
+            setLayoutTextControlsHidden(true);
             setComponentFieldHidden(true);
             setHitScaleFieldHidden(true);
             hideSliderSpecificOutlines();
@@ -2236,6 +2683,7 @@
 
         if (isVariableAsset(assetKey)) {
             setLayoutColorFieldHidden(false);
+            setLayoutTextControlsHidden(true);
             applyGeometryModeForSelection(assetKey, componentKey);
             previewLayoutAsset("home-scene");
             applyAllAssetLayouts();
@@ -2254,7 +2702,28 @@
         applyAllAssetLayouts();
         applyGeometryModeForSelection(assetKey, componentKey);
 
-        if (isRootComponent(componentKey)) {
+        const textComponentSelected = isTextComponent(assetKey, componentKey);
+        setLayoutTextControlsHidden(!textComponentSelected);
+
+        if (textComponentSelected) {
+            const textState = getEffectiveTextState(assetKey);
+
+            layoutTextContent.value = textState.content;
+            layoutTextFontFamily.value = textState.fontFamily;
+            layoutTextFontSize.value = String(Math.round(textState.fontSize));
+            syncLayoutTextColorInputs(textState.color);
+            layoutTextBold.checked = !!textState.bold;
+            layoutTextItalic.checked = !!textState.italic;
+            layoutTextStyleStatus.textContent = "Position comes from X/Y. Font controls below affect only this text component.";
+
+            layoutX.value = String(Math.round(textState.x));
+            layoutY.value = String(Math.round(textState.y));
+            syncNumberPairs();
+
+            layoutHeightLabel.textContent = "Height";
+            layoutHeightHint.textContent = "";
+        }
+        else if (isRootComponent(componentKey)) {
             const state = getEffectiveLayoutState(assetKey);
             const resolvedHeight = getResolvedHeight(assetKey, state);
             const ratioLocked = !!artMetrics[assetKey];
@@ -2276,7 +2745,6 @@
         else {
             const componentState = getEffectiveComponentState(assetKey, componentKey);
             const geometryMode = getComponentDefinitionsForAsset(assetKey)[componentKey]?.geometryMode;
-            const previewRect = runtimeComponentRects[assetKey]?.[componentKey];
 
             layoutScale.value = String(Math.round(componentState.scale));
             layoutX.value = String(Math.round(componentState.x));
@@ -2311,7 +2779,7 @@
         const assetKey = getSelectedAssetKey();
         const componentKey = getSelectedComponentKey();
 
-        if (isVariableAsset(assetKey)) {
+        if (isVariableAsset(assetKey) || isTextComponent(assetKey, componentKey)) {
             return null;
         }
 
@@ -2354,9 +2822,78 @@
         return partial;
     }
 
+    function buildTextStateFromControls() {
+        const assetKey = getSelectedAssetKey();
+        const base = getEffectiveTextState(assetKey);
+
+        if (!base) {
+            return null;
+        }
+
+        const parsedFontSize = parseInt(layoutTextFontSize.value || String(base.fontSize), 10);
+
+        return {
+            content: layoutTextContent.value ?? base.content,
+            fontFamily: layoutTextFontFamily.value || base.fontFamily,
+            fontSize: Number.isFinite(parsedFontSize) && parsedFontSize > 0 ? parsedFontSize : base.fontSize,
+            color: normalizeHexColor(layoutTextColorText.value || layoutTextColorPicker.value, base.color),
+            bold: !!layoutTextBold.checked,
+            italic: !!layoutTextItalic.checked,
+            x: base.x,
+            y: base.y
+        };
+    }
+
+    function pushTextControlValues() {
+        const assetKey = getSelectedAssetKey();
+        const componentKey = getSelectedComponentKey();
+
+        if (!isTextComponent(assetKey, componentKey)) {
+            return;
+        }
+
+        const nextTextState = buildTextStateFromControls();
+
+        if (!nextTextState) {
+            return;
+        }
+
+        beginTextDraft(assetKey, nextTextState);
+        syncLayoutTextColorInputs(nextTextState.color);
+        applyAssetTextStyle(assetKey);
+        updateLayoutCodePreview(assetKey, componentKey);
+        updateLayoutStatusDisplay(assetKey, componentKey);
+    }
+
     function pushLayoutControlValues() {
         const assetKey = getSelectedAssetKey();
+        const componentKey = getSelectedComponentKey();
+
         if (isVariableAsset(assetKey)) {
+            return;
+        }
+
+        if (isTextComponent(assetKey, componentKey)) {
+            const base = getEffectiveTextState(assetKey);
+
+            if (!base) {
+                return;
+            }
+
+            beginTextDraft(assetKey, {
+                x: parseInt(layoutXNumber.value || layoutX.value || String(base.x), 10),
+                y: parseInt(layoutYNumber.value || layoutY.value || String(base.y), 10),
+                content: base.content,
+                fontFamily: base.fontFamily,
+                fontSize: base.fontSize,
+                color: base.color,
+                bold: base.bold,
+                italic: base.italic
+            });
+
+            applyAssetTextStyle(assetKey);
+            updateLayoutCodePreview(assetKey, componentKey);
+            updateLayoutStatusDisplay(assetKey, componentKey);
             return;
         }
 
@@ -2366,7 +2903,7 @@
         }
 
         beginDraftForSelected(partial);
-        updateLayoutSliderBounds(assetKey, getSelectedComponentKey());
+        updateLayoutSliderBounds(assetKey, componentKey);
 
         if (currentDraftState && currentDraftState.scale != null) {
             layoutScale.value = String(Math.round(currentDraftState.scale));
@@ -2379,8 +2916,8 @@
         }
 
         applyAllAssetLayouts();
-        updateLayoutCodePreview(assetKey, getSelectedComponentKey());
-        updateLayoutStatusDisplay(assetKey, getSelectedComponentKey());
+        updateLayoutCodePreview(assetKey, componentKey);
+        updateLayoutStatusDisplay(assetKey, componentKey);
         refreshLayoutSelection();
         refreshComponentOutlines();
     }
@@ -2392,6 +2929,10 @@
 
         if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
             discardCurrentDraft();
+        }
+
+        if (currentTextDraftAssetKey && currentTextDraftAssetKey !== newAssetKey) {
+            discardCurrentTextDraft();
         }
 
         if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
@@ -2408,6 +2949,10 @@
             discardCurrentDraft();
         }
 
+        if (currentTextDraftAssetKey && currentTextDraftAssetKey !== newAssetKey) {
+            discardCurrentTextDraft();
+        }
+
         if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
             discardVariableDraft();
         }
@@ -2417,10 +2962,15 @@
     }
 
     function handleLayoutComponentChange() {
+        const assetKey = getSelectedAssetKey();
         const newComponentKey = getSelectedComponentKey();
 
         if (currentDraftKind === "component" && currentDraftComponentKey !== newComponentKey) {
             discardCurrentDraft();
+        }
+
+        if (currentTextDraftAssetKey === assetKey && !isTextComponent(assetKey, newComponentKey)) {
+            discardCurrentTextDraft();
         }
 
         refreshLayoutUi();
