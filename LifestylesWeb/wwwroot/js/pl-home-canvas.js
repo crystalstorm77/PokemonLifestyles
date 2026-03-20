@@ -130,7 +130,7 @@
     const shouldShowRewardOverlay = String(homeRoot.dataset.showRewardOverlay || "").toLowerCase() === "true";
 
     const layoutColorAssetKey = "app-edge-color";
-    const layoutColorAssetLabel = "shell-background";
+    const layoutColorAssetLabel = "home-scene.png";
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
