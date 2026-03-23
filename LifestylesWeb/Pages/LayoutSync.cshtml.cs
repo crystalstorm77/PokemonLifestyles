@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Hosting;
 
 namespace LifestylesWeb.Pages;
 
@@ -175,6 +175,12 @@ public sealed class LayoutOverridesPayload
 
     public Dictionary<string, string> DefaultVariables { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, LayoutSceneOverride> Scenes { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, LayoutSceneAssetDefinition> SceneAssets { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
     #endregion // SEGMENT C — Layout Override Collection
 }
 
@@ -192,6 +198,9 @@ public sealed class LayoutAssetOverride
 
     public Dictionary<string, string> Text { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, LayoutAssetStateOverride> States { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
     #endregion // SEGMENT D — Layout Override Values
 }
 
@@ -208,4 +217,32 @@ public sealed class LayoutComponentOverride
     public int? HitScaleX { get; set; }
     public int? HitScaleY { get; set; }
     #endregion // SEGMENT E — Layout Component Override Values
+}
+
+public sealed class LayoutAssetStateOverride
+{
+    #region SEGMENT F — Layout Asset State Override Values
+    public bool? Visible { get; set; }
+    #endregion // SEGMENT F — Layout Asset State Override Values
+}
+
+public sealed class LayoutSceneOverride
+{
+    #region SEGMENT G — Layout Scene Override Values
+    public string Label { get; set; } = string.Empty;
+
+    public List<string> Assets { get; set; } = [];
+
+    public List<string> RemovedAssets { get; set; } = [];
+    #endregion // SEGMENT G — Layout Scene Override Values
+}
+
+public sealed class LayoutSceneAssetDefinition
+{
+    #region SEGMENT H — Layout Scene Asset Definition Values
+    public string Type { get; set; } = string.Empty;
+    public string PresetKey { get; set; } = string.Empty;
+    public string Text { get; set; } = string.Empty;
+    public string BehaviorRole { get; set; } = string.Empty;
+    #endregion // SEGMENT H — Layout Scene Asset Definition Values
 }

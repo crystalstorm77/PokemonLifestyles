@@ -123,6 +123,13 @@
                     </button>
 
                     <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-back"
+                            id="pl-manage-button"
+                            hidden>
+                        <span class="pl-button-label">Manage</span>
+                    </button>
+
+                    <button type="button"
                             class="pl-canvas-item pl-canvas-button pl-canvas-button-pause"
                             id="pl-pause-button"
                             hidden>
@@ -134,6 +141,41 @@
                             id="pl-exit-button"
                             hidden>
                         <span class="pl-button-label">Cancel</span>
+                    </button>
+
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-setup" id="pl-focus-manage-panel" hidden>
+                        <div class="pl-setup-copy">
+                            <div class="pl-panel-header">
+                                <span class="pl-eyebrow" style="margin:0;">Focus Types</span>
+                                <span class="pl-badge">Manage</span>
+                            </div>
+
+                            <h2 class="pl-title" style="margin-top:0.55rem;">Manage your labels</h2>
+                            <p class="pl-subtitle">
+                                This scene will host the focus type list, add field, reorder controls, and delete flow in the next pass.
+                            </p>
+                        </div>
+
+                        <div class="pl-setup-controls">
+                            <div class="pl-info-box">
+                                <span class="pl-info-label">Coming next</span>
+                                <strong class="pl-info-value">Scrollable focus type management</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-back"
+                            id="pl-focus-manage-back-button"
+                            hidden>
+                        <span class="pl-button-label">Back</span>
+                    </button>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
+                            id="pl-focus-manage-ok-button"
+                            hidden>
+                        <span class="pl-button-label">OK</span>
                     </button>
 
                     <div class="pl-panel-dim pl-canvas-item" id="pl-confirm-dim" hidden></div>
@@ -253,6 +295,15 @@
         <span class="pl-field-hint" id="pl-layout-safe-zone-status">Inside safe zone.</span>
     </div>
 
+    <label class="pl-field">
+        <span class="pl-field-label">Mode</span>
+        <select class="pl-input" id="pl-layout-editor-mode-select">
+            <option value="layout">Layout</option>
+            <option value="scene-builder">Scene Builder</option>
+        </select>
+        <span class="pl-field-hint" id="pl-layout-editor-mode-hint">Layout moves assets. Scene Builder adds assets to scenes and creates text labels.</span>
+    </label>
+
     <div class="pl-field" id="pl-layout-editor-toggle-field">
         <label for="pl-layout-editor-enabled" style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;">
             <input id="pl-layout-editor-enabled" type="checkbox" checked />
@@ -266,11 +317,20 @@
         <select class="pl-input" id="pl-layout-scene-select">
             <option value="home">Home</option>
             <option value="focus-setup">Focus setup</option>
+            <option value="focus-manage">Focus manage</option>
             <option value="focus-running">Focus running</option>
             <option value="stop-confirm">Stop confirm</option>
             <option value="reward">Reward</option>
             <option value="app-shell">App shell</option>
         </select>
+    </label>
+
+    <label class="pl-field">
+        <span class="pl-field-label">State</span>
+        <select class="pl-input" id="pl-layout-state-select">
+            <option value="base">Base</option>
+        </select>
+        <span class="pl-field-hint" id="pl-layout-state-status">Base = shared scene layout. Scene-specific states can override visibility.</span>
     </label>
 
     <label class="pl-field">
@@ -295,6 +355,61 @@
         <button type="button" class="pl-home-action-button" id="pl-layout-art-picker-button">Browse PNG</button>
         <input id="pl-layout-art-picker-input" type="file" accept=".png,image/png" hidden />
         <span class="pl-field-hint" id="pl-layout-art-picker-status">No PNG override selected.</span>
+    </div>
+
+    <div class="pl-field" id="pl-layout-state-visibility-field" hidden>
+        <label for="pl-layout-state-visible" style="display:flex;align-items:center;gap:0.55rem;cursor:pointer;">
+            <input id="pl-layout-state-visible" type="checkbox" checked />
+            <span class="pl-field-label" style="margin:0;">Visible in selected state</span>
+        </label>
+        <span class="pl-field-hint" id="pl-layout-state-visible-status">This asset currently inherits its visibility from the base scene layout.</span>
+    </div>
+
+    <div id="pl-layout-scene-builder-panel" hidden>
+        <div class="pl-field">
+            <span class="pl-field-label">Add Existing Asset To Scene</span>
+            <select class="pl-input" id="pl-layout-scene-asset-source-select"></select>
+            <div class="pl-layout-actions" style="margin-top:0.75rem;">
+                <button type="button" class="pl-home-action-button" id="pl-layout-scene-asset-add">Add Asset To Scene</button>
+                <button type="button" class="pl-home-action-button" id="pl-layout-scene-asset-remove">Remove Selected Asset</button>
+            </div>
+            <span class="pl-field-hint" id="pl-layout-scene-builder-membership-status">Add an existing asset to this scene, or remove the currently selected asset from it.</span>
+        </div>
+
+        <div class="pl-field" id="pl-layout-behavior-role-field" hidden>
+            <span class="pl-field-label">Selected Asset Behavior</span>
+            <select class="pl-input" id="pl-layout-behavior-role-select">
+                <option value="none">None</option>
+                <option value="open-focus-setup">Open Focus Setup</option>
+                <option value="open-focus-manage">Open Focus Manage</option>
+                <option value="return-home">Return Home</option>
+                <option value="return-focus-setup">Return Focus Setup</option>
+                <option value="select-countdown-mode">Select Count Down Mode</option>
+                <option value="select-countup-mode">Select Count Up Mode</option>
+                <option value="start-focus-session">Start Focus Session</option>
+                <option value="toggle-pause-session">Toggle Pause Session</option>
+                <option value="stop-focus-session">Stop Focus Session</option>
+                <option value="confirm-keep-going">Confirm Keep Going</option>
+                <option value="confirm-stop-session">Confirm Stop Session</option>
+                <option value="close-reward">Close Reward</option>
+            </select>
+            <span class="pl-field-hint" id="pl-layout-behavior-role-status">Select an interactive asset in Scene Builder to edit its behavior role.</span>
+        </div>
+
+        <div class="pl-field">
+            <span class="pl-field-label">Create Text Asset</span>
+            <input class="pl-input" id="pl-layout-new-text-asset-key" type="text" maxlength="48" placeholder="focus-setup-mode-label" />
+            <input class="pl-input" id="pl-layout-new-text-asset-content" type="text" maxlength="80" placeholder="Count Up" style="margin-top:0.75rem;" />
+            <select class="pl-input" id="pl-layout-new-text-asset-preset" style="margin-top:0.75rem;">
+                <option value="text-label">Text Label</option>
+                <option value="text-title">Text Title</option>
+                <option value="text-hint">Text Hint</option>
+            </select>
+            <div class="pl-layout-actions" style="margin-top:0.75rem;">
+                <button type="button" class="pl-home-action-button" id="pl-layout-create-text-asset">Create Text Asset</button>
+            </div>
+            <span class="pl-field-hint" id="pl-layout-scene-builder-text-status">Creates a reusable text asset and adds it to the selected scene.</span>
+        </div>
     </div>
 
     <div class="pl-field">

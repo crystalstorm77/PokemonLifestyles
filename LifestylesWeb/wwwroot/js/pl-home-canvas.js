@@ -26,8 +26,12 @@
     const countdownModeButton = document.getElementById("pl-countdown-mode-button");
     const countUpModeButton = document.getElementById("pl-countup-mode-button");
 
+    const manageButton = document.getElementById("pl-manage-button");
     const pauseButton = document.getElementById("pl-pause-button");
     const exitButton = document.getElementById("pl-exit-button");
+    const focusManagePanel = document.getElementById("pl-focus-manage-panel");
+    const focusManageBackButton = document.getElementById("pl-focus-manage-back-button");
+    const focusManageOkButton = document.getElementById("pl-focus-manage-ok-button");
 
     const confirmDim = document.getElementById("pl-confirm-dim");
     const confirmPanel = document.getElementById("pl-confirm-panel");
@@ -68,10 +72,14 @@
     const saveMode = document.getElementById("pl-save-mode");
 
     const layoutPanel = document.getElementById("pl-layout-panel");
+    const layoutEditorModeSelect = document.getElementById("pl-layout-editor-mode-select");
+    const layoutEditorModeHint = document.getElementById("pl-layout-editor-mode-hint");
     const layoutEditorToggle = document.getElementById("pl-layout-editor-enabled");
     const layoutEditorModeStatus = document.getElementById("pl-layout-editor-mode-status");
     const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
     const layoutSceneSelect = document.getElementById("pl-layout-scene-select");
+    const layoutStateSelect = document.getElementById("pl-layout-state-select");
+    const layoutStateStatus = document.getElementById("pl-layout-state-status");
     const layoutSceneName = document.getElementById("pl-layout-scene-name");
     const layoutStageStatus = document.getElementById("pl-layout-stage-status");
     const layoutSafeZoneStatus = document.getElementById("pl-layout-safe-zone-status");
@@ -79,6 +87,22 @@
     const layoutArtPickerButton = document.getElementById("pl-layout-art-picker-button");
     const layoutArtPickerInput = document.getElementById("pl-layout-art-picker-input");
     const layoutArtPickerStatus = document.getElementById("pl-layout-art-picker-status");
+    const layoutStateVisibilityField = document.getElementById("pl-layout-state-visibility-field");
+    const layoutStateVisible = document.getElementById("pl-layout-state-visible");
+    const layoutStateVisibleStatus = document.getElementById("pl-layout-state-visible-status");
+    const layoutSceneBuilderPanel = document.getElementById("pl-layout-scene-builder-panel");
+    const layoutSceneAssetSourceSelect = document.getElementById("pl-layout-scene-asset-source-select");
+    const layoutSceneAssetAddButton = document.getElementById("pl-layout-scene-asset-add");
+    const layoutSceneAssetRemoveButton = document.getElementById("pl-layout-scene-asset-remove");
+    const layoutSceneBuilderMembershipStatus = document.getElementById("pl-layout-scene-builder-membership-status");
+    const layoutBehaviorRoleField = document.getElementById("pl-layout-behavior-role-field");
+    const layoutBehaviorRoleSelect = document.getElementById("pl-layout-behavior-role-select");
+    const layoutBehaviorRoleStatus = document.getElementById("pl-layout-behavior-role-status");
+    const layoutNewTextAssetKey = document.getElementById("pl-layout-new-text-asset-key");
+    const layoutNewTextAssetContent = document.getElementById("pl-layout-new-text-asset-content");
+    const layoutNewTextAssetPreset = document.getElementById("pl-layout-new-text-asset-preset");
+    const layoutCreateTextAssetButton = document.getElementById("pl-layout-create-text-asset");
+    const layoutSceneBuilderTextStatus = document.getElementById("pl-layout-scene-builder-text-status");
 
     const layoutScale = document.getElementById("pl-layout-scale");
     const layoutScaleNumber = document.getElementById("pl-layout-scale-number");
@@ -107,7 +131,8 @@
         !sliderGroup || !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell ||
         !sliderFillArt || !sliderNibVisual || !durationSlider || !startFocusButton ||
         !countdownModeButton || !countUpModeButton ||
-        !closeFocusButton || !pauseButton || !exitButton ||
+        !closeFocusButton || !manageButton || !pauseButton || !exitButton ||
+        !focusManagePanel || !focusManageBackButton || !focusManageOkButton ||
         !confirmDim || !confirmPanel || !confirmKeepGoingButton || !confirmStopButton ||
         !rewardDim || !rewardPanel || !rewardCloseButton || !focusTypeInput ||
         !setupModeBadge || !setupModeHint || !confirmEyebrow || !confirmTitle ||
@@ -117,9 +142,17 @@
         !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
         !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
         !saveElapsedSeconds || !saveTimerMode || !saveMode || !layoutPanel || !layoutEditorToggle ||
+        !layoutEditorModeSelect || !layoutEditorModeHint ||
         !layoutEditorModeStatus || !layoutAssetSelect || !layoutSceneSelect ||
+        !layoutStateSelect || !layoutStateStatus ||
         !layoutSceneName || !layoutStageStatus || !layoutSafeZoneStatus ||
         !layoutArtPickerField || !layoutArtPickerButton || !layoutArtPickerInput || !layoutArtPickerStatus ||
+        !layoutStateVisibilityField || !layoutStateVisible || !layoutStateVisibleStatus ||
+        !layoutSceneBuilderPanel || !layoutSceneAssetSourceSelect || !layoutSceneAssetAddButton ||
+        !layoutSceneAssetRemoveButton || !layoutSceneBuilderMembershipStatus || !layoutBehaviorRoleField ||
+        !layoutBehaviorRoleSelect || !layoutBehaviorRoleStatus || !layoutNewTextAssetKey ||
+        !layoutNewTextAssetContent || !layoutNewTextAssetPreset || !layoutCreateTextAssetButton ||
+        !layoutSceneBuilderTextStatus ||
         !layoutScale || !layoutScaleNumber || !layoutX || !layoutXNumber ||
         !layoutY || !layoutYNumber || !layoutWidth || !layoutHeight ||
         !layoutScaleValue || !layoutXValue || !layoutYValue ||
@@ -179,8 +212,12 @@
         "slider": { element: sliderGroup, stage: "ui", interactive: true, compound: true },
         "start": { element: startFocusButton, stage: "ui", interactive: true },
         "back": { element: closeFocusButton, stage: "ui", interactive: true },
+        "manage-button": { element: manageButton, stage: "ui", interactive: true },
         "pause": { element: pauseButton, stage: "ui", interactive: true },
         "exit": { element: exitButton, stage: "ui", interactive: true },
+        "focus-manage-panel": { element: focusManagePanel, stage: "ui", interactive: false },
+        "focus-manage-back": { element: focusManageBackButton, stage: "ui", interactive: true },
+        "focus-manage-ok": { element: focusManageOkButton, stage: "ui", interactive: true },
         "confirm-panel": { element: confirmPanel, stage: "ui", interactive: false },
         "keep-going": { element: confirmKeepGoingButton, stage: "ui", interactive: true },
         "stop": { element: confirmStopButton, stage: "ui", interactive: true },
@@ -195,6 +232,11 @@
         "countup-mode": countUpModeButton.querySelector(".pl-button-label"),
         "start": startFocusButton.querySelector(".pl-button-label"),
         "back": closeFocusButton.querySelector(".pl-button-label"),
+        "manage-button": manageButton.querySelector(".pl-button-label"),
+        "pause": pauseButton.querySelector(".pl-button-label"),
+        "exit": exitButton.querySelector(".pl-button-label"),
+        "focus-manage-back": focusManageBackButton.querySelector(".pl-button-label"),
+        "focus-manage-ok": focusManageOkButton.querySelector(".pl-button-label"),
         "keep-going": confirmKeepGoingButton.querySelector(".pl-button-label"),
         "stop": confirmStopButton.querySelector(".pl-button-label"),
         "gotcha": rewardCloseButton.querySelector(".pl-button-label")
@@ -207,6 +249,11 @@
         "countup-mode": "countup-mode.png",
         "start": "focus-start.png",
         "back": "back.png",
+        "manage-button": "manage.png",
+        "pause": "pause.png",
+        "exit": "cancel.png",
+        "focus-manage-back": "back.png",
+        "focus-manage-ok": "ok.png",
         "gotcha": "gotcha.png"
     };
 
@@ -220,6 +267,98 @@
         { label: "Courier New", value: "\"Courier New\", Courier, monospace" }
     ];
 
+    const textAssetPresetDefinitions = {
+        "text-label": {
+            label: "Text Label",
+            width: 180,
+            height: 34,
+            fontFamily: "\"Trebuchet MS\", Helvetica, sans-serif",
+            fontSize: 18,
+            color: "#1d2842",
+            bold: true,
+            italic: false
+        },
+        "text-title": {
+            label: "Text Title",
+            width: 240,
+            height: 42,
+            fontFamily: "\"Trebuchet MS\", Helvetica, sans-serif",
+            fontSize: 24,
+            color: "#1d2842",
+            bold: true,
+            italic: false
+        },
+        "text-hint": {
+            label: "Text Hint",
+            width: 260,
+            height: 48,
+            fontFamily: "\"Trebuchet MS\", Helvetica, sans-serif",
+            fontSize: 14,
+            color: "#51617d",
+            bold: false,
+            italic: false
+        }
+    };
+
+    const behaviorRoleDefinitions = {
+        "none": {
+            label: "None"
+        },
+        "open-focus-setup": {
+            label: "Open Focus Setup"
+        },
+        "open-focus-manage": {
+            label: "Open Focus Manage"
+        },
+        "return-home": {
+            label: "Return Home"
+        },
+        "return-focus-setup": {
+            label: "Return Focus Setup"
+        },
+        "select-countdown-mode": {
+            label: "Select Count Down Mode"
+        },
+        "select-countup-mode": {
+            label: "Select Count Up Mode"
+        },
+        "start-focus-session": {
+            label: "Start Focus Session"
+        },
+        "toggle-pause-session": {
+            label: "Toggle Pause Session"
+        },
+        "stop-focus-session": {
+            label: "Stop Focus Session"
+        },
+        "confirm-keep-going": {
+            label: "Confirm Keep Going"
+        },
+        "confirm-stop-session": {
+            label: "Confirm Stop Session"
+        },
+        "close-reward": {
+            label: "Close Reward"
+        }
+    };
+
+    const defaultAssetBehaviorRoles = {
+        "home-focus": "open-focus-setup",
+        "home-sleep": "none",
+        "countdown-mode": "select-countdown-mode",
+        "countup-mode": "select-countup-mode",
+        "start": "start-focus-session",
+        "back": "return-home",
+        "manage-button": "open-focus-manage",
+        "pause": "toggle-pause-session",
+        "exit": "stop-focus-session",
+        "focus-manage-back": "return-focus-setup",
+        "focus-manage-ok": "return-focus-setup",
+        "keep-going": "confirm-keep-going",
+        "stop": "confirm-stop-session",
+        "gotcha": "close-reward"
+    };
+
     const layoutSceneDefinitions = {
         "home": {
             label: "Home",
@@ -227,7 +366,25 @@
         },
         "focus-setup": {
             label: "Focus setup",
-            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-field", "duration-text", "slider", "start", "back"]
+            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-field", "duration-text", "slider", "start", "back", "manage-button"],
+            states: {
+                base: {
+                    label: "Base"
+                },
+                countdown: {
+                    label: "Count Down"
+                },
+                countup: {
+                    label: "Count Up",
+                    visibility: {
+                        slider: false
+                    }
+                }
+            }
+        },
+        "focus-manage": {
+            label: "Focus manage",
+            assets: ["focus-manage-panel", "focus-manage-back", "focus-manage-ok"]
         },
         "focus-running": {
             label: "Focus running",
@@ -295,6 +452,8 @@
     let sharedLayoutVariables = {};
     let sharedDefaultLayoutState = {};
     let sharedDefaultLayoutVariables = {};
+    let sharedSceneOverrides = {};
+    let sharedSceneAssetDefinitions = {};
     let currentDraftKind = null;
     let currentDraftAssetKey = null;
     let currentDraftComponentKey = null;
@@ -308,6 +467,16 @@
     let currentImageDraftUrl = null;
     let currentImageDraftLabel = null;
     let currentImageDraftObjectUrl = null;
+    let currentVisibilityDraftAssetKey = null;
+    let currentVisibilityDraftSceneKey = null;
+    let currentVisibilityDraftStateKey = null;
+    let currentVisibilityDraftValue = null;
+    let currentBehaviorDraftAssetKey = null;
+    let currentBehaviorDraftValue = null;
+    let currentLayoutEditorMode = "layout";
+    let currentVisibleSceneKey = "home";
+    let currentVisibleSceneStateKey = "base";
+    const dynamicAssetKeys = new Set();
 
     let selectedTimerMode = "countdown";
     let plannedSeconds = 300;
@@ -526,7 +695,8 @@
             height: value.height ?? value.Height,
             scale: value.scale ?? value.Scale,
             components: normalizeLayoutComponents(value.components ?? value.Components),
-            text: normalizeLayoutTextStorage(value.text ?? value.Text)
+            text: normalizeLayoutTextStorage(value.text ?? value.Text),
+            states: normalizeLayoutAssetStates(value.states ?? value.States)
         };
     }
 
@@ -627,6 +797,151 @@
         return result;
     }
 
+    function normalizeSceneOverride(value) {
+        if (!value || typeof value !== "object") {
+            return null;
+        }
+
+        const rawAssets = Array.isArray(value.assets ?? value.Assets)
+            ? (value.assets ?? value.Assets)
+            : [];
+        const rawRemovedAssets = Array.isArray(value.removedAssets ?? value.RemovedAssets)
+            ? (value.removedAssets ?? value.RemovedAssets)
+            : [];
+        const normalizedAssets = rawAssets
+            .map(function (item) {
+                return String(item || "").trim();
+            })
+            .filter(Boolean);
+        const normalizedRemovedAssets = rawRemovedAssets
+            .map(function (item) {
+                return String(item || "").trim();
+            })
+            .filter(Boolean);
+
+        return {
+            label: String(value.label ?? value.Label ?? "").trim(),
+            assets: Array.from(new Set(normalizedAssets)),
+            removedAssets: Array.from(new Set(normalizedRemovedAssets))
+        };
+    }
+
+    function normalizeSceneOverrides(value) {
+        if (!value || typeof value !== "object") {
+            return {};
+        }
+
+        const result = {};
+
+        Object.entries(value).forEach(function ([key, item]) {
+            const normalized = normalizeSceneOverride(item);
+
+            if (normalized) {
+                result[key] = normalized;
+            }
+        });
+
+        return result;
+    }
+
+    function normalizeSceneAssetDefinition(value) {
+        if (!value || typeof value !== "object") {
+            return null;
+        }
+
+        const type = String(value.type ?? value.Type ?? "").trim().toLowerCase();
+        if (type !== "text" && type !== "built-in") {
+            return null;
+        }
+
+        const rawBehaviorRole = value.behaviorRole ?? value.BehaviorRole;
+        const normalizedBehaviorRole = behaviorRoleDefinitions[String(rawBehaviorRole ?? "").trim()]
+            ? String(rawBehaviorRole).trim()
+            : "";
+
+        if (type === "built-in") {
+            return {
+                type: "built-in",
+                presetKey: "",
+                text: "",
+                behaviorRole: normalizedBehaviorRole
+            };
+        }
+
+        const presetKey = String(value.presetKey ?? value.PresetKey ?? "text-label").trim();
+        const resolvedPresetKey = textAssetPresetDefinitions[presetKey] ? presetKey : "text-label";
+
+        return {
+            type: "text",
+            presetKey: resolvedPresetKey,
+            text: String(value.text ?? value.Text ?? "").trim() || "New Text",
+            behaviorRole: normalizedBehaviorRole
+        };
+    }
+
+    function normalizeSceneAssetDefinitions(value) {
+        if (!value || typeof value !== "object") {
+            return {};
+        }
+
+        const result = {};
+
+        Object.entries(value).forEach(function ([key, item]) {
+            const normalized = normalizeSceneAssetDefinition(item);
+
+            if (normalized) {
+                result[key] = normalized;
+            }
+        });
+
+        return result;
+    }
+
+    function normalizeLayoutAssetStateOverride(value) {
+        if (!value || typeof value !== "object") {
+            return null;
+        }
+
+        const rawVisible = value.visible ?? value.Visible;
+        let normalizedVisible = null;
+
+        if (typeof rawVisible === "boolean") {
+            normalizedVisible = rawVisible;
+        }
+        else if (rawVisible != null) {
+            const normalizedRaw = String(rawVisible).trim().toLowerCase();
+
+            if (normalizedRaw === "true" || normalizedRaw === "1" || normalizedRaw === "yes" || normalizedRaw === "on") {
+                normalizedVisible = true;
+            }
+            else if (normalizedRaw === "false" || normalizedRaw === "0" || normalizedRaw === "no" || normalizedRaw === "off") {
+                normalizedVisible = false;
+            }
+        }
+
+        return {
+            visible: normalizedVisible
+        };
+    }
+
+    function normalizeLayoutAssetStates(states) {
+        if (!states || typeof states !== "object") {
+            return {};
+        }
+
+        const result = {};
+
+        Object.entries(states).forEach(function ([key, value]) {
+            const normalized = normalizeLayoutAssetStateOverride(value);
+
+            if (normalized) {
+                result[key] = normalized;
+            }
+        });
+
+        return result;
+    }
+
     function cloneNormalizedLayoutItems(items) {
         return normalizeLayoutItems(cloneJsonCompatibleObject(items));
     }
@@ -666,12 +981,16 @@
                 ?? payload?.DefaultVariables
                 ?? payload?.variables
                 ?? payload?.Variables);
+            sharedSceneOverrides = normalizeSceneOverrides(payload?.scenes ?? payload?.Scenes);
+            sharedSceneAssetDefinitions = normalizeSceneAssetDefinitions(payload?.sceneAssets ?? payload?.SceneAssets);
         }
         catch {
             sharedLayoutState = {};
             sharedLayoutVariables = {};
             sharedDefaultLayoutState = {};
             sharedDefaultLayoutVariables = {};
+            sharedSceneOverrides = {};
+            sharedSceneAssetDefinitions = {};
         }
 
         ensureSharedLayoutVariableDefaults();
@@ -680,6 +999,7 @@
             sharedLayoutVariables.appEdgeColor);
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
+        rebuildDynamicSceneAssets();
         applyLayoutVariables();
     }
 
@@ -696,7 +1016,9 @@
                     items: sharedLayoutState,
                     variables: sharedLayoutVariables,
                     defaultItems: sharedDefaultLayoutState,
-                    defaultVariables: sharedDefaultLayoutVariables
+                    defaultVariables: sharedDefaultLayoutVariables,
+                    scenes: sharedSceneOverrides,
+                    sceneAssets: sharedSceneAssetDefinitions
                 })
             });
         }
@@ -804,6 +1126,20 @@
 
     //#region SEGMENT D1 - Asset State Resolvers And Draft Helpers
     function getCssLayoutDefaults(assetKey) {
+        if (isCustomTextAsset(assetKey)) {
+            const preset = getTextAssetPresetDefinition(assetKey);
+
+            return {
+                x: 0,
+                y: 0,
+                width: preset.width,
+                height: preset.height,
+                scale: 100,
+                components: {},
+                text: {}
+            };
+        }
+
         const metrics = artMetrics[assetKey];
         const defaultWidth = readCssPxVar(`--pl-layout-${assetKey}-width`, 160);
 
@@ -931,6 +1267,22 @@
     }
 
     function getCssTextDefaults(assetKey) {
+        if (isCustomTextAsset(assetKey)) {
+            const preset = getTextAssetPresetDefinition(assetKey);
+            const sceneAssetDefinition = getSceneAssetDefinition(assetKey);
+
+            return {
+                content: sceneAssetDefinition?.text || "New Text",
+                fontFamily: preset.fontFamily,
+                fontSize: preset.fontSize,
+                color: preset.color,
+                bold: preset.bold,
+                italic: preset.italic,
+                x: 0,
+                y: 0
+            };
+        }
+
         const labelElement = getTextLabelElement(assetKey);
 
         if (!labelElement) {
@@ -966,7 +1318,8 @@
             height: stored.height ?? defaults.height,
             scale: stored.scale ?? defaults.scale,
             components: stored.components ?? {},
-            text: stored.text ?? {}
+            text: stored.text ?? {},
+            states: stored.states ?? {}
         };
     }
 
@@ -1271,6 +1624,11 @@
 
     async function saveSelectedLayoutAsset() {
         const assetKey = getSelectedAssetKey();
+        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneStateKey = getSelectedSceneStateKey();
+        const behaviorDraftActive = currentBehaviorDraftAssetKey === assetKey
+            && !!currentBehaviorDraftValue
+            && assetSupportsBehaviorRole(assetKey);
 
         if (isVariableAsset(assetKey)) {
             if (currentVariableDraftKey !== "appEdgeColor" || !currentVariableDraftValue) {
@@ -1294,6 +1652,11 @@
         const imageDraftActive = isRootComponent(componentKey)
             && currentImageDraftAssetKey === assetKey
             && !!currentImageDraftFile;
+        const visibilityDraftActive = sceneStateKey !== "base"
+            && currentVisibilityDraftAssetKey === assetKey
+            && currentVisibilityDraftSceneKey === sceneKey
+            && currentVisibilityDraftStateKey === sceneStateKey
+            && typeof currentVisibilityDraftValue === "boolean";
 
         if (imageDraftActive) {
             const uploadedPath = await uploadLayoutAssetArt(assetKey, currentImageDraftFile);
@@ -1309,16 +1672,35 @@
             await refreshArtMetricsForAsset(assetKey, uploadedPath);
         }
 
+        if (behaviorDraftActive) {
+            saveBehaviorRoleOverride(assetKey, currentBehaviorDraftValue);
+        }
+
         if (isRootComponent(componentKey)) {
             const hasAssetDraft = currentDraftKind === "asset"
                 && currentDraftAssetKey === assetKey
                 && !!currentDraftState;
 
-            if (!hasAssetDraft && !textDraftActive && !imageDraftActive) {
+            if (!hasAssetDraft && !textDraftActive && !imageDraftActive && !visibilityDraftActive && !behaviorDraftActive) {
                 return;
             }
 
             const existing = getSavedLayoutState(assetKey);
+            const nextStates = Object.assign({}, existing.states || {});
+
+            if (visibilityDraftActive) {
+                const stateStorageKey = getLayoutSceneStateStorageKey(sceneKey, sceneStateKey);
+                const defaultVisible = getDefaultSceneAssetVisibility(sceneKey, sceneStateKey, assetKey);
+
+                if (currentVisibilityDraftValue === defaultVisible) {
+                    delete nextStates[stateStorageKey];
+                }
+                else {
+                    nextStates[stateStorageKey] = {
+                        visible: currentVisibilityDraftValue
+                    };
+                }
+            }
 
             sharedLayoutState[assetKey] = {
                 x: hasAssetDraft ? currentDraftState.x : existing.x,
@@ -1327,7 +1709,8 @@
                 height: hasAssetDraft ? currentDraftState.height : existing.height,
                 scale: hasAssetDraft ? currentDraftState.scale : existing.scale,
                 components: existing.components ?? {},
-                text: textDraftActive ? serializeTextState(currentTextDraftState) : (existing.text ?? {})
+                text: textDraftActive ? serializeTextState(currentTextDraftState) : (existing.text ?? {}),
+                states: nextStates
             };
         }
         else {
@@ -1337,12 +1720,13 @@
                 && currentDraftComponentKey === componentKey
                 && !!currentDraftState;
 
-            if (!hasComponentDraft && !textDraftActive) {
+            if (!hasComponentDraft && !textDraftActive && !visibilityDraftActive && !behaviorDraftActive) {
                 return;
             }
 
             const existing = getSavedLayoutState(assetKey);
             const nextComponents = Object.assign({}, existing.components || {});
+            const nextStates = Object.assign({}, existing.states || {});
 
             if (hasComponentDraft) {
                 nextComponents[componentKey] = {
@@ -1356,6 +1740,20 @@
                 };
             }
 
+            if (visibilityDraftActive) {
+                const stateStorageKey = getLayoutSceneStateStorageKey(sceneKey, sceneStateKey);
+                const defaultVisible = getDefaultSceneAssetVisibility(sceneKey, sceneStateKey, assetKey);
+
+                if (currentVisibilityDraftValue === defaultVisible) {
+                    delete nextStates[stateStorageKey];
+                }
+                else {
+                    nextStates[stateStorageKey] = {
+                        visible: currentVisibilityDraftValue
+                    };
+                }
+            }
+
             sharedLayoutState[assetKey] = {
                 x: existing.x,
                 y: existing.y,
@@ -1363,7 +1761,8 @@
                 height: existing.height,
                 scale: existing.scale,
                 components: nextComponents,
-                text: textDraftActive ? serializeTextState(currentTextDraftState) : (existing.text ?? {})
+                text: textDraftActive ? serializeTextState(currentTextDraftState) : (existing.text ?? {}),
+                states: nextStates
             };
         }
 
@@ -1374,6 +1773,8 @@
         currentTextDraftAssetKey = null;
         currentTextDraftState = null;
         clearCurrentImageDraftState();
+        discardCurrentVisibilityDraft();
+        discardCurrentBehaviorRoleDraft();
 
         await saveSharedLayoutState();
         applyAllAssetLayouts();
@@ -1401,16 +1802,34 @@
         if (shouldDiscardImageDraft) {
             discardCurrentImageDraft();
         }
+
+        if (currentVisibilityDraftAssetKey === assetKey) {
+            discardCurrentVisibilityDraft();
+            refreshLayoutUi();
+        }
+
+        if (currentBehaviorDraftAssetKey === assetKey) {
+            discardCurrentBehaviorRoleDraft();
+            refreshLayoutUi();
+        }
     }
 
     function resetSelectedLayoutAsset() {
         const assetKey = getSelectedAssetKey();
+        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneStateKey = getSelectedSceneStateKey();
 
         if (isVariableAsset(assetKey)) {
             beginVariableDraft("appEdgeColor", getCssLayoutVariableDefaults().appEdgeColor);
             syncLayoutColorInputs(currentVariableDraftValue);
             updateLayoutCodePreview(assetKey, "root");
             updateLayoutStatusDisplay(assetKey, "root");
+            return;
+        }
+
+        if (isSceneBuilderModeSelected() && assetSupportsBehaviorRole(assetKey)) {
+            beginBehaviorRoleDraft(assetKey, getDefaultBehaviorRole(assetKey));
+            refreshLayoutUi();
             return;
         }
 
@@ -1421,6 +1840,14 @@
             applyAssetTextStyle(assetKey);
             refreshLayoutUi();
             return;
+        }
+
+        if (sceneStateKey !== "base") {
+            beginVisibilityDraft(
+                assetKey,
+                sceneKey,
+                sceneStateKey,
+                getDefaultSceneAssetVisibility(sceneKey, sceneStateKey, assetKey));
         }
 
         if (isRootComponent(componentKey)) {
@@ -1447,6 +1874,8 @@
         currentTextDraftAssetKey = null;
         currentTextDraftState = null;
         clearCurrentImageDraftState();
+        discardCurrentVisibilityDraft();
+        discardCurrentBehaviorRoleDraft();
 
         if (hadImageDraft) {
             applyLayoutVariables();
@@ -1479,7 +1908,8 @@
                     height: currentDraftState.height,
                     scale: currentDraftState.scale,
                     components: existing.components ?? {},
-                    text: existing.text ?? {}
+                    text: existing.text ?? {},
+                    states: existing.states ?? {}
                 };
             }
             else if (currentDraftKind === "component" && currentDraftComponentKey) {
@@ -1501,7 +1931,8 @@
                     height: existing.height,
                     scale: existing.scale,
                     components: nextComponents,
-                    text: existing.text ?? {}
+                    text: existing.text ?? {},
+                    states: existing.states ?? {}
                 };
             }
         }
@@ -1515,7 +1946,46 @@
                 height: existing.height,
                 scale: existing.scale,
                 components: existing.components ?? {},
-                text: serializeTextState(currentTextDraftState)
+                text: serializeTextState(currentTextDraftState),
+                states: existing.states ?? {}
+            };
+        }
+
+        if (
+            currentVisibilityDraftAssetKey
+            && currentVisibilityDraftSceneKey
+            && currentVisibilityDraftStateKey
+            && typeof currentVisibilityDraftValue === "boolean"
+        ) {
+            const existing = snapshotItems[currentVisibilityDraftAssetKey]
+                || getSavedLayoutState(currentVisibilityDraftAssetKey);
+            const nextStates = Object.assign({}, existing.states || {});
+            const stateStorageKey = getLayoutSceneStateStorageKey(
+                currentVisibilityDraftSceneKey,
+                currentVisibilityDraftStateKey);
+            const defaultVisible = getDefaultSceneAssetVisibility(
+                currentVisibilityDraftSceneKey,
+                currentVisibilityDraftStateKey,
+                currentVisibilityDraftAssetKey);
+
+            if (currentVisibilityDraftValue === defaultVisible) {
+                delete nextStates[stateStorageKey];
+            }
+            else {
+                nextStates[stateStorageKey] = {
+                    visible: currentVisibilityDraftValue
+                };
+            }
+
+            snapshotItems[currentVisibilityDraftAssetKey] = {
+                x: existing.x,
+                y: existing.y,
+                width: existing.width,
+                height: existing.height,
+                scale: existing.scale,
+                components: existing.components ?? {},
+                text: existing.text ?? {},
+                states: nextStates
             };
         }
  
@@ -1658,8 +2128,8 @@
         return { xp, coins };
     }
 
-    function syncTimerModeUi() {
-        const countUpSelected = isCountUpModeSelected();
+    function syncTimerModeUi(forcedStateKey = null) {
+        const countUpSelected = (forcedStateKey || getRenderedFocusSetupStateKey()) === "countup";
 
         setupModeBadge.textContent = countUpSelected ? "Count Up" : "Count Down";
         setupModeHint.textContent = countUpSelected
@@ -1952,7 +2422,338 @@
     }
 
     function getLayoutSceneDefinition(sceneKey) {
-        return layoutSceneDefinitions[sceneKey] || layoutSceneDefinitions.home;
+        const builtInDefinition = layoutSceneDefinitions[sceneKey] || layoutSceneDefinitions.home;
+        const override = sharedSceneOverrides[sceneKey];
+        const removedAssets = (override && Array.isArray(override.removedAssets))
+            ? override.removedAssets
+            : [];
+        const mergedAssets = Array.from(new Set([
+            ...(builtInDefinition.assets || []).filter(function (assetKey) {
+                return !removedAssets.includes(assetKey);
+            }),
+            ...((override && Array.isArray(override.assets)) ? override.assets : [])
+        ]));
+
+        return {
+            label: override?.label || builtInDefinition.label,
+            assets: mergedAssets,
+            states: builtInDefinition.states
+        };
+    }
+
+    function getSceneAssetDefinition(assetKey) {
+        if (sharedSceneAssetDefinitions[assetKey]) {
+            return sharedSceneAssetDefinitions[assetKey];
+        }
+
+        if (layoutAssets[assetKey]) {
+            return {
+                type: "built-in",
+                presetKey: "",
+                text: "",
+                behaviorRole: getDefaultBehaviorRole(assetKey)
+            };
+        }
+
+        return null;
+    }
+
+    function getAvailableSceneAssetKeys() {
+        const allKeys = new Set(Object.keys(layoutAssets));
+
+        Object.keys(sharedSceneAssetDefinitions).forEach(function (assetKey) {
+            allKeys.add(assetKey);
+        });
+
+        allKeys.delete(layoutColorAssetKey);
+        return Array.from(allKeys);
+    }
+
+    function isCustomTextAsset(assetKey) {
+        return sharedSceneAssetDefinitions[assetKey]?.type === "text";
+    }
+
+    function getTextAssetPresetDefinition(assetKey) {
+        const presetKey = sharedSceneAssetDefinitions[assetKey]?.presetKey || "text-label";
+        return textAssetPresetDefinitions[presetKey] || textAssetPresetDefinitions["text-label"];
+    }
+
+    function normalizeBehaviorRole(role) {
+        const normalizedRole = String(role || "").trim();
+        return behaviorRoleDefinitions[normalizedRole] ? normalizedRole : "none";
+    }
+
+    function assetSupportsBehaviorRole(assetKey) {
+        return !!layoutAssets[assetKey]?.interactive;
+    }
+
+    function getDefaultBehaviorRole(assetKey) {
+        if (!assetSupportsBehaviorRole(assetKey)) {
+            return "none";
+        }
+
+        return normalizeBehaviorRole(defaultAssetBehaviorRoles[assetKey] || "none");
+    }
+
+    function getSavedBehaviorRole(assetKey) {
+        const definition = getSceneAssetDefinition(assetKey);
+
+        if (!definition || !assetSupportsBehaviorRole(assetKey)) {
+            return "none";
+        }
+
+        return definition.behaviorRole
+            ? normalizeBehaviorRole(definition.behaviorRole)
+            : getDefaultBehaviorRole(assetKey);
+    }
+
+    function getEffectiveBehaviorRole(assetKey) {
+        if (currentBehaviorDraftAssetKey === assetKey && currentBehaviorDraftValue) {
+            return normalizeBehaviorRole(currentBehaviorDraftValue);
+        }
+
+        return getSavedBehaviorRole(assetKey);
+    }
+
+    function beginBehaviorRoleDraft(assetKey, behaviorRole) {
+        if (!assetSupportsBehaviorRole(assetKey)) {
+            currentBehaviorDraftAssetKey = null;
+            currentBehaviorDraftValue = null;
+            return;
+        }
+
+        currentBehaviorDraftAssetKey = assetKey;
+        currentBehaviorDraftValue = normalizeBehaviorRole(behaviorRole);
+    }
+
+    function discardCurrentBehaviorRoleDraft() {
+        currentBehaviorDraftAssetKey = null;
+        currentBehaviorDraftValue = null;
+    }
+
+    function saveBehaviorRoleOverride(assetKey, behaviorRole) {
+        if (!assetSupportsBehaviorRole(assetKey)) {
+            return;
+        }
+
+        const normalizedRole = normalizeBehaviorRole(behaviorRole);
+        const defaultRole = getDefaultBehaviorRole(assetKey);
+        const existingDefinition = sharedSceneAssetDefinitions[assetKey];
+
+        if (existingDefinition?.type === "text") {
+            sharedSceneAssetDefinitions[assetKey] = Object.assign({}, existingDefinition, {
+                behaviorRole: normalizedRole === "none" ? "" : normalizedRole
+            });
+            return;
+        }
+
+        if (normalizedRole === defaultRole) {
+            delete sharedSceneAssetDefinitions[assetKey];
+            return;
+        }
+
+        sharedSceneAssetDefinitions[assetKey] = {
+            type: "built-in",
+            presetKey: "",
+            text: "",
+            behaviorRole: normalizedRole
+        };
+    }
+
+    function isPersistentWorldAsset(assetKey) {
+        return assetKey === "home-scene";
+    }
+
+    function sanitizeSceneAssetKey(rawValue) {
+        return String(rawValue || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+    }
+
+    function createDynamicTextAssetElement(assetKey) {
+        const element = document.createElement("div");
+        element.className = "pl-canvas-item pl-canvas-dynamic-text";
+        element.id = `pl-dynamic-asset-${assetKey}`;
+        element.hidden = true;
+        element.style.background = "transparent";
+        element.style.border = "none";
+        element.style.pointerEvents = "auto";
+
+        const labelElement = document.createElement("span");
+        labelElement.className = "pl-dynamic-text-label";
+        element.appendChild(labelElement);
+        safeUiStage.appendChild(element);
+
+        layoutAssets[assetKey] = {
+            element,
+            stage: "ui",
+            interactive: false,
+            dynamic: true
+        };
+        layoutTextAssets[assetKey] = labelElement;
+        dynamicAssetKeys.add(assetKey);
+
+        element.addEventListener("pointerdown", function (event) {
+            beginDrag(assetKey, event);
+        });
+
+        element.addEventListener("click", function (event) {
+            handleLayoutAssetCanvasClick(assetKey, event);
+        }, true);
+    }
+
+    function removeDynamicTextAssetElement(assetKey) {
+        const element = layoutAssets[assetKey]?.element;
+
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+
+        delete layoutAssets[assetKey];
+        delete layoutTextAssets[assetKey];
+        delete sharedLayoutState[assetKey];
+        delete sharedDefaultLayoutState[assetKey];
+        dynamicAssetKeys.delete(assetKey);
+    }
+
+    function rebuildDynamicSceneAssets() {
+        Array.from(dynamicAssetKeys).forEach(function (assetKey) {
+            if (!sharedSceneAssetDefinitions[assetKey]) {
+                removeDynamicTextAssetElement(assetKey);
+            }
+        });
+
+        Object.keys(sharedSceneAssetDefinitions).forEach(function (assetKey) {
+            if (!layoutAssets[assetKey]) {
+                createDynamicTextAssetElement(assetKey);
+            }
+        });
+    }
+
+    function ensureSceneAssetInScene(sceneKey, assetKey) {
+        const existing = sharedSceneOverrides[sceneKey] || { label: "", assets: [], removedAssets: [] };
+        const nextAssets = Array.from(new Set([...(existing.assets || []), assetKey]));
+        const nextRemovedAssets = (existing.removedAssets || []).filter(function (key) {
+            return key !== assetKey;
+        });
+
+        sharedSceneOverrides[sceneKey] = {
+            label: existing.label || "",
+            assets: nextAssets,
+            removedAssets: nextRemovedAssets
+        };
+    }
+
+    function removeSceneAssetFromScene(sceneKey, assetKey) {
+        const existing = sharedSceneOverrides[sceneKey] || { label: "", assets: [], removedAssets: [] };
+        const nextAssets = (existing.assets || []).filter(function (key) {
+            return key !== assetKey;
+        });
+        const nextRemovedAssets = layoutSceneDefinitions[sceneKey]?.assets?.includes(assetKey)
+            ? Array.from(new Set([...(existing.removedAssets || []), assetKey]))
+            : (existing.removedAssets || []);
+
+        sharedSceneOverrides[sceneKey] = {
+            label: existing.label || "",
+            assets: nextAssets,
+            removedAssets: nextRemovedAssets
+        };
+    }
+
+    function getLayoutSceneStateDefinitions(sceneKey) {
+        return getLayoutSceneDefinition(sceneKey).states || {
+            base: {
+                label: "Base"
+            }
+        };
+    }
+
+    function getLayoutSceneStateDefinition(sceneKey, stateKey) {
+        const definitions = getLayoutSceneStateDefinitions(sceneKey);
+        return definitions[stateKey] || definitions.base || {
+            label: "Base"
+        };
+    }
+
+    function getLayoutSceneStateKeys(sceneKey) {
+        return Object.keys(getLayoutSceneStateDefinitions(sceneKey));
+    }
+
+    function getSelectedSceneStateKey() {
+        return layoutStateSelect.value || "base";
+    }
+
+    function getLayoutSceneStateStorageKey(sceneKey, stateKey) {
+        return `${sceneKey}::${stateKey}`;
+    }
+
+    function getDefaultSceneAssetVisibility(sceneKey, stateKey, assetKey) {
+        if (!assetKey || !getLayoutSceneAssetKeys(sceneKey).includes(assetKey)) {
+            return false;
+        }
+
+        if (!stateKey || stateKey === "base") {
+            return true;
+        }
+
+        const stateDefinition = getLayoutSceneStateDefinition(sceneKey, stateKey);
+        const visibilityValue = stateDefinition.visibility?.[assetKey];
+        return visibilityValue == null ? true : !!visibilityValue;
+    }
+
+    function getSavedSceneAssetVisibility(assetKey, sceneKey, stateKey) {
+        if (!assetKey || !sceneKey || !stateKey || stateKey === "base") {
+            return getDefaultSceneAssetVisibility(sceneKey, stateKey, assetKey);
+        }
+
+        const stateStorageKey = getLayoutSceneStateStorageKey(sceneKey, stateKey);
+        const savedOverride = getSavedLayoutState(assetKey).states?.[stateStorageKey];
+
+        if (savedOverride && typeof savedOverride.visible === "boolean") {
+            return savedOverride.visible;
+        }
+
+        return getDefaultSceneAssetVisibility(sceneKey, stateKey, assetKey);
+    }
+
+    function getEffectiveSceneAssetVisibility(assetKey, sceneKey, stateKey) {
+        if (
+            currentVisibilityDraftAssetKey === assetKey
+            && currentVisibilityDraftSceneKey === sceneKey
+            && currentVisibilityDraftStateKey === stateKey
+            && typeof currentVisibilityDraftValue === "boolean"
+        ) {
+            return currentVisibilityDraftValue;
+        }
+
+        return getSavedSceneAssetVisibility(assetKey, sceneKey, stateKey);
+    }
+
+    function getRenderedFocusSetupStateKey() {
+        if (layoutModeEnabled && layoutEditorEnabled && layoutSceneSelect.value === "focus-setup") {
+            const selectedStateKey = getSelectedSceneStateKey();
+            return selectedStateKey === "base"
+                ? (isCountUpModeSelected() ? "countup" : "countdown")
+                : selectedStateKey;
+        }
+
+        return isCountUpModeSelected() ? "countup" : "countdown";
+    }
+
+    function beginVisibilityDraft(assetKey, sceneKey, stateKey, visible) {
+        currentVisibilityDraftAssetKey = assetKey;
+        currentVisibilityDraftSceneKey = sceneKey;
+        currentVisibilityDraftStateKey = stateKey;
+        currentVisibilityDraftValue = !!visible;
+    }
+
+    function discardCurrentVisibilityDraft() {
+        currentVisibilityDraftAssetKey = null;
+        currentVisibilityDraftSceneKey = null;
+        currentVisibilityDraftStateKey = null;
+        currentVisibilityDraftValue = null;
     }
 
     function getLayoutSceneAssetKeys(sceneKey) {
@@ -1961,16 +2762,39 @@
         });
     }
 
-    function findLayoutSceneKeyForAsset(assetKey) {
+    function getPreferredLayoutSceneKeyForAsset(assetKey, preferredSceneKey = null) {
         if (!assetKey) {
-            return "home";
+            return null;
         }
 
-        const matchingSceneEntry = Object.entries(layoutSceneDefinitions).find(function ([, sceneDefinition]) {
-            return sceneDefinition.assets.includes(assetKey);
+        const candidateSceneKeys = [
+            preferredSceneKey,
+            layoutSceneSelect.value,
+            currentVisibleSceneKey
+        ].filter(function (sceneKey, index, values) {
+            return !!sceneKey && values.indexOf(sceneKey) === index;
         });
 
-        return matchingSceneEntry ? matchingSceneEntry[0] : "home";
+        return candidateSceneKeys.find(function (sceneKey) {
+            return getLayoutSceneAssetKeys(sceneKey).includes(assetKey);
+        }) || null;
+    }
+
+    function findLayoutSceneKeyForAsset(assetKey, preferredSceneKey = null) {
+        if (!assetKey) {
+            return preferredSceneKey || layoutSceneSelect.value || currentVisibleSceneKey || "home";
+        }
+
+        const preferredSceneKeyForAsset = getPreferredLayoutSceneKeyForAsset(assetKey, preferredSceneKey);
+        if (preferredSceneKeyForAsset) {
+            return preferredSceneKeyForAsset;
+        }
+
+        const matchingSceneEntry = Object.keys(layoutSceneDefinitions).find(function (sceneKey) {
+            return getLayoutSceneAssetKeys(sceneKey).includes(assetKey);
+        });
+
+        return matchingSceneEntry || preferredSceneKey || layoutSceneSelect.value || currentVisibleSceneKey || "home";
     }
 
     function updateLayoutSceneHeader(sceneKey) {
@@ -2045,6 +2869,31 @@
         return preservedAssetKey;
     }
 
+    function populateLayoutStateSelectForScene(sceneKey, preferredStateKey = null) {
+        const stateDefinitions = getLayoutSceneStateDefinitions(sceneKey);
+        const stateKeys = Object.keys(stateDefinitions);
+        const preservedStateKey = stateKeys.includes(preferredStateKey)
+            ? preferredStateKey
+            : (stateKeys.includes(layoutStateSelect.value) ? layoutStateSelect.value : (stateKeys[0] || "base"));
+
+        layoutStateSelect.innerHTML = "";
+
+        stateKeys.forEach(function (stateKey) {
+            const option = document.createElement("option");
+            option.value = stateKey;
+            option.textContent = stateDefinitions[stateKey].label || stateKey;
+            layoutStateSelect.appendChild(option);
+        });
+
+        layoutStateSelect.disabled = stateKeys.length <= 1;
+        layoutStateSelect.value = preservedStateKey;
+        layoutStateStatus.textContent = preservedStateKey === "base"
+            ? "Base = shared scene layout. Scene-specific states can override visibility."
+            : `${stateDefinitions[preservedStateKey].label || preservedStateKey} currently previews this scene state and can override asset visibility.`;
+
+        return preservedStateKey;
+    }
+
     function populateLayoutComponentSelect(assetKey, preferredComponentKey = null) {
         if (!layoutComponentSelect) {
             return "root";
@@ -2073,13 +2922,14 @@
         return preservedKey;
     }
 
-    function setActiveLayoutScene(sceneKey, preferredAssetKey = null, preferredComponentKey = null) {
+    function setActiveLayoutScene(sceneKey, preferredAssetKey = null, preferredComponentKey = null, preferredStateKey = null) {
         const resolvedSceneKey = layoutSceneDefinitions[sceneKey]
             ? sceneKey
-            : findLayoutSceneKeyForAsset(preferredAssetKey);
+            : findLayoutSceneKeyForAsset(preferredAssetKey, sceneKey);
 
         layoutSceneSelect.value = resolvedSceneKey;
         updateLayoutSceneHeader(resolvedSceneKey);
+        populateLayoutStateSelectForScene(resolvedSceneKey, preferredStateKey);
 
         const assetKey = populateLayoutAssetSelectForScene(resolvedSceneKey, preferredAssetKey);
         populateLayoutComponentSelect(assetKey, preferredComponentKey);
@@ -2091,13 +2941,14 @@
         const initialAssetKey = layoutAssetSelect.value || "home-scene";
         const initialSceneKey = layoutSceneDefinitions[layoutSceneSelect.value]
             ? layoutSceneSelect.value
-            : findLayoutSceneKeyForAsset(initialAssetKey);
+            : findLayoutSceneKeyForAsset(initialAssetKey, "home");
 
-        setActiveLayoutScene(initialSceneKey, initialAssetKey, "root");
+        setActiveLayoutScene(initialSceneKey, initialAssetKey, "root", "base");
     }
 
-    function selectLayoutAsset(assetKey, componentKey = "root") {
-        return setActiveLayoutScene(findLayoutSceneKeyForAsset(assetKey), assetKey, componentKey);
+    function selectLayoutAsset(assetKey, componentKey = "root", preferredSceneKey = null) {
+        const resolvedSceneKey = findLayoutSceneKeyForAsset(assetKey, preferredSceneKey);
+        return setActiveLayoutScene(resolvedSceneKey, assetKey, componentKey, getSelectedSceneStateKey());
     }
 
     function ensureLayoutColorAssetSelected() {
@@ -2421,6 +3272,208 @@
             : "No PNG override selected. Browse and then press Save Selected to remember one.";
     }
 
+    function refreshLayoutStateVisibilityControls(assetKey) {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const stateKey = getSelectedSceneStateKey();
+        const sceneSupportsStateVisibility = getLayoutSceneStateKeys(sceneKey).length > 1;
+        const shouldShow = !!assetKey
+            && !isVariableAsset(assetKey)
+            && isRootComponent(getSelectedComponentKey())
+            && sceneSupportsStateVisibility
+            && !isSceneBuilderModeSelected();
+
+        layoutStateVisibilityField.hidden = !shouldShow;
+        layoutStateVisible.disabled = !shouldShow || stateKey === "base";
+
+        if (!shouldShow) {
+            layoutStateVisible.checked = true;
+            layoutStateVisibleStatus.textContent = sceneSupportsStateVisibility
+                ? "Switch back to Layout mode and select a root asset to edit scene-state visibility."
+                : "This scene does not use state-specific visibility.";
+            return;
+        }
+
+        if (stateKey === "base") {
+            layoutStateVisible.checked = getDefaultSceneAssetVisibility(sceneKey, stateKey, assetKey);
+            layoutStateVisibleStatus.textContent = "Base visibility is shared across all scene states. Switch to Count Down or Count Up to save a visibility override.";
+            return;
+        }
+
+        const defaultVisible = getDefaultSceneAssetVisibility(sceneKey, stateKey, assetKey);
+        const effectiveVisible = getEffectiveSceneAssetVisibility(assetKey, sceneKey, stateKey);
+        const savedVisible = getSavedSceneAssetVisibility(assetKey, sceneKey, stateKey);
+        const hasDraft = currentVisibilityDraftAssetKey === assetKey
+            && currentVisibilityDraftSceneKey === sceneKey
+            && currentVisibilityDraftStateKey === stateKey;
+
+        layoutStateVisible.checked = effectiveVisible;
+
+        if (hasDraft) {
+            layoutStateVisibleStatus.textContent = `Pending save: ${effectiveVisible ? "visible" : "hidden"} in ${getLayoutSceneStateDefinition(sceneKey, stateKey).label || stateKey}.`;
+            return;
+        }
+
+        if (savedVisible !== defaultVisible) {
+            layoutStateVisibleStatus.textContent = `Saved override: ${savedVisible ? "visible" : "hidden"} in ${getLayoutSceneStateDefinition(sceneKey, stateKey).label || stateKey}.`;
+            return;
+        }
+
+        layoutStateVisibleStatus.textContent = `Inherits default scene visibility: ${defaultVisible ? "visible" : "hidden"} in ${getLayoutSceneStateDefinition(sceneKey, stateKey).label || stateKey}.`;
+    }
+
+    function refreshLayoutBehaviorRoleControls(assetKey) {
+        const shouldShow = isSceneBuilderModeSelected();
+        layoutBehaviorRoleField.hidden = !shouldShow;
+
+        if (!shouldShow) {
+            return;
+        }
+
+        if (!assetKey || !assetSupportsBehaviorRole(assetKey)) {
+            layoutBehaviorRoleSelect.value = "none";
+            layoutBehaviorRoleSelect.disabled = true;
+            layoutBehaviorRoleStatus.textContent = "Select an interactive asset in Scene Builder to edit its behavior role.";
+            return;
+        }
+
+        const defaultRole = getDefaultBehaviorRole(assetKey);
+        const savedRole = getSavedBehaviorRole(assetKey);
+        const effectiveRole = getEffectiveBehaviorRole(assetKey);
+        const hasDraft = currentBehaviorDraftAssetKey === assetKey && !!currentBehaviorDraftValue;
+
+        layoutBehaviorRoleSelect.disabled = false;
+        layoutBehaviorRoleSelect.value = effectiveRole;
+
+        if (hasDraft) {
+            layoutBehaviorRoleStatus.textContent = `Pending save: ${behaviorRoleDefinitions[effectiveRole]?.label || effectiveRole}.`;
+            return;
+        }
+
+        if (savedRole !== defaultRole) {
+            layoutBehaviorRoleStatus.textContent = `Saved override: ${behaviorRoleDefinitions[savedRole]?.label || savedRole}.`;
+            return;
+        }
+
+        layoutBehaviorRoleStatus.textContent = `Default behavior: ${behaviorRoleDefinitions[defaultRole]?.label || defaultRole}.`;
+    }
+
+    function isSceneBuilderModeSelected() {
+        return currentLayoutEditorMode === "scene-builder";
+    }
+
+    function populateSceneAssetSourceSelect() {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const currentAssetKeys = new Set(getLayoutSceneAssetKeys(sceneKey));
+        const availableAssetKeys = getAvailableSceneAssetKeys().filter(function (assetKey) {
+            return !currentAssetKeys.has(assetKey);
+        });
+
+        layoutSceneAssetSourceSelect.innerHTML = "";
+
+        if (availableAssetKeys.length <= 0) {
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "";
+            emptyOption.textContent = "No additional assets available";
+            layoutSceneAssetSourceSelect.appendChild(emptyOption);
+            layoutSceneAssetSourceSelect.disabled = true;
+            return;
+        }
+
+        availableAssetKeys.forEach(function (assetKey) {
+            const option = document.createElement("option");
+            const sceneAssetDefinition = getSceneAssetDefinition(assetKey);
+            option.value = assetKey;
+            option.textContent = isCustomTextAsset(assetKey)
+                ? `${assetKey} (text)`
+                : assetKey;
+            option.title = sceneAssetDefinition?.text || "";
+            layoutSceneAssetSourceSelect.appendChild(option);
+        });
+
+        layoutSceneAssetSourceSelect.disabled = false;
+    }
+
+    function refreshSceneBuilderPanel() {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const selectedAssetKey = getSelectedAssetKey();
+        const canRemove = !!selectedAssetKey && getLayoutSceneAssetKeys(sceneKey).includes(selectedAssetKey);
+
+        layoutSceneBuilderPanel.hidden = !isSceneBuilderModeSelected();
+
+        if (!isSceneBuilderModeSelected()) {
+            return;
+        }
+
+        populateSceneAssetSourceSelect();
+        layoutSceneAssetAddButton.disabled = layoutSceneAssetSourceSelect.disabled;
+        layoutSceneAssetRemoveButton.disabled = !canRemove;
+        layoutSceneBuilderMembershipStatus.textContent = canRemove
+            ? `${selectedAssetKey} currently belongs to ${getLayoutSceneDefinition(sceneKey).label}.`
+            : `Add an existing asset to ${getLayoutSceneDefinition(sceneKey).label}, or select an asset there before removing it.`;
+        layoutSceneBuilderTextStatus.textContent = "Creates a reusable text asset and adds it to the selected scene.";
+        layoutEditorModeHint.textContent = "Scene Builder adds assets to scenes and creates text labels. Switch back to Layout to position them.";
+    }
+
+    async function addSelectedSceneAssetToCurrentScene() {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const assetKey = String(layoutSceneAssetSourceSelect.value || "").trim();
+
+        if (!assetKey) {
+            return;
+        }
+
+        ensureSceneAssetInScene(sceneKey, assetKey);
+        await saveSharedLayoutState();
+        setActiveLayoutScene(sceneKey, assetKey, "root", getSelectedSceneStateKey());
+        refreshLayoutUi();
+    }
+
+    async function removeSelectedSceneAssetFromCurrentScene() {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const assetKey = getSelectedAssetKey();
+
+        if (!assetKey || !getLayoutSceneAssetKeys(sceneKey).includes(assetKey)) {
+            return;
+        }
+
+        removeSceneAssetFromScene(sceneKey, assetKey);
+        await saveSharedLayoutState();
+        setActiveLayoutScene(sceneKey, null, "root", getSelectedSceneStateKey());
+        refreshLayoutUi();
+    }
+
+    async function createSceneTextAsset() {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const assetKey = sanitizeSceneAssetKey(layoutNewTextAssetKey.value);
+        const assetText = String(layoutNewTextAssetContent.value || "").trim();
+        const presetKey = textAssetPresetDefinitions[layoutNewTextAssetPreset.value]
+            ? layoutNewTextAssetPreset.value
+            : "text-label";
+
+        if (!assetKey) {
+            layoutSceneBuilderTextStatus.textContent = "Text asset key is required.";
+            return;
+        }
+
+        if (layoutAssets[assetKey] || sharedSceneAssetDefinitions[assetKey]) {
+            layoutSceneBuilderTextStatus.textContent = `${assetKey} already exists. Choose a different key.`;
+            return;
+        }
+
+        sharedSceneAssetDefinitions[assetKey] = {
+            type: "text",
+            presetKey,
+            text: assetText || "New Text"
+        };
+        ensureSceneAssetInScene(sceneKey, assetKey);
+        rebuildDynamicSceneAssets();
+        layoutNewTextAssetKey.value = "";
+        layoutNewTextAssetContent.value = "";
+        await saveSharedLayoutState();
+        setActiveLayoutScene(sceneKey, assetKey, "text", getSelectedSceneStateKey());
+        refreshLayoutUi();
+    }
+
     function hideSliderSpecificOutlines() {
         if (componentOutline) {
             componentOutline.hidden = true;
@@ -2613,11 +3666,18 @@
 
     //#region SEGMENT G2 - Slider Rendering And Asset Layout
     function applyAssetTextStyle(assetKey) {
+        const assetElement = getAssetElement(assetKey);
         const labelElement = getTextLabelElement(assetKey);
         const textState = getEffectiveTextState(assetKey);
 
-        if (!labelElement || !textState) {
+        if (!assetElement || !labelElement || !textState) {
             return;
+        }
+
+        if (isCustomTextAsset(assetKey)) {
+            assetElement.style.background = "transparent";
+            assetElement.style.border = "none";
+            assetElement.style.overflow = "visible";
         }
 
         labelElement.textContent = textState.content;
@@ -2742,7 +3802,11 @@
     }
 
     function updateDurationReadout() {
-        const formatted = isCountUpModeSelected()
+        const countUpPreviewSelected = layoutModeEnabled
+            && layoutEditorEnabled
+            && layoutSceneSelect.value === "focus-setup"
+            && getRenderedFocusSetupStateKey() === "countup";
+        const formatted = (countUpPreviewSelected || isCountUpModeSelected())
             ? formatClock(0)
             : formatDurationSelection(parseInt(durationSlider.value || "5", 10));
         durationText.textContent = formatted;
@@ -2891,6 +3955,9 @@
     }
 
     function updateLayoutCodePreview(assetKey, componentKey) {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneStateKey = getSelectedSceneStateKey();
+
         if (isVariableAsset(assetKey)) {
             layoutCode.value =
                 `:root {\n  --pl-art-app-edge-color: ${getEffectiveLayoutVariable("appEdgeColor")};\n}`;
@@ -2954,6 +4021,21 @@
             }
 
             layoutCode.value = JSON.stringify(payload, null, 2);
+            return;
+        }
+
+        if (sceneStateKey !== "base") {
+            layoutCode.value = JSON.stringify({
+                items: {
+                    [assetKey]: {
+                        states: {
+                            [getLayoutSceneStateStorageKey(sceneKey, sceneStateKey)]: {
+                                visible: getEffectiveSceneAssetVisibility(assetKey, sceneKey, sceneStateKey)
+                            }
+                        }
+                    }
+                }
+            }, null, 2);
             return;
         }
 
@@ -3023,6 +4105,8 @@
         const state = getEffectiveLayoutState(assetKey);
         const status = getVisibilityStatus(assetKey, state);
         const stageType = getAssetStageType(assetKey);
+        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneStateKey = getSelectedSceneStateKey();
 
         layoutStageStatus.textContent = stageType === "world"
             ? "World layer · fills the screen with cover scaling."
@@ -3033,6 +4117,10 @@
         layoutScaleValue.textContent = `${Math.round(state.scale)}%`;
         layoutXValue.textContent = status.xStatus.text;
         layoutYValue.textContent = status.yStatus.text;
+
+        if (sceneStateKey !== "base") {
+            layoutSafeZoneStatus.textContent += ` Visibility in ${getLayoutSceneStateDefinition(sceneKey, sceneStateKey).label || sceneStateKey}: ${getEffectiveSceneAssetVisibility(assetKey, sceneKey, sceneStateKey) ? "visible" : "hidden"}.`;
+        }
     }
 
     function syncNumberPairs() {
@@ -3053,10 +4141,21 @@
 
     function getLayoutEditorManagedControls() {
         return [
+            layoutEditorModeSelect,
             layoutSceneSelect,
+            layoutStateSelect,
             layoutAssetSelect,
             layoutComponentSelect,
             layoutArtPickerButton,
+            layoutStateVisible,
+            layoutSceneAssetSourceSelect,
+            layoutSceneAssetAddButton,
+            layoutSceneAssetRemoveButton,
+            layoutBehaviorRoleSelect,
+            layoutNewTextAssetKey,
+            layoutNewTextAssetContent,
+            layoutNewTextAssetPreset,
+            layoutCreateTextAssetButton,
             layoutScale,
             layoutScaleNumber,
             layoutX,
@@ -3103,6 +4202,27 @@
         layoutEditorModeStatus.textContent = layoutEditorEnabled
             ? "Checked: click assets to select and move them. Unchecked: interact with the app normally."
             : "Editor disabled. Interact with the app normally until you check this again.";
+    }
+
+    function updateLayoutWorkspaceModeUi() {
+        const sceneBuilderSelected = isSceneBuilderModeSelected();
+        layoutEditorModeSelect.value = currentLayoutEditorMode;
+        layoutSceneBuilderPanel.hidden = !sceneBuilderSelected;
+        layoutEditorModeHint.textContent = sceneBuilderSelected
+            ? "Scene Builder adds assets to scenes and creates text labels. Switch back to Layout to position them."
+            : "Layout moves assets. Scene Builder adds assets to scenes and creates text labels.";
+
+        if (sceneBuilderSelected) {
+            setGeometryFieldsHidden(true);
+            setLayoutColorFieldHidden(true);
+            setLayoutTextControlsHidden(true);
+            setHitScaleFieldHidden(true);
+            layoutArtPickerField.hidden = true;
+            layoutStateVisibilityField.hidden = true;
+        }
+        else {
+            layoutBehaviorRoleField.hidden = true;
+        }
     }
 
     function setLayoutEditorEnabled(nextEnabled) {
@@ -3192,6 +4312,7 @@
         updateLayoutSceneHeader(layoutSceneSelect.value || "home");
         updateLayoutEditorControlState();
         updateLayoutEditorModeStatus();
+        updateLayoutWorkspaceModeUi();
         syncLayoutEditorSelectableStates();
 
         const assetKey = getSelectedAssetKey();
@@ -3201,12 +4322,28 @@
             setComponentFieldHidden(true);
             setHitScaleFieldHidden(true);
             layoutArtPickerField.hidden = true;
+            layoutStateVisibilityField.hidden = true;
+            refreshSceneBuilderPanel();
             hideSliderSpecificOutlines();
             return;
         }
 
         const componentKey = populateLayoutComponentSelect(assetKey, getSelectedComponentKey());
         refreshLayoutArtPicker(assetKey, componentKey);
+        refreshLayoutStateVisibilityControls(assetKey);
+        refreshLayoutBehaviorRoleControls(assetKey);
+        refreshSceneBuilderPanel();
+
+        if (isSceneBuilderModeSelected()) {
+            layoutArtPickerField.hidden = true;
+            layoutStateVisibilityField.hidden = true;
+            previewLayoutAsset(assetKey);
+            applyAllAssetLayouts();
+            updateLayoutCodePreview(assetKey, componentKey);
+            updateLayoutStatusDisplay(assetKey, componentKey);
+            refreshLayoutSelection();
+            return;
+        }
 
         if (isVariableAsset(assetKey)) {
             setLayoutColorFieldHidden(false);
@@ -3486,7 +4623,12 @@
 
     //#region SEGMENT I - Layout Selection, Drag, And Slider Pointer Handling
     function handleLayoutSceneChange() {
-        const newAssetKey = setActiveLayoutScene(layoutSceneSelect.value || "home", getSelectedAssetKey(), getSelectedComponentKey());
+        const nextSceneKey = layoutSceneSelect.value || "home";
+        const newAssetKey = setActiveLayoutScene(
+            nextSceneKey,
+            getSelectedAssetKey(),
+            getSelectedComponentKey(),
+            getSelectedSceneStateKey());
 
         if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
             discardCurrentDraft();
@@ -3502,6 +4644,32 @@
 
         if (currentImageDraftAssetKey && currentImageDraftAssetKey !== newAssetKey) {
             discardCurrentImageDraft();
+        }
+
+        if (currentVisibilityDraftSceneKey && currentVisibilityDraftSceneKey !== nextSceneKey) {
+            discardCurrentVisibilityDraft();
+        }
+
+        if (currentBehaviorDraftAssetKey && currentBehaviorDraftAssetKey !== newAssetKey) {
+            discardCurrentBehaviorRoleDraft();
+        }
+
+        refreshLayoutUi();
+    }
+
+    function handleLayoutStateChange() {
+        const sceneKey = layoutSceneSelect.value || "home";
+        const nextStateKey = layoutStateSelect.value || "base";
+        populateLayoutStateSelectForScene(sceneKey, nextStateKey);
+
+        if (
+            currentVisibilityDraftSceneKey
+            && (
+                currentVisibilityDraftSceneKey !== sceneKey
+                || currentVisibilityDraftStateKey !== nextStateKey
+            )
+        ) {
+            discardCurrentVisibilityDraft();
         }
 
         refreshLayoutUi();
@@ -3524,6 +4692,14 @@
 
         if (currentImageDraftAssetKey && currentImageDraftAssetKey !== newAssetKey) {
             discardCurrentImageDraft();
+        }
+
+        if (currentVisibilityDraftAssetKey && currentVisibilityDraftAssetKey !== newAssetKey) {
+            discardCurrentVisibilityDraft();
+        }
+
+        if (currentBehaviorDraftAssetKey && currentBehaviorDraftAssetKey !== newAssetKey) {
+            discardCurrentBehaviorRoleDraft();
         }
 
         populateLayoutComponentSelect(newAssetKey, "root");
@@ -3584,6 +4760,39 @@
         layoutArtPickerInput.value = "";
     }
 
+    function handleLayoutStateVisibilityChange() {
+        const assetKey = getSelectedAssetKey();
+        const sceneKey = layoutSceneSelect.value || "home";
+        const stateKey = getSelectedSceneStateKey();
+
+        if (!assetKey || isVariableAsset(assetKey) || stateKey === "base") {
+            refreshLayoutUi();
+            return;
+        }
+
+        beginVisibilityDraft(assetKey, sceneKey, stateKey, !!layoutStateVisible.checked);
+        refreshLayoutUi();
+    }
+
+    function handleLayoutBehaviorRoleChange() {
+        const assetKey = getSelectedAssetKey();
+
+        if (!assetKey || !assetSupportsBehaviorRole(assetKey)) {
+            refreshLayoutUi();
+            return;
+        }
+
+        beginBehaviorRoleDraft(assetKey, layoutBehaviorRoleSelect.value || getDefaultBehaviorRole(assetKey));
+        refreshLayoutUi();
+    }
+
+    function handleLayoutEditorModeChange() {
+        currentLayoutEditorMode = layoutEditorModeSelect.value === "scene-builder"
+            ? "scene-builder"
+            : "layout";
+        refreshLayoutUi();
+    }
+
     function handleLayoutEditorToggleChange() {
         setLayoutEditorEnabled(layoutEditorToggle.checked);
     }
@@ -3593,8 +4802,10 @@
             return;
         }
 
+        const preferredSceneKey = layoutSceneSelect.value || currentVisibleSceneKey || "home";
+
         if (getSelectedAssetKey() !== assetKey) {
-            selectLayoutAsset(assetKey, "root");
+            selectLayoutAsset(assetKey, "root", preferredSceneKey);
             handleLayoutAssetChange();
         }
         else {
@@ -3606,7 +4817,23 @@
     }
 
     function beginDrag(assetKey, event) {
-        if (!layoutEditorEnabled || getSelectedAssetKey() !== assetKey || !isRootComponent(getSelectedComponentKey()) || isVariableAsset(assetKey)) {
+        if (!layoutEditorEnabled || isVariableAsset(assetKey)) {
+            return;
+        }
+
+        const preferredSceneKey = layoutSceneSelect.value || currentVisibleSceneKey || "home";
+        const resolvedSceneKey = findLayoutSceneKeyForAsset(assetKey, preferredSceneKey);
+
+        if (
+            getSelectedAssetKey() !== assetKey
+            || !isRootComponent(getSelectedComponentKey())
+            || (layoutSceneSelect.value || "home") !== resolvedSceneKey
+        ) {
+            selectLayoutAsset(assetKey, "root", resolvedSceneKey);
+            refreshLayoutUi();
+        }
+
+        if (getSelectedAssetKey() !== assetKey || !isRootComponent(getSelectedComponentKey())) {
             return;
         }
 
@@ -3619,6 +4846,9 @@
             offsetX: designPoint.x - state.x,
             offsetY: designPoint.y - state.y
         };
+
+        event.preventDefault();
+        event.stopPropagation();
     }
 
     function handleDragMove(event) {
@@ -3744,16 +4974,24 @@
 
         const preservedAssetKey = getSelectedAssetKey();
         const preservedComponentKey = getSelectedComponentKey();
+        const previewStateKey = sceneKey === "focus-setup"
+            ? getRenderedFocusSetupStateKey()
+            : "base";
 
-        setActiveLayoutScene(sceneKey, preservedAssetKey, preservedComponentKey);
+        setActiveLayoutScene(sceneKey, preservedAssetKey, preservedComponentKey, previewStateKey);
     }
 
     function setSetupChildrenVisible(isVisible) {
-        focusTypeField.hidden = !isVisible;
-        durationText.hidden = !isVisible;
-        sliderGroup.hidden = !isVisible || isCountUpModeSelected();
-        countdownModeButton.hidden = !isVisible;
-        countUpModeButton.hidden = !isVisible;
+        const sceneStateKey = getRenderedFocusSetupStateKey();
+        const isAssetVisible = function (assetKey) {
+            return isVisible && getEffectiveSceneAssetVisibility(assetKey, "focus-setup", sceneStateKey);
+        };
+
+        focusTypeField.hidden = !isAssetVisible("focus-type-field");
+        durationText.hidden = !isAssetVisible("duration-text");
+        sliderGroup.hidden = !isAssetVisible("slider");
+        countdownModeButton.hidden = !isAssetVisible("countdown-mode");
+        countUpModeButton.hidden = !isAssetVisible("countup-mode");
     }
 
     function setSetupChildrenLocked(isLocked) {
@@ -3770,11 +5008,19 @@
     }
 
     function setSetupVisible(isVisible) {
-        setupPanel.hidden = !isVisible;
-        startFocusButton.hidden = !isVisible;
-        closeFocusButton.hidden = !isVisible;
+        const sceneStateKey = getRenderedFocusSetupStateKey();
+        setupPanel.hidden = !(isVisible && getEffectiveSceneAssetVisibility("setup-panel", "focus-setup", sceneStateKey));
+        startFocusButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("start", "focus-setup", sceneStateKey));
+        closeFocusButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("back", "focus-setup", sceneStateKey));
+        manageButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("manage-button", "focus-setup", sceneStateKey));
         setSetupChildrenVisible(isVisible);
-        syncTimerModeUi();
+        syncTimerModeUi(sceneStateKey);
+    }
+
+    function setFocusManageVisible(isVisible) {
+        focusManagePanel.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-panel", "focus-manage", "base"));
+        focusManageBackButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-back", "focus-manage", "base"));
+        focusManageOkButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-ok", "focus-manage", "base"));
     }
 
     function setRunVisible(isVisible) {
@@ -3796,24 +5042,45 @@
     }
 
     function showHomeState() {
+        currentVisibleSceneKey = "home";
+        currentVisibleSceneStateKey = "base";
         setHomeButtonsVisible(true);
         setSetupVisible(false);
+        setFocusManageVisible(false);
         setRunVisible(false);
         setConfirmVisible(false);
         setRewardVisible(false);
+        applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("home");
     }
 
     function showSetupState() {
+        currentVisibleSceneKey = "focus-setup";
+        currentVisibleSceneStateKey = getRenderedFocusSetupStateKey();
         setHomeButtonsVisible(false);
         setSetupVisible(true);
+        setFocusManageVisible(false);
         setRunVisible(false);
         setConfirmVisible(false);
         setRewardVisible(false);
         setupPanel.classList.remove("pl-setup-panel-locked");
         setSetupChildrenLocked(false);
         updateDurationReadout();
+        applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("focus-setup");
+    }
+
+    function showFocusManageState() {
+        currentVisibleSceneKey = "focus-manage";
+        currentVisibleSceneStateKey = "base";
+        setHomeButtonsVisible(false);
+        setSetupVisible(false);
+        setFocusManageVisible(true);
+        setRunVisible(false);
+        setConfirmVisible(false);
+        setRewardVisible(false);
+        applySceneMembershipVisibility();
+        syncLayoutSceneToVisibleState("focus-manage");
     }
 
     function showRunStatePreview() {
@@ -3823,6 +5090,8 @@
             : formatDurationLabel(previewSeconds);
 
         showSetupState();
+        currentVisibleSceneKey = "focus-running";
+        currentVisibleSceneStateKey = "base";
         setupPanel.classList.add("pl-setup-panel-locked");
         setSetupChildrenLocked(true);
         setRunVisible(true);
@@ -3831,18 +5100,24 @@
         durationText.textContent = previewLabel;
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Stop Focusing");
+        applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("focus-running");
     }
 
     function showConfirmStatePreview() {
         showRunStatePreview();
+        currentVisibleSceneKey = "stop-confirm";
+        currentVisibleSceneStateKey = "base";
         setConfirmVisible(true);
         activeConfirmContext = "stop";
         updateConfirmPanel(600);
+        applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("stop-confirm");
     }
 
     function showRewardStatePreview() {
+        currentVisibleSceneKey = "reward";
+        currentVisibleSceneStateKey = "base";
         setHomeButtonsVisible(false);
         setSetupVisible(false);
         setRunVisible(false);
@@ -3853,7 +5128,36 @@
         rewardDurationText.textContent = "00:25:00";
         rewardXp.textContent = "2500";
         rewardCoins.textContent = "25";
+        applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("reward");
+    }
+
+    function applySceneMembershipVisibility() {
+        Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
+            if (isPersistentWorldAsset(assetKey)) {
+                config.element.hidden = false;
+                return;
+            }
+
+            const isVisibleInScene = getLayoutSceneAssetKeys(currentVisibleSceneKey).includes(assetKey)
+                && getEffectiveSceneAssetVisibility(assetKey, currentVisibleSceneKey, currentVisibleSceneStateKey);
+            const isBuiltInDefault = !!layoutSceneDefinitions[currentVisibleSceneKey]?.assets?.includes(assetKey);
+
+            if (config.dynamic) {
+                config.element.hidden = !isVisibleInScene;
+                return;
+            }
+
+            if (!isBuiltInDefault) {
+                config.element.hidden = !isVisibleInScene;
+                return;
+            }
+
+            if (isBuiltInDefault && !isVisibleInScene) {
+                config.element.hidden = true;
+                return;
+            }
+        });
     }
 
     function previewLayoutAsset(assetKey) {
@@ -3861,38 +5165,62 @@
             return;
         }
 
+        const sceneKey = findLayoutSceneKeyForAsset(
+            assetKey,
+            layoutSceneSelect.value || currentVisibleSceneKey || "home");
+
+        switch (sceneKey) {
+            case "focus-setup":
+                showSetupState();
+                break;
+            case "focus-manage":
+                showFocusManageState();
+                break;
+            case "focus-running":
+                showRunStatePreview();
+                break;
+            case "stop-confirm":
+                showConfirmStatePreview();
+                break;
+            case "reward":
+                showRewardStatePreview();
+                break;
+            case "home":
+            case "app-shell":
+                showHomeState();
+                break;
+            default:
+                break;
+        }
+
         switch (assetKey) {
             case "home-scene":
             case "home-focus":
             case "home-sleep":
-                showHomeState();
-                break;
             case "setup-panel":
             case "countdown-mode":
             case "countup-mode":
             case "focus-type-field":
-            case "duration-text":
             case "slider":
             case "start":
             case "back":
-                showSetupState();
+            case "manage-button":
+            case "focus-manage-panel":
+            case "focus-manage-back":
+            case "focus-manage-ok":
                 break;
-            case "duration-text":
             case "pause":
             case "exit":
-                showRunStatePreview();
-                break;
             case "confirm-panel":
             case "keep-going":
             case "stop":
-                showConfirmStatePreview();
-                break;
             case "reward-panel":
             case "gotcha":
-                showRewardStatePreview();
                 break;
             default:
-                showHomeState();
+                if (!sceneKey) {
+                    showHomeState();
+                }
                 break;
         }
 
@@ -3903,6 +5231,14 @@
         showSetupState();
     }
 
+    function openFocusManage() {
+        showFocusManageState();
+    }
+
+    function returnToFocusSetup() {
+        showSetupState();
+    }
+
     function returnToHome() {
         resetRunState();
         showHomeState();
@@ -3910,6 +5246,173 @@
     //#endregion SEGMENT J1 - Screen State Previews And Visibility
 
     //#region SEGMENT J2 - Session Runtime And Rewards
+    function selectCountdownMode() {
+        if (isRunning || isPaused || isSubmitting) {
+            return;
+        }
+
+        selectedTimerMode = "countdown";
+        syncTimerModeUi();
+        setSetupChildrenVisible(!setupPanel.hidden);
+        applySceneMembershipVisibility();
+        updateDurationReadout();
+        refreshLayoutUi();
+    }
+
+    function selectCountUpMode() {
+        if (isRunning || isPaused || isSubmitting) {
+            return;
+        }
+
+        selectedTimerMode = "countup";
+        syncTimerModeUi();
+        setSetupChildrenVisible(!setupPanel.hidden);
+        applySceneMembershipVisibility();
+        updateDurationReadout();
+        refreshLayoutUi();
+    }
+
+    function startFocusSession() {
+        if (isSubmitting) {
+            return;
+        }
+
+        plannedSeconds = isCountUpModeSelected()
+            ? 7200
+            : Math.max(300, Math.min(7200, parseInt(durationSlider.value || "5", 10) * 60));
+        nextCountUpCheckpointSeconds = 7200;
+        startedAtMs = Date.now();
+        pausedElapsedSeconds = 0;
+        isRunning = true;
+        isPaused = false;
+        isSubmitting = false;
+        completionTonePlayed = false;
+        activeConfirmContext = "stop";
+
+        setupPanel.classList.add("pl-setup-panel-locked");
+        setSetupChildrenLocked(true);
+        setRunVisible(true);
+        countdownModeButton.hidden = true;
+        countUpModeButton.hidden = true;
+        startFocusButton.hidden = true;
+        closeFocusButton.hidden = true;
+
+        setButtonLabel(pauseButton, "Pause");
+        setButtonLabel(exitButton, "Cancel");
+        currentVisibleSceneKey = "focus-running";
+        currentVisibleSceneStateKey = "base";
+        applySceneMembershipVisibility();
+
+        updateUi();
+    }
+
+    function togglePauseSession() {
+        if ((!isRunning && !isPaused) || isSubmitting || !confirmPanel.hidden) {
+            return;
+        }
+
+        if (!isPaused) {
+            pausedElapsedSeconds = getElapsedSeconds();
+            isPaused = true;
+            updateUi();
+            return;
+        }
+
+        startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+        isPaused = false;
+        updateUi();
+    }
+
+    function stopFocusSession() {
+        if (!isRunning || isSubmitting) {
+            return;
+        }
+
+        const elapsedSeconds = getElapsedSeconds();
+
+        if (elapsedSeconds < stopThresholdSeconds) {
+            returnToHome();
+            return;
+        }
+
+        openConfirmPanel("stop", elapsedSeconds);
+    }
+
+    function confirmKeepGoing() {
+        if (isSubmitting) {
+            return;
+        }
+
+        setConfirmVisible(false);
+
+        if (activeConfirmContext === "countup-checkpoint" && isPaused && !isRunning) {
+            nextCountUpCheckpointSeconds += 7200;
+            startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
+            isPaused = false;
+            isRunning = true;
+            activeConfirmContext = "stop";
+            currentVisibleSceneKey = "focus-running";
+            currentVisibleSceneStateKey = "base";
+            applySceneMembershipVisibility();
+            updateUi();
+        }
+    }
+
+    function confirmStopSession() {
+        if (isSubmitting) {
+            return;
+        }
+
+        submitSave(activeConfirmContext === "countup-checkpoint" ? "break" : "stop");
+    }
+
+    function closeRewardSummary() {
+        window.location.href = "/Index";
+    }
+
+    function runAssetBehaviorRole(assetKey) {
+        switch (getEffectiveBehaviorRole(assetKey)) {
+            case "open-focus-setup":
+                openFocusSetup();
+                return;
+            case "open-focus-manage":
+                openFocusManage();
+                return;
+            case "return-home":
+                returnToHome();
+                return;
+            case "return-focus-setup":
+                returnToFocusSetup();
+                return;
+            case "select-countdown-mode":
+                selectCountdownMode();
+                return;
+            case "select-countup-mode":
+                selectCountUpMode();
+                return;
+            case "start-focus-session":
+                startFocusSession();
+                return;
+            case "toggle-pause-session":
+                togglePauseSession();
+                return;
+            case "stop-focus-session":
+                stopFocusSession();
+                return;
+            case "confirm-keep-going":
+                confirmKeepGoing();
+                return;
+            case "confirm-stop-session":
+                confirmStopSession();
+                return;
+            case "close-reward":
+                closeRewardSummary();
+                return;
+            default:
+                return;
+        }
+    }
+
     function resetRunState() {
         isRunning = false;
         isPaused = false;
@@ -3944,8 +5447,11 @@
         countdownModeButton.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
         countUpModeButton.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
         startFocusButton.disabled = isDisabled;
+        manageButton.disabled = isDisabled;
         pauseButton.disabled = isDisabled;
         exitButton.disabled = isDisabled;
+        focusManageBackButton.disabled = isDisabled;
+        focusManageOkButton.disabled = isDisabled;
         confirmKeepGoingButton.disabled = isDisabled;
         confirmStopButton.disabled = isDisabled;
         rewardCloseButton.disabled = isDisabled;
@@ -3956,6 +5462,9 @@
     function openConfirmPanel(context, elapsedSeconds) {
         activeConfirmContext = context;
         setConfirmVisible(true);
+        currentVisibleSceneKey = "stop-confirm";
+        currentVisibleSceneStateKey = "base";
+        applySceneMembershipVisibility();
         updateConfirmPanel(elapsedSeconds);
     }
 
@@ -4119,7 +5628,7 @@
             return;
         }
 
-        openFocusSetup();
+        runAssetBehaviorRole("home-focus");
     });
 
     closeFocusButton.addEventListener("click", function () {
@@ -4127,7 +5636,15 @@
             return;
         }
 
-        returnToHome();
+        runAssetBehaviorRole("back");
+    });
+
+    manageButton.addEventListener("click", function () {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "manage-button") {
+            return;
+        }
+
+        runAssetBehaviorRole("manage-button");
     });
 
     durationSlider.addEventListener("input", function () {
@@ -4139,10 +5656,7 @@
             return;
         }
 
-        selectedTimerMode = "countdown";
-        syncTimerModeUi();
-        updateDurationReadout();
-        refreshLayoutUi();
+        runAssetBehaviorRole("countdown-mode");
     });
 
     countUpModeButton.addEventListener("click", function () {
@@ -4150,10 +5664,7 @@
             return;
         }
 
-        selectedTimerMode = "countup";
-        syncTimerModeUi();
-        updateDurationReadout();
-        refreshLayoutUi();
+        runAssetBehaviorRole("countup-mode");
     });
 
     startFocusButton.addEventListener("click", function () {
@@ -4161,30 +5672,7 @@
             return;
         }
 
-        plannedSeconds = isCountUpModeSelected()
-            ? 7200
-            : Math.max(300, Math.min(7200, parseInt(durationSlider.value || "5", 10) * 60));
-        nextCountUpCheckpointSeconds = 7200;
-        startedAtMs = Date.now();
-        pausedElapsedSeconds = 0;
-        isRunning = true;
-        isPaused = false;
-        isSubmitting = false;
-        completionTonePlayed = false;
-        activeConfirmContext = "stop";
-
-        setupPanel.classList.add("pl-setup-panel-locked");
-        setSetupChildrenLocked(true);
-        setRunVisible(true);
-        countdownModeButton.hidden = true;
-        countUpModeButton.hidden = true;
-        startFocusButton.hidden = true;
-        closeFocusButton.hidden = true;
-
-        setButtonLabel(pauseButton, "Pause");
-        setButtonLabel(exitButton, "Cancel");
-
-        updateUi();
+        runAssetBehaviorRole("start");
     });
 
     pauseButton.addEventListener("click", function () {
@@ -4192,16 +5680,7 @@
             return;
         }
 
-        if (!isPaused) {
-            pausedElapsedSeconds = getElapsedSeconds();
-            isPaused = true;
-            updateUi();
-            return;
-        }
-
-        startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
-        isPaused = false;
-        updateUi();
+        runAssetBehaviorRole("pause");
     });
 
     exitButton.addEventListener("click", function () {
@@ -4209,14 +5688,23 @@
             return;
         }
 
-        const elapsedSeconds = getElapsedSeconds();
+        runAssetBehaviorRole("exit");
+    });
 
-        if (elapsedSeconds < stopThresholdSeconds) {
-            returnToHome();
+    focusManageBackButton.addEventListener("click", function () {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "focus-manage-back") {
             return;
         }
 
-        openConfirmPanel("stop", elapsedSeconds);
+        runAssetBehaviorRole("focus-manage-back");
+    });
+
+    focusManageOkButton.addEventListener("click", function () {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "focus-manage-ok") {
+            return;
+        }
+
+        runAssetBehaviorRole("focus-manage-ok");
     });
 
     confirmKeepGoingButton.addEventListener("click", function () {
@@ -4224,16 +5712,7 @@
             return;
         }
 
-        setConfirmVisible(false);
-
-        if (activeConfirmContext === "countup-checkpoint" && isPaused && !isRunning) {
-            nextCountUpCheckpointSeconds += 7200;
-            startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
-            isPaused = false;
-            isRunning = true;
-            activeConfirmContext = "stop";
-            updateUi();
-        }
+        runAssetBehaviorRole("keep-going");
     });
 
     confirmStopButton.addEventListener("click", function () {
@@ -4241,7 +5720,7 @@
             return;
         }
 
-        submitSave(activeConfirmContext === "countup-checkpoint" ? "break" : "stop");
+        runAssetBehaviorRole("stop");
     });
 
     rewardCloseButton.addEventListener("click", function () {
@@ -4249,12 +5728,17 @@
             return;
         }
 
-        window.location.href = "/Index";
+        runAssetBehaviorRole("gotcha");
     });
 
     document.addEventListener("keydown", function (event) {
         if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
             setConfirmVisible(false);
+            currentVisibleSceneKey = isRunning || isPaused ? "focus-running" : "focus-setup";
+            currentVisibleSceneStateKey = currentVisibleSceneKey === "focus-setup"
+                ? getRenderedFocusSetupStateKey()
+                : "base";
+            applySceneMembershipVisibility();
         }
     });
 
@@ -4293,6 +5777,8 @@
     });
 
     function wireLayoutInputs() {
+        layoutEditorModeSelect.addEventListener("change", handleLayoutEditorModeChange);
+        layoutStateSelect.addEventListener("change", handleLayoutStateChange);
         const rangeToNumberPairs = [
             [layoutScale, layoutScaleNumber],
             [layoutX, layoutXNumber],
@@ -4386,6 +5872,17 @@
         layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
         layoutArtPickerButton.addEventListener("click", handleLayoutArtPickerButtonClick);
         layoutArtPickerInput.addEventListener("change", handleLayoutArtPickerInputChange);
+        layoutStateVisible.addEventListener("change", handleLayoutStateVisibilityChange);
+        layoutBehaviorRoleSelect.addEventListener("change", handleLayoutBehaviorRoleChange);
+        layoutSceneAssetAddButton.addEventListener("click", function () {
+            void addSelectedSceneAssetToCurrentScene();
+        });
+        layoutSceneAssetRemoveButton.addEventListener("click", function () {
+            void removeSelectedSceneAssetFromCurrentScene();
+        });
+        layoutCreateTextAssetButton.addEventListener("click", function () {
+            void createSceneTextAsset();
+        });
 
         if (layoutComponentSelect) {
             layoutComponentSelect.addEventListener("change", handleLayoutComponentChange);
