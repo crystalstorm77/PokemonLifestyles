@@ -86,7 +86,19 @@
                     </p>
 
                     <label class="pl-canvas-item pl-canvas-form-field pl-focus-type-field-asset" id="pl-focus-type-field" hidden>
-                        <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="@Model.InitialFocusType" />
+                        <input class="pl-input" id="pl-focus-type-input" type="text" maxlength="40" value="@Model.InitialFocusType" hidden />
+                        <div class="pl-focus-type-picker" id="pl-focus-type-picker" aria-label="Focus type picker">
+                            <div class="pl-focus-type-picker-fade pl-focus-type-picker-fade-top" aria-hidden="true"></div>
+                            <div class="pl-focus-type-picker-selection" aria-hidden="true"></div>
+                            <div class="pl-focus-type-picker-fade pl-focus-type-picker-fade-bottom" aria-hidden="true"></div>
+                            <div class="pl-focus-type-picker-viewport"
+                                 id="pl-focus-type-picker-viewport"
+                                 tabindex="0"
+                                 role="listbox"
+                                 aria-label="Focus type">
+                                <div class="pl-focus-type-picker-list" id="pl-focus-type-picker-list"></div>
+                            </div>
+                        </div>
                     </label>
 
                     <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>5 minutes</div>

@@ -63,6 +63,9 @@
     const rewardCloseButton = document.getElementById("pl-reward-close-button");
 
     const focusTypeInput = document.getElementById("pl-focus-type-input");
+    const focusTypePicker = document.getElementById("pl-focus-type-picker");
+    const focusTypePickerViewport = document.getElementById("pl-focus-type-picker-viewport");
+    const focusTypePickerList = document.getElementById("pl-focus-type-picker-list");
     const setupModeBadge = document.getElementById("pl-setup-mode-badge");
     const setupModeHint = document.getElementById("pl-setup-mode-hint");
 
@@ -163,6 +166,7 @@
         !focusManageConfirmDismissField || !focusManageConfirmDismissInput ||
         !confirmDim || !confirmPanel || !confirmKeepGoingButton || !confirmStopButton ||
         !rewardDim || !rewardPanel || !rewardCloseButton || !focusTypeInput ||
+        !focusTypePicker || !focusTypePickerViewport || !focusTypePickerList ||
         !setupModeBadge || !setupModeHint || !confirmEyebrow || !confirmTitle ||
         !confirmSubtitle || !confirmCurrentTime || !confirmTimerStatus ||
         !confirmCompleteLabel || !confirmCompleteXp || !confirmCompleteCoins ||
@@ -641,6 +645,13 @@
     let currentVisibleSceneStateKey = "base";
     const dynamicAssetKeys = new Set();
     let savedFocusLabels = parseInitialFocusLabels();
+    let focusTypePickerSelectedIndex = 0;
+    let focusTypePickerScrollSyncFrameId = 0;
+    let focusTypePickerScrollSnapTimeoutId = 0;
+    let focusTypePickerSettleAttemptCount = 0;
+    let focusTypePickerPointerState = null;
+    let focusTypePickerSuppressClickUntil = 0;
+    let focusTypePickerLastTouchInteractionAt = 0;
     let draftFocusLabels = [];
     let selectedFocusLabelDraftId = "";
     let focusManageSaveConfirmOpen = false;
@@ -4778,6 +4789,7 @@
 
         layoutEditorEnabled = !!nextEnabled;
         dragState = null;
+        setFocusTypePickerDisabledState(focusTypeInput.disabled);
         refreshLayoutUi();
     }
 
@@ -5752,6 +5764,7 @@
         });
 
         focusTypeInput.disabled = isLocked;
+        setFocusTypePickerDisabledState(isLocked);
     }
 
     function setHomeButtonsVisible(isVisible) {
@@ -5767,6 +5780,14 @@
         manageButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("manage-button", "focus-setup", sceneStateKey));
         setSetupChildrenVisible(isVisible);
         syncTimerModeUi(sceneStateKey);
+
+        if (isVisible) {
+            requestAnimationFrame(function () {
+                syncFocusTypePickerPadding();
+                scrollFocusTypePickerToIndex(focusTypePickerSelectedIndex, "auto");
+                refreshFocusTypePickerSelectionStyles();
+            });
+        }
     }
 
     function isFocusManageConfirmPreviewRequested() {
@@ -6077,6 +6098,344 @@
 
         const fallbackLabel = normalizeFocusLabelName(focusTypeInput.value || "Focus");
         return fallbackLabel ? [fallbackLabel] : ["Focus"];
+    }
+
+    function getFocusTypePickerItemHeight() {
+        const parsed = parseFloat(
+            getComputedStyle(focusTypePicker).getPropertyValue("--pl-focus-type-picker-item-height"));
+
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 54;
+    }
+
+    function clampFocusTypePickerIndex(index) {
+        return Math.max(0, Math.min(Math.max(savedFocusLabels.length - 1, 0), index));
+    }
+
+    function getSelectedFocusLabelIndexByName(labelName) {
+        const normalizedLabel = normalizeFocusLabelName(labelName).toLowerCase();
+
+        if (!normalizedLabel) {
+            return 0;
+        }
+
+        const matchIndex = savedFocusLabels.findIndex(function (label) {
+            return label.toLowerCase() === normalizedLabel;
+        });
+
+        return matchIndex >= 0 ? matchIndex : 0;
+    }
+
+    function syncFocusTypePickerPadding() {
+        const viewportHeight = focusTypePickerViewport.clientHeight;
+
+        if (viewportHeight <= 0) {
+            return;
+        }
+
+        const itemHeight = getFocusTypePickerItemHeight();
+        const verticalPadding = Math.max(0, Math.round((viewportHeight - itemHeight) / 2));
+
+        focusTypePickerList.style.paddingTop = `${verticalPadding}px`;
+        focusTypePickerList.style.paddingBottom = `${verticalPadding}px`;
+    }
+
+    function setFocusTypeValue(nextValue) {
+        const normalizedValue = normalizeFocusLabelName(nextValue);
+        const matchingLabel = savedFocusLabels.find(function (label) {
+            return label.toLowerCase() === normalizedValue.toLowerCase();
+        });
+        const resolvedValue = matchingLabel || normalizedValue || savedFocusLabels[0] || "Focus";
+
+        focusTypeInput.value = resolvedValue;
+        saveFocusType.value = resolvedValue;
+        focusTypePickerSelectedIndex = getSelectedFocusLabelIndexByName(resolvedValue);
+        homeRoot.dataset.focusLabels = JSON.stringify(savedFocusLabels);
+    }
+
+    function refreshFocusTypePickerSelectionStyles() {
+        const pickerItems = focusTypePickerList.querySelectorAll(".pl-focus-type-picker-item");
+
+        if (pickerItems.length === 0) {
+            focusTypePickerViewport.removeAttribute("aria-activedescendant");
+            return;
+        }
+
+        const itemHeight = getFocusTypePickerItemHeight();
+        const viewportCenter = focusTypePickerViewport.scrollTop + (focusTypePickerViewport.clientHeight / 2);
+        const touchInteractionActive = isFocusTypePickerInteractionActive() && focusTypePickerPointerState?.pointerType === "touch";
+        let activeItemId = "";
+
+        pickerItems.forEach(function (item, index) {
+            const itemCenter = item.offsetTop + (item.offsetHeight / 2);
+            const distance = Math.abs(itemCenter - viewportCenter);
+            const normalizedDistance = Math.min(1, distance / Math.max(itemHeight * 1.15, 1));
+            const scale = touchInteractionActive
+                ? 1.18 - (normalizedDistance * 0.72)
+                : 1 - (normalizedDistance * 0.2);
+            const opacity = 1 - (normalizedDistance * 0.82);
+            const isSelected = !touchInteractionActive && index === focusTypePickerSelectedIndex;
+
+            item.classList.toggle("pl-focus-type-picker-item-selected", isSelected);
+            item.setAttribute("aria-selected", isSelected ? "true" : "false");
+            item.style.transform = `scale(${Math.max(0.8, scale).toFixed(3)})`;
+            item.style.opacity = `${Math.max(0.16, opacity).toFixed(3)}`;
+
+            if (isSelected) {
+                activeItemId = item.id;
+            }
+        });
+
+        if (activeItemId) {
+            focusTypePickerViewport.setAttribute("aria-activedescendant", activeItemId);
+        }
+        else {
+            focusTypePickerViewport.removeAttribute("aria-activedescendant");
+        }
+    }
+
+    function scrollFocusTypePickerToIndex(index, behavior = "auto") {
+        if (focusTypeField.hidden || focusTypePickerViewport.clientHeight <= 0) {
+            return;
+        }
+
+        syncFocusTypePickerPadding();
+
+        const targetIndex = clampFocusTypePickerIndex(index);
+        const top = getFocusTypePickerItemHeight() * targetIndex;
+
+        focusTypePickerViewport.scrollTo({
+            top,
+            behavior
+        });
+    }
+
+    function getClampedFocusTypePickerScrollTop() {
+        const maxScrollTop = Math.max(
+            0,
+            focusTypePickerViewport.scrollHeight - focusTypePickerViewport.clientHeight);
+
+        return Math.max(0, Math.min(maxScrollTop, focusTypePickerViewport.scrollTop));
+    }
+
+    function snapFocusTypePickerToNearest(behavior = "smooth") {
+        const targetIndex = clampFocusTypePickerIndex(
+            Math.round(getClampedFocusTypePickerScrollTop() / Math.max(getFocusTypePickerItemHeight(), 1)));
+
+        setFocusTypeValue(savedFocusLabels[targetIndex] || savedFocusLabels[0] || "Focus");
+        scrollFocusTypePickerToIndex(targetIndex, behavior);
+        refreshFocusTypePickerSelectionStyles();
+    }
+
+    function isFocusTypePickerInteractionActive() {
+        return !!focusTypePickerPointerState;
+    }
+
+    function scheduleFocusTypePickerSnap(delayMs = 140) {
+        if (focusTypePickerScrollSnapTimeoutId) {
+            clearTimeout(focusTypePickerScrollSnapTimeoutId);
+        }
+
+        focusTypePickerScrollSnapTimeoutId = window.setTimeout(function () {
+            focusTypePickerScrollSnapTimeoutId = 0;
+
+            if (isFocusTypePickerInteractionActive()) {
+                return;
+            }
+
+            const currentScrollTop = focusTypePickerViewport.scrollTop;
+            const clampedScrollTop = getClampedFocusTypePickerScrollTop();
+            const isOutOfBounds = Math.abs(currentScrollTop - clampedScrollTop) > 0.5;
+
+            if (isOutOfBounds && focusTypePickerSettleAttemptCount < 8) {
+                focusTypePickerSettleAttemptCount += 1;
+                focusTypePickerViewport.scrollTo({
+                    top: clampedScrollTop,
+                    behavior: "smooth"
+                });
+                scheduleFocusTypePickerSnap(90);
+                return;
+            }
+
+            focusTypePickerSettleAttemptCount = 0;
+            snapFocusTypePickerToNearest("smooth");
+        }, delayMs);
+    }
+
+    function handleFocusTypePickerScroll() {
+        if (focusTypePickerScrollSyncFrameId) {
+            cancelAnimationFrame(focusTypePickerScrollSyncFrameId);
+        }
+
+        focusTypePickerScrollSyncFrameId = requestAnimationFrame(function () {
+            focusTypePickerScrollSyncFrameId = 0;
+
+            const touchInteractionActive = isFocusTypePickerInteractionActive() && focusTypePickerPointerState?.pointerType === "touch";
+
+            if (!touchInteractionActive) {
+                const targetIndex = clampFocusTypePickerIndex(
+                    Math.round(focusTypePickerViewport.scrollTop / Math.max(getFocusTypePickerItemHeight(), 1)));
+
+                setFocusTypeValue(savedFocusLabels[targetIndex] || savedFocusLabels[0] || "Focus");
+            }
+
+            refreshFocusTypePickerSelectionStyles();
+        });
+
+        if (isFocusTypePickerInteractionActive()) {
+            return;
+        }
+
+        if (Date.now() - focusTypePickerLastTouchInteractionAt < 260) {
+            scheduleFocusTypePickerSnap(260);
+            return;
+        }
+
+        scheduleFocusTypePickerSnap(180);
+    }
+
+    function handleFocusTypePickerPointerDown(event) {
+        if (focusTypePickerViewport.getAttribute("aria-disabled") === "true") {
+            return;
+        }
+
+        if (event.pointerType === "touch") {
+            focusTypePickerLastTouchInteractionAt = Date.now();
+            focusTypePickerViewport.classList.add("pl-focus-type-picker-viewport-touch-active");
+        }
+
+        focusTypePickerPointerState = {
+            pointerId: event.pointerId,
+            pointerType: event.pointerType || "mouse",
+            startClientY: event.clientY,
+            startScrollTop: focusTypePickerViewport.scrollTop,
+            moved: false
+        };
+
+        if (typeof focusTypePickerViewport.setPointerCapture === "function") {
+            focusTypePickerViewport.setPointerCapture(event.pointerId);
+        }
+    }
+
+    function handleFocusTypePickerPointerMove(event) {
+        if (!focusTypePickerPointerState || event.pointerId !== focusTypePickerPointerState.pointerId) {
+            return;
+        }
+
+        const deltaY = event.clientY - focusTypePickerPointerState.startClientY;
+        const maxScrollTop = Math.max(
+            0,
+            focusTypePickerViewport.scrollHeight - focusTypePickerViewport.clientHeight);
+        const desiredScrollTop = focusTypePickerPointerState.startScrollTop - deltaY;
+
+        if (Math.abs(deltaY) > 3) {
+            focusTypePickerPointerState.moved = true;
+        }
+
+        if (!focusTypePickerPointerState.moved) {
+            return;
+        }
+
+        if (focusTypePickerPointerState.pointerType === "touch") {
+            focusTypePickerLastTouchInteractionAt = Date.now();
+            event.preventDefault();
+            focusTypePickerViewport.scrollTop = Math.max(0, Math.min(maxScrollTop, desiredScrollTop));
+            handleFocusTypePickerScroll();
+            return;
+        }
+
+        event.preventDefault();
+        focusTypePickerViewport.scrollTop = desiredScrollTop;
+        handleFocusTypePickerScroll();
+    }
+
+    function handleFocusTypePickerPointerUp(event) {
+        if (!focusTypePickerPointerState || event.pointerId !== focusTypePickerPointerState.pointerId) {
+            return;
+        }
+
+        if (focusTypePickerPointerState.pointerType === "touch") {
+            focusTypePickerViewport.classList.remove("pl-focus-type-picker-viewport-touch-active");
+        }
+
+        if (typeof focusTypePickerViewport.releasePointerCapture === "function") {
+            try {
+                focusTypePickerViewport.releasePointerCapture(event.pointerId);
+            }
+            catch {
+            }
+        }
+
+        if (focusTypePickerScrollSnapTimeoutId) {
+            clearTimeout(focusTypePickerScrollSnapTimeoutId);
+            focusTypePickerScrollSnapTimeoutId = 0;
+        }
+
+        if (focusTypePickerPointerState.moved || focusTypePickerPointerState.pointerType === "touch") {
+            focusTypePickerSuppressClickUntil = Date.now() + 180;
+            focusTypePickerSettleAttemptCount = 0;
+            if (focusTypePickerPointerState.pointerType === "touch") {
+                focusTypePickerLastTouchInteractionAt = Date.now();
+            }
+
+            scheduleFocusTypePickerSnap(focusTypePickerPointerState.pointerType === "touch" ? 320 : 120);
+        }
+
+        focusTypePickerPointerState = null;
+    }
+
+    function handleFocusTypePickerWheel(event) {
+        if (focusTypePickerViewport.getAttribute("aria-disabled") === "true") {
+            return;
+        }
+
+        event.preventDefault();
+        focusTypePickerViewport.scrollTop += event.deltaY * 0.18;
+        handleFocusTypePickerScroll();
+    }
+
+    function renderFocusTypePicker() {
+        focusTypePickerList.innerHTML = "";
+
+        savedFocusLabels.forEach(function (label, index) {
+            const pickerItem = document.createElement("button");
+            pickerItem.type = "button";
+            pickerItem.className = "pl-focus-type-picker-item";
+            pickerItem.id = `pl-focus-type-option-${index}`;
+            pickerItem.setAttribute("role", "option");
+            pickerItem.textContent = label;
+
+            pickerItem.addEventListener("click", function () {
+                if (focusTypePickerViewport.getAttribute("aria-disabled") === "true") {
+                    return;
+                }
+
+                if (Date.now() < focusTypePickerSuppressClickUntil) {
+                    return;
+                }
+
+                setFocusTypeValue(label);
+                scrollFocusTypePickerToIndex(index, "smooth");
+                refreshFocusTypePickerSelectionStyles();
+            });
+
+            focusTypePickerList.appendChild(pickerItem);
+        });
+
+        setFocusTypeValue(focusTypeInput.value || savedFocusLabels[0] || "Focus");
+
+        requestAnimationFrame(function () {
+            syncFocusTypePickerPadding();
+            scrollFocusTypePickerToIndex(focusTypePickerSelectedIndex, "auto");
+            refreshFocusTypePickerSelectionStyles();
+        });
+    }
+
+    function setFocusTypePickerDisabledState(isDisabled) {
+        const resolvedDisabled = isDisabled || layoutEditorEnabled;
+
+        focusTypePicker.classList.toggle("pl-focus-type-picker-disabled", resolvedDisabled);
+        focusTypePickerViewport.setAttribute("aria-disabled", resolvedDisabled ? "true" : "false");
+        focusTypePickerViewport.tabIndex = resolvedDisabled ? -1 : 0;
     }
 
     function createFocusLabelDraft(name, originalName = null, isNew = false) {
@@ -6434,9 +6793,8 @@
         });
         const nextValue = matchingPreferred || matchingCurrent || savedFocusLabels[0] || "Focus";
 
-        focusTypeInput.value = nextValue;
-        saveFocusType.value = nextValue;
-        homeRoot.dataset.focusLabels = JSON.stringify(savedFocusLabels);
+        setFocusTypeValue(nextValue);
+        renderFocusTypePicker();
     }
 
     async function fetchFocusLabels() {
@@ -6867,6 +7225,7 @@
         confirmStopButton.disabled = isDisabled;
         rewardCloseButton.disabled = isDisabled;
         focusTypeInput.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
+        setFocusTypePickerDisabledState(isDisabled || setupPanel.classList.contains("pl-setup-panel-locked"));
         durationSlider.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked") || isCountUpModeSelected();
         syncFocusManageButtons();
     }
@@ -7063,6 +7422,50 @@
         updateDurationReadout();
     });
 
+    focusTypePickerViewport.addEventListener("scroll", handleFocusTypePickerScroll, { passive: true });
+    focusTypePickerViewport.addEventListener("pointerdown", handleFocusTypePickerPointerDown);
+    focusTypePickerViewport.addEventListener("pointermove", handleFocusTypePickerPointerMove);
+    focusTypePickerViewport.addEventListener("pointerup", handleFocusTypePickerPointerUp);
+    focusTypePickerViewport.addEventListener("pointercancel", handleFocusTypePickerPointerUp);
+    focusTypePickerViewport.addEventListener("wheel", handleFocusTypePickerWheel, { passive: false });
+
+    focusTypePickerViewport.addEventListener("keydown", function (event) {
+        if (focusTypePickerViewport.getAttribute("aria-disabled") === "true") {
+            return;
+        }
+
+        let nextIndex = focusTypePickerSelectedIndex;
+
+        switch (event.key) {
+            case "ArrowUp":
+                nextIndex -= 1;
+                break;
+            case "ArrowDown":
+                nextIndex += 1;
+                break;
+            case "Home":
+                nextIndex = 0;
+                break;
+            case "End":
+                nextIndex = savedFocusLabels.length - 1;
+                break;
+            case "PageUp":
+                nextIndex -= 3;
+                break;
+            case "PageDown":
+                nextIndex += 3;
+                break;
+            default:
+                return;
+        }
+
+        event.preventDefault();
+        nextIndex = clampFocusTypePickerIndex(nextIndex);
+        setFocusTypeValue(savedFocusLabels[nextIndex] || savedFocusLabels[0] || "Focus");
+        scrollFocusTypePickerToIndex(nextIndex, "smooth");
+        refreshFocusTypePickerSelectionStyles();
+    });
+
     countdownModeButton.addEventListener("click", function () {
         if (isRunning || isPaused || isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "countdown-mode")) {
             return;
@@ -7219,6 +7622,8 @@
 
     window.addEventListener("resize", function () {
         applyAllAssetLayouts();
+        syncFocusTypePickerPadding();
+        refreshFocusTypePickerSelectionStyles();
 
         if (layoutModeEnabled) {
             refreshLayoutUi();
@@ -7227,6 +7632,8 @@
 
     window.addEventListener("pl-home-stage-resized", function () {
         applyAllAssetLayouts();
+        syncFocusTypePickerPadding();
+        refreshFocusTypePickerSelectionStyles();
 
         if (layoutModeEnabled) {
             refreshLayoutUi();
@@ -7622,6 +8029,7 @@
         initializeLayoutPanelWorkspace();
         applyPanelArtStates();
         syncFocusTypeInputWithSavedLabels(focusTypeInput.value);
+        setFocusTypePickerDisabledState(false);
         syncFocusManageButtons();
 
         await loadSharedLayoutState();
