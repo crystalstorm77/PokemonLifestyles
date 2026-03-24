@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using LifestyleCore.Data;
 using LifestyleCore.Models;
@@ -13,6 +14,7 @@ namespace LifestylesWeb.Pages;
 public class PagesIndexModel : PageModel
 {
     private readonly FocusSessionRepository _focusRepo = new();
+    private readonly FocusLabelRepository _focusLabelRepo = new();
 
     #region SEGMENT A — Bound Input + Display State
     [BindProperty]
@@ -33,6 +35,9 @@ public class PagesIndexModel : PageModel
     public bool RewardCompleted { get; private set; }
     public int RewardXp { get; private set; }
     public int RewardCoins { get; private set; }
+    public List<string> FocusLabels { get; private set; } = new();
+    public string InitialFocusType { get; private set; } = "Focus";
+    public string FocusLabelsJson => JsonSerializer.Serialize(FocusLabels);
     #endregion // SEGMENT A — Bound Input + Display State
 
     #region SEGMENT B — Page Actions
@@ -62,6 +67,37 @@ public class PagesIndexModel : PageModel
         }
     }
 
+    public async Task<IActionResult> OnGetFocusLabelsAsync()
+    {
+        return new JsonResult(await _focusLabelRepo.GetActiveAsync());
+    }
+
+    public async Task<IActionResult> OnPostFocusLabelsAsync([FromBody] FocusLabelMutationInput input)
+    {
+        if (input is null)
+        {
+            return new JsonResult(new { ok = false, changed = false, labels = await _focusLabelRepo.GetActiveAsync() });
+        }
+
+        string action = (input.Action ?? "").Trim().ToLowerInvariant();
+        bool changed = action switch
+        {
+            "add" => await _focusLabelRepo.UpsertActiveAsync(input.Name),
+            "delete" => await _focusLabelRepo.SoftDeleteAsync(input.Name),
+            "rename" => await _focusLabelRepo.RenameAsync(input.Name, input.NextName),
+            "move-up" => await _focusLabelRepo.MoveUpAsync(input.Name),
+            "move-down" => await _focusLabelRepo.MoveDownAsync(input.Name),
+            _ => false
+        };
+
+        return new JsonResult(new
+        {
+            ok = true,
+            changed,
+            labels = await _focusLabelRepo.GetActiveAsync()
+        });
+    }
+
     public async Task<IActionResult> OnPostSaveFocusAsync()
     {
         string focusType = (Input.FocusType ?? "").Trim();
@@ -70,6 +106,8 @@ public class PagesIndexModel : PageModel
         {
             return RedirectToPage();
         }
+
+        await _focusLabelRepo.UpsertActiveAsync(focusType);
 
         string timerMode = (Input.TimerMode ?? "").Trim().ToLowerInvariant();
         string saveMode = (Input.SaveMode ?? "").Trim().ToLowerInvariant();
@@ -133,6 +171,8 @@ public class PagesIndexModel : PageModel
     {
         DataFilePath = Db.GetDbPath();
         Sessions = (await _focusRepo.GetForDateAsync(GetGameDayForLocal(DateTime.Now))).ToList();
+        FocusLabels = await _focusLabelRepo.GetActiveAsync();
+        InitialFocusType = FocusLabels.FirstOrDefault() ?? "Focus";
         await LoadRewardPreviewSettingsAsync(DateTime.Now);
     }
 
@@ -268,6 +308,18 @@ public class PagesIndexModel : PageModel
 
         [StringLength(20)]
         public string SaveMode { get; set; } = "";
+    }
+
+    public sealed class FocusLabelMutationInput
+    {
+        [StringLength(20)]
+        public string Action { get; set; } = "";
+
+        [StringLength(40)]
+        public string Name { get; set; } = "";
+
+        [StringLength(40)]
+        public string NextName { get; set; } = "";
     }
     #endregion // SEGMENT D — Input Model
 }
