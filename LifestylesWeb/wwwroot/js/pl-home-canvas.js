@@ -6,8 +6,10 @@
     const safeZoneOutline = document.getElementById("pl-safe-zone-outline");
 
     const homeSceneArt = document.getElementById("pl-home-scene-art");
+    const standaloneLayoutLauncher = document.getElementById("pl-standalone-layout-launcher");
     const homeFocusButton = document.getElementById("pl-home-focus-button");
     const homeSleepButton = document.getElementById("pl-home-sleep-button");
+    const openLayoutModeButton = document.getElementById("pl-open-layout-mode-button");
 
     const setupPanel = document.getElementById("pl-setup-panel");
     const setupControls = document.getElementById("pl-setup-controls");
@@ -151,7 +153,7 @@
     const layoutCode = document.getElementById("pl-layout-code");
 
     if (!homeRoot || !worldStage || !safeUiStage || !safeZoneOutline ||
-        !homeSceneArt || !homeFocusButton || !homeSleepButton ||
+        !homeSceneArt || !standaloneLayoutLauncher || !homeFocusButton || !homeSleepButton || !openLayoutModeButton ||
         !setupPanel || !setupControls || !focusTypeLabel || !focusTypeField || !durationText ||
         !sliderGroup || !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell ||
         !sliderFillArt || !sliderNibVisual || !durationSlider || !startFocusButton ||
@@ -195,8 +197,39 @@
     }
 
     const stopThresholdSeconds = 60;
-    const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
+    const layoutModeStorageKey = "plLayoutModeRequested";
+
+    function readStandaloneLayoutModePreference() {
+        try {
+            return window.localStorage.getItem(layoutModeStorageKey) === "1";
+        }
+        catch {
+            return false;
+        }
+    }
+
+    function writeStandaloneLayoutModePreference(isEnabled) {
+        try {
+            window.localStorage.setItem(layoutModeStorageKey, isEnabled ? "1" : "0");
+        }
+        catch {
+        }
+    }
+
+    const layoutModeParam = new URL(window.location.href).searchParams.get("layout");
+    if (layoutModeParam === "1") {
+        writeStandaloneLayoutModePreference(true);
+    } else if (layoutModeParam === "0") {
+        writeStandaloneLayoutModePreference(false);
+    }
+
+    const standaloneDisplayRequested =
+        window.matchMedia("(display-mode: standalone)").matches
+        || window.navigator.standalone === true;
+    const layoutModeEnabled = layoutModeParam === "1"
+        || (layoutModeParam !== "0" && standaloneDisplayRequested && readStandaloneLayoutModePreference());
     let layoutEditorEnabled = layoutModeEnabled;
+    standaloneLayoutLauncher.hidden = layoutModeEnabled || !standaloneDisplayRequested;
     const layoutSyncReadUrl = "/LayoutSync?handler=Read";
     const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
     const layoutSyncUploadArtUrl = "/LayoutSync?handler=UploadArt";
@@ -288,6 +321,7 @@
         "home-scene": { element: homeSceneArt, stage: "world", interactive: false },
         "home-focus": { element: homeFocusButton, stage: "ui", interactive: true },
         "home-sleep": { element: homeSleepButton, stage: "ui", interactive: true },
+        "open-layout-mode": { element: openLayoutModeButton, stage: "ui", interactive: true },
         "setup-panel": { element: setupPanel, stage: "ui", interactive: false },
         "countdown-mode": { element: countdownModeButton, stage: "ui", interactive: true },
         "countup-mode": { element: countUpModeButton, stage: "ui", interactive: true },
@@ -324,6 +358,7 @@
     const layoutTextAssets = {
         "home-focus": homeFocusButton.querySelector(".pl-button-label"),
         "home-sleep": homeSleepButton.querySelector(".pl-button-label"),
+        "open-layout-mode": openLayoutModeButton.querySelector(".pl-button-label"),
         "countdown-mode": countdownModeButton.querySelector(".pl-button-label"),
         "countup-mode": countUpModeButton.querySelector(".pl-button-label"),
         "start": startFocusButton.querySelector(".pl-button-label"),
@@ -349,6 +384,7 @@
     const layoutTextArtLabels = {
         "home-focus": "focus-start.png",
         "home-sleep": "sleep.png",
+        "open-layout-mode": "layout.png",
         "countdown-mode": "countdown-mode.png",
         "countup-mode": "countup-mode.png",
         "start": "focus-start.png",
@@ -418,6 +454,9 @@
         "open-focus-manage": {
             label: "Open Focus Manage"
         },
+        "enable-layout-mode": {
+            label: "Enable Layout Mode"
+        },
         "return-home": {
             label: "Return Home"
         },
@@ -456,6 +495,7 @@
     const defaultAssetBehaviorRoles = {
         "home-focus": "open-focus-setup",
         "home-sleep": "none",
+        "open-layout-mode": "enable-layout-mode",
         "countdown-mode": "select-countdown-mode",
         "countup-mode": "select-countup-mode",
         "start": "start-focus-session",
@@ -477,7 +517,7 @@
     const layoutSceneDefinitions = {
         "home": {
             label: "Home",
-            assets: ["home-scene", "home-focus", "home-sleep"]
+            assets: ["home-scene", "home-focus", "home-sleep", "open-layout-mode"]
         },
         "focus-setup": {
             label: "Focus setup",
@@ -549,6 +589,7 @@
     };
 
     const layoutAssetDefaultStates = {
+        "open-layout-mode": { x: 318, y: 16, width: 84, height: 34, scale: 100 },
         "focus-type-label": { x: 20, y: 177, width: 88, height: 18, scale: 100 },
         "focus-manage-panel": { x: 54, y: 46, width: 238, height: 324, scale: 100 },
         "focus-manage-list": { x: 70, y: 78, width: 200, height: 170, scale: 100 },
@@ -2568,43 +2609,19 @@
     }
 
     function projectAxis(authorPosition, authorBoxSize, authorFrameSize, runtimeFrameSize, uiScale) {
-        const projectedSize = Math.max(1, authorBoxSize * uiScale);
-        const authorInsideMax = Math.max(0, authorFrameSize - authorBoxSize);
-        const runtimeInsideMax = Math.max(0, runtimeFrameSize - projectedSize);
-
         if (authorPosition < 0) {
-            return authorPosition;
+            return authorPosition * uiScale;
         }
 
-        if (authorPosition > authorInsideMax) {
-            return runtimeInsideMax + (authorPosition - authorInsideMax);
-        }
-
-        if (authorInsideMax <= 0 || runtimeInsideMax <= 0) {
-            return 0;
-        }
-
-        return (authorPosition / authorInsideMax) * runtimeInsideMax;
+        return authorPosition * uiScale;
     }
 
     function unprojectAxis(runtimePosition, authorBoxSize, authorFrameSize, runtimeFrameSize, uiScale) {
-        const projectedSize = Math.max(1, authorBoxSize * uiScale);
-        const authorInsideMax = Math.max(0, authorFrameSize - authorBoxSize);
-        const runtimeInsideMax = Math.max(0, runtimeFrameSize - projectedSize);
-
         if (runtimePosition < 0) {
-            return runtimePosition;
+            return runtimePosition / Math.max(0.0001, uiScale);
         }
 
-        if (runtimePosition > runtimeInsideMax) {
-            return authorInsideMax + (runtimePosition - runtimeInsideMax);
-        }
-
-        if (authorInsideMax <= 0 || runtimeInsideMax <= 0) {
-            return 0;
-        }
-
-        return (runtimePosition / runtimeInsideMax) * authorInsideMax;
+        return runtimePosition / Math.max(0.0001, uiScale);
     }
 
     function projectUiAssetRect(state, authorWidth, authorHeight) {
@@ -6116,6 +6133,7 @@
     function setHomeButtonsVisible(isVisible) {
         homeFocusButton.hidden = !isVisible;
         homeSleepButton.hidden = !isVisible;
+        openLayoutModeButton.hidden = !isVisible;
     }
 
     function setSetupVisible(isVisible) {
@@ -6404,6 +6422,18 @@
 
     function openFocusSetup() {
         showSetupState();
+    }
+
+    function enableLayoutModeFromApp() {
+        try {
+            window.localStorage.setItem(layoutModeStorageKey, "1");
+        }
+        catch {
+        }
+
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set("layout", "1");
+        window.location.href = nextUrl.toString();
     }
 
     function openFocusManage() {
@@ -7479,6 +7509,9 @@
 
                 openFocusManage();
                 return;
+            case "enable-layout-mode":
+                enableLayoutModeFromApp();
+                return;
             case "return-home":
                 returnToHome();
                 return;
@@ -7754,6 +7787,18 @@
         }
 
         runAssetBehaviorRole("home-focus");
+    });
+
+    openLayoutModeButton.addEventListener("click", function () {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "open-layout-mode") {
+            return;
+        }
+
+        runAssetBehaviorRole("open-layout-mode");
+    });
+
+    standaloneLayoutLauncher.addEventListener("click", function () {
+        enableLayoutModeFromApp();
     });
 
     closeFocusButton.addEventListener("click", function () {

@@ -213,9 +213,29 @@
         will-change: left, top, transform, width, height;
     }
 
-        .pl-canvas-item[hidden] {
-            display: none !important;
-        }
+    .pl-canvas-item[hidden] {
+        display: none !important;
+    }
+
+    .pl-standalone-layout-launcher {
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+        right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+        z-index: 90;
+        border: 1px solid rgba(148, 163, 184, 0.44);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #0f172a;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+        padding: 0.55rem 1rem;
+        font: 800 1rem/1 "Trebuchet MS", Helvetica, sans-serif;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+    }
+
+    .pl-standalone-layout-launcher[hidden] {
+        display: none !important;
+    }
 
     .pl-canvas-button {
         border: none !important;
@@ -251,6 +271,15 @@
     .pl-canvas-button-home-sleep {
         color: #111827;
         background-image: var(--pl-btn-home-sleep-image), var(--pl-btn-home-sleep-fallback) !important;
+    }
+
+    .pl-canvas-button-layout-debug {
+        color: #0f172a;
+        border: 1px solid rgba(148, 163, 184, 0.4) !important;
+        border-radius: 999px;
+        background-image: none !important;
+        background-color: rgba(255, 255, 255, 0.92) !important;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16) !important;
     }
 
     .pl-canvas-button-start,

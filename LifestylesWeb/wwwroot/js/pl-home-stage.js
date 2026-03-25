@@ -14,7 +14,37 @@
         return;
     }
 
-    const layoutModeEnabled = new URL(window.location.href).searchParams.get("layout") === "1";
+    const layoutModeStorageKey = "plLayoutModeRequested";
+
+    function readStandaloneLayoutModePreference() {
+        try {
+            return window.localStorage.getItem(layoutModeStorageKey) === "1";
+        }
+        catch {
+            return false;
+        }
+    }
+
+    function writeStandaloneLayoutModePreference(isEnabled) {
+        try {
+            window.localStorage.setItem(layoutModeStorageKey, isEnabled ? "1" : "0");
+        }
+        catch {
+        }
+    }
+
+    const layoutModeParam = new URL(window.location.href).searchParams.get("layout");
+    if (layoutModeParam === "1") {
+        writeStandaloneLayoutModePreference(true);
+    } else if (layoutModeParam === "0") {
+        writeStandaloneLayoutModePreference(false);
+    }
+
+    const standaloneDisplayRequested =
+        window.matchMedia("(display-mode: standalone)").matches
+        || window.navigator.standalone === true;
+    const layoutModeEnabled = layoutModeParam === "1"
+        || (layoutModeParam !== "0" && standaloneDisplayRequested && readStandaloneLayoutModePreference());
     const desktopPointerQuery = window.matchMedia("(pointer:fine)");
     const standaloneStartupLock = {
         lockedFrame: null,
@@ -777,40 +807,38 @@
                 safeFrameHeight / uiAuthorHeight
             );
         } else {
-            const safeFrame = buildSafeFrame(
-                liveViewport.width,
-                liveViewport.height,
-                liveSafeArea,
-                uiAuthorTop
+            previewScale = Math.min(
+                1,
+                Math.max(0.1, liveViewport.width / designWidth),
+                Math.max(0.1, liveViewport.height / designHeight)
             );
 
-            resetRuntimeShellStyles();
-
-            rootWidth = liveViewport.width;
-            rootHeight = liveViewport.height;
-
-            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
-            worldRenderWidth = designWidth * worldScale;
-            worldRenderHeight = designHeight * worldScale;
-            worldLeft = (rootWidth - worldRenderWidth) / 2;
-            worldTop = (rootHeight - worldRenderHeight) / 2;
-            worldStageMeasuredScale = worldScale;
-
-            safeFrameLeft = safeFrame.left;
-            safeFrameTop = safeFrame.top;
-            safeFrameWidth = safeFrame.width;
-            safeFrameHeight = safeFrame.height;
-
-            safeUiRenderWidth = safeFrameWidth;
-            safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = safeFrameLeft;
-            safeUiTop = safeFrameTop;
-            safeUiStageMeasuredScale = 1;
-
-            uiProjectionScale = Math.min(
-                safeFrameWidth / uiAuthorWidth,
-                safeFrameHeight / uiAuthorHeight
+            applyDesktopPreviewShellStyles(
+                designWidth * previewScale,
+                designHeight * previewScale,
+                previewScale,
+                designWidth,
+                designHeight
             );
+
+            rootWidth = designWidth;
+            rootHeight = designHeight;
+            worldScale = 1;
+            worldRenderWidth = designWidth;
+            worldRenderHeight = designHeight;
+            worldLeft = 0;
+            worldTop = 0;
+            worldStageMeasuredScale = previewScale;
+            safeFrameLeft = uiAuthorLeft;
+            safeFrameTop = uiAuthorTop;
+            safeFrameWidth = uiAuthorWidth;
+            safeFrameHeight = uiAuthorHeight;
+            safeUiRenderWidth = uiAuthorWidth;
+            safeUiRenderHeight = uiAuthorHeight;
+            safeUiLeft = uiAuthorLeft;
+            safeUiTop = uiAuthorTop;
+            safeUiStageMeasuredScale = previewScale;
+            uiProjectionScale = 1;
         }
 
         homeRoot.style.width = `${round3(rootWidth)}px`;

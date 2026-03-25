@@ -1,7 +1,37 @@
 ﻿(function () {
     //#region SEGMENT A - Layout Gate And Defaults
+    const layoutModeStorageKey = "plLayoutModeRequested";
     const searchParams = new URL(window.location.href).searchParams;
-    const layoutModeEnabled = searchParams.get("layout") === "1";
+
+    function readStandaloneLayoutModePreference() {
+        try {
+            return window.localStorage.getItem(layoutModeStorageKey) === "1";
+        }
+        catch {
+            return false;
+        }
+    }
+
+    function writeStandaloneLayoutModePreference(isEnabled) {
+        try {
+            window.localStorage.setItem(layoutModeStorageKey, isEnabled ? "1" : "0");
+        }
+        catch {
+        }
+    }
+
+    const layoutModeParam = searchParams.get("layout");
+    if (layoutModeParam === "1") {
+        writeStandaloneLayoutModePreference(true);
+    } else if (layoutModeParam === "0") {
+        writeStandaloneLayoutModePreference(false);
+    }
+
+    const standaloneDisplayRequested =
+        window.matchMedia("(display-mode: standalone)").matches
+        || window.navigator.standalone === true;
+    const layoutModeEnabled = layoutModeParam === "1"
+        || (layoutModeParam !== "0" && standaloneDisplayRequested && readStandaloneLayoutModePreference());
 
     if (!layoutModeEnabled) {
         return;
@@ -315,7 +345,15 @@
             homeSceneArt: document.getElementById("pl-home-scene-art"),
             safeUiStageShell: document.getElementById("pl-safe-ui-stage-shell"),
             safeUiStage: document.getElementById("pl-safe-ui-stage"),
-            safeZoneOutline: document.getElementById("pl-safe-zone-outline")
+            safeZoneOutline: document.getElementById("pl-safe-zone-outline"),
+            homeFocusButton: document.getElementById("pl-home-focus-button"),
+            homeSleepButton: document.getElementById("pl-home-sleep-button"),
+            setupPanel: document.getElementById("pl-setup-panel"),
+            durationText: document.getElementById("pl-duration-text"),
+            manageButton: document.getElementById("pl-manage-button"),
+            countdownModeButton: document.getElementById("pl-countdown-mode-button"),
+            countUpModeButton: document.getElementById("pl-countup-mode-button"),
+            focusManagePanel: document.getElementById("pl-focus-manage-panel")
         };
     }
 
@@ -437,6 +475,14 @@
         const safeUiStageShellRect = layers.safeUiStageShell ? layers.safeUiStageShell.getBoundingClientRect() : null;
         const safeUiStageRect = layers.safeUiStage ? layers.safeUiStage.getBoundingClientRect() : null;
         const safeZoneOutlineRect = layers.safeZoneOutline ? layers.safeZoneOutline.getBoundingClientRect() : null;
+        const homeFocusButtonRect = layers.homeFocusButton ? layers.homeFocusButton.getBoundingClientRect() : null;
+        const homeSleepButtonRect = layers.homeSleepButton ? layers.homeSleepButton.getBoundingClientRect() : null;
+        const setupPanelRect = layers.setupPanel ? layers.setupPanel.getBoundingClientRect() : null;
+        const durationTextRect = layers.durationText ? layers.durationText.getBoundingClientRect() : null;
+        const manageButtonRect = layers.manageButton ? layers.manageButton.getBoundingClientRect() : null;
+        const countdownModeButtonRect = layers.countdownModeButton ? layers.countdownModeButton.getBoundingClientRect() : null;
+        const countUpModeButtonRect = layers.countUpModeButton ? layers.countUpModeButton.getBoundingClientRect() : null;
+        const focusManagePanelRect = layers.focusManagePanel ? layers.focusManagePanel.getBoundingClientRect() : null;
 
         const lines = [];
         lines.push(`displayMode: ${readDisplayMode()}`);
@@ -449,6 +495,14 @@
         lines.push(`window.inner: ${round(window.innerWidth)} x ${round(window.innerHeight)}`);
         lines.push(`document.client: ${round(html.clientWidth)} x ${round(html.clientHeight)}`);
         lines.push(`window.scroll: x=${round(window.scrollX)} y=${round(window.scrollY)}`);
+        lines.push("");
+        lines.push(`dataset.stageDisplayMode: ${layers.homeRoot?.dataset.stageDisplayMode || "n/a"}`);
+        lines.push(`dataset.viewport: ${layers.homeRoot?.dataset.viewportWidth || "n/a"} x ${layers.homeRoot?.dataset.viewportHeight || "n/a"}`);
+        lines.push(`dataset.uiAuthorFrame: left=${layers.homeRoot?.dataset.uiAuthorFrameLeft || "n/a"} top=${layers.homeRoot?.dataset.uiAuthorFrameTop || "n/a"} w=${layers.homeRoot?.dataset.uiAuthorFrameWidth || "n/a"} h=${layers.homeRoot?.dataset.uiAuthorFrameHeight || "n/a"}`);
+        lines.push(`dataset.safeFrame: left=${layers.homeRoot?.dataset.safeFrameLeft || "n/a"} top=${layers.homeRoot?.dataset.safeFrameTop || "n/a"} w=${layers.homeRoot?.dataset.safeFrameWidth || "n/a"} h=${layers.homeRoot?.dataset.safeFrameHeight || "n/a"}`);
+        lines.push(`dataset.worldStageScale: ${layers.homeRoot?.dataset.worldStageScale || "n/a"}`);
+        lines.push(`dataset.safeUiStageScale: ${layers.homeRoot?.dataset.safeUiStageScale || "n/a"}`);
+        lines.push(`dataset.uiProjectionScale: ${layers.homeRoot?.dataset.uiProjectionScale || "n/a"}`);
         lines.push("");
         lines.push(`safeArea.top: ${round(safeArea.top)}`);
         lines.push(`safeArea.right: ${round(safeArea.right)}`);
@@ -477,6 +531,35 @@
         lines.push(formatRect("safeUiStageShell.rect", safeUiStageShellRect));
         lines.push(formatRect("safeUiStage.rect", safeUiStageRect));
         lines.push(formatRect("safeZoneOutline.rect", safeZoneOutlineRect));
+        lines.push("");
+        lines.push(formatRect("homeFocusButton.rect", homeFocusButtonRect));
+        lines.push(formatRect("homeSleepButton.rect", homeSleepButtonRect));
+        lines.push(formatRect("setupPanel.rect", setupPanelRect));
+        lines.push(formatRect("durationText.rect", durationTextRect));
+        lines.push(formatRect("manageButton.rect", manageButtonRect));
+        lines.push(formatRect("countdownModeButton.rect", countdownModeButtonRect));
+        lines.push(formatRect("countUpModeButton.rect", countUpModeButtonRect));
+        lines.push(formatRect("focusManagePanel.rect", focusManagePanelRect));
+        lines.push("");
+
+        const addRelativeRectLine = (label, rect, containerRect) => {
+            if (!rect || !containerRect) {
+                return;
+            }
+
+            lines.push(
+                `${label}.relativeToSafeUi: left=${round(rect.left - containerRect.left)} top=${round(rect.top - containerRect.top)} rightGap=${round(containerRect.right - rect.right)} bottomGap=${round(containerRect.bottom - rect.bottom)}`
+            );
+        };
+
+        addRelativeRectLine("homeFocusButton", homeFocusButtonRect, safeUiStageRect);
+        addRelativeRectLine("homeSleepButton", homeSleepButtonRect, safeUiStageRect);
+        addRelativeRectLine("setupPanel", setupPanelRect, safeUiStageRect);
+        addRelativeRectLine("durationText", durationTextRect, safeUiStageRect);
+        addRelativeRectLine("manageButton", manageButtonRect, safeUiStageRect);
+        addRelativeRectLine("countdownModeButton", countdownModeButtonRect, safeUiStageRect);
+        addRelativeRectLine("countUpModeButton", countUpModeButtonRect, safeUiStageRect);
+        addRelativeRectLine("focusManagePanel", focusManagePanelRect, safeUiStageRect);
         lines.push("");
 
         const addSizeLines = (label, element) => {
