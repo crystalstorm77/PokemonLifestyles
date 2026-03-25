@@ -29,6 +29,11 @@
         --pl-btn-stop-fallback: linear-gradient(180deg, #2563eb, #2563eb);
         --pl-btn-gotcha-image: url('/assets/ui/buttons/gotcha.png');
         --pl-btn-gotcha-fallback: none;
+        --pl-focus-type-picker-box-image: none;
+        --pl-focus-type-picker-selection-fill-color: #dbeafe;
+        --pl-focus-type-picker-selection-line-color: #93c5fd;
+        --pl-focus-type-picker-selection-fill-opacity: 1;
+        --pl-focus-type-picker-selection-line-opacity: 1;
         --pl-slider-track-empty-image: url('/assets/ui/buttons/slider-empty.png');
         --pl-slider-track-empty-fallback: none;
         --pl-slider-track-fill-image: url('/assets/ui/buttons/slider-fill.png');

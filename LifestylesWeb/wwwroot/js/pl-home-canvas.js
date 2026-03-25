@@ -211,7 +211,30 @@
     const layoutColorAssetKey = "app-edge-color";
     const layoutColorAssetLabel = "home-scene.png";
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
+    const focusTypeHighlightFillAssetKey = "focus-type-highlight-fill-color";
+    const focusTypeHighlightLineAssetKey = "focus-type-highlight-line-color";
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+    const variableAssetDefinitions = {
+        [layoutColorAssetKey]: {
+            label: layoutColorAssetLabel,
+            variableKey: "appEdgeColor",
+            fieldLabel: "Shell background",
+            hint: "Colors the outer shell/background around the authored canvas."
+        },
+        [focusTypeHighlightFillAssetKey]: {
+            label: "Focus Type Highlight Fill",
+            variableKey: "focusTypeHighlightFillColor",
+            fieldLabel: "Highlight fill",
+            hint: "Colors the bright strip behind the currently selected focus type."
+        },
+        [focusTypeHighlightLineAssetKey]: {
+            label: "Focus Type Highlight Lines",
+            variableKey: "focusTypeHighlightLineColor",
+            fieldLabel: "Highlight lines",
+            hint: "Colors the top and bottom lines of the selected focus type strip."
+        }
+    };
 
     const artImageVars = {
         "home-scene": "--pl-home-scene-image",
@@ -243,6 +266,9 @@
     };
 
     const artComponentImageVars = {
+        "focus-type-field": {
+            "box": "--pl-focus-type-picker-box-image"
+        },
         "slider": {
             "empty": "--pl-slider-track-empty-image",
             "fill": "--pl-slider-track-fill-image",
@@ -455,7 +481,7 @@
         },
         "focus-setup": {
             label: "Focus setup",
-            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-label", "focus-type-field", "duration-text", "slider", "start", "back", "manage-button"],
+            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, "duration-text", "slider", "start", "back", "manage-button"],
             states: {
                 base: {
                     label: "Base"
@@ -492,7 +518,21 @@
         },
         "focus-running": {
             label: "Focus running",
-            assets: ["duration-text", "pause", "exit"]
+            assets: ["setup-panel", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, "duration-text", "slider", "pause", "exit"],
+            states: {
+                base: {
+                    label: "Base"
+                },
+                countdown: {
+                    label: "Count Down"
+                },
+                countup: {
+                    label: "Count Up",
+                    visibility: {
+                        slider: false
+                    }
+                }
+            }
         },
         "stop-confirm": {
             label: "Stop confirm",
@@ -602,6 +642,20 @@
                 allowsHitScale: false,
                 status: "Browse and save PNG art for empty Focus Manage tiles."
             }
+        },
+        "focus-type-field": {
+            "root": {
+                label: "Whole Asset",
+                geometryMode: "asset",
+                allowsHitScale: false,
+                status: "Moves, resizes, and scales the picker field as a whole."
+            },
+            "box": {
+                label: "box",
+                geometryMode: "art-only",
+                allowsHitScale: false,
+                status: "Browse and save PNG art for the picker box behind the focus type labels."
+            }
         }
     };
 
@@ -646,12 +700,11 @@
     const dynamicAssetKeys = new Set();
     let savedFocusLabels = parseInitialFocusLabels();
     let focusTypePickerSelectedIndex = 0;
-    let focusTypePickerScrollSyncFrameId = 0;
     let focusTypePickerScrollSnapTimeoutId = 0;
-    let focusTypePickerSettleAttemptCount = 0;
     let focusTypePickerPointerState = null;
     let focusTypePickerSuppressClickUntil = 0;
-    let focusTypePickerLastTouchInteractionAt = 0;
+    let focusTypePickerPositionPx = 0;
+    let focusTypePickerAnimationFrameId = 0;
     let draftFocusLabels = [];
     let selectedFocusLabelDraftId = "";
     let focusManageSaveConfirmOpen = false;
@@ -843,10 +896,7 @@
         const scale = getAssetStageScale(assetKey);
 
         if (isSelfLabeledTextAsset(assetKey)) {
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
+            return unprojectSelfLabeledPosition(assetKey, clientX - rect.left, clientY - rect.top);
         }
 
         return {
@@ -1032,6 +1082,18 @@
 
         if (!result.appEdgeColor) {
             result.appEdgeColor = normalizeHexColor(fallbackColor, getRenderedShellThemeColor());
+        }
+
+        if (!result.focusTypeHighlightFillColor) {
+            result.focusTypeHighlightFillColor = normalizeHexColor(
+                getComputedStyle(homeRoot).getPropertyValue("--pl-focus-type-picker-selection-fill-color"),
+                "#dbeafe");
+        }
+
+        if (!result.focusTypeHighlightLineColor) {
+            result.focusTypeHighlightLineColor = normalizeHexColor(
+                getComputedStyle(homeRoot).getPropertyValue("--pl-focus-type-picker-selection-line-color"),
+                "#93c5fd");
         }
 
         return result;
@@ -1918,21 +1980,58 @@
         const assetKey = getSelectedAssetKey();
         const sceneKey = layoutSceneSelect.value || "home";
         const sceneStateKey = getSelectedSceneStateKey();
+        const visibilityDraftActive = sceneStateKey !== "base"
+            && currentVisibilityDraftAssetKey === assetKey
+            && currentVisibilityDraftSceneKey === sceneKey
+            && currentVisibilityDraftStateKey === sceneStateKey
+            && typeof currentVisibilityDraftValue === "boolean";
         const behaviorDraftActive = currentBehaviorDraftAssetKey === assetKey
             && !!currentBehaviorDraftValue
             && assetSupportsBehaviorRole(assetKey);
 
         if (isVariableAsset(assetKey)) {
-            if (currentVariableDraftKey !== "appEdgeColor" || !currentVariableDraftValue) {
+            const variableKey = getVariableAssetDefinition(assetKey).variableKey;
+
+            if ((currentVariableDraftKey !== variableKey || !currentVariableDraftValue) && !visibilityDraftActive) {
                 return;
             }
 
-            sharedLayoutVariables.appEdgeColor = currentVariableDraftValue;
-            currentVariableDraftKey = null;
-            currentVariableDraftValue = null;
+            if (currentVariableDraftKey === variableKey && currentVariableDraftValue) {
+                sharedLayoutVariables[variableKey] = currentVariableDraftValue;
+                currentVariableDraftKey = null;
+                currentVariableDraftValue = null;
+            }
 
+            if (visibilityDraftActive) {
+                const existing = sharedLayoutState[assetKey] || { components: {}, text: {}, states: {} };
+                const nextStates = Object.assign({}, existing.states || {});
+                const stateStorageKey = getLayoutSceneStateStorageKey(sceneKey, sceneStateKey);
+                const defaultVisible = getDefaultSceneAssetVisibility(sceneKey, sceneStateKey, assetKey);
+
+                if (currentVisibilityDraftValue === defaultVisible) {
+                    delete nextStates[stateStorageKey];
+                }
+                else {
+                    nextStates[stateStorageKey] = {
+                        visible: currentVisibilityDraftValue
+                    };
+                }
+
+                if (Object.keys(nextStates).length > 0) {
+                    sharedLayoutState[assetKey] = {
+                        components: existing.components || {},
+                        text: existing.text || {},
+                        states: nextStates
+                    };
+                }
+                else {
+                    delete sharedLayoutState[assetKey];
+                }
+            }
+
+            discardCurrentVisibilityDraft();
             await saveSharedLayoutState();
-            applyLayoutVariables();
+            applyAllAssetLayouts();
             refreshLayoutUi();
             return;
         }
@@ -1949,12 +2048,6 @@
         const imageDraftActive = currentImageDraftAssetKey === assetKey
             && (currentImageDraftComponentKey || "root") === componentKey
             && !!currentImageDraftFile;
-        const visibilityDraftActive = sceneStateKey !== "base"
-            && currentVisibilityDraftAssetKey === assetKey
-            && currentVisibilityDraftSceneKey === sceneKey
-            && currentVisibilityDraftStateKey === sceneStateKey
-            && typeof currentVisibilityDraftValue === "boolean";
-
         if (imageDraftActive) {
             const uploadedPath = await uploadLayoutAssetArt(assetKey, currentImageDraftFile);
 
@@ -2088,6 +2181,9 @@
 
         if (isVariableAsset(assetKey)) {
             discardVariableDraft();
+            if (currentVisibilityDraftAssetKey === assetKey) {
+                discardCurrentVisibilityDraft();
+            }
             refreshLayoutUi();
             return;
         }
@@ -2123,10 +2219,19 @@
         const sceneStateKey = getSelectedSceneStateKey();
 
         if (isVariableAsset(assetKey)) {
-            beginVariableDraft("appEdgeColor", getCssLayoutVariableDefaults().appEdgeColor);
+            const variableDefinition = getVariableAssetDefinition(assetKey);
+            beginVariableDraft(variableDefinition.variableKey, getCssLayoutVariableDefaults()[variableDefinition.variableKey]);
+            if (sceneStateKey !== "base") {
+                beginVisibilityDraft(
+                    assetKey,
+                    sceneKey,
+                    sceneStateKey,
+                    getDefaultSceneAssetVisibility(sceneKey, sceneStateKey, assetKey));
+            }
             syncLayoutColorInputs(currentVariableDraftValue);
             updateLayoutCodePreview(assetKey, "root");
             updateLayoutStatusDisplay(assetKey, "root");
+            refreshLayoutUi();
             return;
         }
 
@@ -2202,8 +2307,8 @@
         const snapshotItems = cloneNormalizedLayoutItems(sharedLayoutState);
         const snapshotVariables = cloneNormalizedLayoutVariables(sharedLayoutVariables);
 
-        if (currentVariableDraftKey === "appEdgeColor" && currentVariableDraftValue) {
-            snapshotVariables.appEdgeColor = currentVariableDraftValue;
+        if (currentVariableDraftKey && currentVariableDraftValue) {
+            snapshotVariables[currentVariableDraftKey] = currentVariableDraftValue;
         }
 
         if (currentDraftAssetKey && currentDraftState) {
@@ -2657,13 +2762,26 @@
         }
 
         const result = {};
-        const appEdgeColor = normalizeHexColor(
-            variables.appEdgeColor ?? variables.AppEdgeColor ?? variables["app-edge-color"],
-            "");
+        const colorVariableDefinitions = {
+            appEdgeColor: ["appEdgeColor", "AppEdgeColor", "app-edge-color"],
+            focusTypeHighlightFillColor: ["focusTypeHighlightFillColor", "FocusTypeHighlightFillColor", "focus-type-highlight-fill-color"],
+            focusTypeHighlightLineColor: ["focusTypeHighlightLineColor", "FocusTypeHighlightLineColor", "focus-type-highlight-line-color"]
+        };
 
-        if (appEdgeColor) {
-            result.appEdgeColor = appEdgeColor;
-        }
+        Object.entries(colorVariableDefinitions).forEach(function ([normalizedKey, aliases]) {
+            const rawValue = aliases
+                .map(function (alias) {
+                    return variables[alias];
+                })
+                .find(function (value) {
+                    return value != null;
+                });
+            const normalizedColor = normalizeHexColor(rawValue, "");
+
+            if (normalizedColor) {
+                result[normalizedKey] = normalizedColor;
+            }
+        });
 
         Object.entries(variables).forEach(function ([key, value]) {
             if (!key.startsWith("assetImage:")) {
@@ -2682,7 +2800,13 @@
 
     function getCssLayoutVariableDefaults() {
         return {
-            appEdgeColor: defaultLayoutEdgeColor
+            appEdgeColor: defaultLayoutEdgeColor,
+            focusTypeHighlightFillColor: normalizeHexColor(
+                getComputedStyle(homeRoot).getPropertyValue("--pl-focus-type-picker-selection-fill-color"),
+                "#dbeafe"),
+            focusTypeHighlightLineColor: normalizeHexColor(
+                getComputedStyle(homeRoot).getPropertyValue("--pl-focus-type-picker-selection-line-color"),
+                "#93c5fd")
         };
     }
 
@@ -2748,6 +2872,34 @@
         }
     }
 
+    function applyColorCssVariable(cssVariableName, colorValue, fallbackValue) {
+        if (!homeRoot || !cssVariableName) {
+            return;
+        }
+
+        homeRoot.style.setProperty(cssVariableName, normalizeHexColor(colorValue, fallbackValue), "important");
+    }
+
+    function applyRawCssVariable(cssVariableName, rawValue) {
+        if (!homeRoot || !cssVariableName) {
+            return;
+        }
+
+        homeRoot.style.setProperty(cssVariableName, String(rawValue), "important");
+    }
+
+    function isVariableAssetVisibleInCurrentScene(assetKey) {
+        if (!assetKey || !currentVisibleSceneKey) {
+            return false;
+        }
+
+        if (!getLayoutSceneAssetKeys(currentVisibleSceneKey).includes(assetKey)) {
+            return false;
+        }
+
+        return getEffectiveSceneAssetVisibility(assetKey, currentVisibleSceneKey, currentVisibleSceneStateKey);
+    }
+
     function applyAssetImageVariable(assetKey, rawUrl, componentKey = "root") {
         const cssVariableName = getArtImageCssVariableName(assetKey, componentKey);
 
@@ -2769,6 +2921,20 @@
 
     function applyLayoutVariables() {
         applyEdgeColorVariable(getEffectiveLayoutVariable("appEdgeColor"));
+        applyColorCssVariable(
+            "--pl-focus-type-picker-selection-fill-color",
+            getEffectiveLayoutVariable("focusTypeHighlightFillColor"),
+            getCssLayoutVariableDefaults().focusTypeHighlightFillColor);
+        applyColorCssVariable(
+            "--pl-focus-type-picker-selection-line-color",
+            getEffectiveLayoutVariable("focusTypeHighlightLineColor"),
+            getCssLayoutVariableDefaults().focusTypeHighlightLineColor);
+        applyRawCssVariable(
+            "--pl-focus-type-picker-selection-fill-opacity",
+            isVariableAssetVisibleInCurrentScene(focusTypeHighlightFillAssetKey) ? "1" : "0");
+        applyRawCssVariable(
+            "--pl-focus-type-picker-selection-line-opacity",
+            isVariableAssetVisibleInCurrentScene(focusTypeHighlightLineAssetKey) ? "1" : "0");
 
         Object.keys(artImageVars).forEach(function (assetKey) {
             applyAssetImageVariable(assetKey, getEffectiveAssetImageOverride(assetKey, "root"), "root");
@@ -2801,7 +2967,11 @@
     }
 
     function isVariableAsset(assetKey) {
-        return assetKey === layoutColorAssetKey;
+        return !!variableAssetDefinitions[assetKey];
+    }
+
+    function getVariableAssetDefinition(assetKey) {
+        return variableAssetDefinitions[assetKey] || variableAssetDefinitions[layoutColorAssetKey];
     }
 
     function syncLayoutColorInputs(colorValue) {
@@ -3146,6 +3316,17 @@
         return isCountUpModeSelected() ? "countup" : "countdown";
     }
 
+    function getRenderedFocusRunningStateKey() {
+        if (layoutModeEnabled && layoutEditorEnabled && layoutSceneSelect.value === "focus-running") {
+            const selectedStateKey = getSelectedSceneStateKey();
+            return selectedStateKey === "base"
+                ? (isCountUpModeSelected() ? "countup" : "countdown")
+                : selectedStateKey;
+        }
+
+        return isCountUpModeSelected() ? "countup" : "countdown";
+    }
+
     function beginVisibilityDraft(assetKey, sceneKey, stateKey, visible) {
         currentVisibilityDraftAssetKey = assetKey;
         currentVisibilityDraftSceneKey = sceneKey;
@@ -3209,6 +3390,23 @@
         const rootLabel = getAssetRootComponentLabel(assetKey);
 
         if (assetSupportsEditableText(assetKey)) {
+            if (isCustomTextAsset(assetKey)) {
+                return {
+                    root: {
+                        label: rootLabel,
+                        geometryMode: "text-box-asset",
+                        allowsHitScale: false,
+                        status: "Moves this text box on the stage and controls the bounds that its copy wraps inside."
+                    },
+                    text: {
+                        label: "text",
+                        geometryMode: "text",
+                        allowsHitScale: false,
+                        status: "Moves and styles the overlaid text independently inside this asset."
+                    }
+                };
+            }
+
             if (isSelfLabeledTextAsset(assetKey)) {
                 return {
                     text: {
@@ -3274,7 +3472,9 @@
         assetKeys.forEach(function (assetKey) {
             const option = document.createElement("option");
             option.value = assetKey;
-            option.textContent = isVariableAsset(assetKey) ? layoutColorAssetLabel : assetKey;
+            option.textContent = isVariableAsset(assetKey)
+                ? getVariableAssetDefinition(assetKey).label
+                : assetKey;
             layoutAssetSelect.appendChild(option);
         });
 
@@ -3376,13 +3576,24 @@
     }
 
     function updateLayoutColorDraft(rawValue) {
-        const normalized = normalizeHexColor(rawValue, layoutColorPicker?.value || defaultLayoutEdgeColor);
+        const selectedAssetKey = getSelectedAssetKey();
+        const variableAssetKey = isVariableAsset(selectedAssetKey)
+            ? selectedAssetKey
+            : layoutColorAssetKey;
+        const variableDefinition = getVariableAssetDefinition(variableAssetKey);
+        const fallbackValue = getEffectiveLayoutVariable(variableDefinition.variableKey)
+            || getCssLayoutVariableDefaults()[variableDefinition.variableKey]
+            || defaultLayoutEdgeColor;
+        const normalized = normalizeHexColor(rawValue, layoutColorPicker?.value || fallbackValue);
 
-        ensureLayoutColorAssetSelected();
+        if (!isVariableAsset(selectedAssetKey)) {
+            ensureLayoutColorAssetSelected();
+        }
+
         syncLayoutColorInputs(normalized);
-        beginVariableDraft("appEdgeColor", normalized);
-        updateLayoutCodePreview(layoutColorAssetKey, "root");
-        updateLayoutStatusDisplay(layoutColorAssetKey, "root");
+        beginVariableDraft(variableDefinition.variableKey, normalized);
+        updateLayoutCodePreview(variableAssetKey, "root");
+        updateLayoutStatusDisplay(variableAssetKey, "root");
     }
 
     function ensureLayoutVariableControls() {
@@ -3394,7 +3605,7 @@
         layoutColorField.className = "pl-field";
         layoutColorField.hidden = true;
         layoutColorField.innerHTML = `
-      <span class="pl-field-label">Shell background</span>
+      <span class="pl-field-label" id="pl-layout-edge-color-label">Shell background</span>
       <div class="pl-layout-range-with-number">
         <input class="pl-input" id="pl-layout-edge-color-picker" type="color" value="${defaultLayoutEdgeColor}" />
         <input class="pl-input pl-layout-number-input" id="pl-layout-edge-color-text" type="text" value="${defaultLayoutEdgeColor.toUpperCase()}" spellcheck="false" autocomplete="off" />
@@ -3774,7 +3985,6 @@
         const stateKey = getSelectedSceneStateKey();
         const sceneSupportsStateVisibility = getLayoutSceneStateKeys(sceneKey).length > 1;
         const shouldShow = !!assetKey
-            && !isVariableAsset(assetKey)
             && isRootComponent(getSelectedComponentKey())
             && sceneSupportsStateVisibility
             && !isSceneBuilderModeSelected();
@@ -3967,6 +4177,8 @@
         layoutNewTextAssetKey.value = "";
         layoutNewTextAssetContent.value = "";
         await saveSharedLayoutState();
+        currentLayoutEditorMode = "layout";
+        layoutEditorModeSelect.value = "layout";
         setActiveLayoutScene(sceneKey, assetKey, "text", getSelectedSceneStateKey());
         refreshLayoutUi();
     }
@@ -4178,13 +4390,17 @@
         }
 
         const isSelfLabeledAsset = assetElement === labelElement;
+        const textScale = getAssetStageType(assetKey) === "world"
+            ? Math.max(0.0001, getWorldStageScale())
+            : Math.max(0.0001, getUiProjectionScale());
+        const scaledFontSize = Math.max(8, (textState.fontSize || 16) * textScale);
 
         labelElement.textContent = textState.content;
         labelElement.style.display = "block";
         labelElement.style.pointerEvents = isSelfLabeledAsset ? "auto" : "none";
         labelElement.style.textAlign = "center";
         labelElement.style.fontFamily = textState.fontFamily || layoutTextFontFamilyOptions[0].value;
-        labelElement.style.fontSize = `${Math.max(8, Math.round(textState.fontSize || 16))}px`;
+        labelElement.style.fontSize = `${scaledFontSize}px`;
         labelElement.style.fontWeight = textState.bold ? "900" : "400";
         labelElement.style.fontStyle = textState.italic ? "italic" : "normal";
         labelElement.style.color = normalizeHexColor(textState.color, "#ffffff");
@@ -4193,7 +4409,7 @@
             assetElement.style.display = "flex";
             assetElement.style.alignItems = "center";
             assetElement.style.justifyContent = "center";
-            assetElement.style.padding = "0.25rem 0.4rem";
+            assetElement.style.padding = `${0.25 * textScale}rem ${0.4 * textScale}rem`;
             assetElement.style.boxSizing = "border-box";
             assetElement.style.overflow = "hidden";
             labelElement.style.whiteSpace = "pre-wrap";
@@ -4206,11 +4422,20 @@
         labelElement.style.position = "absolute";
         labelElement.style.left = "50%";
         labelElement.style.top = "50%";
-        labelElement.style.transform = `translate(-50%, -50%) translate(${Math.round(textState.x)}px, ${Math.round(textState.y)}px)`;
+        labelElement.style.transform = `translate(-50%, -50%) translate(${textState.x * textScale}px, ${textState.y * textScale}px)`;
         labelElement.style.width = "max-content";
         labelElement.style.maxWidth = "90%";
         labelElement.style.whiteSpace = "nowrap";
         labelElement.style.lineHeight = "1";
+    }
+
+    function applyRuntimeSafeUiTypography() {
+        const safeUiScale = Math.max(0.0001, getUiProjectionScale());
+        const durationFontSizePx = Math.max(12, 1.45 * 16 * safeUiScale);
+        const pickerFontSizePx = Math.max(12, 1.25 * 16 * safeUiScale);
+
+        durationText.style.fontSize = `${durationFontSizePx}px`;
+        focusTypePicker.style.setProperty("--pl-focus-type-picker-font-size", `${pickerFontSizePx}px`);
     }
 
     function updateSliderVisuals() {
@@ -4321,7 +4546,7 @@
             && layoutSceneSelect.value === "focus-setup"
             && getRenderedFocusSetupStateKey() === "countup";
         const formatted = (countUpPreviewSelected || isCountUpModeSelected())
-            ? formatClock(0)
+            ? formatDurationLabel(0)
             : formatDurationSelection(parseInt(durationSlider.value || "5", 10));
         durationText.textContent = formatted;
         updateSliderVisuals();
@@ -4357,11 +4582,11 @@
         }
 
         if (isSelfLabeledTextAsset(assetKey)) {
-            const stageScale = Math.max(0.0001, getSafeUiStageScale());
-            element.style.left = `${state.x / stageScale}px`;
-            element.style.top = `${state.y / stageScale}px`;
-            element.style.width = `${state.width / stageScale}px`;
-            element.style.height = `${resolvedHeight / stageScale}px`;
+            const projected = getSelfLabeledProjectedRect(assetKey, state);
+            element.style.left = `${projected.left}px`;
+            element.style.top = `${projected.top}px`;
+            element.style.width = `${projected.width}px`;
+            element.style.height = `${projected.height}px`;
             element.style.transform = "scale(1)";
             return;
         }
@@ -4384,6 +4609,7 @@
     function applyAllAssetLayouts() {
         Object.keys(layoutAssets).forEach(applyAssetLayout);
         Object.keys(layoutTextAssets).forEach(applyAssetTextStyle);
+        applyRuntimeSafeUiTypography();
         applyLayoutVariables();
         refreshLayoutSelection();
         applyButtonArtStates();
@@ -4447,6 +4673,55 @@
         return !!(artMetrics[assetKey] && artMetrics[assetKey].canvasRatio > 0);
     }
 
+    function getVariableAssetCssVariableName(assetKey) {
+        if (assetKey === layoutColorAssetKey) {
+            return layoutEdgeColorVariableName;
+        }
+
+        if (assetKey === focusTypeHighlightFillAssetKey) {
+            return "--pl-focus-type-picker-selection-fill-color";
+        }
+
+        if (assetKey === focusTypeHighlightLineAssetKey) {
+            return "--pl-focus-type-picker-selection-line-color";
+        }
+
+        return null;
+    }
+
+    function getVariableAssetStatusDefinition(assetKey) {
+        if (assetKey === layoutColorAssetKey) {
+            return {
+                stageStatus: "Shell background · colors the edge fill outside the authored canvas.",
+                safeZoneStatus: "Used for desktop chrome and the iPhone edge / bottom-bar tint fallback.",
+                saveHint: "Press Save Selected to keep this shell background color. It is saved through LayoutSync and mirrored into the theme-color meta."
+            };
+        }
+
+        if (assetKey === focusTypeHighlightFillAssetKey) {
+            return {
+                stageStatus: "Picker highlight fill · colors the selected focus strip.",
+                safeZoneStatus: "Used behind the currently centred focus type label inside the picker box.",
+                saveHint: "Press Save Selected to keep this highlight fill color."
+            };
+        }
+
+        if (assetKey === focusTypeHighlightLineAssetKey) {
+            return {
+                stageStatus: "Picker highlight lines · colors the selected strip borders.",
+                safeZoneStatus: "Used for the top and bottom separator lines around the currently centred focus type.",
+                saveHint: "Press Save Selected to keep these highlight line colors."
+            };
+        }
+
+        const definition = getVariableAssetDefinition(assetKey);
+        return {
+            stageStatus: `${definition?.label || assetKey} · editable theme color.`,
+            safeZoneStatus: definition?.hint || "Saved through LayoutSync as a shared UI color.",
+            saveHint: "Press Save Selected to keep this color."
+        };
+    }
+
     function updateLayoutSliderBounds(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
             return;
@@ -4498,8 +4773,12 @@
         const sceneStateKey = getSelectedSceneStateKey();
 
         if (isVariableAsset(assetKey)) {
-            layoutCode.value =
-                `:root {\n  --pl-art-app-edge-color: ${getEffectiveLayoutVariable("appEdgeColor")};\n}`;
+            const definition = getVariableAssetDefinition(assetKey);
+            const cssVariableName = getVariableAssetCssVariableName(assetKey);
+
+            layoutCode.value = cssVariableName
+                ? `:root {\n  ${cssVariableName}: ${getEffectiveLayoutVariable(definition.variableKey)};\n}`
+                : "";
             return;
         }
 
@@ -4593,14 +4872,17 @@
     }
     function updateLayoutStatusDisplay(assetKey, componentKey) {
         if (isVariableAsset(assetKey)) {
-            layoutStageStatus.textContent = "Shell background · colors the edge fill outside the authored canvas.";
-            layoutSafeZoneStatus.textContent = "Used for desktop chrome and the iPhone edge / bottom-bar tint fallback.";
-            layoutScaleValue.textContent = getEffectiveLayoutVariable("appEdgeColor").toUpperCase();
+            const definition = getVariableAssetDefinition(assetKey);
+            const statusDefinition = getVariableAssetStatusDefinition(assetKey);
+
+            layoutStageStatus.textContent = statusDefinition.stageStatus;
+            layoutSafeZoneStatus.textContent = statusDefinition.safeZoneStatus;
+            layoutScaleValue.textContent = getEffectiveLayoutVariable(definition.variableKey).toUpperCase();
             layoutXValue.textContent = "Not position-based";
             layoutYValue.textContent = "Not position-based";
 
             if (layoutColorHint) {
-                layoutColorHint.textContent = "Press Save Selected to keep this shell background color. It is saved through LayoutSync and mirrored into the theme-color meta.";
+                layoutColorHint.textContent = statusDefinition.saveHint;
             }
 
             return;
@@ -4937,12 +5219,21 @@
         }
 
         if (isVariableAsset(assetKey)) {
+            const variableDefinition = getVariableAssetDefinition(assetKey);
+            const layoutColorLabel = document.getElementById("pl-layout-edge-color-label");
+
             setLayoutColorFieldHidden(false);
             setLayoutTextControlsHidden(true);
             applyGeometryModeForSelection(assetKey, componentKey);
-            previewLayoutAsset("home-scene");
+            previewLayoutAsset(assetKey);
             applyAllAssetLayouts();
-            syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
+            if (layoutColorLabel) {
+                layoutColorLabel.textContent = variableDefinition.fieldLabel;
+            }
+            if (layoutColorHint) {
+                layoutColorHint.textContent = variableDefinition.hint;
+            }
+            syncLayoutColorInputs(getEffectiveLayoutVariable(variableDefinition.variableKey));
             updateLayoutCodePreview(assetKey, componentKey);
             updateLayoutStatusDisplay(assetKey, componentKey);
             refreshLayoutSelection();
@@ -4951,6 +5242,13 @@
         }
 
         setLayoutColorFieldHidden(true);
+        if (layoutColorHint) {
+            layoutColorHint.textContent = getVariableAssetDefinition(layoutColorAssetKey).hint;
+        }
+        const layoutColorLabel = document.getElementById("pl-layout-edge-color-label");
+        if (layoutColorLabel) {
+            layoutColorLabel.textContent = getVariableAssetDefinition(layoutColorAssetKey).fieldLabel;
+        }
         syncLayoutColorInputs(getEffectiveLayoutVariable("appEdgeColor"));
         previewLayoutAsset(assetKey);
         updateLayoutSliderBounds(assetKey, componentKey);
@@ -5338,6 +5636,9 @@
             getSelectedAssetKey(),
             getSelectedComponentKey(),
             getSelectedSceneStateKey());
+        const nextVariableDefinition = isVariableAsset(newAssetKey)
+            ? getVariableAssetDefinition(newAssetKey)
+            : null;
 
         if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
             discardCurrentDraft();
@@ -5347,7 +5648,7 @@
             discardCurrentTextDraft();
         }
 
-        if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
+        if (currentVariableDraftKey && (!nextVariableDefinition || nextVariableDefinition.variableKey !== currentVariableDraftKey)) {
             discardVariableDraft();
         }
 
@@ -5386,6 +5687,9 @@
 
     function handleLayoutAssetChange() {
         const newAssetKey = getSelectedAssetKey();
+        const nextVariableDefinition = isVariableAsset(newAssetKey)
+            ? getVariableAssetDefinition(newAssetKey)
+            : null;
 
         if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
             discardCurrentDraft();
@@ -5395,7 +5699,7 @@
             discardCurrentTextDraft();
         }
 
-        if (currentVariableDraftKey && newAssetKey !== layoutColorAssetKey) {
+        if (currentVariableDraftKey && (!nextVariableDefinition || nextVariableDefinition.variableKey !== currentVariableDraftKey)) {
             discardVariableDraft();
         }
 
@@ -5506,7 +5810,7 @@
         const sceneKey = layoutSceneSelect.value || "home";
         const stateKey = getSelectedSceneStateKey();
 
-        if (!assetKey || isVariableAsset(assetKey) || stateKey === "base") {
+        if (!assetKey || stateKey === "base") {
             refreshLayoutUi();
             return;
         }
@@ -5730,6 +6034,50 @@
     //#endregion SEGMENT I - Layout Selection, Drag, And Slider Pointer Handling
 
     //#region SEGMENT J1 - Screen State Previews And Visibility
+    function getRenderedSceneStateKey(sceneKey) {
+        if (sceneKey === "focus-running") {
+            return getRenderedFocusRunningStateKey();
+        }
+
+        if (sceneKey === "focus-setup") {
+            return getRenderedFocusSetupStateKey();
+        }
+
+        return "base";
+    }
+
+    function getSetupSceneVisibilityTarget() {
+        const sceneKey = currentVisibleSceneKey === "focus-running" ? "focus-running" : "focus-setup";
+        return {
+            sceneKey: sceneKey,
+            sceneStateKey: getRenderedSceneStateKey(sceneKey)
+        };
+    }
+
+    function getSceneAssetVisibilityTarget(assetKey, sceneKey) {
+        if (sceneKey === "focus-running") {
+            const runningAssetKeys = getLayoutSceneAssetKeys("focus-running");
+            if (runningAssetKeys.includes(assetKey)) {
+                return {
+                    sceneKey: "focus-running",
+                    sceneStateKey: getRenderedFocusRunningStateKey()
+                };
+            }
+
+            if (getLayoutSceneAssetKeys("focus-setup").includes(assetKey)) {
+                return {
+                    sceneKey: "focus-setup",
+                    sceneStateKey: getRenderedFocusSetupStateKey()
+                };
+            }
+        }
+
+        return {
+            sceneKey: sceneKey,
+            sceneStateKey: getRenderedSceneStateKey(sceneKey)
+        };
+    }
+
     function syncLayoutSceneToVisibleState(sceneKey) {
         if (!layoutModeEnabled || layoutEditorEnabled) {
             return;
@@ -5737,17 +6085,15 @@
 
         const preservedAssetKey = getSelectedAssetKey();
         const preservedComponentKey = getSelectedComponentKey();
-        const previewStateKey = sceneKey === "focus-setup"
-            ? getRenderedFocusSetupStateKey()
-            : "base";
+        const previewStateKey = getRenderedSceneStateKey(sceneKey);
 
         setActiveLayoutScene(sceneKey, preservedAssetKey, preservedComponentKey, previewStateKey);
     }
 
     function setSetupChildrenVisible(isVisible) {
-        const sceneStateKey = getRenderedFocusSetupStateKey();
+        const visibilityTarget = getSetupSceneVisibilityTarget();
         const isAssetVisible = function (assetKey) {
-            return isVisible && getEffectiveSceneAssetVisibility(assetKey, "focus-setup", sceneStateKey);
+            return isVisible && getEffectiveSceneAssetVisibility(assetKey, visibilityTarget.sceneKey, visibilityTarget.sceneStateKey);
         };
 
         focusTypeLabel.hidden = !isAssetVisible("focus-type-label");
@@ -5773,19 +6119,17 @@
     }
 
     function setSetupVisible(isVisible) {
-        const sceneStateKey = getRenderedFocusSetupStateKey();
-        setupPanel.hidden = !(isVisible && getEffectiveSceneAssetVisibility("setup-panel", "focus-setup", sceneStateKey));
-        startFocusButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("start", "focus-setup", sceneStateKey));
-        closeFocusButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("back", "focus-setup", sceneStateKey));
-        manageButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("manage-button", "focus-setup", sceneStateKey));
+        const visibilityTarget = getSetupSceneVisibilityTarget();
+        setupPanel.hidden = !(isVisible && getEffectiveSceneAssetVisibility("setup-panel", visibilityTarget.sceneKey, visibilityTarget.sceneStateKey));
+        startFocusButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("start", "focus-setup", getRenderedFocusSetupStateKey()));
+        closeFocusButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("back", "focus-setup", getRenderedFocusSetupStateKey()));
+        manageButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("manage-button", "focus-setup", getRenderedFocusSetupStateKey()));
         setSetupChildrenVisible(isVisible);
-        syncTimerModeUi(sceneStateKey);
+        syncTimerModeUi(visibilityTarget.sceneStateKey);
 
         if (isVisible) {
             requestAnimationFrame(function () {
-                syncFocusTypePickerPadding();
                 scrollFocusTypePickerToIndex(focusTypePickerSelectedIndex, "auto");
-                refreshFocusTypePickerSelectionStyles();
             });
         }
     }
@@ -5852,6 +6196,7 @@
         setRunVisible(false);
         setConfirmVisible(false);
         setRewardVisible(false);
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("home");
     }
@@ -5868,6 +6213,7 @@
         setupPanel.classList.remove("pl-setup-panel-locked");
         setSetupChildrenLocked(false);
         updateDurationReadout();
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("focus-setup");
     }
@@ -5890,27 +6236,28 @@
             syncFocusManageButtons();
         }
 
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("focus-manage");
     }
 
     function showRunStatePreview() {
         const previewSeconds = isCountUpModeSelected() ? 4800 : 1500;
-        const previewLabel = isCountUpModeSelected()
-            ? formatClock(previewSeconds)
-            : formatDurationLabel(previewSeconds);
+        const previewLabel = formatDurationLabel(previewSeconds);
 
         showSetupState();
         currentVisibleSceneKey = "focus-running";
-        currentVisibleSceneStateKey = "base";
+        currentVisibleSceneStateKey = getRenderedFocusRunningStateKey();
         setupPanel.classList.add("pl-setup-panel-locked");
         setSetupChildrenLocked(true);
+        setSetupChildrenVisible(true);
         setRunVisible(true);
         countdownModeButton.hidden = true;
         countUpModeButton.hidden = true;
         durationText.textContent = previewLabel;
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Stop Focusing");
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("focus-running");
     }
@@ -5922,6 +6269,7 @@
         setConfirmVisible(true);
         activeConfirmContext = "stop";
         updateConfirmPanel(600);
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("stop-confirm");
     }
@@ -5939,6 +6287,7 @@
         rewardDurationText.textContent = "00:25:00";
         rewardXp.textContent = "2500";
         rewardCoins.textContent = "25";
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         syncLayoutSceneToVisibleState("reward");
     }
@@ -5950,9 +6299,10 @@
                 return;
             }
 
-            const isVisibleInScene = getLayoutSceneAssetKeys(currentVisibleSceneKey).includes(assetKey)
-                && getEffectiveSceneAssetVisibility(assetKey, currentVisibleSceneKey, currentVisibleSceneStateKey);
-            const isBuiltInDefault = !!layoutSceneDefinitions[currentVisibleSceneKey]?.assets?.includes(assetKey);
+            const visibilityTarget = getSceneAssetVisibilityTarget(assetKey, currentVisibleSceneKey);
+            const isVisibleInScene = getLayoutSceneAssetKeys(visibilityTarget.sceneKey).includes(assetKey)
+                && getEffectiveSceneAssetVisibility(assetKey, visibilityTarget.sceneKey, visibilityTarget.sceneStateKey);
+            const isBuiltInDefault = !!layoutSceneDefinitions[visibilityTarget.sceneKey]?.assets?.includes(assetKey);
 
             if (config.dynamic) {
                 config.element.hidden = !isVisibleInScene;
@@ -5969,6 +6319,8 @@
                 return;
             }
         });
+
+        updateRuntimeMutedVisualState();
     }
 
     function previewLayoutAsset(assetKey) {
@@ -6055,6 +6407,10 @@
     }
 
     function openFocusManage() {
+        if (isRunning || isPaused || isSubmitting) {
+            return;
+        }
+
         showFocusManageState(false);
     }
 
@@ -6125,18 +6481,25 @@
         return matchIndex >= 0 ? matchIndex : 0;
     }
 
-    function syncFocusTypePickerPadding() {
-        const viewportHeight = focusTypePickerViewport.clientHeight;
+    function getFocusTypePickerViewportCenterOffset() {
+        return Math.max(0, (focusTypePickerViewport.clientHeight - getFocusTypePickerItemHeight()) / 2);
+    }
 
-        if (viewportHeight <= 0) {
+    function getFocusTypePickerMaxPosition() {
+        return Math.max(0, (Math.max(savedFocusLabels.length - 1, 0)) * getFocusTypePickerItemHeight());
+    }
+
+    function clampFocusTypePickerPosition(positionPx) {
+        return Math.max(0, Math.min(getFocusTypePickerMaxPosition(), positionPx));
+    }
+
+    function cancelFocusTypePickerAnimation() {
+        if (!focusTypePickerAnimationFrameId) {
             return;
         }
 
-        const itemHeight = getFocusTypePickerItemHeight();
-        const verticalPadding = Math.max(0, Math.round((viewportHeight - itemHeight) / 2));
-
-        focusTypePickerList.style.paddingTop = `${verticalPadding}px`;
-        focusTypePickerList.style.paddingBottom = `${verticalPadding}px`;
+        cancelAnimationFrame(focusTypePickerAnimationFrameId);
+        focusTypePickerAnimationFrameId = 0;
     }
 
     function setFocusTypeValue(nextValue) {
@@ -6152,6 +6515,11 @@
         homeRoot.dataset.focusLabels = JSON.stringify(savedFocusLabels);
     }
 
+    function applyFocusTypePickerPosition() {
+        const translateY = getFocusTypePickerViewportCenterOffset() - focusTypePickerPositionPx;
+        focusTypePickerList.style.transform = `translateY(${translateY}px)`;
+    }
+
     function refreshFocusTypePickerSelectionStyles() {
         const pickerItems = focusTypePickerList.querySelectorAll(".pl-focus-type-picker-item");
 
@@ -6161,16 +6529,16 @@
         }
 
         const itemHeight = getFocusTypePickerItemHeight();
-        const viewportCenter = focusTypePickerViewport.scrollTop + (focusTypePickerViewport.clientHeight / 2);
+        const viewportCenter = focusTypePickerViewport.clientHeight / 2;
         const touchInteractionActive = isFocusTypePickerInteractionActive() && focusTypePickerPointerState?.pointerType === "touch";
         let activeItemId = "";
 
         pickerItems.forEach(function (item, index) {
-            const itemCenter = item.offsetTop + (item.offsetHeight / 2);
+            const itemCenter = (getFocusTypePickerViewportCenterOffset() - focusTypePickerPositionPx) + (index * itemHeight) + (itemHeight / 2);
             const distance = Math.abs(itemCenter - viewportCenter);
             const normalizedDistance = Math.min(1, distance / Math.max(itemHeight * 1.15, 1));
             const scale = touchInteractionActive
-                ? 1.18 - (normalizedDistance * 0.72)
+                ? 1 - (normalizedDistance * 0.28)
                 : 1 - (normalizedDistance * 0.2);
             const opacity = 1 - (normalizedDistance * 0.82);
             const isSelected = !touchInteractionActive && index === focusTypePickerSelectedIndex;
@@ -6193,37 +6561,59 @@
         }
     }
 
+    function setFocusTypePickerPosition(positionPx) {
+        focusTypePickerPositionPx = clampFocusTypePickerPosition(positionPx);
+        applyFocusTypePickerPosition();
+        refreshFocusTypePickerSelectionStyles();
+    }
+
+    function animateFocusTypePickerToPosition(targetPositionPx) {
+        cancelFocusTypePickerAnimation();
+
+        const clampedTarget = clampFocusTypePickerPosition(targetPositionPx);
+
+        function step() {
+            const delta = clampedTarget - focusTypePickerPositionPx;
+
+            if (Math.abs(delta) <= 0.5) {
+                focusTypePickerPositionPx = clampedTarget;
+                applyFocusTypePickerPosition();
+                refreshFocusTypePickerSelectionStyles();
+                focusTypePickerAnimationFrameId = 0;
+                return;
+            }
+
+            focusTypePickerPositionPx += delta * 0.22;
+            applyFocusTypePickerPosition();
+            refreshFocusTypePickerSelectionStyles();
+            focusTypePickerAnimationFrameId = requestAnimationFrame(step);
+        }
+
+        focusTypePickerAnimationFrameId = requestAnimationFrame(step);
+    }
+
     function scrollFocusTypePickerToIndex(index, behavior = "auto") {
         if (focusTypeField.hidden || focusTypePickerViewport.clientHeight <= 0) {
             return;
         }
 
-        syncFocusTypePickerPadding();
-
         const targetIndex = clampFocusTypePickerIndex(index);
-        const top = getFocusTypePickerItemHeight() * targetIndex;
+        const targetPosition = getFocusTypePickerItemHeight() * targetIndex;
 
-        focusTypePickerViewport.scrollTo({
-            top,
-            behavior
-        });
-    }
+        if (behavior === "smooth") {
+            animateFocusTypePickerToPosition(targetPosition);
+            return;
+        }
 
-    function getClampedFocusTypePickerScrollTop() {
-        const maxScrollTop = Math.max(
-            0,
-            focusTypePickerViewport.scrollHeight - focusTypePickerViewport.clientHeight);
-
-        return Math.max(0, Math.min(maxScrollTop, focusTypePickerViewport.scrollTop));
+        setFocusTypePickerPosition(targetPosition);
     }
 
     function snapFocusTypePickerToNearest(behavior = "smooth") {
         const targetIndex = clampFocusTypePickerIndex(
-            Math.round(getClampedFocusTypePickerScrollTop() / Math.max(getFocusTypePickerItemHeight(), 1)));
+            Math.round(focusTypePickerPositionPx / Math.max(getFocusTypePickerItemHeight(), 1)));
 
         setFocusTypeValue(savedFocusLabels[targetIndex] || savedFocusLabels[0] || "Focus");
         scrollFocusTypePickerToIndex(targetIndex, behavior);
-        refreshFocusTypePickerSelectionStyles();
     }
 
     function isFocusTypePickerInteractionActive() {
@@ -6241,56 +6631,8 @@
             if (isFocusTypePickerInteractionActive()) {
                 return;
             }
-
-            const currentScrollTop = focusTypePickerViewport.scrollTop;
-            const clampedScrollTop = getClampedFocusTypePickerScrollTop();
-            const isOutOfBounds = Math.abs(currentScrollTop - clampedScrollTop) > 0.5;
-
-            if (isOutOfBounds && focusTypePickerSettleAttemptCount < 8) {
-                focusTypePickerSettleAttemptCount += 1;
-                focusTypePickerViewport.scrollTo({
-                    top: clampedScrollTop,
-                    behavior: "smooth"
-                });
-                scheduleFocusTypePickerSnap(90);
-                return;
-            }
-
-            focusTypePickerSettleAttemptCount = 0;
             snapFocusTypePickerToNearest("smooth");
         }, delayMs);
-    }
-
-    function handleFocusTypePickerScroll() {
-        if (focusTypePickerScrollSyncFrameId) {
-            cancelAnimationFrame(focusTypePickerScrollSyncFrameId);
-        }
-
-        focusTypePickerScrollSyncFrameId = requestAnimationFrame(function () {
-            focusTypePickerScrollSyncFrameId = 0;
-
-            const touchInteractionActive = isFocusTypePickerInteractionActive() && focusTypePickerPointerState?.pointerType === "touch";
-
-            if (!touchInteractionActive) {
-                const targetIndex = clampFocusTypePickerIndex(
-                    Math.round(focusTypePickerViewport.scrollTop / Math.max(getFocusTypePickerItemHeight(), 1)));
-
-                setFocusTypeValue(savedFocusLabels[targetIndex] || savedFocusLabels[0] || "Focus");
-            }
-
-            refreshFocusTypePickerSelectionStyles();
-        });
-
-        if (isFocusTypePickerInteractionActive()) {
-            return;
-        }
-
-        if (Date.now() - focusTypePickerLastTouchInteractionAt < 260) {
-            scheduleFocusTypePickerSnap(260);
-            return;
-        }
-
-        scheduleFocusTypePickerSnap(180);
     }
 
     function handleFocusTypePickerPointerDown(event) {
@@ -6298,16 +6640,14 @@
             return;
         }
 
-        if (event.pointerType === "touch") {
-            focusTypePickerLastTouchInteractionAt = Date.now();
-            focusTypePickerViewport.classList.add("pl-focus-type-picker-viewport-touch-active");
-        }
+        cancelFocusTypePickerAnimation();
+        focusTypePicker.classList.toggle("pl-focus-type-picker-dragging", event.pointerType === "touch");
 
         focusTypePickerPointerState = {
             pointerId: event.pointerId,
             pointerType: event.pointerType || "mouse",
             startClientY: event.clientY,
-            startScrollTop: focusTypePickerViewport.scrollTop,
+            startPositionPx: focusTypePickerPositionPx,
             moved: false
         };
 
@@ -6322,10 +6662,7 @@
         }
 
         const deltaY = event.clientY - focusTypePickerPointerState.startClientY;
-        const maxScrollTop = Math.max(
-            0,
-            focusTypePickerViewport.scrollHeight - focusTypePickerViewport.clientHeight);
-        const desiredScrollTop = focusTypePickerPointerState.startScrollTop - deltaY;
+        const desiredPosition = focusTypePickerPointerState.startPositionPx - deltaY;
 
         if (Math.abs(deltaY) > 3) {
             focusTypePickerPointerState.moved = true;
@@ -6335,17 +6672,8 @@
             return;
         }
 
-        if (focusTypePickerPointerState.pointerType === "touch") {
-            focusTypePickerLastTouchInteractionAt = Date.now();
-            event.preventDefault();
-            focusTypePickerViewport.scrollTop = Math.max(0, Math.min(maxScrollTop, desiredScrollTop));
-            handleFocusTypePickerScroll();
-            return;
-        }
-
         event.preventDefault();
-        focusTypePickerViewport.scrollTop = desiredScrollTop;
-        handleFocusTypePickerScroll();
+        setFocusTypePickerPosition(desiredPosition);
     }
 
     function handleFocusTypePickerPointerUp(event) {
@@ -6353,9 +6681,7 @@
             return;
         }
 
-        if (focusTypePickerPointerState.pointerType === "touch") {
-            focusTypePickerViewport.classList.remove("pl-focus-type-picker-viewport-touch-active");
-        }
+        focusTypePicker.classList.remove("pl-focus-type-picker-dragging");
 
         if (typeof focusTypePickerViewport.releasePointerCapture === "function") {
             try {
@@ -6372,12 +6698,7 @@
 
         if (focusTypePickerPointerState.moved || focusTypePickerPointerState.pointerType === "touch") {
             focusTypePickerSuppressClickUntil = Date.now() + 180;
-            focusTypePickerSettleAttemptCount = 0;
-            if (focusTypePickerPointerState.pointerType === "touch") {
-                focusTypePickerLastTouchInteractionAt = Date.now();
-            }
-
-            scheduleFocusTypePickerSnap(focusTypePickerPointerState.pointerType === "touch" ? 320 : 120);
+            scheduleFocusTypePickerSnap(focusTypePickerPointerState.pointerType === "touch" ? 0 : 120);
         }
 
         focusTypePickerPointerState = null;
@@ -6389,8 +6710,9 @@
         }
 
         event.preventDefault();
-        focusTypePickerViewport.scrollTop += event.deltaY * 0.18;
-        handleFocusTypePickerScroll();
+        cancelFocusTypePickerAnimation();
+        setFocusTypePickerPosition(focusTypePickerPositionPx + (event.deltaY * 0.18));
+        scheduleFocusTypePickerSnap(180);
     }
 
     function renderFocusTypePicker() {
@@ -6415,7 +6737,6 @@
 
                 setFocusTypeValue(label);
                 scrollFocusTypePickerToIndex(index, "smooth");
-                refreshFocusTypePickerSelectionStyles();
             });
 
             focusTypePickerList.appendChild(pickerItem);
@@ -6424,9 +6745,7 @@
         setFocusTypeValue(focusTypeInput.value || savedFocusLabels[0] || "Focus");
 
         requestAnimationFrame(function () {
-            syncFocusTypePickerPadding();
             scrollFocusTypePickerToIndex(focusTypePickerSelectedIndex, "auto");
-            refreshFocusTypePickerSelectionStyles();
         });
     }
 
@@ -7020,8 +7339,12 @@
         }
 
         selectedTimerMode = "countdown";
+        if (currentVisibleSceneKey === "focus-setup") {
+            currentVisibleSceneStateKey = getRenderedFocusSetupStateKey();
+        }
         syncTimerModeUi();
         setSetupChildrenVisible(!setupPanel.hidden);
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         updateDurationReadout();
         refreshLayoutUi();
@@ -7033,8 +7356,12 @@
         }
 
         selectedTimerMode = "countup";
+        if (currentVisibleSceneKey === "focus-setup") {
+            currentVisibleSceneStateKey = getRenderedFocusSetupStateKey();
+        }
         syncTimerModeUi();
         setSetupChildrenVisible(!setupPanel.hidden);
+        applyLayoutVariables();
         applySceneMembershipVisibility();
         updateDurationReadout();
         refreshLayoutUi();
@@ -7068,7 +7395,8 @@
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Cancel");
         currentVisibleSceneKey = "focus-running";
-        currentVisibleSceneStateKey = "base";
+        currentVisibleSceneStateKey = getRenderedFocusRunningStateKey();
+        setSetupChildrenVisible(true);
         applySceneMembershipVisibility();
 
         updateUi();
@@ -7120,7 +7448,8 @@
             isRunning = true;
             activeConfirmContext = "stop";
             currentVisibleSceneKey = "focus-running";
-            currentVisibleSceneStateKey = "base";
+            currentVisibleSceneStateKey = getRenderedFocusRunningStateKey();
+            setSetupChildrenVisible(true);
             applySceneMembershipVisibility();
             updateUi();
         }
@@ -7144,6 +7473,10 @@
                 openFocusSetup();
                 return;
             case "open-focus-manage":
+                if (isRunning || isPaused || isSubmitting) {
+                    return;
+                }
+
                 openFocusManage();
                 return;
             case "return-home":
@@ -7199,6 +7532,7 @@
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Cancel");
         updateDurationReadout();
+        updateRuntimeMutedVisualState();
     }
 
     function getElapsedSeconds() {
@@ -7212,6 +7546,24 @@
 
         const liveElapsed = Math.floor((Date.now() - startedAtMs) / 1000);
         return Math.max(0, liveElapsed);
+    }
+
+    function updateRuntimeMutedVisualState() {
+        const sessionActive = isRunning || isPaused;
+
+        manageButton.classList.toggle("pl-runtime-muted", sessionActive);
+        durationText.classList.toggle("pl-runtime-muted", isPaused);
+
+        Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
+            if (!isCustomTextAsset(assetKey) || !config?.dynamic) {
+                return;
+            }
+
+            const shouldMuteCustomRunningText = sessionActive
+                && currentVisibleSceneKey === "focus-running"
+                && !config.element.hidden;
+            config.element.classList.toggle("pl-runtime-muted", shouldMuteCustomRunningText);
+        });
     }
 
     function setButtonsDisabled(isDisabled) {
@@ -7360,7 +7712,7 @@
         const elapsedSeconds = getElapsedSeconds();
         const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
         durationText.textContent = isCountUpModeSelected()
-            ? formatClock(elapsedSeconds)
+            ? formatDurationLabel(elapsedSeconds)
             : formatDurationLabel(remainingSeconds);
 
         updateExitButton(elapsedSeconds);
@@ -7375,6 +7727,8 @@
         else {
             setButtonLabel(pauseButton, "Pause");
         }
+
+        updateRuntimeMutedVisualState();
 
         if (isCountUpModeSelected()) {
             if (elapsedSeconds >= nextCountUpCheckpointSeconds && confirmPanel.hidden && !isSubmitting) {
@@ -7422,7 +7776,6 @@
         updateDurationReadout();
     });
 
-    focusTypePickerViewport.addEventListener("scroll", handleFocusTypePickerScroll, { passive: true });
     focusTypePickerViewport.addEventListener("pointerdown", handleFocusTypePickerPointerDown);
     focusTypePickerViewport.addEventListener("pointermove", handleFocusTypePickerPointerMove);
     focusTypePickerViewport.addEventListener("pointerup", handleFocusTypePickerPointerUp);
@@ -7463,7 +7816,6 @@
         nextIndex = clampFocusTypePickerIndex(nextIndex);
         setFocusTypeValue(savedFocusLabels[nextIndex] || savedFocusLabels[0] || "Focus");
         scrollFocusTypePickerToIndex(nextIndex, "smooth");
-        refreshFocusTypePickerSelectionStyles();
     });
 
     countdownModeButton.addEventListener("click", function () {
@@ -7622,7 +7974,7 @@
 
     window.addEventListener("resize", function () {
         applyAllAssetLayouts();
-        syncFocusTypePickerPadding();
+        applyFocusTypePickerPosition();
         refreshFocusTypePickerSelectionStyles();
 
         if (layoutModeEnabled) {
@@ -7632,7 +7984,7 @@
 
     window.addEventListener("pl-home-stage-resized", function () {
         applyAllAssetLayouts();
-        syncFocusTypePickerPadding();
+        applyFocusTypePickerPosition();
         refreshFocusTypePickerSelectionStyles();
 
         if (layoutModeEnabled) {
