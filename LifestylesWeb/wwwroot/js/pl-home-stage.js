@@ -702,37 +702,38 @@
                 safeUiStageMeasuredScale = previewScale;
                 uiProjectionScale = 1;
             } else {
-                const safeFrame = {
-                    left: activeStandaloneLockFrame.safeFrameLeft,
-                    top: activeStandaloneLockFrame.safeFrameTop,
-                    width: activeStandaloneLockFrame.safeFrameWidth,
-                    height: activeStandaloneLockFrame.safeFrameHeight
-                };
-
-                rootWidth = activeStandaloneLockFrame.viewportWidth;
-                rootHeight = activeStandaloneLockFrame.viewportHeight;
-
-                applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, 0);
-
-                worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
-                worldRenderWidth = designWidth * worldScale;
-                worldRenderHeight = designHeight * worldScale;
-                worldLeft = (rootWidth - worldRenderWidth) / 2;
-                worldTop = (rootHeight - worldRenderHeight) / 2;
-                worldStageMeasuredScale = worldScale;
-                safeFrameLeft = safeFrame.left;
-                safeFrameTop = safeFrame.top;
-                safeFrameWidth = safeFrame.width;
-                safeFrameHeight = safeFrame.height;
-                safeUiRenderWidth = safeFrameWidth;
-                safeUiRenderHeight = safeFrameHeight;
-                safeUiLeft = safeFrameLeft;
-                safeUiTop = safeFrameTop;
-                safeUiStageMeasuredScale = 1;
-                uiProjectionScale = Math.min(
-                    safeFrameWidth / uiAuthorWidth,
-                    safeFrameHeight / uiAuthorHeight
+                previewScale = Math.min(
+                    1,
+                    Math.max(0.1, liveViewport.width / designWidth),
+                    Math.max(0.1, liveViewport.height / designHeight)
                 );
+
+                applyDesktopPreviewShellStyles(
+                    designWidth * previewScale,
+                    designHeight * previewScale,
+                    previewScale,
+                    designWidth,
+                    designHeight
+                );
+
+                rootWidth = designWidth;
+                rootHeight = designHeight;
+                worldScale = 1;
+                worldRenderWidth = designWidth;
+                worldRenderHeight = designHeight;
+                worldLeft = 0;
+                worldTop = 0;
+                worldStageMeasuredScale = previewScale;
+                safeFrameLeft = uiAuthorLeft;
+                safeFrameTop = uiAuthorTop;
+                safeFrameWidth = uiAuthorWidth;
+                safeFrameHeight = uiAuthorHeight;
+                safeUiRenderWidth = uiAuthorWidth;
+                safeUiRenderHeight = uiAuthorHeight;
+                safeUiLeft = uiAuthorLeft;
+                safeUiTop = uiAuthorTop;
+                safeUiStageMeasuredScale = previewScale;
+                uiProjectionScale = 1;
             }
         } else if (mobilePortraitLockMode) {
             previewScale = Math.min(
@@ -772,40 +773,38 @@
             safeUiStageMeasuredScale = previewScale;
             uiProjectionScale = 1;
         } else if (standaloneDisplayMode) {
-            const safeFrame = buildSafeFrame(
-                viewport.width,
-                viewport.height,
-                safeArea,
-                uiAuthorTop
+            previewScale = Math.min(
+                1,
+                Math.max(0.1, liveViewport.width / designWidth),
+                Math.max(0.1, liveViewport.height / designHeight)
             );
 
-            rootWidth = viewport.width;
-            rootHeight = viewport.height;
-
-            applyStandaloneRuntimeShellStyles(rootWidth, rootHeight, 0);
-
-            worldScale = Math.max(rootWidth / designWidth, rootHeight / designHeight);
-            worldRenderWidth = designWidth * worldScale;
-            worldRenderHeight = designHeight * worldScale;
-            worldLeft = (rootWidth - worldRenderWidth) / 2;
-            worldTop = (rootHeight - worldRenderHeight) / 2;
-            worldStageMeasuredScale = worldScale;
-
-            safeFrameLeft = safeFrame.left;
-            safeFrameTop = safeFrame.top;
-            safeFrameWidth = safeFrame.width;
-            safeFrameHeight = safeFrame.height;
-
-            safeUiRenderWidth = safeFrameWidth;
-            safeUiRenderHeight = safeFrameHeight;
-            safeUiLeft = safeFrameLeft;
-            safeUiTop = safeFrameTop;
-            safeUiStageMeasuredScale = 1;
-
-            uiProjectionScale = Math.min(
-                safeFrameWidth / uiAuthorWidth,
-                safeFrameHeight / uiAuthorHeight
+            applyDesktopPreviewShellStyles(
+                designWidth * previewScale,
+                designHeight * previewScale,
+                previewScale,
+                designWidth,
+                designHeight
             );
+
+            rootWidth = designWidth;
+            rootHeight = designHeight;
+            worldScale = 1;
+            worldRenderWidth = designWidth;
+            worldRenderHeight = designHeight;
+            worldLeft = 0;
+            worldTop = 0;
+            worldStageMeasuredScale = previewScale;
+            safeFrameLeft = uiAuthorLeft;
+            safeFrameTop = uiAuthorTop;
+            safeFrameWidth = uiAuthorWidth;
+            safeFrameHeight = uiAuthorHeight;
+            safeUiRenderWidth = uiAuthorWidth;
+            safeUiRenderHeight = uiAuthorHeight;
+            safeUiLeft = uiAuthorLeft;
+            safeUiTop = uiAuthorTop;
+            safeUiStageMeasuredScale = previewScale;
+            uiProjectionScale = 1;
         } else {
             previewScale = Math.min(
                 1,
