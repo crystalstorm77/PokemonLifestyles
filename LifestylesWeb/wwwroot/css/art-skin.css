@@ -36,9 +36,9 @@
         --pl-focus-type-picker-selection-line-opacity: 1;
         --pl-slider-track-empty-image: url('/assets/ui/buttons/slider-empty.png');
         --pl-slider-track-empty-fallback: none;
-        --pl-slider-track-fill-image: url('/assets/ui/buttons/slider-fill.png');
+        --pl-slider-track-fill-image: url('/assets/ui/buttons/slider-full.png');
         --pl-slider-track-fill-fallback: none;
-        --pl-slider-nib-image: url('/assets/ui/buttons/slider-nib.png');
+        --pl-slider-nib-image: url('/assets/ui/buttons/nib.png');
         --pl-slider-nib-fallback: none;
     }
 }

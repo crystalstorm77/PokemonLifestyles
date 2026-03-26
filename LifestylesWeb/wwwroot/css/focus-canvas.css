@@ -2,11 +2,13 @@
 @media all {
     :root {
         --pl-home-screen-width: 428px;
-        --pl-home-screen-height: 926px;
+        --pl-home-screen-height: 913px;
         --pl-safe-ui-author-left: 0px;
         --pl-safe-ui-author-top: 0px;
         --pl-safe-ui-author-width: 428px;
-        --pl-safe-ui-author-height: 879px;
+        --pl-safe-ui-author-height: 866px;
+        --pl-safe-ui-visible-height: 832px;
+        --pl-ui-font-family: "Caveat", sans-serif;
     }
 
     html,
@@ -217,26 +219,6 @@
         display: none !important;
     }
 
-    .pl-standalone-layout-launcher {
-        position: fixed;
-        top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
-        right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
-        z-index: 90;
-        border: 1px solid rgba(148, 163, 184, 0.44);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.94);
-        color: #0f172a;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
-        padding: 0.55rem 1rem;
-        font: 800 1rem/1 "Trebuchet MS", Helvetica, sans-serif;
-        letter-spacing: 0.01em;
-        cursor: pointer;
-    }
-
-    .pl-standalone-layout-launcher[hidden] {
-        display: none !important;
-    }
-
     .pl-canvas-button {
         border: none !important;
         box-shadow: none !important;
@@ -247,7 +229,9 @@
         background-size: 100% 100%, 100% 100% !important;
         overflow: hidden;
         color: #0f172a;
-        font-weight: 900;
+        font-weight: 700;
+        font-family: var(--pl-ui-font-family);
+        font-synthesis: none;
     }
 
         .pl-canvas-button .pl-button-label {
@@ -419,7 +403,7 @@
     .pl-eyebrow {
         margin: 0 0 0.45rem;
         font-size: 0.82rem;
-        font-weight: 900;
+        font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
         color: #475569;
@@ -557,12 +541,68 @@
         z-index: 14;
         display: flex;
         align-items: center;
+        justify-content: center;
         font-size: 1.45rem;
         line-height: 1.1;
         font-weight: 900;
         color: #111827;
         pointer-events: none;
+        overflow: hidden;
+        font-family: var(--pl-ui-font-family);
+        font-synthesis: none;
     }
+
+        .pl-canvas-duration-text .pl-canvas-duration-text-label {
+            display: inline-grid;
+            grid-template-columns: 9ch 6ch 5ch;
+            column-gap: 0.45ch;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            pointer-events: none;
+            font-variant-numeric: tabular-nums;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: geometricPrecision;
+        }
+
+            .pl-canvas-duration-text .pl-canvas-duration-part {
+                display: inline-grid;
+                grid-template-columns: 3ch auto;
+                column-gap: 0.3ch;
+                align-items: baseline;
+                justify-items: start;
+            }
+
+            .pl-canvas-duration-text .pl-canvas-duration-value {
+                display: inline-block;
+                min-width: 3ch;
+                text-align: right;
+            }
+
+            .pl-canvas-duration-text .pl-canvas-duration-unit {
+                display: inline-block;
+                text-align: left;
+                white-space: nowrap;
+            }
+
+            .pl-canvas-duration-text .pl-canvas-duration-part:first-child .pl-canvas-duration-unit {
+                min-width: 5ch;
+            }
+
+            .pl-canvas-duration-text .pl-canvas-duration-part:nth-child(2) .pl-canvas-duration-unit,
+            .pl-canvas-duration-text .pl-canvas-duration-part:nth-child(3) .pl-canvas-duration-unit {
+                min-width: 3ch;
+            }
+
+            .pl-canvas-duration-text .pl-canvas-duration-part:first-child .pl-canvas-duration-value {
+                min-width: 3ch;
+            }
+
+            .pl-canvas-duration-text .pl-canvas-duration-part:nth-child(2) .pl-canvas-duration-value,
+            .pl-canvas-duration-text .pl-canvas-duration-part:nth-child(3) .pl-canvas-duration-value {
+                min-width: 2ch;
+            }
+        }
 
     .pl-focus-manage-list-shell-asset {
         position: relative;
@@ -1344,3 +1384,20 @@
     }
 }
 /* SEGMENT A4 END - Home Canvas Layout Panel + Runtime Overrides */
+/* SEGMENT A0 START - Home Canvas Font Faces */
+@font-face {
+    font-family: "Caveat";
+    src: url("/assets/fonts/Caveat-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+}
+
+@font-face {
+    font-family: "Caveat";
+    src: url("/assets/fonts/Caveat-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: block;
+}
+/* SEGMENT A0 END - Home Canvas Font Faces */

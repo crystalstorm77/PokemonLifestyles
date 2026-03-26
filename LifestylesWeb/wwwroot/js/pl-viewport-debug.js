@@ -225,6 +225,7 @@
 
                 <div class="pl-viewport-debug-actions">
                     <button type="button" class="pl-viewport-debug-button" id="pl-viewport-debug-refresh">Refresh</button>
+                    <button type="button" class="pl-viewport-debug-button" id="pl-viewport-debug-copy">Copy Data</button>
                     <button type="button" class="pl-viewport-debug-button" id="pl-viewport-debug-toggle">Collapse</button>
                 </div>
             </div>
@@ -331,6 +332,41 @@
 
         return `${label}: x=${round(rect.left)} y=${round(rect.top)} w=${round(rect.width)} h=${round(rect.height)} right=${round(rect.right)} bottom=${round(rect.bottom)}`;
     }
+
+    function measureNodeContentRect(element) {
+        if (!element) {
+            return null;
+        }
+
+        const range = document.createRange();
+
+        try {
+            range.selectNodeContents(element);
+            const rect = range.getBoundingClientRect();
+
+            if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height)) {
+                return null;
+            }
+
+            return rect;
+        }
+        catch {
+            return null;
+        }
+        finally {
+            range.detach?.();
+        }
+    }
+
+    function formatTextMetrics(label, element) {
+        if (!element) {
+            return `${label}: n/a`;
+        }
+
+        const computed = window.getComputedStyle(element);
+
+        return `${label}: clientW=${round(element.clientWidth)} scrollW=${round(element.scrollWidth)} offsetW=${round(element.offsetWidth)} fontSize=${summarizeCssValue(computed.fontSize)} fontFamily=${summarizeCssValue(computed.fontFamily)} lineHeight=${summarizeCssValue(computed.lineHeight)} letterSpacing=${summarizeCssValue(computed.letterSpacing)} textAlign=${summarizeCssValue(computed.textAlign)} justifyContent=${summarizeCssValue(computed.justifyContent)} paddingL=${summarizeCssValue(computed.paddingLeft)} paddingR=${summarizeCssValue(computed.paddingRight)}`;
+    }
     //#endregion SEGMENT C - Measurement Helpers
 
     //#region SEGMENT D - Layer Diagnostics State
@@ -350,7 +386,9 @@
             homeSleepButton: document.getElementById("pl-home-sleep-button"),
             setupPanel: document.getElementById("pl-setup-panel"),
             durationText: document.getElementById("pl-duration-text"),
+            durationTextContent: document.getElementById("pl-duration-text"),
             manageButton: document.getElementById("pl-manage-button"),
+            manageButtonLabel: document.querySelector("#pl-manage-button .pl-button-label"),
             countdownModeButton: document.getElementById("pl-countdown-mode-button"),
             countUpModeButton: document.getElementById("pl-countup-mode-button"),
             focusManagePanel: document.getElementById("pl-focus-manage-panel")
@@ -479,10 +517,56 @@
         const homeSleepButtonRect = layers.homeSleepButton ? layers.homeSleepButton.getBoundingClientRect() : null;
         const setupPanelRect = layers.setupPanel ? layers.setupPanel.getBoundingClientRect() : null;
         const durationTextRect = layers.durationText ? layers.durationText.getBoundingClientRect() : null;
+        const durationTextContentRect = measureNodeContentRect(layers.durationTextContent);
         const manageButtonRect = layers.manageButton ? layers.manageButton.getBoundingClientRect() : null;
+        const manageButtonLabelRect = layers.manageButtonLabel ? layers.manageButtonLabel.getBoundingClientRect() : null;
         const countdownModeButtonRect = layers.countdownModeButton ? layers.countdownModeButton.getBoundingClientRect() : null;
         const countUpModeButtonRect = layers.countUpModeButton ? layers.countUpModeButton.getBoundingClientRect() : null;
         const focusManagePanelRect = layers.focusManagePanel ? layers.focusManagePanel.getBoundingClientRect() : null;
+        const measuredStageScale =
+            homeRootRect && layers.homeRoot && layers.homeRoot.offsetWidth > 0
+                ? homeRootRect.width / layers.homeRoot.offsetWidth
+                : NaN;
+        const measuredStageHeightScale =
+            homeRootRect && layers.homeRoot && layers.homeRoot.offsetHeight > 0
+                ? homeRootRect.height / layers.homeRoot.offsetHeight
+                : NaN;
+        const measuredShellScale =
+            homeStageShellRect && layers.homeRoot && layers.homeRoot.offsetWidth > 0
+                ? homeStageShellRect.width / layers.homeRoot.offsetWidth
+                : NaN;
+        const stageLeftGap =
+            appShellRect && homeStageShellRect
+                ? homeStageShellRect.left - appShellRect.left
+                : NaN;
+        const stageRightGap =
+            appShellRect && homeStageShellRect
+                ? appShellRect.right - homeStageShellRect.right
+                : NaN;
+        const stageTopGap =
+            appShellRect && homeStageShellRect
+                ? homeStageShellRect.top - appShellRect.top
+                : NaN;
+        const stageBottomGap =
+            appShellRect && homeStageShellRect
+                ? appShellRect.bottom - homeStageShellRect.bottom
+                : NaN;
+        const visibleViewportAspect =
+            visualViewport && visualViewport.width > 0
+                ? visualViewport.height / visualViewport.width
+                : NaN;
+        const designViewportWidth = parsePx(layers.homeRoot?.dataset.viewportWidth);
+        const designViewportHeight = parsePx(layers.homeRoot?.dataset.viewportHeight);
+        const designAspect =
+            designViewportWidth > 0
+                ? designViewportHeight / designViewportWidth
+                : NaN;
+        const safeFrameWidth = parsePx(layers.homeRoot?.dataset.safeFrameWidth);
+        const safeFrameHeight = parsePx(layers.homeRoot?.dataset.safeFrameHeight);
+        const safeFrameAspect =
+            safeFrameWidth > 0
+                ? safeFrameHeight / safeFrameWidth
+                : NaN;
 
         const lines = [];
         lines.push(`displayMode: ${readDisplayMode()}`);
@@ -503,6 +587,14 @@
         lines.push(`dataset.worldStageScale: ${layers.homeRoot?.dataset.worldStageScale || "n/a"}`);
         lines.push(`dataset.safeUiStageScale: ${layers.homeRoot?.dataset.safeUiStageScale || "n/a"}`);
         lines.push(`dataset.uiProjectionScale: ${layers.homeRoot?.dataset.uiProjectionScale || "n/a"}`);
+        lines.push("");
+        lines.push(`derived.visibleViewportAspect: ${round(visibleViewportAspect)}`);
+        lines.push(`derived.designAspect: ${round(designAspect)}`);
+        lines.push(`derived.safeFrameAspect: ${round(safeFrameAspect)}`);
+        lines.push(`derived.measuredStageWidthScale: ${round(measuredStageScale)}`);
+        lines.push(`derived.measuredStageHeightScale: ${round(measuredStageHeightScale)}`);
+        lines.push(`derived.measuredShellScale: ${round(measuredShellScale)}`);
+        lines.push(`derived.stageGaps: left=${round(stageLeftGap)} right=${round(stageRightGap)} top=${round(stageTopGap)} bottom=${round(stageBottomGap)}`);
         lines.push("");
         lines.push(`safeArea.top: ${round(safeArea.top)}`);
         lines.push(`safeArea.right: ${round(safeArea.right)}`);
@@ -536,7 +628,9 @@
         lines.push(formatRect("homeSleepButton.rect", homeSleepButtonRect));
         lines.push(formatRect("setupPanel.rect", setupPanelRect));
         lines.push(formatRect("durationText.rect", durationTextRect));
+        lines.push(formatRect("durationTextContent.rect", durationTextContentRect));
         lines.push(formatRect("manageButton.rect", manageButtonRect));
+        lines.push(formatRect("manageButtonLabel.rect", manageButtonLabelRect));
         lines.push(formatRect("countdownModeButton.rect", countdownModeButtonRect));
         lines.push(formatRect("countUpModeButton.rect", countUpModeButtonRect));
         lines.push(formatRect("focusManagePanel.rect", focusManagePanelRect));
@@ -556,10 +650,15 @@
         addRelativeRectLine("homeSleepButton", homeSleepButtonRect, safeUiStageRect);
         addRelativeRectLine("setupPanel", setupPanelRect, safeUiStageRect);
         addRelativeRectLine("durationText", durationTextRect, safeUiStageRect);
+        addRelativeRectLine("durationTextContent", durationTextContentRect, safeUiStageRect);
         addRelativeRectLine("manageButton", manageButtonRect, safeUiStageRect);
+        addRelativeRectLine("manageButtonLabel", manageButtonLabelRect, safeUiStageRect);
         addRelativeRectLine("countdownModeButton", countdownModeButtonRect, safeUiStageRect);
         addRelativeRectLine("countUpModeButton", countUpModeButtonRect, safeUiStageRect);
         addRelativeRectLine("focusManagePanel", focusManagePanelRect, safeUiStageRect);
+        lines.push("");
+        lines.push(formatTextMetrics("durationText.metrics", layers.durationText));
+        lines.push(formatTextMetrics("manageButtonLabel.metrics", layers.manageButtonLabel));
         lines.push("");
 
         const addSizeLines = (label, element) => {
@@ -631,6 +730,35 @@
     //#endregion SEGMENT E - Output Builder
 
     //#region SEGMENT F - Panel Lifecycle And Boot
+    function fallbackCopyText(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "readonly");
+        textarea.setAttribute("aria-hidden", "true");
+        textarea.style.position = "fixed";
+        textarea.style.top = "0";
+        textarea.style.left = "-9999px";
+        textarea.style.width = "1px";
+        textarea.style.height = "1px";
+        textarea.style.opacity = "0";
+        textarea.style.pointerEvents = "none";
+
+        document.body.appendChild(textarea);
+
+        try {
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+            return document.execCommand("copy");
+        }
+        catch {
+            return false;
+        }
+        finally {
+            textarea.remove();
+        }
+    }
+
     function setCollapsed(panel, collapsed) {
         panel.classList.toggle("pl-viewport-debug-panel-collapsed", collapsed);
         const toggleButton = panel.querySelector("#pl-viewport-debug-toggle");
@@ -660,10 +788,11 @@
         const panel = createPanel();
         const output = panel.querySelector("#pl-viewport-debug-output");
         const refreshButton = panel.querySelector("#pl-viewport-debug-refresh");
+        const copyButton = panel.querySelector("#pl-viewport-debug-copy");
         const toggleButton = panel.querySelector("#pl-viewport-debug-toggle");
         const resetLayersButton = panel.querySelector("#pl-viewport-debug-reset-layers");
 
-        if (!output || !refreshButton || !toggleButton || !resetLayersButton) {
+        if (!output || !refreshButton || !copyButton || !toggleButton || !resetLayersButton) {
             return;
         }
 
@@ -681,6 +810,30 @@
         };
 
         refreshButton.addEventListener("click", update);
+        copyButton.addEventListener("click", async () => {
+            const text = buildOutput();
+            let copied = false;
+
+            try {
+                await navigator.clipboard.writeText(text);
+                copied = true;
+            }
+            catch {
+                copied = fallbackCopyText(text);
+            }
+
+            if (copied) {
+                copyButton.textContent = "Copied";
+                return;
+            }
+
+            output.textContent = `${text}\n\n[Copy failed. Use the browser share sheet or long-press in Safari if needed.]`;
+            copyButton.textContent = "Copy Failed";
+
+            window.setTimeout(() => {
+                copyButton.textContent = "Copy Data";
+            }, 1500);
+        });
         toggleButton.addEventListener("click", () => {
             const collapsed = !panel.classList.contains("pl-viewport-debug-panel-collapsed");
             setCollapsed(panel, collapsed);

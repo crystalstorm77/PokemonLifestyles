@@ -2,7 +2,7 @@
   "name": "Pokemon Lifestyles",
   "short_name": "Lifestyles",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#01ff75",
   "theme_color": "#01ff75"

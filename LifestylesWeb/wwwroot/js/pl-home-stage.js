@@ -528,11 +528,15 @@
     //#region SEGMENT F - Layout Application
     function applyHomeStageLayout() {
         const designWidth = readDesignPx("--pl-home-screen-width", 428);
-        const designHeight = readDesignPx("--pl-home-screen-height", 926);
+        const designHeight = readDesignPx("--pl-home-screen-height", 913);
         const uiAuthorLeft = 0;
         const uiAuthorTop = 47;
         const uiAuthorWidth = designWidth;
         const uiAuthorHeight = designHeight - uiAuthorTop;
+        const uiVisibleHeight = Math.min(
+            uiAuthorHeight,
+            readDesignPx("--pl-safe-ui-visible-height", uiAuthorHeight)
+        );
 
         const liveViewport = readRuntimeViewport();
         const liveSafeArea = readSafeAreaInsets();
@@ -623,7 +627,7 @@
             safeFrameLeft = uiAuthorLeft;
             safeFrameTop = uiAuthorTop;
             safeFrameWidth = uiAuthorWidth;
-            safeFrameHeight = uiAuthorHeight;
+            safeFrameHeight = uiVisibleHeight;
             safeUiRenderWidth = uiAuthorWidth;
             safeUiRenderHeight = uiAuthorHeight;
             safeUiLeft = uiAuthorLeft;
@@ -694,7 +698,7 @@
                 safeFrameLeft = uiAuthorLeft;
                 safeFrameTop = uiAuthorTop;
                 safeFrameWidth = uiAuthorWidth;
-                safeFrameHeight = uiAuthorHeight;
+                safeFrameHeight = uiVisibleHeight;
                 safeUiRenderWidth = uiAuthorWidth;
                 safeUiRenderHeight = uiAuthorHeight;
                 safeUiLeft = uiAuthorLeft;
@@ -704,8 +708,7 @@
             } else {
                 previewScale = Math.min(
                     1,
-                    Math.max(0.1, liveViewport.width / designWidth),
-                    Math.max(0.1, liveViewport.height / designHeight)
+                    Math.max(0.1, liveViewport.width / designWidth)
                 );
 
                 applyDesktopPreviewShellStyles(
@@ -727,7 +730,7 @@
                 safeFrameLeft = uiAuthorLeft;
                 safeFrameTop = uiAuthorTop;
                 safeFrameWidth = uiAuthorWidth;
-                safeFrameHeight = uiAuthorHeight;
+                safeFrameHeight = uiVisibleHeight;
                 safeUiRenderWidth = uiAuthorWidth;
                 safeUiRenderHeight = uiAuthorHeight;
                 safeUiLeft = uiAuthorLeft;
@@ -765,7 +768,7 @@
             safeFrameLeft = uiAuthorLeft;
             safeFrameTop = uiAuthorTop;
             safeFrameWidth = uiAuthorWidth;
-            safeFrameHeight = uiAuthorHeight;
+                safeFrameHeight = uiVisibleHeight;
             safeUiRenderWidth = uiAuthorWidth;
             safeUiRenderHeight = uiAuthorHeight;
             safeUiLeft = uiAuthorLeft;
@@ -773,11 +776,10 @@
             safeUiStageMeasuredScale = previewScale;
             uiProjectionScale = 1;
         } else if (standaloneDisplayMode) {
-            previewScale = Math.min(
-                1,
-                Math.max(0.1, liveViewport.width / designWidth),
-                Math.max(0.1, liveViewport.height / designHeight)
-            );
+                previewScale = Math.min(
+                    1,
+                    Math.max(0.1, liveViewport.width / designWidth)
+                );
 
             applyDesktopPreviewShellStyles(
                 designWidth * previewScale,
@@ -798,7 +800,7 @@
             safeFrameLeft = uiAuthorLeft;
             safeFrameTop = uiAuthorTop;
             safeFrameWidth = uiAuthorWidth;
-            safeFrameHeight = uiAuthorHeight;
+                safeFrameHeight = uiVisibleHeight;
             safeUiRenderWidth = uiAuthorWidth;
             safeUiRenderHeight = uiAuthorHeight;
             safeUiLeft = uiAuthorLeft;
@@ -831,7 +833,7 @@
             safeFrameLeft = uiAuthorLeft;
             safeFrameTop = uiAuthorTop;
             safeFrameWidth = uiAuthorWidth;
-            safeFrameHeight = uiAuthorHeight;
+            safeFrameHeight = uiVisibleHeight;
             safeUiRenderWidth = uiAuthorWidth;
             safeUiRenderHeight = uiAuthorHeight;
             safeUiLeft = uiAuthorLeft;

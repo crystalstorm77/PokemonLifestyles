@@ -6,7 +6,6 @@
     const safeZoneOutline = document.getElementById("pl-safe-zone-outline");
 
     const homeSceneArt = document.getElementById("pl-home-scene-art");
-    const standaloneLayoutLauncher = document.getElementById("pl-standalone-layout-launcher");
     const homeFocusButton = document.getElementById("pl-home-focus-button");
     const homeSleepButton = document.getElementById("pl-home-sleep-button");
     const openLayoutModeButton = document.getElementById("pl-open-layout-mode-button");
@@ -16,6 +15,11 @@
     const focusTypeLabel = document.getElementById("pl-focus-type-label");
     const focusTypeField = document.getElementById("pl-focus-type-field");
     const durationText = document.getElementById("pl-duration-text");
+    const durationTextLabel = document.getElementById("pl-duration-text-label");
+    const durationHoursValue = document.getElementById("pl-duration-hours-value");
+    const durationHoursUnit = document.getElementById("pl-duration-hours-unit");
+    const durationMinutesValue = document.getElementById("pl-duration-minutes-value");
+    const durationSecondsValue = document.getElementById("pl-duration-seconds-value");
     const sliderGroup = document.getElementById("pl-slider-group");
     const sliderTrackShell = document.getElementById("pl-slider-track-shell");
     const sliderTrackEmptyArt = document.getElementById("pl-slider-track-empty-art");
@@ -153,8 +157,9 @@
     const layoutCode = document.getElementById("pl-layout-code");
 
     if (!homeRoot || !worldStage || !safeUiStage || !safeZoneOutline ||
-        !homeSceneArt || !standaloneLayoutLauncher || !homeFocusButton || !homeSleepButton || !openLayoutModeButton ||
-        !setupPanel || !setupControls || !focusTypeLabel || !focusTypeField || !durationText ||
+        !homeSceneArt || !homeFocusButton || !homeSleepButton || !openLayoutModeButton ||
+        !setupPanel || !setupControls || !focusTypeLabel || !focusTypeField || !durationText || !durationTextLabel ||
+        !durationHoursValue || !durationHoursUnit || !durationMinutesValue || !durationSecondsValue ||
         !sliderGroup || !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell ||
         !sliderFillArt || !sliderNibVisual || !durationSlider || !startFocusButton ||
         !countdownModeButton || !countUpModeButton ||
@@ -229,7 +234,6 @@
     const layoutModeEnabled = layoutModeParam === "1"
         || (layoutModeParam !== "0" && standaloneDisplayRequested && readStandaloneLayoutModePreference());
     let layoutEditorEnabled = layoutModeEnabled;
-    standaloneLayoutLauncher.hidden = layoutModeEnabled || !standaloneDisplayRequested;
     const layoutSyncReadUrl = "/LayoutSync?handler=Read";
     const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
     const layoutSyncUploadArtUrl = "/LayoutSync?handler=UploadArt";
@@ -246,6 +250,10 @@
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
     const focusTypeHighlightFillAssetKey = "focus-type-highlight-fill-color";
     const focusTypeHighlightLineAssetKey = "focus-type-highlight-line-color";
+    const retiredDurationTextAssetKey = "duration-text";
+    const timerTextAssetKey = "timer-text";
+    const bundledUiFontFamily = "\"Caveat\", sans-serif";
+    const defaultTextBoldThickness = 0;
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
     const variableAssetDefinitions = {
@@ -402,6 +410,7 @@
     };
 
     const layoutTextFontFamilyOptions = [
+        { label: "Caveat", value: bundledUiFontFamily },
         { label: "System UI", value: "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif" },
         { label: "Arial", value: "Arial, Helvetica, sans-serif" },
         { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
@@ -416,7 +425,7 @@
             label: "Text Label",
             width: 180,
             height: 34,
-            fontFamily: "\"Trebuchet MS\", Helvetica, sans-serif",
+            fontFamily: bundledUiFontFamily,
             fontSize: 18,
             color: "#1d2842",
             bold: true,
@@ -426,7 +435,7 @@
             label: "Text Title",
             width: 240,
             height: 42,
-            fontFamily: "\"Trebuchet MS\", Helvetica, sans-serif",
+            fontFamily: bundledUiFontFamily,
             fontSize: 24,
             color: "#1d2842",
             bold: true,
@@ -521,7 +530,7 @@
         },
         "focus-setup": {
             label: "Focus setup",
-            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, "duration-text", "slider", "start", "back", "manage-button"],
+            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, timerTextAssetKey, "slider", "start", "back", "manage-button"],
             states: {
                 base: {
                     label: "Base"
@@ -558,7 +567,7 @@
         },
         "focus-running": {
             label: "Focus running",
-            assets: ["setup-panel", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, "duration-text", "slider", "pause", "exit"],
+            assets: ["setup-panel", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, timerTextAssetKey, "slider", "pause", "exit"],
             states: {
                 base: {
                     label: "Base"
@@ -604,7 +613,8 @@
         "focus-manage-confirm-message": { x: 96, y: 144, width: 156, height: 58, scale: 100 },
         "focus-manage-confirm-delete": { x: 96, y: 190, width: 70, height: 38, scale: 100 },
         "focus-manage-confirm-cancel": { x: 176, y: 190, width: 76, height: 38, scale: 100 },
-        "focus-manage-confirm-dismiss": { x: 96, y: 234, width: 140, height: 24, scale: 100 }
+        "focus-manage-confirm-dismiss": { x: 96, y: 234, width: 140, height: 24, scale: 100 },
+        "slider": { x: 40, y: 548, width: 348, height: 80, scale: 100 }
     };
 
     const assetComponentDefinitions = {
@@ -764,6 +774,7 @@
 
     let selectedTimerMode = "countdown";
     let plannedSeconds = 300;
+    let currentTimerTextSeconds = 300;
     let startedAtMs = 0;
     let pausedElapsedSeconds = 0;
     let nextCountUpCheckpointSeconds = 7200;
@@ -811,6 +822,7 @@
     let layoutTextColorText = null;
     let layoutTextBold = null;
     let layoutTextItalic = null;
+    let layoutTextBoldThickness = null;
     let layoutTextStyleStatus = null;
 
     let componentOutline = document.getElementById("pl-layout-component-outline");
@@ -877,7 +889,7 @@
     }
 
     function getDesignHeight() {
-        return readCssPxVar("--pl-home-screen-height", 926);
+        return readCssPxVar("--pl-home-screen-height", 913);
     }
 
     function getUiAuthorFrameWidth() {
@@ -1072,7 +1084,7 @@
         }
 
         const result = {};
-        const keys = ["content", "fontFamily", "fontSize", "color", "bold", "italic", "x", "y"];
+        const keys = ["content", "fontFamily", "fontSize", "color", "bold", "italic", "boldThickness", "x", "y"];
 
         keys.forEach(function (key) {
             const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
@@ -1297,6 +1309,140 @@
         sharedLayoutVariables = ensureLayoutVariableDefaults(sharedLayoutVariables);
     }
 
+    function createTimerTextLayoutSeed(sourceState) {
+        const normalized = normalizeLayoutOverride(cloneJsonCompatibleObject(sourceState))
+            || getCssLayoutDefaults(retiredDurationTextAssetKey);
+
+        return {
+            x: normalized.x,
+            y: normalized.y,
+            width: normalized.width,
+            height: normalized.height,
+            scale: normalized.scale,
+            lockAspectRatio: false,
+            components: {},
+            text: {
+                content: formatDurationLabel(currentTimerTextSeconds),
+                fontFamily: bundledUiFontFamily,
+                fontSize: "23",
+                color: "#111827",
+                bold: "true",
+                italic: "false",
+                x: "0",
+                y: "0"
+            },
+            states: cloneJsonCompatibleObject(normalized.states || {})
+        };
+    }
+
+    function normalizeSliderLayoutState(rawState, fallbackState) {
+        const baseState = rawState && typeof rawState === "object"
+            ? rawState
+            : {};
+
+        const nextState = {
+            x: readTextStorageInt(baseState.x, fallbackState.x),
+            y: readTextStorageInt(baseState.y, fallbackState.y),
+            width: readTextStorageInt(baseState.width, fallbackState.width),
+            height: readTextStorageInt(baseState.height, fallbackState.height),
+            scale: readTextStorageInt(baseState.scale, fallbackState.scale),
+            lockAspectRatio: typeof baseState.lockAspectRatio === "boolean"
+                ? baseState.lockAspectRatio
+                : !!fallbackState.lockAspectRatio,
+            components: normalizeLayoutComponents(baseState.components ?? baseState.Components),
+            text: normalizeLayoutTextStorage(baseState.text ?? baseState.Text),
+            states: normalizeLayoutAssetStates(baseState.states ?? baseState.States)
+        };
+
+        const widthLooksBroken = !Number.isFinite(nextState.width) || nextState.width < 40;
+        const heightLooksBroken = !Number.isFinite(nextState.height) || nextState.height < 20;
+        const scaleLooksBroken = !Number.isFinite(nextState.scale) || nextState.scale <= 0;
+
+        if (widthLooksBroken || heightLooksBroken || scaleLooksBroken) {
+            return {
+                x: fallbackState.x,
+                y: fallbackState.y,
+                width: fallbackState.width,
+                height: fallbackState.height,
+                scale: fallbackState.scale,
+                lockAspectRatio: false,
+                components: nextState.components,
+                text: nextState.text,
+                states: nextState.states
+            };
+        }
+
+        return nextState;
+    }
+
+    function ensureSliderAssetSetup() {
+        const sliderDefaults = getCssLayoutDefaults("slider");
+        sharedDefaultLayoutState.slider = normalizeSliderLayoutState(
+            sharedDefaultLayoutState.slider,
+            sliderDefaults);
+        sharedLayoutState.slider = normalizeSliderLayoutState(
+            sharedLayoutState.slider,
+            sharedDefaultLayoutState.slider);
+    }
+
+    function ensureTimerTextAssetSetup() {
+        const defaultText = formatDurationLabel(currentTimerTextSeconds);
+        const shouldUseBundledTimerFont = function (fontFamilyValue) {
+            const normalized = String(fontFamilyValue || "").trim().toLowerCase();
+            return !normalized
+                || normalized.includes("arial")
+                || normalized.includes("helvetica")
+                || normalized.includes("trebuchet");
+        };
+
+        if (!sharedSceneAssetDefinitions[timerTextAssetKey]) {
+            sharedSceneAssetDefinitions[timerTextAssetKey] = {
+                type: "text",
+                presetKey: "text-label",
+                text: defaultText,
+                behaviorRole: "none"
+            };
+        }
+
+        const currentSourceState =
+            sharedLayoutState[retiredDurationTextAssetKey]
+            || sharedDefaultLayoutState[retiredDurationTextAssetKey]
+            || getCssLayoutDefaults(retiredDurationTextAssetKey);
+        const defaultSourceState =
+            sharedDefaultLayoutState[retiredDurationTextAssetKey]
+            || getCssLayoutDefaults(retiredDurationTextAssetKey);
+
+        if (!sharedLayoutState[timerTextAssetKey]) {
+            sharedLayoutState[timerTextAssetKey] = createTimerTextLayoutSeed(currentSourceState);
+        }
+
+        if (!sharedDefaultLayoutState[timerTextAssetKey]) {
+            sharedDefaultLayoutState[timerTextAssetKey] = createTimerTextLayoutSeed(defaultSourceState);
+        }
+
+        if (shouldUseBundledTimerFont(sharedLayoutState[timerTextAssetKey]?.text?.fontFamily)) {
+            sharedLayoutState[timerTextAssetKey].text = Object.assign(
+                {},
+                sharedLayoutState[timerTextAssetKey].text || {},
+                { fontFamily: bundledUiFontFamily });
+        }
+
+        if (shouldUseBundledTimerFont(sharedDefaultLayoutState[timerTextAssetKey]?.text?.fontFamily)) {
+            sharedDefaultLayoutState[timerTextAssetKey].text = Object.assign(
+                {},
+                sharedDefaultLayoutState[timerTextAssetKey].text || {},
+                { fontFamily: bundledUiFontFamily });
+        }
+
+        Object.values(sharedSceneOverrides).forEach(function (override) {
+            if (override && Array.isArray(override.assets)) {
+                override.assets = override.assets.filter(function (assetKey) {
+                    return assetKey !== retiredDurationTextAssetKey;
+                });
+            }
+        });
+    }
+
     async function loadSharedLayoutState() {
         try {
             const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
@@ -1337,6 +1483,8 @@
         }
 
         ensureSharedLayoutVariableDefaults();
+        ensureSliderAssetSetup();
+        ensureTimerTextAssetSetup();
         sharedDefaultLayoutVariables = ensureLayoutVariableDefaults(
             sharedDefaultLayoutVariables,
             sharedLayoutVariables.appEdgeColor);
@@ -1598,6 +1746,11 @@
         return fallbackValue;
     }
 
+    function readTextStorageFloat(value, fallbackValue) {
+        const parsed = parseFloat(String(value ?? ""));
+        return Number.isFinite(parsed) ? parsed : fallbackValue;
+    }
+
     function normalizeEditableTextState(rawState, fallbackState) {
         return {
             content: typeof rawState?.content === "string" ? rawState.content : fallbackState.content,
@@ -1608,6 +1761,7 @@
             color: normalizeHexColor(rawState?.color, fallbackState.color),
             bold: readTextStorageBoolean(rawState?.bold, fallbackState.bold),
             italic: readTextStorageBoolean(rawState?.italic, fallbackState.italic),
+            boldThickness: Math.max(0, readTextStorageFloat(rawState?.boldThickness, fallbackState.boldThickness ?? defaultTextBoldThickness)),
             x: readTextStorageInt(rawState?.x, fallbackState.x),
             y: readTextStorageInt(rawState?.y, fallbackState.y)
         };
@@ -1621,6 +1775,7 @@
             color: normalizeHexColor(textState.color, "#ffffff"),
             bold: textState.bold ? "true" : "false",
             italic: textState.italic ? "true" : "false",
+            boldThickness: String(Math.max(0, Number(textState.boldThickness ?? defaultTextBoldThickness))),
             x: String(Math.round(textState.x || 0)),
             y: String(Math.round(textState.y || 0))
         };
@@ -1638,6 +1793,7 @@
                 color: preset.color,
                 bold: preset.bold,
                 italic: preset.italic,
+                boldThickness: defaultTextBoldThickness,
                 x: 0,
                 y: 0
             };
@@ -1662,6 +1818,7 @@
                 ? parsedFontWeight >= 700
                 : /bold/i.test(String(computedStyle.fontWeight || "")),
             italic: String(computedStyle.fontStyle || "").toLowerCase().includes("italic"),
+            boldThickness: defaultTextBoldThickness,
             x: 0,
             y: 0
         };
@@ -2572,9 +2729,34 @@
         return `${hours} ${hourLabel} ${minutes} min ${seconds} sec`;
     }
 
+    function getDurationParts(totalSeconds) {
+        const clamped = Math.max(0, Math.floor(totalSeconds));
+        const hours = Math.floor(clamped / 3600);
+        const minutes = Math.floor((clamped % 3600) / 60);
+        const seconds = clamped % 60;
+
+        return {
+            hours,
+            hourLabel: hours === 1 ? "hour" : "hours",
+            minutes,
+            seconds
+        };
+    }
+
     function formatDurationSelection(totalMinutes) {
         const minutes = Math.max(1, Math.floor(totalMinutes));
         return formatDurationLabel(minutes * 60);
+    }
+
+    function refreshTimerTextAsset() {
+        const timerTextElement = getAssetElement(timerTextAssetKey);
+
+        if (!timerTextElement) {
+            return;
+        }
+
+        applyAssetTextStyle(timerTextAssetKey);
+        timerTextElement.setAttribute("aria-label", formatDurationLabel(currentTimerTextSeconds));
     }
 
     function formatMinutesLabel(totalMinutes) {
@@ -3703,6 +3885,12 @@
             </label>
         </div>
 
+        <label class="pl-field">
+            <span class="pl-field-label">Bold thickness (px)</span>
+            <input class="pl-input" id="pl-layout-text-bold-thickness" type="number" min="0" max="3" step="0.25" value="0" />
+            <span class="pl-field-hint">Adds extra pixel thickness to the rendered text without changing its font family.</span>
+        </label>
+
         <span class="pl-field-hint" id="pl-layout-text-style-status">These controls affect only the overlaid text component.</span>
     `;
 
@@ -3720,6 +3908,7 @@
         layoutTextColorText = layoutTextControls.querySelector("#pl-layout-text-color-text");
         layoutTextBold = layoutTextControls.querySelector("#pl-layout-text-bold");
         layoutTextItalic = layoutTextControls.querySelector("#pl-layout-text-italic");
+        layoutTextBoldThickness = layoutTextControls.querySelector("#pl-layout-text-bold-thickness");
         layoutTextStyleStatus = layoutTextControls.querySelector("#pl-layout-text-style-status");
 
         layoutTextFontFamily.innerHTML = "";
@@ -3752,6 +3941,7 @@
 
         layoutTextBold.addEventListener("change", pushTextControlValues);
         layoutTextItalic.addEventListener("change", pushTextControlValues);
+        layoutTextBoldThickness.addEventListener("input", pushTextControlValues);
     }
 
     function syncLayoutTextColorInputs(colorValue) {
@@ -4391,6 +4581,23 @@
     //#endregion SEGMENT G1 - Slider Geometry Helpers
 
     //#region SEGMENT G2 - Slider Rendering And Asset Layout
+    function buildTextThicknessShadow(color, thicknessPx) {
+        if (!Number.isFinite(thicknessPx) || thicknessPx <= 0) {
+            return "none";
+        }
+
+        const offsets = [
+            [-1, 0], [1, 0], [0, -1], [0, 1],
+            [-1, -1], [-1, 1], [1, -1], [1, 1]
+        ];
+
+        return offsets
+            .map(function ([x, y]) {
+                return `${x * thicknessPx}px ${y * thicknessPx}px 0 ${color}`;
+            })
+            .join(", ");
+    }
+
     function applyAssetTextStyle(assetKey) {
         const assetElement = getAssetElement(assetKey);
         const labelElement = getTextLabelElement(assetKey);
@@ -4411,16 +4618,22 @@
             ? Math.max(0.0001, getWorldStageScale())
             : Math.max(0.0001, getUiProjectionScale());
         const scaledFontSize = Math.max(8, (textState.fontSize || 16) * textScale);
+        const resolvedContent = assetKey === timerTextAssetKey
+            ? formatDurationLabel(currentTimerTextSeconds)
+            : textState.content;
 
-        labelElement.textContent = textState.content;
+        labelElement.textContent = resolvedContent;
         labelElement.style.display = "block";
         labelElement.style.pointerEvents = isSelfLabeledAsset ? "auto" : "none";
         labelElement.style.textAlign = "center";
         labelElement.style.fontFamily = textState.fontFamily || layoutTextFontFamilyOptions[0].value;
         labelElement.style.fontSize = `${scaledFontSize}px`;
-        labelElement.style.fontWeight = textState.bold ? "900" : "400";
+        labelElement.style.fontWeight = textState.bold ? "700" : "400";
         labelElement.style.fontStyle = textState.italic ? "italic" : "normal";
         labelElement.style.color = normalizeHexColor(textState.color, "#ffffff");
+        labelElement.style.textShadow = buildTextThicknessShadow(
+            normalizeHexColor(textState.color, "#ffffff"),
+            Math.max(0, Number(textState.boldThickness ?? defaultTextBoldThickness)) * textScale);
 
         if (isSelfLabeledAsset) {
             assetElement.style.display = "flex";
@@ -4452,7 +4665,18 @@
         const pickerFontSizePx = Math.max(12, 1.25 * 16 * safeUiScale);
 
         durationText.style.fontSize = `${durationFontSizePx}px`;
+        durationTextLabel.style.fontSize = `${durationFontSizePx}px`;
         focusTypePicker.style.setProperty("--pl-focus-type-picker-font-size", `${pickerFontSizePx}px`);
+    }
+
+    function setDurationReadout(totalSeconds) {
+        const parts = getDurationParts(totalSeconds);
+
+        durationHoursValue.textContent = String(parts.hours);
+        durationHoursUnit.textContent = parts.hourLabel;
+        durationMinutesValue.textContent = String(parts.minutes);
+        durationSecondsValue.textContent = String(parts.seconds);
+        durationText.setAttribute("aria-label", formatDurationLabel(totalSeconds));
     }
 
     function updateSliderVisuals() {
@@ -4562,10 +4786,12 @@
             && layoutEditorEnabled
             && layoutSceneSelect.value === "focus-setup"
             && getRenderedFocusSetupStateKey() === "countup";
-        const formatted = (countUpPreviewSelected || isCountUpModeSelected())
-            ? formatDurationLabel(0)
-            : formatDurationSelection(parseInt(durationSlider.value || "5", 10));
-        durationText.textContent = formatted;
+        const readoutSeconds = countUpPreviewSelected || isCountUpModeSelected()
+            ? 0
+            : Math.max(60, Math.floor(parseInt(durationSlider.value || "5", 10) * 60));
+
+        currentTimerTextSeconds = readoutSeconds;
+        refreshTimerTextAsset();
         updateSliderVisuals();
     }
 
@@ -5038,6 +5264,7 @@
             layoutTextColorPicker,
             layoutTextColorText,
             layoutTextBold,
+            layoutTextBoldThickness,
             layoutTextItalic
         ].filter(Boolean);
     }
@@ -5285,6 +5512,7 @@
             syncLayoutTextColorInputs(textState.color);
             layoutTextBold.checked = !!textState.bold;
             layoutTextItalic.checked = !!textState.italic;
+            layoutTextBoldThickness.value = String(Number(textState.boldThickness ?? defaultTextBoldThickness));
 
             if (isSelfLabeledTextAsset(assetKey) && assetState) {
                 layoutTextStyleStatus.textContent = "X/Y move this text box. Width and height control the bounds that its text wraps inside.";
@@ -5527,6 +5755,7 @@
         }
 
         const parsedFontSize = parseInt(layoutTextFontSize.value || String(base.fontSize), 10);
+        const parsedBoldThickness = parseFloat(layoutTextBoldThickness.value || String(base.boldThickness ?? defaultTextBoldThickness));
 
         return {
             content: layoutTextContent.value ?? base.content,
@@ -5535,6 +5764,7 @@
             color: normalizeHexColor(layoutTextColorText.value || layoutTextColorPicker.value, base.color),
             bold: !!layoutTextBold.checked,
             italic: !!layoutTextItalic.checked,
+            boldThickness: Number.isFinite(parsedBoldThickness) && parsedBoldThickness >= 0 ? parsedBoldThickness : (base.boldThickness ?? defaultTextBoldThickness),
             x: base.x,
             y: base.y
         };
@@ -6261,7 +6491,6 @@
 
     function showRunStatePreview() {
         const previewSeconds = isCountUpModeSelected() ? 4800 : 1500;
-        const previewLabel = formatDurationLabel(previewSeconds);
 
         showSetupState();
         currentVisibleSceneKey = "focus-running";
@@ -6272,7 +6501,8 @@
         setRunVisible(true);
         countdownModeButton.hidden = true;
         countUpModeButton.hidden = true;
-        durationText.textContent = previewLabel;
+        currentTimerTextSeconds = previewSeconds;
+        refreshTimerTextAsset();
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Stop Focusing");
         applyLayoutVariables();
@@ -7592,6 +7822,14 @@
                 return;
             }
 
+            if (assetKey === timerTextAssetKey) {
+                const shouldMuteTimerText = isPaused
+                    && currentVisibleSceneKey === "focus-running"
+                    && !config.element.hidden;
+                config.element.classList.toggle("pl-runtime-muted", shouldMuteTimerText);
+                return;
+            }
+
             const shouldMuteCustomRunningText = sessionActive
                 && currentVisibleSceneKey === "focus-running"
                 && !config.element.hidden;
@@ -7744,9 +7982,8 @@
 
         const elapsedSeconds = getElapsedSeconds();
         const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
-        durationText.textContent = isCountUpModeSelected()
-            ? formatDurationLabel(elapsedSeconds)
-            : formatDurationLabel(remainingSeconds);
+        currentTimerTextSeconds = isCountUpModeSelected() ? elapsedSeconds : remainingSeconds;
+        refreshTimerTextAsset();
 
         updateExitButton(elapsedSeconds);
 
@@ -7795,10 +8032,6 @@
         }
 
         runAssetBehaviorRole("open-layout-mode");
-    });
-
-    standaloneLayoutLauncher.addEventListener("click", function () {
-        enableLayoutModeFromApp();
     });
 
     closeFocusButton.addEventListener("click", function () {

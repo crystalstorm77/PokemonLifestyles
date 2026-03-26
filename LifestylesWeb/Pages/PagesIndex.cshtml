@@ -39,13 +39,6 @@
                     <div class="pl-layout-hit-outline" id="pl-layout-hit-outline" hidden aria-hidden="true"></div>
 
                     <button type="button"
-                            class="pl-standalone-layout-launcher"
-                            id="pl-standalone-layout-launcher"
-                            hidden>
-                        Layout
-                    </button>
-
-                    <button type="button"
                             class="pl-canvas-item pl-canvas-button pl-canvas-button-home-focus"
                             id="pl-home-focus-button">
                         <span class="pl-button-label">Focus</span>
@@ -114,7 +107,22 @@
                         </div>
                     </label>
 
-                    <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>5 minutes</div>
+                    <div class="pl-canvas-item pl-canvas-duration-text" id="pl-duration-text" hidden>
+                        <span class="pl-canvas-duration-text-label" id="pl-duration-text-label">
+                            <span class="pl-canvas-duration-part">
+                                <span class="pl-canvas-duration-value" id="pl-duration-hours-value">0</span>
+                                <span class="pl-canvas-duration-unit" id="pl-duration-hours-unit">hours</span>
+                            </span>
+                            <span class="pl-canvas-duration-part">
+                                <span class="pl-canvas-duration-value" id="pl-duration-minutes-value">5</span>
+                                <span class="pl-canvas-duration-unit">min</span>
+                            </span>
+                            <span class="pl-canvas-duration-part">
+                                <span class="pl-canvas-duration-value" id="pl-duration-seconds-value">0</span>
+                                <span class="pl-canvas-duration-unit">sec</span>
+                            </span>
+                        </span>
+                    </div>
 
                     <div class="pl-canvas-item pl-slider-group" id="pl-slider-group" hidden>
                         <div class="pl-slider-track-shell" id="pl-slider-track-shell">
