@@ -2,8 +2,10 @@
     //#region SEGMENT A - Element References And Runtime State
     const homeRoot = document.getElementById("pl-home-root");
     const worldStage = document.getElementById("pl-world-stage");
+    const safeUiStageShell = document.getElementById("pl-safe-ui-stage-shell");
     const safeUiStage = document.getElementById("pl-safe-ui-stage");
     const safeZoneOutline = document.getElementById("pl-safe-zone-outline");
+    const statusToast = safeUiStage?.querySelector(".pl-status-toast") || null;
 
     const homeSceneArt = document.getElementById("pl-home-scene-art");
     const homeFocusButton = document.getElementById("pl-home-focus-button");
@@ -20,6 +22,7 @@
     const durationHoursUnit = document.getElementById("pl-duration-hours-unit");
     const durationMinutesValue = document.getElementById("pl-duration-minutes-value");
     const durationSecondsValue = document.getElementById("pl-duration-seconds-value");
+    const barAsset = document.getElementById("pl-bar");
     const sliderGroup = document.getElementById("pl-slider-group");
     const sliderTrackShell = document.getElementById("pl-slider-track-shell");
     const sliderTrackEmptyArt = document.getElementById("pl-slider-track-empty-art");
@@ -63,6 +66,9 @@
     const confirmPanel = document.getElementById("pl-confirm-panel");
     const confirmKeepGoingButton = document.getElementById("pl-confirm-keep-going");
     const confirmStopButton = document.getElementById("pl-confirm-stop");
+    const countupStopConfirmPanel = document.getElementById("pl-countup-stop-confirm-panel");
+    const countupConfirmKeepGoingButton = document.getElementById("pl-countup-confirm-keep-going");
+    const countupConfirmStopButton = document.getElementById("pl-countup-confirm-stop");
 
     const rewardDim = document.getElementById("pl-reward-dim");
     const rewardPanel = document.getElementById("pl-reward-panel");
@@ -86,12 +92,20 @@
     const confirmCurrentLabel = document.getElementById("pl-confirm-current-label");
     const confirmCurrentXp = document.getElementById("pl-confirm-current-xp");
     const confirmCurrentCoins = document.getElementById("pl-confirm-current-coins");
+    const stopConfirmCurrentXp = document.getElementById("pl-stop-confirm-current-xp");
+    const stopConfirmCurrentCoins = document.getElementById("pl-stop-confirm-current-coins");
+    const stopConfirmPotentialXp = document.getElementById("pl-stop-confirm-potential-xp");
+    const stopConfirmPotentialCoins = document.getElementById("pl-stop-confirm-potential-coins");
+    const countupStopConfirmCurrentXp = document.getElementById("pl-countup-stop-confirm-current-xp");
+    const countupStopConfirmCurrentCoins = document.getElementById("pl-countup-stop-confirm-current-coins");
 
     const rewardStatusText = document.getElementById("pl-reward-status-text");
     const rewardFocusType = document.getElementById("pl-reward-focus-type");
     const rewardDurationText = document.getElementById("pl-reward-duration-text");
     const rewardXp = document.getElementById("pl-reward-xp");
     const rewardCoins = document.getElementById("pl-reward-coins");
+    const rewardCurrentXp = document.getElementById("pl-reward-current-xp");
+    const rewardCurrentCoins = document.getElementById("pl-reward-current-coins");
 
     const saveForm = document.getElementById("pl-save-form");
     const saveFocusType = document.getElementById("pl-save-focus-type");
@@ -156,10 +170,11 @@
     const layoutResetDefault = document.getElementById("pl-layout-reset-default");
     const layoutCode = document.getElementById("pl-layout-code");
 
-    if (!homeRoot || !worldStage || !safeUiStage || !safeZoneOutline ||
+    if (!homeRoot || !worldStage || !safeUiStageShell || !safeUiStage || !safeZoneOutline ||
         !homeSceneArt || !homeFocusButton || !homeSleepButton || !openLayoutModeButton ||
         !setupPanel || !setupControls || !focusTypeLabel || !focusTypeField || !durationText || !durationTextLabel ||
         !durationHoursValue || !durationHoursUnit || !durationMinutesValue || !durationSecondsValue ||
+        !barAsset ||
         !sliderGroup || !sliderTrackShell || !sliderTrackEmptyArt || !sliderFillShell ||
         !sliderFillArt || !sliderNibVisual || !durationSlider || !startFocusButton ||
         !countdownModeButton || !countUpModeButton ||
@@ -172,14 +187,17 @@
         !focusManageConfirmDeleteButton || !focusManageConfirmCancelButton ||
         !focusManageConfirmDismissField || !focusManageConfirmDismissInput ||
         !confirmDim || !confirmPanel || !confirmKeepGoingButton || !confirmStopButton ||
+        !countupStopConfirmPanel || !countupConfirmKeepGoingButton || !countupConfirmStopButton ||
         !rewardDim || !rewardPanel || !rewardCloseButton || !focusTypeInput ||
         !focusTypePicker || !focusTypePickerViewport || !focusTypePickerList ||
         !setupModeBadge || !setupModeHint || !confirmEyebrow || !confirmTitle ||
         !confirmSubtitle || !confirmCurrentTime || !confirmTimerStatus ||
         !confirmCompleteLabel || !confirmCompleteXp || !confirmCompleteCoins ||
         !confirmCurrentLabel || !confirmCurrentXp || !confirmCurrentCoins ||
+        !stopConfirmCurrentXp || !stopConfirmCurrentCoins || !stopConfirmPotentialXp || !stopConfirmPotentialCoins ||
+        !countupStopConfirmCurrentXp || !countupStopConfirmCurrentCoins ||
         !rewardStatusText || !rewardFocusType || !rewardDurationText || !rewardXp ||
-        !rewardCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
+        !rewardCoins || !rewardCurrentXp || !rewardCurrentCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
         !saveElapsedSeconds || !saveTimerMode || !saveMode || !layoutPanel || !layoutEditorToggle ||
         !layoutEditorModeSelect || !layoutEditorModeHint ||
         !layoutEditorModeStatus || !layoutAssetSelect || !layoutSceneSelect ||
@@ -202,7 +220,8 @@
     }
 
     const stopThresholdSeconds = 60;
-    const layoutModeStorageKey = "plLayoutModeRequested";
+        const layoutModeStorageKey = "plLayoutModeRequested";
+        const rangeSelectorStorageKey = "plRangeSelectorValue";
 
     function readStandaloneLayoutModePreference() {
         try {
@@ -221,6 +240,35 @@
         }
     }
 
+    function clampRangeSelectorValue(value) {
+        const parsed = Number(value);
+
+        if (!Number.isFinite(parsed)) {
+            return 0;
+        }
+
+        return Math.max(0, Math.min(1, parsed));
+    }
+
+    function readRangeSelectorPreference() {
+        try {
+            return clampRangeSelectorValue(window.localStorage.getItem(rangeSelectorStorageKey));
+        }
+        catch {
+            return 0;
+        }
+    }
+
+    function writeRangeSelectorPreference(value) {
+        rangeSelectorValue = clampRangeSelectorValue(value);
+
+        try {
+            window.localStorage.setItem(rangeSelectorStorageKey, String(rangeSelectorValue));
+        }
+        catch {
+        }
+    }
+
     const layoutModeParam = new URL(window.location.href).searchParams.get("layout");
     if (layoutModeParam === "1") {
         writeStandaloneLayoutModePreference(true);
@@ -234,6 +282,7 @@
     const layoutModeEnabled = layoutModeParam === "1"
         || (layoutModeParam !== "0" && standaloneDisplayRequested && readStandaloneLayoutModePreference());
     let layoutEditorEnabled = layoutModeEnabled;
+    const initialRangeSelectorValue = readRangeSelectorPreference();
     const layoutSyncReadUrl = "/LayoutSync?handler=Read";
     const layoutSyncWriteUrl = "/LayoutSync?handler=Write";
     const layoutSyncUploadArtUrl = "/LayoutSync?handler=UploadArt";
@@ -252,6 +301,7 @@
     const focusTypeHighlightLineAssetKey = "focus-type-highlight-line-color";
     const retiredDurationTextAssetKey = "duration-text";
     const timerTextAssetKey = "timer-text";
+    const countdownModeTextAssetKey = "countdown-mode-text";
     const bundledUiFontFamily = "\"Caveat\", sans-serif";
     const defaultTextBoldThickness = 0;
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
@@ -299,9 +349,14 @@
         "focus-manage-ok": "--pl-focus-manage-ok-image",
         "focus-manage-confirm-delete": "--pl-focus-manage-confirm-delete-image",
         "focus-manage-confirm-cancel": "--pl-focus-manage-confirm-cancel-image",
+        "focus-manage-input": "--pl-focus-manage-input-box-image",
         "keep-going": "--pl-btn-keep-going-image",
         "stop": "--pl-btn-stop-image",
+        "countup-stop-confirm-panel": "--pl-countup-stop-confirm-panel-image",
+        "countup-keep-going": "--pl-btn-countup-keep-going-image",
+        "countup-stop": "--pl-btn-countup-stop-image",
         "gotcha": "--pl-btn-gotcha-image",
+        "bar": "--pl-bar-image",
         "slider": "--pl-slider-track-empty-image",
         "slider-nib-art": "--pl-slider-nib-image"
     };
@@ -335,6 +390,7 @@
         "countup-mode": { element: countUpModeButton, stage: "ui", interactive: true },
         "focus-type-label": { element: focusTypeLabel, stage: "ui", interactive: false },
         "focus-type-field": { element: focusTypeField, stage: "ui", interactive: false },
+        "bar": { element: barAsset, stage: "ui", interactive: true },
         "duration-text": { element: durationText, stage: "ui", interactive: false },
         "slider": { element: sliderGroup, stage: "ui", interactive: true, compound: true },
         "start": { element: startFocusButton, stage: "ui", interactive: true },
@@ -357,9 +413,20 @@
         "focus-manage-confirm-cancel": { element: focusManageConfirmCancelButton, stage: "ui", interactive: true },
         "focus-manage-confirm-dismiss": { element: focusManageConfirmDismissField, stage: "ui", interactive: true },
         "confirm-panel": { element: confirmPanel, stage: "ui", interactive: false },
+        "stop-confirm-current-xp": { element: stopConfirmCurrentXp, stage: "ui", interactive: false },
+        "stop-confirm-current-coins": { element: stopConfirmCurrentCoins, stage: "ui", interactive: false },
+        "stop-confirm-potential-xp": { element: stopConfirmPotentialXp, stage: "ui", interactive: false },
+        "stop-confirm-potential-coins": { element: stopConfirmPotentialCoins, stage: "ui", interactive: false },
         "keep-going": { element: confirmKeepGoingButton, stage: "ui", interactive: true },
         "stop": { element: confirmStopButton, stage: "ui", interactive: true },
+        "countup-stop-confirm-panel": { element: countupStopConfirmPanel, stage: "ui", interactive: false },
+        "countup-stop-confirm-current-xp": { element: countupStopConfirmCurrentXp, stage: "ui", interactive: false },
+        "countup-stop-confirm-current-coins": { element: countupStopConfirmCurrentCoins, stage: "ui", interactive: false },
+        "countup-keep-going": { element: countupConfirmKeepGoingButton, stage: "ui", interactive: true },
+        "countup-stop": { element: countupConfirmStopButton, stage: "ui", interactive: true },
         "reward-panel": { element: rewardPanel, stage: "ui", interactive: false },
+        "reward-current-xp": { element: rewardCurrentXp, stage: "ui", interactive: false },
+        "reward-current-coins": { element: rewardCurrentCoins, stage: "ui", interactive: false },
         "gotcha": { element: rewardCloseButton, stage: "ui", interactive: true }
     };
 
@@ -376,6 +443,7 @@
         "exit": exitButton.querySelector(".pl-button-label"),
         "focus-type-label": focusTypeLabel,
         "focus-manage-input-label": focusManageInputLabel,
+        "focus-manage-input": focusManageInput,
         "focus-manage-add": focusManageAddButton.querySelector(".pl-button-label"),
         "focus-manage-delete": focusManageDeleteButton.querySelector(".pl-button-label"),
         "focus-manage-back": focusManageBackButton.querySelector(".pl-button-label"),
@@ -384,8 +452,18 @@
         "focus-manage-confirm-message": focusManageConfirmMessage,
         "focus-manage-confirm-delete": focusManageConfirmDeleteButton.querySelector(".pl-button-label"),
         "focus-manage-confirm-cancel": focusManageConfirmCancelButton.querySelector(".pl-button-label"),
+        "stop-confirm-current-xp": stopConfirmCurrentXp,
+        "stop-confirm-current-coins": stopConfirmCurrentCoins,
+        "stop-confirm-potential-xp": stopConfirmPotentialXp,
+        "stop-confirm-potential-coins": stopConfirmPotentialCoins,
+        "countup-stop-confirm-current-xp": countupStopConfirmCurrentXp,
+        "countup-stop-confirm-current-coins": countupStopConfirmCurrentCoins,
+        "reward-current-xp": rewardCurrentXp,
+        "reward-current-coins": rewardCurrentCoins,
         "keep-going": confirmKeepGoingButton.querySelector(".pl-button-label"),
         "stop": confirmStopButton.querySelector(".pl-button-label"),
+        "countup-keep-going": countupConfirmKeepGoingButton.querySelector(".pl-button-label"),
+        "countup-stop": countupConfirmStopButton.querySelector(".pl-button-label"),
         "gotcha": rewardCloseButton.querySelector(".pl-button-label")
     };
 
@@ -406,6 +484,8 @@
         "focus-manage-ok": "ok.png",
         "focus-manage-confirm-delete": "delete.png",
         "focus-manage-confirm-cancel": "cancel.png",
+        "countup-keep-going": "keep-going.png",
+        "countup-stop": "stop.png",
         "gotcha": "gotcha.png"
     };
 
@@ -520,6 +600,8 @@
         "focus-manage-confirm-cancel": "none",
         "keep-going": "confirm-keep-going",
         "stop": "confirm-stop-session",
+        "countup-keep-going": "confirm-keep-going",
+        "countup-stop": "confirm-stop-session",
         "gotcha": "close-reward"
     };
 
@@ -530,19 +612,13 @@
         },
         "focus-setup": {
             label: "Focus setup",
-            assets: ["setup-panel", "countdown-mode", "countup-mode", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, timerTextAssetKey, "slider", "start", "back", "manage-button"],
+            assets: ["setup-panel", "countdown-mode", "countup-mode", countdownModeTextAssetKey, "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, timerTextAssetKey, "bar", "start", "back", "manage-button"],
             states: {
-                base: {
-                    label: "Base"
-                },
                 countdown: {
                     label: "Count Down"
                 },
                 countup: {
-                    label: "Count Up",
-                    visibility: {
-                        slider: false
-                    }
+                    label: "Count Up"
                 }
             }
         },
@@ -556,7 +632,12 @@
                 "focus-manage-add",
                 "focus-manage-delete",
                 "focus-manage-back",
-                "focus-manage-ok",
+                "focus-manage-ok"
+            ]
+        },
+        "focus-manage-confirm": {
+            label: "Focus manage confirm",
+            assets: [
                 "focus-manage-confirm-panel",
                 "focus-manage-confirm-title",
                 "focus-manage-confirm-message",
@@ -567,35 +648,82 @@
         },
         "focus-running": {
             label: "Focus running",
-            assets: ["setup-panel", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, timerTextAssetKey, "slider", "pause", "exit"],
+            assets: ["setup-panel", "focus-type-label", "focus-type-field", focusTypeHighlightFillAssetKey, focusTypeHighlightLineAssetKey, timerTextAssetKey, "pause", "exit"],
             states: {
-                base: {
-                    label: "Base"
-                },
                 countdown: {
                     label: "Count Down"
                 },
                 countup: {
-                    label: "Count Up",
-                    visibility: {
-                        slider: false
-                    }
+                    label: "Count Up"
                 }
             }
         },
         "stop-confirm": {
             label: "Stop confirm",
-            assets: ["confirm-panel", "keep-going", "stop"]
+            assets: [
+                "confirm-panel",
+                "stop-confirm-current-xp",
+                "stop-confirm-current-coins",
+                "stop-confirm-potential-xp",
+                "stop-confirm-potential-coins",
+                "keep-going",
+                "stop"
+            ]
+        },
+        "countup-stop-confirm": {
+            label: "Count up stop confirm",
+            assets: [
+                "countup-stop-confirm-panel",
+                "countup-stop-confirm-current-xp",
+                "countup-stop-confirm-current-coins",
+                "countup-keep-going",
+                "countup-stop"
+            ]
         },
         "reward": {
             label: "Reward",
-            assets: ["reward-panel", "gotcha"]
+            assets: ["reward-panel", "reward-current-xp", "reward-current-coins", "gotcha"]
         },
         "app-shell": {
             label: "App shell",
             assets: [layoutColorAssetKey]
         }
     };
+
+    const layoutOverlayDefinitions = {
+        "none": {
+            label: "None",
+            baseSceneKey: null
+        },
+        "focus-manage": {
+            label: "Focus manage",
+            baseSceneKey: "focus-setup"
+        },
+        "focus-manage-confirm": {
+            label: "Focus manage confirm",
+            baseSceneKey: "focus-setup"
+        },
+        "stop-confirm": {
+            label: "Stop confirm",
+            baseSceneKey: "focus-running"
+        },
+        "countup-stop-confirm": {
+            label: "Count up stop confirm",
+            baseSceneKey: "focus-running"
+        },
+        "reward": {
+            label: "Reward",
+            baseSceneKey: "focus-running"
+        }
+    };
+
+    const layoutBaseSceneKeys = ["home", "focus-setup", "focus-running", "app-shell"];
+    const overlaySceneKeys = new Set(Object.keys(layoutOverlayDefinitions).filter(function (overlayKey) {
+        return overlayKey !== "none";
+    }));
+    const overlayAssetKeys = new Set(Array.from(overlaySceneKeys).flatMap(function (overlayKey) {
+        return layoutSceneDefinitions[overlayKey]?.assets || [];
+    }));
 
     const layoutAssetDefaultStates = {
         "open-layout-mode": { x: 318, y: 16, width: 84, height: 34, scale: 100 },
@@ -614,6 +742,17 @@
         "focus-manage-confirm-delete": { x: 96, y: 190, width: 70, height: 38, scale: 100 },
         "focus-manage-confirm-cancel": { x: 176, y: 190, width: 76, height: 38, scale: 100 },
         "focus-manage-confirm-dismiss": { x: 96, y: 234, width: 140, height: 24, scale: 100 },
+        "stop-confirm-current-xp": { x: 86, y: 170, width: 76, height: 28, scale: 100 },
+        "stop-confirm-current-coins": { x: 86, y: 214, width: 76, height: 28, scale: 100 },
+        "stop-confirm-potential-xp": { x: 238, y: 170, width: 76, height: 28, scale: 100 },
+        "stop-confirm-potential-coins": { x: 238, y: 214, width: 76, height: 28, scale: 100 },
+        "countup-stop-confirm-panel": { x: 76, y: 120, width: 196, height: 120, scale: 100 },
+        "countup-stop-confirm-current-xp": { x: 126, y: 176, width: 96, height: 30, scale: 100 },
+        "countup-stop-confirm-current-coins": { x: 126, y: 216, width: 96, height: 30, scale: 100 },
+        "countup-keep-going": { x: 76, y: 252, width: 100, height: 42, scale: 100 },
+        "countup-stop": { x: 186, y: 252, width: 100, height: 42, scale: 100 },
+        "reward-current-xp": { x: 126, y: 236, width: 92, height: 34, scale: 100 },
+        "reward-current-coins": { x: 126, y: 286, width: 92, height: 34, scale: 100 },
         "slider": { x: 40, y: 548, width: 348, height: 80, scale: 100 }
     };
 
@@ -748,6 +887,7 @@
     let currentLayoutEditorMode = "layout";
     let currentVisibleSceneKey = "home";
     let currentVisibleSceneStateKey = "base";
+    let currentVisibleOverlayKey = "none";
     const dynamicAssetKeys = new Set();
     let savedFocusLabels = parseInitialFocusLabels();
     let focusTypePickerSelectedIndex = 0;
@@ -756,6 +896,7 @@
     let focusTypePickerSuppressClickUntil = 0;
     let focusTypePickerPositionPx = 0;
     let focusTypePickerAnimationFrameId = 0;
+    let activeButtonPressState = null;
     let draftFocusLabels = [];
     let selectedFocusLabelDraftId = "";
     let focusManageSaveConfirmOpen = false;
@@ -786,6 +927,8 @@
     let activeConfirmContext = "stop";
     let dragState = null;
     let sliderDragState = null;
+    let rangeSelectorDragState = null;
+    let rangeSelectorValue = initialRangeSelectorValue;
     let focusManageScrollbarDragState = null;
 
     const layoutAssetField = layoutAssetSelect.closest(".pl-field");
@@ -816,6 +959,7 @@
 
     let layoutTextControls = null;
     let layoutTextContent = null;
+    let layoutTextAlternateContent = null;
     let layoutTextFontFamily = null;
     let layoutTextFontSize = null;
     let layoutTextColorPicker = null;
@@ -823,10 +967,22 @@
     let layoutTextBold = null;
     let layoutTextItalic = null;
     let layoutTextBoldThickness = null;
+    let layoutTextPressedYOffset = null;
     let layoutTextStyleStatus = null;
+    let layoutTimerHoursGap = null;
+    let layoutTimerMinutesGap = null;
+    let layoutModeCountdownContent = null;
+    let layoutModeCountupContent = null;
+    let layoutOverlayField = null;
+    let layoutOverlaySelect = null;
+    let layoutOverlayStatus = null;
 
     let componentOutline = document.getElementById("pl-layout-component-outline");
     let hitOutline = document.getElementById("pl-layout-hit-outline");
+    let overlayStageShell = null;
+    let overlayStage = null;
+    let overlayBackdrop = null;
+    let focusManageConfirmBackdrop = null;
 
     const defaultLayoutEdgeColor = normalizeHexColor(
         getComputedStyle(document.documentElement).getPropertyValue(layoutEdgeColorVariableName),
@@ -963,6 +1119,14 @@
         return !!(varName && readCssUrlVar(varName));
     }
 
+    function getDerivedPressedArtCssVariableName(assetKey) {
+        const rootVariableName = artImageVars[assetKey] || "";
+
+        return rootVariableName.endsWith("-image")
+            ? rootVariableName.replace(/-image$/, "-pressed-image")
+            : "";
+    }
+
     function getArtImageCssVariableName(assetKey, componentKey = "root") {
         if (!assetKey) {
             return "";
@@ -970,6 +1134,10 @@
 
         if (!componentKey || componentKey === "root") {
             return artImageVars[assetKey] || "";
+        }
+
+        if (componentKey === "pressed") {
+            return getDerivedPressedArtCssVariableName(assetKey);
         }
 
         return artComponentImageVars[assetKey]?.[componentKey] || "";
@@ -1084,7 +1252,7 @@
         }
 
         const result = {};
-        const keys = ["content", "fontFamily", "fontSize", "color", "bold", "italic", "boldThickness", "x", "y"];
+        const keys = ["content", "alternateContent", "fontFamily", "fontSize", "color", "bold", "italic", "boldThickness", "x", "y", "hoursGap", "minutesGap", "countdownContent", "countupContent", "pressedYOffset"];
 
         keys.forEach(function (key) {
             const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
@@ -1312,6 +1480,7 @@
     function createTimerTextLayoutSeed(sourceState) {
         const normalized = normalizeLayoutOverride(cloneJsonCompatibleObject(sourceState))
             || getCssLayoutDefaults(retiredDurationTextAssetKey);
+        const normalizedText = normalizeLayoutTextStorage(normalized.text);
 
         return {
             x: normalized.x,
@@ -1329,9 +1498,41 @@
                 bold: "true",
                 italic: "false",
                 x: "0",
-                y: "0"
+                y: "0",
+                hoursGap: normalizedText.hoursGap ?? "0.8",
+                minutesGap: normalizedText.minutesGap ?? "0.8",
+                pressedYOffset: normalizedText.pressedYOffset ?? "0"
             },
             states: cloneJsonCompatibleObject(normalized.states || {})
+        };
+    }
+
+    function createCountdownModeTextLayoutSeed() {
+        return {
+            x: 124,
+            y: 152,
+            width: 180,
+            height: 34,
+            scale: 100,
+            lockAspectRatio: false,
+            components: {},
+            text: {
+                content: "Count Down Mode",
+                countdownContent: "Count Down Mode",
+                countupContent: "Count Up Mode",
+                fontFamily: bundledUiFontFamily,
+                fontSize: "18",
+                color: "#1d2842",
+                bold: "true",
+                italic: "false",
+                boldThickness: "0",
+                x: "0",
+                y: "0",
+                hoursGap: "0.8",
+                minutesGap: "0.8",
+                pressedYOffset: "0"
+            },
+            states: {}
         };
     }
 
@@ -1354,17 +1555,52 @@
             states: normalizeLayoutAssetStates(baseState.states ?? baseState.States)
         };
 
+        const brokenSliderVisibilityStateKeys = [
+            "focus-setup::countdown"
+        ];
+
+        brokenSliderVisibilityStateKeys.forEach(function (stateStorageKey) {
+            const stateOverride = nextState.states?.[stateStorageKey];
+            if (stateOverride && stateOverride.visible === false) {
+                delete nextState.states[stateStorageKey];
+            }
+        });
+
         const widthLooksBroken = !Number.isFinite(nextState.width) || nextState.width < 40;
         const heightLooksBroken = !Number.isFinite(nextState.height) || nextState.height < 20;
         const scaleLooksBroken = !Number.isFinite(nextState.scale) || nextState.scale <= 0;
+        const widthDriftedTooFar = Number.isFinite(nextState.width) && Number.isFinite(fallbackState.width)
+            && nextState.width > Math.round(fallbackState.width * 1.08);
+        const heightDriftedTooFar = Number.isFinite(nextState.height) && Number.isFinite(fallbackState.height)
+            && nextState.height > Math.round(fallbackState.height * 1.5);
+        const aspectLooksBroken = Number.isFinite(nextState.width) && Number.isFinite(nextState.height)
+            && (nextState.width / Math.max(1, nextState.height)) < 2.5;
+        const xDriftedTooFar = Number.isFinite(nextState.x) && Number.isFinite(fallbackState.x)
+            && Math.abs(nextState.x - fallbackState.x) > 140;
+        const yDriftedTooFar = Number.isFinite(nextState.y) && Number.isFinite(fallbackState.y)
+            && Math.abs(nextState.y - fallbackState.y) > 180;
 
-        if (widthLooksBroken || heightLooksBroken || scaleLooksBroken) {
+        if (widthLooksBroken || heightLooksBroken || scaleLooksBroken || widthDriftedTooFar || heightDriftedTooFar || aspectLooksBroken) {
             return {
-                x: fallbackState.x,
-                y: fallbackState.y,
+                x: nextState.x,
+                y: nextState.y,
                 width: fallbackState.width,
                 height: fallbackState.height,
                 scale: fallbackState.scale,
+                lockAspectRatio: false,
+                components: nextState.components,
+                text: nextState.text,
+                states: nextState.states
+            };
+        }
+
+        if (xDriftedTooFar || yDriftedTooFar) {
+            return {
+                x: fallbackState.x,
+                y: fallbackState.y,
+                width: nextState.width,
+                height: nextState.height,
+                scale: nextState.scale,
                 lockAspectRatio: false,
                 components: nextState.components,
                 text: nextState.text,
@@ -1443,6 +1679,25 @@
         });
     }
 
+    function ensureCountdownModeTextAssetSetup() {
+        if (!sharedSceneAssetDefinitions[countdownModeTextAssetKey]) {
+            sharedSceneAssetDefinitions[countdownModeTextAssetKey] = {
+                type: "text",
+                presetKey: "text-label",
+                text: "Count Down Mode",
+                behaviorRole: "none"
+            };
+        }
+
+        if (!sharedLayoutState[countdownModeTextAssetKey]) {
+            sharedLayoutState[countdownModeTextAssetKey] = createCountdownModeTextLayoutSeed();
+        }
+
+        if (!sharedDefaultLayoutState[countdownModeTextAssetKey]) {
+            sharedDefaultLayoutState[countdownModeTextAssetKey] = createCountdownModeTextLayoutSeed();
+        }
+    }
+
     async function loadSharedLayoutState() {
         try {
             const response = await fetch(layoutSyncReadUrl, { cache: "no-store" });
@@ -1485,6 +1740,7 @@
         ensureSharedLayoutVariableDefaults();
         ensureSliderAssetSetup();
         ensureTimerTextAssetSetup();
+        ensureCountdownModeTextAssetSetup();
         sharedDefaultLayoutVariables = ensureLayoutVariableDefaults(
             sharedDefaultLayoutVariables,
             sharedLayoutVariables.appEdgeColor);
@@ -1526,7 +1782,8 @@
             visibleTopRatio: 0,
             visibleWidthRatio: 1,
             visibleHeightRatio: 1,
-            hasVisibleBounds: false
+            hasVisibleBounds: false,
+            visibleAnchorXRatio: 0.5
         };
 
         try {
@@ -1579,6 +1836,47 @@
                 metrics.visibleWidthRatio = (maxX - minX + 1) / image.naturalWidth;
                 metrics.visibleHeightRatio = (maxY - minY + 1) / image.naturalHeight;
                 metrics.hasVisibleBounds = true;
+
+                const visibleHeight = maxY - minY + 1;
+                const sampleCenterY = minY + (visibleHeight / 2);
+                const sampleRadius = Math.max(1, Math.round(visibleHeight * 0.08));
+                let anchorLeftSum = 0;
+                let anchorRightSum = 0;
+                let anchorSampleCount = 0;
+
+                for (let y = Math.max(minY, Math.round(sampleCenterY - sampleRadius));
+                    y <= Math.min(maxY, Math.round(sampleCenterY + sampleRadius));
+                    y += 1) {
+                    let rowMinX = image.naturalWidth;
+                    let rowMaxX = -1;
+
+                    for (let x = minX; x <= maxX; x += 1) {
+                        const alpha = imageData[((y * image.naturalWidth) + x) * 4 + 3];
+
+                        if (alpha > 0) {
+                            if (x < rowMinX) {
+                                rowMinX = x;
+                            }
+
+                            if (x > rowMaxX) {
+                                rowMaxX = x;
+                            }
+                        }
+                    }
+
+                    if (rowMaxX >= rowMinX) {
+                        anchorLeftSum += rowMinX;
+                        anchorRightSum += rowMaxX;
+                        anchorSampleCount += 1;
+                    }
+                }
+
+                if (anchorSampleCount > 0) {
+                    const anchorLeft = anchorLeftSum / anchorSampleCount;
+                    const anchorRight = anchorRightSum / anchorSampleCount;
+                    const anchorCenter = (anchorLeft + anchorRight) / 2;
+                    metrics.visibleAnchorXRatio = (anchorCenter - minX) / Math.max(1, (maxX - minX + 1));
+                }
             }
         }
         catch {
@@ -1663,6 +1961,31 @@
     }
 
     function getDefaultComponentState(assetKey, componentKey) {
+        if (assetKey === "range-selector") {
+            switch (componentKey) {
+                case "nib":
+                    return {
+                        x: 0,
+                        y: 0,
+                        width: null,
+                        height: null,
+                        scale: 100,
+                        hitScaleX: 100,
+                        hitScaleY: 100
+                    };
+                default:
+                    return {
+                        x: 0,
+                        y: 0,
+                        width: null,
+                        height: null,
+                        scale: 100,
+                        hitScaleX: 100,
+                        hitScaleY: 100
+                    };
+            }
+        }
+
         if (assetKey === "slider") {
             switch (componentKey) {
                 case "empty":
@@ -1754,6 +2077,15 @@
     function normalizeEditableTextState(rawState, fallbackState) {
         return {
             content: typeof rawState?.content === "string" ? rawState.content : fallbackState.content,
+            alternateContent: typeof rawState?.alternateContent === "string"
+                ? rawState.alternateContent
+                : (fallbackState.alternateContent ?? fallbackState.content),
+            countdownContent: typeof rawState?.countdownContent === "string"
+                ? rawState.countdownContent
+                : (fallbackState.countdownContent ?? fallbackState.content),
+            countupContent: typeof rawState?.countupContent === "string"
+                ? rawState.countupContent
+                : (fallbackState.countupContent ?? fallbackState.content),
             fontFamily: typeof rawState?.fontFamily === "string" && rawState.fontFamily.trim()
                 ? rawState.fontFamily.trim()
                 : fallbackState.fontFamily,
@@ -1763,13 +2095,19 @@
             italic: readTextStorageBoolean(rawState?.italic, fallbackState.italic),
             boldThickness: Math.max(0, readTextStorageFloat(rawState?.boldThickness, fallbackState.boldThickness ?? defaultTextBoldThickness)),
             x: readTextStorageInt(rawState?.x, fallbackState.x),
-            y: readTextStorageInt(rawState?.y, fallbackState.y)
+            y: readTextStorageInt(rawState?.y, fallbackState.y),
+            hoursGap: readTextStorageFloat(rawState?.hoursGap, fallbackState.hoursGap ?? 0.8),
+            minutesGap: readTextStorageFloat(rawState?.minutesGap, fallbackState.minutesGap ?? 0.8),
+            pressedYOffset: readTextStorageFloat(rawState?.pressedYOffset, fallbackState.pressedYOffset ?? 0)
         };
     }
 
     function serializeTextState(textState) {
         return {
             content: String(textState.content ?? ""),
+            alternateContent: String(textState.alternateContent ?? textState.content ?? ""),
+            countdownContent: String(textState.countdownContent ?? textState.content ?? ""),
+            countupContent: String(textState.countupContent ?? textState.content ?? ""),
             fontFamily: String(textState.fontFamily ?? layoutTextFontFamilyOptions[0].value),
             fontSize: String(Math.max(8, Math.round(textState.fontSize || 16))),
             color: normalizeHexColor(textState.color, "#ffffff"),
@@ -1777,7 +2115,10 @@
             italic: textState.italic ? "true" : "false",
             boldThickness: String(Math.max(0, Number(textState.boldThickness ?? defaultTextBoldThickness))),
             x: String(Math.round(textState.x || 0)),
-            y: String(Math.round(textState.y || 0))
+            y: String(Math.round(textState.y || 0)),
+            hoursGap: String(Number(textState.hoursGap ?? 0.8)),
+            minutesGap: String(Number(textState.minutesGap ?? 0.8)),
+            pressedYOffset: String(Number(textState.pressedYOffset ?? 0))
         };
     }
 
@@ -1788,6 +2129,17 @@
 
             return {
                 content: sceneAssetDefinition?.text || "New Text",
+                alternateContent: assetKey === "pause"
+                    ? "Keep Going?"
+                    : (assetKey === "exit"
+                        ? "Stop Focusing"
+                        : (sceneAssetDefinition?.text || "New Text")),
+                countdownContent: assetKey === countdownModeTextAssetKey
+                    ? "Count Down Mode"
+                    : (sceneAssetDefinition?.text || "New Text"),
+                countupContent: assetKey === countdownModeTextAssetKey
+                    ? "Count Up Mode"
+                    : (sceneAssetDefinition?.text || "New Text"),
                 fontFamily: preset.fontFamily,
                 fontSize: preset.fontSize,
                 color: preset.color,
@@ -1795,7 +2147,10 @@
                 italic: preset.italic,
                 boldThickness: defaultTextBoldThickness,
                 x: 0,
-                y: 0
+                y: 0,
+                hoursGap: 0.8,
+                minutesGap: 0.8,
+                pressedYOffset: 0
             };
         }
 
@@ -1808,9 +2163,15 @@
         const computedStyle = getComputedStyle(labelElement);
         const parsedFontSize = parseInt(computedStyle.fontSize || "", 10);
         const parsedFontWeight = parseInt(computedStyle.fontWeight || "", 10);
+        const resolvedContent = assetKey === "focus-manage-input"
+            ? (labelElement.getAttribute("placeholder") || "")
+            : (labelElement.textContent || "");
 
         return {
-            content: labelElement.textContent || "",
+            content: resolvedContent,
+            alternateContent: assetKey === "pause"
+                ? "Keep Going?"
+                : (assetKey === "exit" ? "Stop Focusing" : resolvedContent),
             fontFamily: computedStyle.fontFamily || layoutTextFontFamilyOptions[0].value,
             fontSize: Number.isFinite(parsedFontSize) && parsedFontSize > 0 ? parsedFontSize : 16,
             color: normalizeHexColor(computedStyle.color, "#ffffff"),
@@ -1820,7 +2181,10 @@
             italic: String(computedStyle.fontStyle || "").toLowerCase().includes("italic"),
             boldThickness: defaultTextBoldThickness,
             x: 0,
-            y: 0
+            y: 0,
+            hoursGap: 0.8,
+            minutesGap: 0.8,
+            pressedYOffset: 0
         };
     }
 
@@ -2100,6 +2464,16 @@
         });
     }
 
+    function getComponentArtMetricKey(assetKey, componentKey = "root") {
+        return componentKey && componentKey !== "root"
+            ? `${assetKey}:${componentKey}`
+            : assetKey;
+    }
+
+    function getComponentArtMetrics(assetKey, componentKey = "root") {
+        return artMetrics[getComponentArtMetricKey(assetKey, componentKey)] || null;
+    }
+
     function beginImageDraft(assetKey, componentKey, file) {
         if (!assetKey || !file) {
             return;
@@ -2117,8 +2491,12 @@
         applyLayoutVariables();
 
         if (!isRootComponent(currentImageDraftComponentKey)) {
-            applyAllAssetLayouts();
-            refreshLayoutUi();
+            refreshArtMetricsForAsset(
+                getComponentArtMetricKey(assetKey, currentImageDraftComponentKey),
+                currentImageDraftUrl).then(function () {
+                applyAllAssetLayouts();
+                refreshLayoutUi();
+            });
             return;
         }
 
@@ -2140,8 +2518,12 @@
         }
 
         if (componentKey !== "root") {
-            applyAllAssetLayouts();
-            refreshLayoutUi();
+            refreshArtMetricsForAsset(
+                getComponentArtMetricKey(assetKey, componentKey),
+                getEffectiveAssetImageOverride(assetKey, componentKey)).then(function () {
+                applyAllAssetLayouts();
+                refreshLayoutUi();
+            });
             return;
         }
 
@@ -2258,9 +2640,9 @@
             clearCurrentImageDraftState();
             applyLayoutVariables();
 
-            if (isRootComponent(componentKey)) {
-                await refreshArtMetricsForAsset(assetKey, uploadedPath);
-            }
+            await refreshArtMetricsForAsset(
+                getComponentArtMetricKey(assetKey, componentKey),
+                uploadedPath);
         }
 
         if (behaviorDraftActive) {
@@ -2707,6 +3089,155 @@
         }
     }
 
+    function getPreferredStaticButtonLabel(assetKey, fallbackLabel) {
+        const textState = getEffectiveTextState(assetKey);
+        const candidate = String(textState?.content ?? "").trim();
+        return candidate || fallbackLabel;
+    }
+
+    function assetUsesButtonInteractions(assetKey) {
+        const element = getAssetElement(assetKey);
+
+        return !!layoutAssets[assetKey]?.interactive
+            && !!element
+            && (
+                element.classList.contains("pl-canvas-button")
+                || element.classList.contains("pl-focus-manage-action-button")
+            );
+    }
+
+    function assetSupportsPressedArt(assetKey) {
+        return assetUsesButtonInteractions(assetKey) && !!artImageVars[assetKey];
+    }
+
+    function isButtonPressed(assetKey) {
+        return activeButtonPressState?.assetKey === assetKey && !!activeButtonPressState?.inside;
+    }
+
+    function isButtonLatchedPressed(assetKey) {
+        if (assetKey === "countdown-mode") {
+            return !isCountUpModeSelected();
+        }
+
+        if (assetKey === "countup-mode") {
+            return isCountUpModeSelected();
+        }
+
+        return false;
+    }
+
+    function isButtonVisuallyPressed(assetKey) {
+        return isButtonPressed(assetKey) || isButtonLatchedPressed(assetKey);
+    }
+
+    function isPointerInsideElementBounds(element, clientX, clientY) {
+        if (!element || element.hidden) {
+            return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+        return clientX >= rect.left
+            && clientX <= rect.right
+            && clientY >= rect.top
+            && clientY <= rect.bottom;
+    }
+
+    function clearActiveButtonPressState() {
+        if (!activeButtonPressState) {
+            return;
+        }
+
+        const element = activeButtonPressState.element;
+        const pointerId = activeButtonPressState.pointerId;
+
+        if (element && typeof element.releasePointerCapture === "function") {
+            try {
+                element.releasePointerCapture(pointerId);
+            }
+            catch {
+            }
+        }
+
+        activeButtonPressState = null;
+        applyButtonArtStates();
+    }
+
+    function beginButtonPress(assetKey, event) {
+        const element = getAssetElement(assetKey);
+
+        if (
+            layoutEditorEnabled
+            || !assetUsesButtonInteractions(assetKey)
+            || !element
+            || element.disabled
+            || event.button > 0
+        ) {
+            return false;
+        }
+
+        clearActiveButtonPressState();
+        activeButtonPressState = {
+            assetKey,
+            element,
+            pointerId: event.pointerId,
+            inside: true
+        };
+
+        if (typeof element.setPointerCapture === "function") {
+            try {
+                element.setPointerCapture(event.pointerId);
+            }
+            catch {
+            }
+        }
+
+        applyButtonArtStates();
+        return true;
+    }
+
+    function updateActiveButtonPressState(event) {
+        if (!activeButtonPressState || event.pointerId !== activeButtonPressState.pointerId) {
+            return;
+        }
+
+        const nextInside = isPointerInsideElementBounds(
+            activeButtonPressState.element,
+            event.clientX,
+            event.clientY);
+
+        if (nextInside === activeButtonPressState.inside) {
+            return;
+        }
+
+        activeButtonPressState.inside = nextInside;
+        applyButtonArtStates();
+    }
+
+    function suppressNextButtonClick(element) {
+        if (!element) {
+            return;
+        }
+
+        element.__plSuppressSyntheticClickUntil = Date.now() + 400;
+    }
+
+    function shouldIgnoreSuppressedButtonClick(element) {
+        return !!element && Number(element.__plSuppressSyntheticClickUntil || 0) > Date.now();
+    }
+
+    function endButtonPress(event, activatePressedButton = false) {
+        if (!activeButtonPressState || event.pointerId !== activeButtonPressState.pointerId) {
+            return false;
+        }
+
+        const shouldActivate = !!activeButtonPressState.inside && activatePressedButton;
+        const element = activeButtonPressState.element;
+
+        clearActiveButtonPressState();
+        suppressNextButtonClick(element);
+        return shouldActivate;
+    }
+
     function isCountUpModeSelected() {
         return selectedTimerMode === "countup";
     }
@@ -2748,6 +3279,162 @@
         return formatDurationLabel(minutes * 60);
     }
 
+    function ensureTimerTextSlotElements(labelElement) {
+        if (!labelElement) {
+            return null;
+        }
+
+        let slotMap = labelElement.__plTimerSlots;
+
+        if (slotMap) {
+            return slotMap;
+        }
+
+        labelElement.replaceChildren();
+
+        const createGroup = function (groupKey) {
+            const group = document.createElement("span");
+            group.dataset.timerGroup = groupKey;
+            labelElement.appendChild(group);
+            return group;
+        };
+        const createSlot = function (parent, slotKey, className) {
+            const slot = document.createElement("span");
+            slot.dataset.timerSlot = slotKey;
+            slot.className = className;
+            parent.appendChild(slot);
+            return slot;
+        };
+        const hoursGroup = createGroup("hours");
+        const minutesGroup = createGroup("minutes");
+        const secondsGroup = createGroup("seconds");
+
+        slotMap = {
+            hoursGroup,
+            minutesGroup,
+            secondsGroup,
+            hoursTens: createSlot(hoursGroup, "hours-tens", "pl-timer-slot-digit"),
+            hoursOnes: createSlot(hoursGroup, "hours-ones", "pl-timer-slot-digit"),
+            hoursSpacer: createSlot(hoursGroup, "hours-spacer", "pl-timer-slot-spacer"),
+            hoursLabel: createSlot(hoursGroup, "hours-label", "pl-timer-slot-label"),
+            minutesTens: createSlot(minutesGroup, "minutes-tens", "pl-timer-slot-digit"),
+            minutesOnes: createSlot(minutesGroup, "minutes-ones", "pl-timer-slot-digit"),
+            minutesSpacer: createSlot(minutesGroup, "minutes-spacer", "pl-timer-slot-spacer"),
+            minutesLabel: createSlot(minutesGroup, "minutes-label", "pl-timer-slot-label"),
+            secondsTens: createSlot(secondsGroup, "seconds-tens", "pl-timer-slot-digit"),
+            secondsOnes: createSlot(secondsGroup, "seconds-ones", "pl-timer-slot-digit"),
+            secondsSpacer: createSlot(secondsGroup, "seconds-spacer", "pl-timer-slot-spacer"),
+            secondsLabel: createSlot(secondsGroup, "seconds-label", "pl-timer-slot-label")
+        };
+
+        labelElement.__plTimerSlots = slotMap;
+        return slotMap;
+    }
+
+    function applyTimerTextSlotLayout(labelElement, textScale) {
+        const slots = ensureTimerTextSlotElements(labelElement);
+        const textState = getEffectiveTextState(timerTextAssetKey);
+
+        if (!slots) {
+            return;
+        }
+
+        labelElement.style.display = "inline-flex";
+        labelElement.style.alignItems = "baseline";
+        labelElement.style.whiteSpace = "nowrap";
+        labelElement.style.lineHeight = "1";
+
+        [
+            slots.hoursGroup,
+            slots.minutesGroup,
+            slots.secondsGroup
+        ].forEach(function (groupElement) {
+            groupElement.style.display = "inline-grid";
+            groupElement.style.gridTemplateColumns = "1ch 1ch 0.45em auto";
+            groupElement.style.columnGap = "0";
+            groupElement.style.alignItems = "baseline";
+        });
+
+        [
+            slots.hoursTens,
+            slots.hoursOnes,
+            slots.hoursSpacer,
+            slots.hoursLabel,
+            slots.minutesTens,
+            slots.minutesOnes,
+            slots.minutesSpacer,
+            slots.minutesLabel,
+            slots.secondsTens,
+            slots.secondsOnes,
+            slots.secondsSpacer,
+            slots.secondsLabel
+        ].forEach(function (slotElement) {
+            slotElement.style.display = "block";
+            slotElement.style.minWidth = "0";
+        });
+
+        [
+            slots.hoursTens,
+            slots.hoursOnes,
+            slots.minutesTens,
+            slots.minutesOnes,
+            slots.secondsTens,
+            slots.secondsOnes
+        ].forEach(function (slotElement) {
+            slotElement.style.textAlign = "right";
+        });
+
+        [
+            slots.hoursSpacer,
+            slots.minutesSpacer,
+            slots.secondsSpacer
+        ].forEach(function (slotElement) {
+            slotElement.style.width = "0.45em";
+            slotElement.style.minWidth = "0.45em";
+        });
+
+        const hoursGap = Math.max(0, Number(textState?.hoursGap ?? 0.8));
+        const minutesGap = Math.max(0, Number(textState?.minutesGap ?? 0.8));
+        slots.hoursGroup.style.marginRight = `${hoursGap}em`;
+        slots.minutesGroup.style.marginRight = `${minutesGap}em`;
+        slots.secondsGroup.style.marginRight = "0";
+    }
+
+    function renderTimerTextSlots(labelElement, totalSeconds) {
+        const slots = ensureTimerTextSlotElements(labelElement);
+
+        if (!slots) {
+            return;
+        }
+
+        const parts = getDurationParts(totalSeconds);
+        const padTwoDigitParts = function (value) {
+            const safe = Math.max(0, Math.floor(value));
+            const ones = String(safe % 10);
+            const tensValue = Math.floor(safe / 10);
+            return {
+                tens: tensValue > 0 ? String(tensValue) : "",
+                ones
+            };
+        };
+        const hoursDigits = padTwoDigitParts(parts.hours);
+        const minutesDigits = padTwoDigitParts(parts.minutes);
+        const secondsDigits = padTwoDigitParts(parts.seconds);
+
+        slots.hoursTens.textContent = hoursDigits.tens;
+        slots.hoursOnes.textContent = hoursDigits.ones;
+        slots.hoursSpacer.textContent = "\u00A0";
+        slots.hoursLabel.textContent = parts.hourLabel;
+        slots.minutesTens.textContent = minutesDigits.tens;
+        slots.minutesOnes.textContent = minutesDigits.ones;
+        slots.minutesSpacer.textContent = "\u00A0";
+        slots.minutesLabel.textContent = "min";
+        slots.secondsTens.textContent = secondsDigits.tens;
+        slots.secondsOnes.textContent = secondsDigits.ones;
+        slots.secondsSpacer.textContent = "\u00A0";
+        slots.secondsLabel.textContent = "sec";
+    }
+
     function refreshTimerTextAsset() {
         const timerTextElement = getAssetElement(timerTextAssetKey);
 
@@ -2765,8 +3452,8 @@
     }
 
     function calculateRewardPreview(elapsedSeconds, isComplete) {
-        const roundedMinutes = Math.max(0, Math.round(elapsedSeconds / 60));
-        const baseXp = Math.round(roundedMinutes * rewardXpPerMinute);
+        const completedMinutes = Math.max(0, Math.floor(elapsedSeconds / 60));
+        const baseXp = Math.round(completedMinutes * rewardXpPerMinute);
         const multiplier = isComplete ? rewardSleepMultiplier : rewardIncompleteMultiplier;
         const xp = Math.max(0, Math.round(baseXp * multiplier));
         const coins = rewardWindowEligible
@@ -2788,6 +3475,7 @@
         countUpModeButton.classList.toggle("pl-canvas-button-mode-selected", countUpSelected);
         applyAssetTextStyle("countdown-mode");
         applyAssetTextStyle("countup-mode");
+        applyAssetTextStyle(countdownModeTextAssetKey);
     }
 
     function projectAxis(authorPosition, authorBoxSize, authorFrameSize, runtimeFrameSize, uiScale) {
@@ -2859,47 +3547,48 @@
         focusManagePanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("focus-manage-panel"));
         focusManageConfirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("focus-manage-confirm-panel"));
         confirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("confirm-panel"));
+        countupStopConfirmPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("countup-stop-confirm-panel"));
         rewardPanel.classList.toggle("pl-canvas-panel-has-art", assetHasArt("reward-panel"));
+        focusTypeField.classList.toggle("pl-canvas-form-field-has-art", assetHasArt("focus-type-field"));
+        focusManageInputField.classList.toggle("pl-canvas-form-field-has-art", assetHasArt("focus-manage-input"));
     }
 
     function applyButtonArtStates() {
-        [
-            "home-focus",
-            "home-sleep",
-            "countdown-mode",
-            "countup-mode",
-            "start",
-            "back",
-            "manage-button",
-            "pause",
-            "exit",
-            "focus-manage-add",
-            "focus-manage-delete",
-            "focus-manage-back",
-            "focus-manage-ok",
-            "focus-manage-confirm-delete",
-            "focus-manage-confirm-cancel",
-            "keep-going",
-            "stop",
-            "gotcha"
-        ].forEach(function (assetKey) {
+        Object.keys(layoutAssets).forEach(function (assetKey) {
             const element = layoutAssets[assetKey]?.element;
-            const imageUrl = readCssUrlVar(artImageVars[assetKey]);
+
+            if (!assetUsesButtonInteractions(assetKey)) {
+                return;
+            }
 
             if (!element) {
                 return;
             }
 
-            if (imageUrl) {
+            const rootImageUrl = readCssUrlVar(artImageVars[assetKey]);
+            const pressedImageUrl = assetSupportsPressedArt(assetKey)
+                ? readCssUrlVar(getArtImageCssVariableName(assetKey, "pressed"))
+                : "";
+            const imageUrl = isButtonVisuallyPressed(assetKey) && pressedImageUrl
+                ? pressedImageUrl
+                : rootImageUrl;
+            const hasArt = !!imageUrl;
+            element.classList.toggle("pl-canvas-button-has-art", hasArt);
+            element.classList.toggle("pl-focus-manage-action-button-has-art", hasArt);
+            element.classList.toggle("pl-canvas-button-pressed", isButtonVisuallyPressed(assetKey));
+
+            if (hasArt) {
                 const escapedUrl = String(imageUrl)
                     .replace(/\\/g, "\\\\")
                     .replace(/"/g, '\\"');
 
                 element.style.setProperty("background-image", `url("${escapedUrl}")`, "important");
+                applyAssetTextStyle(assetKey);
                 return;
             }
 
             element.style.removeProperty("background-image");
+            applyAssetTextStyle(assetKey);
         });
     }
 
@@ -3145,6 +3834,15 @@
             });
         });
 
+        Object.keys(layoutAssets).forEach(function (assetKey) {
+            if (!assetSupportsPressedArt(assetKey)) {
+                return;
+            }
+
+            applyAssetImageVariable(assetKey, getEffectiveAssetImageOverride(assetKey, "pressed"), "pressed");
+        });
+
+        applyButtonArtStates();
         applyPanelArtStates();
     }
 
@@ -3202,6 +3900,65 @@
             assets: mergedAssets,
             states: builtInDefinition.states
         };
+    }
+
+    function isOverlaySceneKey(sceneKey) {
+        return overlaySceneKeys.has(sceneKey);
+    }
+
+    function getLayoutOverlayDefinition(overlayKey) {
+        return layoutOverlayDefinitions[overlayKey] || layoutOverlayDefinitions.none;
+    }
+
+    function getOverlayBaseSceneKey(overlayKey) {
+        return getLayoutOverlayDefinition(overlayKey).baseSceneKey || null;
+    }
+
+    function getActiveOverlaySceneKeys(overlayKey) {
+        if (overlayKey === "focus-manage-confirm") {
+            return ["focus-manage", "focus-manage-confirm"];
+        }
+
+        return overlayKey !== "none" && isOverlaySceneKey(overlayKey)
+            ? [overlayKey]
+            : [];
+    }
+
+    function getCompatibleOverlayKeys(sceneKey) {
+        return ["none"].concat(Array.from(overlaySceneKeys).filter(function (overlayKey) {
+            return getOverlayBaseSceneKey(overlayKey) === sceneKey;
+        }));
+    }
+
+    function getSelectedLayoutOverlayKey() {
+        return layoutOverlaySelect?.value || "none";
+    }
+
+    function getNormalizedSceneOverlaySelection(sceneKey, overlayKey = "none") {
+        const normalizedSceneKey = layoutSceneDefinitions[sceneKey]
+            ? sceneKey
+            : "home";
+        const normalizedOverlayKey = isOverlaySceneKey(normalizedSceneKey)
+            ? normalizedSceneKey
+            : overlayKey;
+        const overlayBaseSceneKey = getOverlayBaseSceneKey(normalizedOverlayKey);
+        const resolvedSceneKey = overlayBaseSceneKey || normalizedSceneKey;
+        const compatibleOverlayKeys = getCompatibleOverlayKeys(resolvedSceneKey);
+        const resolvedOverlayKey = compatibleOverlayKeys.includes(normalizedOverlayKey)
+            ? normalizedOverlayKey
+            : "none";
+
+        return {
+            sceneKey: resolvedSceneKey,
+            overlayKey: resolvedOverlayKey
+        };
+    }
+
+    function getLayoutEditingSceneKey(sceneKey = layoutSceneSelect.value || "home", overlayKey = getSelectedLayoutOverlayKey()) {
+        const normalizedSelection = getNormalizedSceneOverlaySelection(sceneKey, overlayKey);
+        return normalizedSelection.overlayKey !== "none"
+            ? normalizedSelection.overlayKey
+            : normalizedSelection.sceneKey;
     }
 
     function getSceneAssetDefinition(assetKey) {
@@ -3377,6 +4134,93 @@
         }, true);
     }
 
+    function registerRangeSelectorAssetElement() {
+        if (layoutAssets["range-selector"]) {
+            return;
+        }
+
+        layoutAssetDefaultStates["range-selector"] = { x: 112, y: 468, width: 204, height: 72, scale: 100 };
+        artComponentImageVars["range-selector"] = {
+            "bar-empty": "--pl-range-selector-bar-empty-image",
+            "bar-full": "--pl-range-selector-bar-full-image",
+            "nib": "--pl-range-selector-nib-image"
+        };
+
+        const element = document.createElement("div");
+        element.className = "pl-canvas-item";
+        element.id = "pl-range-selector-asset";
+        element.hidden = true;
+        element.style.boxSizing = "border-box";
+        element.style.overflow = "visible";
+        element.style.border = "none";
+        element.style.borderRadius = "0";
+        element.style.background = "transparent";
+        element.style.backdropFilter = "none";
+
+        const barEmptyElement = document.createElement("div");
+        barEmptyElement.dataset.rangeSelectorComponent = "bar-empty";
+        barEmptyElement.setAttribute("aria-hidden", "true");
+        barEmptyElement.style.position = "absolute";
+        barEmptyElement.style.backgroundImage = "var(--pl-range-selector-bar-empty-image, none)";
+        barEmptyElement.style.backgroundPosition = "center center";
+        barEmptyElement.style.backgroundRepeat = "no-repeat";
+        barEmptyElement.style.backgroundSize = "100% 100%";
+        barEmptyElement.style.pointerEvents = "none";
+
+        const barFullShellElement = document.createElement("div");
+        barFullShellElement.dataset.rangeSelectorComponent = "bar-full-shell";
+        barFullShellElement.setAttribute("aria-hidden", "true");
+        barFullShellElement.style.position = "absolute";
+        barFullShellElement.style.overflow = "hidden";
+        barFullShellElement.style.pointerEvents = "none";
+
+        const barFullElement = document.createElement("div");
+        barFullElement.dataset.rangeSelectorComponent = "bar-full";
+        barFullElement.style.backgroundImage = "var(--pl-range-selector-bar-full-image, none)";
+        barFullElement.style.backgroundPosition = "center center";
+        barFullElement.style.backgroundRepeat = "no-repeat";
+        barFullElement.style.backgroundSize = "100% 100%";
+        barFullElement.style.pointerEvents = "none";
+
+        const nibElement = document.createElement("div");
+        nibElement.dataset.rangeSelectorComponent = "nib";
+        nibElement.setAttribute("aria-hidden", "true");
+        nibElement.style.position = "absolute";
+        nibElement.style.backgroundImage = "var(--pl-range-selector-nib-image, none)";
+        nibElement.style.backgroundPosition = "center center";
+        nibElement.style.backgroundRepeat = "no-repeat";
+        nibElement.style.backgroundSize = "contain";
+        nibElement.style.touchAction = "none";
+
+        barFullShellElement.appendChild(barFullElement);
+        element.appendChild(barEmptyElement);
+        element.appendChild(barFullShellElement);
+        element.appendChild(nibElement);
+        safeUiStage.appendChild(element);
+
+        layoutAssets["range-selector"] = {
+            element,
+            stage: "ui",
+            interactive: false
+        };
+
+        element.addEventListener("pointerdown", function (event) {
+            if (layoutEditorEnabled) {
+                beginDrag("range-selector", event);
+            }
+        });
+
+        element.addEventListener("click", function (event) {
+            if (layoutEditorEnabled) {
+                handleLayoutAssetCanvasClick("range-selector", event);
+            }
+        }, true);
+
+        nibElement.addEventListener("pointerdown", function (event) {
+            handleRangeSelectorPointerDown(event);
+        });
+    }
+
     function removeDynamicTextAssetElement(assetKey) {
         const element = layoutAssets[assetKey]?.element;
 
@@ -3403,6 +4247,10 @@
                 createDynamicTextAssetElement(assetKey);
             }
         });
+
+        if (overlayStage) {
+            syncOverlayStageAssetParents();
+        }
     }
 
     function ensureSceneAssetInScene(sceneKey, assetKey) {
@@ -3553,8 +4401,10 @@
 
         const candidateSceneKeys = [
             preferredSceneKey,
+            getSelectedLayoutOverlayKey(),
             layoutSceneSelect.value,
-            currentVisibleSceneKey
+            currentVisibleSceneKey,
+            currentVisibleOverlayKey
         ].filter(function (sceneKey, index, values) {
             return !!sceneKey && values.indexOf(sceneKey) === index;
         });
@@ -3566,7 +4416,7 @@
 
     function findLayoutSceneKeyForAsset(assetKey, preferredSceneKey = null) {
         if (!assetKey) {
-            return preferredSceneKey || layoutSceneSelect.value || currentVisibleSceneKey || "home";
+            return preferredSceneKey || getSelectedLayoutOverlayKey() || layoutSceneSelect.value || currentVisibleOverlayKey || currentVisibleSceneKey || "home";
         }
 
         const preferredSceneKeyForAsset = getPreferredLayoutSceneKeyForAsset(assetKey, preferredSceneKey);
@@ -3578,15 +4428,47 @@
             return getLayoutSceneAssetKeys(sceneKey).includes(assetKey);
         });
 
-        return matchingSceneEntry || preferredSceneKey || layoutSceneSelect.value || currentVisibleSceneKey || "home";
+        return matchingSceneEntry || preferredSceneKey || getSelectedLayoutOverlayKey() || layoutSceneSelect.value || currentVisibleOverlayKey || currentVisibleSceneKey || "home";
     }
 
-    function updateLayoutSceneHeader(sceneKey) {
-        layoutSceneName.textContent = getLayoutSceneDefinition(sceneKey).label;
+    function updateLayoutSceneHeader(sceneKey, overlayKey = "none") {
+        const sceneLabel = getLayoutSceneDefinition(sceneKey).label;
+        layoutSceneName.textContent = overlayKey !== "none"
+            ? `${sceneLabel} + ${getLayoutOverlayDefinition(overlayKey).label}`
+            : sceneLabel;
     }
 
     function getComponentDefinitionsForAsset(assetKey) {
         const rootLabel = getAssetRootComponentLabel(assetKey);
+
+        if (assetKey === "range-selector") {
+            return {
+                root: {
+                    label: rootLabel,
+                    geometryMode: "asset",
+                    allowsHitScale: false,
+                    status: "Moves, resizes, and scales the selected asset as a whole."
+                },
+                "bar-empty": {
+                    label: "Bar-Empty",
+                    geometryMode: "art-only",
+                    allowsHitScale: false,
+                    status: "Browse and save a PNG for the empty bar artwork."
+                },
+                "bar-full": {
+                    label: "Bar-Full",
+                    geometryMode: "art-only",
+                    allowsHitScale: false,
+                    status: "Browse and save a PNG for the full bar artwork."
+                },
+                nib: {
+                    label: "nib",
+                    geometryMode: "component-scale",
+                    allowsHitScale: false,
+                    status: "Browse and save a PNG for the nib artwork, and adjust its local scale and offset."
+                }
+            };
+        }
 
         if (assetSupportsEditableText(assetKey)) {
             if (isCustomTextAsset(assetKey)) {
@@ -3617,7 +4499,24 @@
                 };
             }
 
-            return {
+            if (assetKey === "focus-manage-input") {
+                return {
+                    root: {
+                        label: rootLabel,
+                        geometryMode: "asset",
+                        allowsHitScale: false,
+                        status: "Moves, resizes, and scales the Focus Manage input field as a whole."
+                    },
+                    text: {
+                        label: "text",
+                        geometryMode: "text",
+                        allowsHitScale: false,
+                        status: "Edits the placeholder copy and typography shown inside the Focus Manage input."
+                    }
+                };
+            }
+
+            const buttonDefinitions = {
                 root: {
                     label: rootLabel,
                     geometryMode: "asset",
@@ -3633,6 +4532,17 @@
                     status: "Moves and styles the overlaid text independently inside this asset."
                 }
             };
+
+            if (assetSupportsPressedArt(assetKey)) {
+                buttonDefinitions.pressed = {
+                    label: "pressed",
+                    geometryMode: "art-only",
+                    allowsHitScale: false,
+                    status: "Browse and save a PNG for the pressed-down button artwork shown while the button is held."
+                };
+            }
+
+            return buttonDefinitions;
         }
 
         const definitions = assetComponentDefinitions[assetKey] || {
@@ -3660,6 +4570,77 @@
     //#endregion SEGMENT E - Layout Variable And Scene Helpers
 
     //#region SEGMENT F1 - Scene Selection And Editor Extensions
+    function ensureLayoutOverlayControls() {
+        if (layoutOverlayField) {
+            return;
+        }
+
+        const sceneField = layoutSceneSelect?.closest(".pl-field");
+        const stateField = layoutStateSelect?.closest(".pl-field");
+
+        if (!sceneField || !stateField || !sceneField.parentNode) {
+            return;
+        }
+
+        layoutOverlayField = document.createElement("label");
+        layoutOverlayField.className = "pl-field";
+        layoutOverlayField.innerHTML = `
+        <span class="pl-field-label">Overlay</span>
+        <select class="pl-input" id="pl-layout-overlay-select"></select>
+        <span class="pl-field-hint" id="pl-layout-overlay-status">Choose an optional popup overlay to preview over the selected base scene.</span>
+    `;
+
+        sceneField.parentNode.insertBefore(layoutOverlayField, stateField);
+        layoutOverlaySelect = layoutOverlayField.querySelector("#pl-layout-overlay-select");
+        layoutOverlayStatus = layoutOverlayField.querySelector("#pl-layout-overlay-status");
+    }
+
+    function populateLayoutSceneSelect(preferredSceneKey = null) {
+        const preservedSceneKey = layoutBaseSceneKeys.includes(preferredSceneKey)
+            ? preferredSceneKey
+            : (layoutBaseSceneKeys.includes(layoutSceneSelect.value) ? layoutSceneSelect.value : "home");
+
+        layoutSceneSelect.innerHTML = "";
+        layoutBaseSceneKeys.forEach(function (sceneKey) {
+            const option = document.createElement("option");
+            option.value = sceneKey;
+            option.textContent = getLayoutSceneDefinition(sceneKey).label;
+            layoutSceneSelect.appendChild(option);
+        });
+        layoutSceneSelect.value = preservedSceneKey;
+        return preservedSceneKey;
+    }
+
+    function populateLayoutOverlaySelectForScene(sceneKey, preferredOverlayKey = "none") {
+        ensureLayoutOverlayControls();
+
+        if (!layoutOverlayField || !layoutOverlaySelect || !layoutOverlayStatus) {
+            return "none";
+        }
+
+        const compatibleOverlayKeys = getCompatibleOverlayKeys(sceneKey);
+        const preservedOverlayKey = compatibleOverlayKeys.includes(preferredOverlayKey)
+            ? preferredOverlayKey
+            : (compatibleOverlayKeys.includes(layoutOverlaySelect.value) ? layoutOverlaySelect.value : "none");
+
+        layoutOverlayField.hidden = compatibleOverlayKeys.length <= 1;
+        layoutOverlaySelect.innerHTML = "";
+
+        compatibleOverlayKeys.forEach(function (overlayKey) {
+            const option = document.createElement("option");
+            option.value = overlayKey;
+            option.textContent = getLayoutOverlayDefinition(overlayKey).label;
+            layoutOverlaySelect.appendChild(option);
+        });
+
+        layoutOverlaySelect.disabled = compatibleOverlayKeys.length <= 1;
+        layoutOverlaySelect.value = preservedOverlayKey;
+        layoutOverlayStatus.textContent = preservedOverlayKey === "none"
+            ? "No popup overlay is being previewed over this scene."
+            : `${getLayoutOverlayDefinition(preservedOverlayKey).label} is previewed on top of ${getLayoutSceneDefinition(sceneKey).label}.`;
+        return preservedOverlayKey;
+    }
+
     function populateLayoutAssetSelectForScene(sceneKey, preferredAssetKey = null) {
         const assetKeys = getLayoutSceneAssetKeys(sceneKey);
         const preservedAssetKey = assetKeys.includes(preferredAssetKey)
@@ -3737,25 +4718,34 @@
     }
 
     function setActiveLayoutScene(sceneKey, preferredAssetKey = null, preferredComponentKey = null, preferredStateKey = null) {
-        const resolvedSceneKey = layoutSceneDefinitions[sceneKey]
-            ? sceneKey
-            : findLayoutSceneKeyForAsset(preferredAssetKey, sceneKey);
+        ensureLayoutOverlayControls();
+        const resolvedSelection = getNormalizedSceneOverlaySelection(
+            layoutSceneDefinitions[sceneKey]
+                ? sceneKey
+                : findLayoutSceneKeyForAsset(preferredAssetKey, sceneKey),
+            getSelectedLayoutOverlayKey());
+        const resolvedSceneKey = populateLayoutSceneSelect(resolvedSelection.sceneKey);
+        const resolvedOverlayKey = populateLayoutOverlaySelectForScene(resolvedSceneKey, resolvedSelection.overlayKey);
 
-        layoutSceneSelect.value = resolvedSceneKey;
-        updateLayoutSceneHeader(resolvedSceneKey);
+        updateLayoutSceneHeader(resolvedSceneKey, resolvedOverlayKey);
         populateLayoutStateSelectForScene(resolvedSceneKey, preferredStateKey);
 
-        const assetKey = populateLayoutAssetSelectForScene(resolvedSceneKey, preferredAssetKey);
+        const assetKey = populateLayoutAssetSelectForScene(
+            getLayoutEditingSceneKey(resolvedSceneKey, resolvedOverlayKey),
+            preferredAssetKey);
         populateLayoutComponentSelect(assetKey, preferredComponentKey);
 
         return assetKey;
     }
 
     function initializeLayoutSceneControls() {
+        ensureLayoutOverlayControls();
         const initialAssetKey = layoutAssetSelect.value || "home-scene";
-        const initialSceneKey = layoutSceneDefinitions[layoutSceneSelect.value]
-            ? layoutSceneSelect.value
-            : findLayoutSceneKeyForAsset(initialAssetKey, "home");
+        const initialSceneKey = isOverlaySceneKey(layoutSceneSelect.value)
+            ? getOverlayBaseSceneKey(layoutSceneSelect.value)
+            : (layoutBaseSceneKeys.includes(layoutSceneSelect.value)
+                ? layoutSceneSelect.value
+                : findLayoutSceneKeyForAsset(initialAssetKey, "home"));
 
         setActiveLayoutScene(initialSceneKey, initialAssetKey, "root", "base");
     }
@@ -3855,6 +4845,12 @@
             <span class="pl-field-hint">Updates the label rendered over this asset. Press Enter for a new line.</span>
         </label>
 
+        <label class="pl-field" id="pl-layout-text-alternate-field" hidden>
+            <span class="pl-field-label">Alternate text</span>
+            <textarea class="pl-input" id="pl-layout-text-alternate-content" rows="2"></textarea>
+            <span class="pl-field-hint">Used for the alternate running-state label on this button.</span>
+        </label>
+
         <label class="pl-field">
             <span class="pl-field-label">Font</span>
             <select class="pl-input" id="pl-layout-text-font-family"></select>
@@ -3891,6 +4887,42 @@
             <span class="pl-field-hint">Adds extra pixel thickness to the rendered text without changing its font family.</span>
         </label>
 
+        <label class="pl-field" id="pl-layout-text-pressed-y-field" hidden>
+            <span class="pl-field-label">Pressed text Y offset (px)</span>
+            <input class="pl-input" id="pl-layout-text-pressed-y-offset" type="number" min="-24" max="24" step="1" value="0" />
+            <span class="pl-field-hint">Moves button text vertically while the button is visually pressed.</span>
+        </label>
+
+        <div class="pl-field" id="pl-layout-timer-gap-controls" hidden>
+            <span class="pl-field-label">Timer group spacing (em)</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                <label>
+                    <span class="pl-field-hint">Hours to minutes</span>
+                    <input class="pl-input" id="pl-layout-timer-hours-gap" type="number" min="0" max="6" step="0.1" value="0.8" />
+                </label>
+                <label>
+                    <span class="pl-field-hint">Minutes to seconds</span>
+                    <input class="pl-input" id="pl-layout-timer-minutes-gap" type="number" min="0" max="6" step="0.1" value="0.8" />
+                </label>
+            </div>
+            <span class="pl-field-hint">Adjusts the spacing between the three timer groups without moving the whole timer asset.</span>
+        </div>
+
+        <div class="pl-field" id="pl-layout-mode-text-controls" hidden>
+            <span class="pl-field-label">Mode labels</span>
+            <div style="display:grid;grid-template-columns:1fr;gap:0.75rem;">
+                <label>
+                    <span class="pl-field-hint">Count Down</span>
+                    <input class="pl-input" id="pl-layout-mode-countdown-content" type="text" maxlength="80" />
+                </label>
+                <label>
+                    <span class="pl-field-hint">Count Up</span>
+                    <input class="pl-input" id="pl-layout-mode-countup-content" type="text" maxlength="80" />
+                </label>
+            </div>
+            <span class="pl-field-hint">These two labels swap automatically when the timer mode changes.</span>
+        </div>
+
         <span class="pl-field-hint" id="pl-layout-text-style-status">These controls affect only the overlaid text component.</span>
     `;
 
@@ -3902,6 +4934,7 @@
         }
 
         layoutTextContent = layoutTextControls.querySelector("#pl-layout-text-content");
+        layoutTextAlternateContent = layoutTextControls.querySelector("#pl-layout-text-alternate-content");
         layoutTextFontFamily = layoutTextControls.querySelector("#pl-layout-text-font-family");
         layoutTextFontSize = layoutTextControls.querySelector("#pl-layout-text-font-size");
         layoutTextColorPicker = layoutTextControls.querySelector("#pl-layout-text-color-picker");
@@ -3909,6 +4942,11 @@
         layoutTextBold = layoutTextControls.querySelector("#pl-layout-text-bold");
         layoutTextItalic = layoutTextControls.querySelector("#pl-layout-text-italic");
         layoutTextBoldThickness = layoutTextControls.querySelector("#pl-layout-text-bold-thickness");
+        layoutTextPressedYOffset = layoutTextControls.querySelector("#pl-layout-text-pressed-y-offset");
+        layoutTimerHoursGap = layoutTextControls.querySelector("#pl-layout-timer-hours-gap");
+        layoutTimerMinutesGap = layoutTextControls.querySelector("#pl-layout-timer-minutes-gap");
+        layoutModeCountdownContent = layoutTextControls.querySelector("#pl-layout-mode-countdown-content");
+        layoutModeCountupContent = layoutTextControls.querySelector("#pl-layout-mode-countup-content");
         layoutTextStyleStatus = layoutTextControls.querySelector("#pl-layout-text-style-status");
 
         layoutTextFontFamily.innerHTML = "";
@@ -3917,6 +4955,7 @@
         });
 
         layoutTextContent.addEventListener("input", pushTextControlValues);
+        layoutTextAlternateContent?.addEventListener("input", pushTextControlValues);
         layoutTextFontFamily.addEventListener("change", pushTextControlValues);
         layoutTextFontSize.addEventListener("input", pushTextControlValues);
 
@@ -3942,6 +4981,11 @@
         layoutTextBold.addEventListener("change", pushTextControlValues);
         layoutTextItalic.addEventListener("change", pushTextControlValues);
         layoutTextBoldThickness.addEventListener("input", pushTextControlValues);
+        layoutTextPressedYOffset?.addEventListener("input", pushTextControlValues);
+        layoutTimerHoursGap?.addEventListener("input", pushTextControlValues);
+        layoutTimerMinutesGap?.addEventListener("input", pushTextControlValues);
+        layoutModeCountdownContent?.addEventListener("input", pushTextControlValues);
+        layoutModeCountupContent?.addEventListener("input", pushTextControlValues);
     }
 
     function syncLayoutTextColorInputs(colorValue) {
@@ -4188,7 +5232,7 @@
     }
 
     function refreshLayoutStateVisibilityControls(assetKey) {
-        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneKey = getLayoutEditingSceneKey();
         const stateKey = getSelectedSceneStateKey();
         const sceneSupportsStateVisibility = getLayoutSceneStateKeys(sceneKey).length > 1;
         const shouldShow = !!assetKey
@@ -4276,7 +5320,7 @@
     }
 
     function populateSceneAssetSourceSelect() {
-        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneKey = getLayoutEditingSceneKey();
         const currentAssetKeys = new Set(getLayoutSceneAssetKeys(sceneKey));
         const availableAssetKeys = getAvailableSceneAssetKeys().filter(function (assetKey) {
             return !currentAssetKeys.has(assetKey);
@@ -4308,7 +5352,7 @@
     }
 
     function refreshSceneBuilderPanel() {
-        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneKey = getLayoutEditingSceneKey();
         const selectedAssetKey = getSelectedAssetKey();
         const canRemove = !!selectedAssetKey && getLayoutSceneAssetKeys(sceneKey).includes(selectedAssetKey);
 
@@ -4329,7 +5373,7 @@
     }
 
     async function addSelectedSceneAssetToCurrentScene() {
-        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneKey = getLayoutEditingSceneKey();
         const assetKey = String(layoutSceneAssetSourceSelect.value || "").trim();
 
         if (!assetKey) {
@@ -4337,13 +5381,14 @@
         }
 
         ensureSceneAssetInScene(sceneKey, assetKey);
+        syncOverlayStageAssetParents();
         await saveSharedLayoutState();
         setActiveLayoutScene(sceneKey, assetKey, "root", getSelectedSceneStateKey());
         refreshLayoutUi();
     }
 
     async function removeSelectedSceneAssetFromCurrentScene() {
-        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneKey = getLayoutEditingSceneKey();
         const assetKey = getSelectedAssetKey();
 
         if (!assetKey || !getLayoutSceneAssetKeys(sceneKey).includes(assetKey)) {
@@ -4351,13 +5396,14 @@
         }
 
         removeSceneAssetFromScene(sceneKey, assetKey);
+        syncOverlayStageAssetParents();
         await saveSharedLayoutState();
         setActiveLayoutScene(sceneKey, null, "root", getSelectedSceneStateKey());
         refreshLayoutUi();
     }
 
     async function createSceneTextAsset() {
-        const sceneKey = layoutSceneSelect.value || "home";
+        const sceneKey = getLayoutEditingSceneKey();
         const assetKey = sanitizeSceneAssetKey(layoutNewTextAssetKey.value);
         const assetText = String(layoutNewTextAssetContent.value || "").trim();
         const presetKey = textAssetPresetDefinitions[layoutNewTextAssetPreset.value]
@@ -4381,6 +5427,7 @@
         };
         ensureSceneAssetInScene(sceneKey, assetKey);
         rebuildDynamicSceneAssets();
+        syncOverlayStageAssetParents();
         layoutNewTextAssetKey.value = "";
         layoutNewTextAssetContent.value = "";
         await saveSharedLayoutState();
@@ -4439,8 +5486,11 @@
             ? projected.height * nibMetric.visibleHeightRatio
             : projected.height;
         const nibVisibleWidth = Math.max(6, nibVisibleHeight * nibVisibleAspectRatio);
-        const rightEdgeInset = Math.max(2, Math.round(nibVisibleWidth * 0.18));
-        const targetCenter = trackLeft + (progressRatio * Math.max(0, trackWidth - rightEdgeInset));
+        const nibHalfWidth = nibVisibleWidth / 2;
+        const trackStartCenter = trackLeft + nibHalfWidth;
+        const trackEndCenter = trackLeft + Math.max(nibHalfWidth, trackWidth - nibHalfWidth);
+        const unclampedTargetCenter = trackLeft + (progressRatio * trackWidth);
+        const targetCenter = Math.max(trackStartCenter, Math.min(trackEndCenter, unclampedTargetCenter));
 
         const nibTop = nibMetric && nibMetric.hasVisibleBounds
             ? projected.height * nibMetric.visibleTopRatio
@@ -4541,6 +5591,71 @@
         return previewRect.width / Math.max(0.0001, metrics.localScaleX);
     }
 
+    function cloneSliderDebugRect(rect) {
+        if (!rect) {
+            return null;
+        }
+
+        return {
+            left: Number(rect.left),
+            top: Number(rect.top),
+            width: Number(rect.width),
+            height: Number(rect.height)
+        };
+    }
+
+    function cloneSliderDebugState(state) {
+        if (!state) {
+            return null;
+        }
+
+        return {
+            x: Number(state.x ?? 0),
+            y: Number(state.y ?? 0),
+            width: state.width == null ? null : Number(state.width),
+            height: state.height == null ? null : Number(state.height),
+            scale: Number(state.scale ?? 100),
+            hitScaleX: Number(state.hitScaleX ?? 100),
+            hitScaleY: Number(state.hitScaleY ?? 100)
+        };
+    }
+
+    function cloneSliderDebugMetric(metric) {
+        if (!metric) {
+            return null;
+        }
+
+        return {
+            canvasWidth: Number(metric.canvasWidth ?? 0),
+            canvasHeight: Number(metric.canvasHeight ?? 0),
+            canvasRatio: Number(metric.canvasRatio ?? 0),
+            visibleLeftRatio: Number(metric.visibleLeftRatio ?? 0),
+            visibleTopRatio: Number(metric.visibleTopRatio ?? 0),
+            visibleWidthRatio: Number(metric.visibleWidthRatio ?? 0),
+            visibleHeightRatio: Number(metric.visibleHeightRatio ?? 0),
+            hasVisibleBounds: metric.hasVisibleBounds === true
+        };
+    }
+
+    function readSliderComputedStyleSnapshot(element) {
+        if (!element) {
+            return null;
+        }
+
+        const computed = window.getComputedStyle(element);
+        return {
+            position: computed.position,
+            display: computed.display,
+            overflow: computed.overflow,
+            backgroundImage: computed.backgroundImage,
+            backgroundSize: computed.backgroundSize,
+            left: computed.left,
+            top: computed.top,
+            width: computed.width,
+            height: computed.height
+        };
+    }
+
     function cacheSliderRuntimeRects(metrics, emptyRect, fillShellRect, fullFillRect, nibRect, nibHitRect) {
         const toStageRect = function (localRect) {
             return {
@@ -4564,6 +5679,10 @@
             nib: toStageRect(nibRect),
             "nib-hit": toStageRect(nibHitRect)
         };
+    }
+
+    function cacheSliderDebugSnapshot(snapshot) {
+        window.__plSliderDebugSnapshot = snapshot;
     }
 
     function applyOutlineRect(outlineElement, rect) {
@@ -4598,6 +5717,66 @@
             .join(", ");
     }
 
+    function getRuntimeValueTextContent(assetKey, textState) {
+        if (layoutEditorEnabled) {
+            return textState.content;
+        }
+
+        switch (assetKey) {
+            case "reward-current-xp":
+                return String(homeRoot.dataset.rewardXp || "0");
+            case "reward-current-coins":
+                return String(homeRoot.dataset.rewardCoins || "0");
+            case "stop-confirm-potential-xp": {
+                const countUpSelected = isCountUpModeSelected();
+                const countUpCheckpoint = activeConfirmContext === "countup-checkpoint";
+                const completedPreviewSeconds = countUpCheckpoint
+                    ? getElapsedSeconds()
+                    : (countUpSelected ? getElapsedSeconds() : plannedSeconds);
+                return String(calculateRewardPreview(completedPreviewSeconds, true).xp);
+            }
+            case "stop-confirm-potential-coins": {
+                const countUpSelected = isCountUpModeSelected();
+                const countUpCheckpoint = activeConfirmContext === "countup-checkpoint";
+                const completedPreviewSeconds = countUpCheckpoint
+                    ? getElapsedSeconds()
+                    : (countUpSelected ? getElapsedSeconds() : plannedSeconds);
+                return String(calculateRewardPreview(completedPreviewSeconds, true).coins);
+            }
+            case "stop-confirm-current-xp": {
+                const elapsedSeconds = getElapsedSeconds();
+                const countUpEligibleForCompletion = isCountUpModeSelected() && elapsedSeconds >= 300;
+                return String(calculateRewardPreview(elapsedSeconds, countUpEligibleForCompletion).xp);
+            }
+            case "stop-confirm-current-coins": {
+                const elapsedSeconds = getElapsedSeconds();
+                const countUpEligibleForCompletion = isCountUpModeSelected() && elapsedSeconds >= 300;
+                return String(calculateRewardPreview(elapsedSeconds, countUpEligibleForCompletion).coins);
+            }
+            case "countup-stop-confirm-current-xp":
+                return String(calculateRewardPreview(getElapsedSeconds(), false).xp);
+            case "countup-stop-confirm-current-coins":
+                return String(calculateRewardPreview(getElapsedSeconds(), false).coins);
+            default:
+                return textState.content;
+        }
+    }
+
+    function getExitButtonLabel(textState) {
+        const elapsedSeconds = getElapsedSeconds();
+
+        if (isCountUpModeSelected() && elapsedSeconds >= 300) {
+            return "Done Focusing";
+        }
+
+        if (elapsedSeconds >= stopThresholdSeconds) {
+            return textState.alternateContent || "Stop Focusing";
+        }
+
+        const remainingCancelSeconds = Math.max(1, stopThresholdSeconds - elapsedSeconds);
+        return `Cancel (${remainingCancelSeconds})`;
+    }
+
     function applyAssetTextStyle(assetKey) {
         const assetElement = getAssetElement(assetKey);
         const labelElement = getTextLabelElement(assetKey);
@@ -4618,13 +5797,50 @@
             ? Math.max(0.0001, getWorldStageScale())
             : Math.max(0.0001, getUiProjectionScale());
         const scaledFontSize = Math.max(8, (textState.fontSize || 16) * textScale);
-        const resolvedContent = assetKey === timerTextAssetKey
+        const isTimerTextAsset = assetKey === timerTextAssetKey;
+        const isFocusManageInputAsset = assetKey === "focus-manage-input";
+        const isCountdownModeTextAsset = assetKey === countdownModeTextAssetKey;
+        const isPauseButtonAsset = assetKey === "pause";
+        const isExitButtonAsset = assetKey === "exit";
+        const useAlternateButtonLabel = isPauseButtonAsset
+            ? !!isPaused
+            : (isExitButtonAsset ? getElapsedSeconds() >= stopThresholdSeconds : false);
+        const pressedTextYOffset = assetSupportsPressedArt(assetKey) && isButtonVisuallyPressed(assetKey)
+            ? Number(textState.pressedYOffset ?? 0)
+            : 0;
+        const isRuntimeValueTextAsset = assetKey === "reward-current-xp"
+            || assetKey === "reward-current-coins"
+            || assetKey === "stop-confirm-potential-xp"
+            || assetKey === "stop-confirm-potential-coins"
+            || assetKey === "stop-confirm-current-xp"
+            || assetKey === "stop-confirm-current-coins"
+            || assetKey === "countup-stop-confirm-current-xp"
+            || assetKey === "countup-stop-confirm-current-coins";
+        const resolvedContent = isTimerTextAsset
             ? formatDurationLabel(currentTimerTextSeconds)
-            : textState.content;
+            : (isRuntimeValueTextAsset
+                ? getRuntimeValueTextContent(assetKey, textState)
+            : (isExitButtonAsset
+                ? getExitButtonLabel(textState)
+            : (assetKey === "focus-manage-add"
+                ? (getSelectedFocusLabelDraft() ? "Rename" : (textState.content || "Add"))
+            : (isCountdownModeTextAsset
+                ? (isCountUpModeSelected()
+                    ? (textState.countupContent || textState.content || "Count Up Mode")
+                    : (textState.countdownContent || textState.content || "Count Down Mode"))
+                : ((isPauseButtonAsset || isExitButtonAsset) && useAlternateButtonLabel
+                    ? (textState.alternateContent || textState.content)
+                    : textState.content)))));
 
-        labelElement.textContent = resolvedContent;
-        labelElement.style.display = "block";
-        labelElement.style.pointerEvents = isSelfLabeledAsset ? "auto" : "none";
+        if (isFocusManageInputAsset) {
+            labelElement.setAttribute("placeholder", resolvedContent || "Type a focus label");
+        }
+        else if (!isTimerTextAsset) {
+            labelElement.textContent = resolvedContent;
+        }
+
+        labelElement.style.display = isTimerTextAsset ? "inline-grid" : "block";
+        labelElement.style.pointerEvents = (isSelfLabeledAsset || isFocusManageInputAsset) ? "auto" : "none";
         labelElement.style.textAlign = "center";
         labelElement.style.fontFamily = textState.fontFamily || layoutTextFontFamilyOptions[0].value;
         labelElement.style.fontSize = `${scaledFontSize}px`;
@@ -4634,6 +5850,26 @@
         labelElement.style.textShadow = buildTextThicknessShadow(
             normalizeHexColor(textState.color, "#ffffff"),
             Math.max(0, Number(textState.boldThickness ?? defaultTextBoldThickness)) * textScale);
+
+        if (isFocusManageInputAsset) {
+            labelElement.style.position = "static";
+            labelElement.style.left = "";
+            labelElement.style.top = "";
+            labelElement.style.transform = "none";
+            labelElement.style.width = "100%";
+            labelElement.style.maxWidth = "100%";
+            labelElement.style.height = "100%";
+            labelElement.style.whiteSpace = "nowrap";
+            labelElement.style.lineHeight = "1.2";
+            labelElement.style.textAlign = "left";
+            labelElement.style.padding = `${0.8 * textScale}rem ${0.9 * textScale}rem`;
+            labelElement.style.boxSizing = "border-box";
+            labelElement.style.background = "transparent";
+            labelElement.style.border = "none";
+            labelElement.style.outline = "none";
+            labelElement.style.setProperty("--pl-focus-manage-input-placeholder-color", normalizeHexColor(textState.color, "#64748b"));
+            return;
+        }
 
         if (isSelfLabeledAsset) {
             assetElement.style.display = "flex";
@@ -4652,11 +5888,16 @@
         labelElement.style.position = "absolute";
         labelElement.style.left = "50%";
         labelElement.style.top = "50%";
-        labelElement.style.transform = `translate(-50%, -50%) translate(${textState.x * textScale}px, ${textState.y * textScale}px)`;
-        labelElement.style.width = "max-content";
+        labelElement.style.transform = `translate(-50%, -50%) translate(${textState.x * textScale}px, ${(textState.y + pressedTextYOffset) * textScale}px)`;
+        labelElement.style.width = isTimerTextAsset ? "auto" : "max-content";
         labelElement.style.maxWidth = "90%";
         labelElement.style.whiteSpace = "nowrap";
         labelElement.style.lineHeight = "1";
+
+        if (isTimerTextAsset) {
+            applyTimerTextSlotLayout(labelElement, textScale);
+            renderTimerTextSlots(labelElement, currentTimerTextSeconds);
+        }
     }
 
     function applyRuntimeSafeUiTypography() {
@@ -4681,11 +5922,17 @@
 
     function updateSliderVisuals() {
         const metrics = getSliderVisualMetrics();
+        const rootState = getEffectiveLayoutState("slider");
+        const savedRootState = getSavedLayoutState("slider");
 
         const emptyState = getEffectiveComponentState("slider", "empty");
         const fillState = getEffectiveComponentState("slider", "fill");
         const nibState = getEffectiveComponentState("slider", "nib");
         const nibHitState = getEffectiveComponentState("slider", "nib-hit");
+        const savedEmptyState = getSavedComponentState("slider", "empty");
+        const savedFillState = getSavedComponentState("slider", "fill");
+        const savedNibState = getSavedComponentState("slider", "nib");
+        const savedNibHitState = getSavedComponentState("slider", "nib-hit");
 
         const transformOptions = {
             localScaleX: metrics.localScaleX,
@@ -4739,29 +5986,35 @@
         sliderGroup.style.top = `${metrics.projected.top}px`;
         sliderGroup.style.width = `${metrics.projected.width}px`;
         sliderGroup.style.height = `${metrics.projected.height}px`;
+        sliderGroup.style.position = "absolute";
         sliderGroup.style.transform = "scale(1)";
         sliderGroup.style.overflow = "visible";
 
+        sliderTrackShell.style.position = "absolute";
         sliderTrackShell.style.left = `${emptyRect.left}px`;
         sliderTrackShell.style.top = `${emptyRect.top}px`;
         sliderTrackShell.style.width = `${emptyRect.width}px`;
         sliderTrackShell.style.height = `${emptyRect.height}px`;
 
+        sliderTrackEmptyArt.style.position = "absolute";
         sliderTrackEmptyArt.style.left = "0px";
         sliderTrackEmptyArt.style.top = "0px";
         sliderTrackEmptyArt.style.width = `${emptyRect.width}px`;
         sliderTrackEmptyArt.style.height = `${emptyRect.height}px`;
 
+        sliderFillShell.style.position = "absolute";
         sliderFillShell.style.left = `${fillShellRect.left}px`;
         sliderFillShell.style.top = `${fillShellRect.top}px`;
         sliderFillShell.style.width = `${fillShellRect.width}px`;
         sliderFillShell.style.height = `${fillShellRect.height}px`;
 
+        sliderFillArt.style.position = "absolute";
         sliderFillArt.style.left = "0px";
         sliderFillArt.style.top = "0px";
         sliderFillArt.style.width = `${fillFullRect.width}px`;
         sliderFillArt.style.height = `${fillFullRect.height}px`;
 
+        sliderNibVisual.style.position = "absolute";
         sliderNibVisual.style.left = `${nibRect.left}px`;
         sliderNibVisual.style.top = `${nibRect.top}px`;
         sliderNibVisual.style.width = `${nibRect.width}px`;
@@ -4769,6 +6022,7 @@
         sliderNibVisual.style.transform = "none";
         applySliderNibBackground(nibRect, metrics.nibMetric);
 
+        durationSlider.style.position = "absolute";
         durationSlider.style.left = `${nibHitRect.left}px`;
         durationSlider.style.top = `${nibHitRect.top}px`;
         durationSlider.style.width = `${nibHitRect.width}px`;
@@ -4778,6 +6032,58 @@
         durationSlider.style.background = "transparent";
 
         cacheSliderRuntimeRects(metrics, emptyRect, fillShellRect, fillFullRect, nibRect, nibHitRect);
+        cacheSliderDebugSnapshot({
+            timestamp: new Date().toISOString(),
+            sliderValue: {
+                min: parseInt(durationSlider.min || "5", 10),
+                max: parseInt(durationSlider.max || "120", 10),
+                step: parseInt(durationSlider.step || "1", 10),
+                value: parseInt(durationSlider.value || "5", 10)
+            },
+            rootState: cloneSliderDebugState(rootState),
+            savedRootState: cloneSliderDebugState(savedRootState),
+            componentStates: {
+                empty: cloneSliderDebugState(emptyState),
+                fill: cloneSliderDebugState(fillState),
+                nib: cloneSliderDebugState(nibState),
+                "nib-hit": cloneSliderDebugState(nibHitState)
+            },
+            savedComponentStates: {
+                empty: cloneSliderDebugState(savedEmptyState),
+                fill: cloneSliderDebugState(savedFillState),
+                nib: cloneSliderDebugState(savedNibState),
+                "nib-hit": cloneSliderDebugState(savedNibHitState)
+            },
+            artMetrics: {
+                slider: cloneSliderDebugMetric(metrics.sliderMetric),
+                nib: cloneSliderDebugMetric(metrics.nibMetric)
+            },
+            metrics: {
+                projected: cloneSliderDebugRect(metrics.projected),
+                resolvedHeight: Number(metrics.resolvedHeight),
+                localScaleX: Number(metrics.localScaleX),
+                localScaleY: Number(metrics.localScaleY),
+                progressRatio: Number(metrics.progressRatio),
+                trackLeft: Number(metrics.trackLeft),
+                trackWidth: Number(metrics.trackWidth),
+                targetCenter: Number(metrics.targetCenter),
+                nibRect: cloneSliderDebugRect(metrics.nibRect)
+            },
+            runtimeRects: {
+                empty: cloneSliderDebugRect(emptyRect),
+                "fill-shell": cloneSliderDebugRect(fillShellRect),
+                "fill-full": cloneSliderDebugRect(fillFullRect),
+                nib: cloneSliderDebugRect(nibRect),
+                "nib-hit": cloneSliderDebugRect(nibHitRect)
+            },
+            computedStyles: {
+                group: readSliderComputedStyleSnapshot(sliderGroup),
+                "track-shell": readSliderComputedStyleSnapshot(sliderTrackShell),
+                "fill-shell": readSliderComputedStyleSnapshot(sliderFillShell),
+                nib: readSliderComputedStyleSnapshot(sliderNibVisual),
+                input: readSliderComputedStyleSnapshot(durationSlider)
+            }
+        });
         refreshComponentOutlines();
     }
 
@@ -4793,6 +6099,235 @@
         currentTimerTextSeconds = readoutSeconds;
         refreshTimerTextAsset();
         updateSliderVisuals();
+    }
+
+    function getDurationSliderBounds() {
+        const min = parseInt(durationSlider.min || "5", 10);
+        const max = parseInt(durationSlider.max || "120", 10);
+        const step = Math.max(1, parseInt(durationSlider.step || "1", 10) || 1);
+
+        return { min, max, step };
+    }
+
+    function clampDurationSliderValue(value) {
+        const { min, max, step } = getDurationSliderBounds();
+        const parsed = parseInt(String(value ?? ""), 10);
+        const safeValue = Number.isFinite(parsed) ? parsed : min;
+        const snapped = min + (Math.round((safeValue - min) / step) * step);
+
+        return Math.max(min, Math.min(max, snapped));
+    }
+
+    function rangeSelectorValueToDurationMinutes(value) {
+        const { min, max, step } = getDurationSliderBounds();
+        const ratio = clampRangeSelectorValue(value);
+        const raw = min + ((max - min) * ratio);
+        const snapped = min + (Math.round((raw - min) / step) * step);
+
+        return Math.max(min, Math.min(max, snapped));
+    }
+
+    function durationMinutesToRangeSelectorValue(value) {
+        const { min, max } = getDurationSliderBounds();
+        const clampedMinutes = clampDurationSliderValue(value);
+
+        if (max <= min) {
+            return 0;
+        }
+
+        return clampRangeSelectorValue((clampedMinutes - min) / (max - min));
+    }
+
+    function syncDurationSliderToRangeSelectorValue() {
+        durationSlider.value = String(rangeSelectorValueToDurationMinutes(rangeSelectorValue));
+    }
+
+    function syncRangeSelectorValueToDurationSlider() {
+        writeRangeSelectorPreference(durationMinutesToRangeSelectorValue(durationSlider.value));
+        applyRangeSelectorAssetVisuals();
+    }
+
+    function getRangeSelectorMetrics(projectedWidth = null, projectedHeight = null) {
+        const element = getAssetElement("range-selector");
+        const barEmptyElement = element?.querySelector('[data-range-selector-component="bar-empty"]');
+        const barFullShellElement = element?.querySelector('[data-range-selector-component="bar-full-shell"]');
+        const barFullElement = element?.querySelector('[data-range-selector-component="bar-full"]');
+        const nibElement = element?.querySelector('[data-range-selector-component="nib"]');
+
+        if (!element || !barEmptyElement || !barFullShellElement || !barFullElement || !nibElement) {
+            return null;
+        }
+
+        const width = Math.max(1, projectedWidth ?? element.clientWidth);
+        const height = Math.max(1, projectedHeight ?? element.clientHeight);
+        const horizontalInset = Math.max(12, Math.round(width * 0.06));
+        const trackWidth = Math.max(24, width - (horizontalInset * 2));
+        const maxTrackHeight = Math.max(18, height - 18);
+        const barEmptyMetric = getComponentArtMetrics("range-selector", "bar-empty");
+        const barFullMetric = getComponentArtMetrics("range-selector", "bar-full");
+        const nibMetric = getComponentArtMetrics("range-selector", "nib");
+        const barEmptyState = getEffectiveComponentState("range-selector", "bar-empty");
+        const barFullState = getEffectiveComponentState("range-selector", "bar-full");
+        const nibState = getEffectiveComponentState("range-selector", "nib");
+        const preferredTrackRatio = barEmptyMetric?.canvasRatio
+            || barFullMetric?.canvasRatio
+            || Math.max(1, trackWidth / Math.max(18, Math.min(Math.round(height * 0.38), height - 28)));
+        const trackHeightFromArt = Math.round(trackWidth / Math.max(0.0001, preferredTrackRatio));
+        const trackHeight = Math.max(18, Math.min(maxTrackHeight, trackHeightFromArt));
+        const trackTop = Math.max(8, Math.round((height - trackHeight) / 2));
+        const trackVisibleLeftRatio = barEmptyMetric?.hasVisibleBounds
+            ? barEmptyMetric.visibleLeftRatio
+            : (barFullMetric?.hasVisibleBounds ? barFullMetric.visibleLeftRatio : 0);
+        const trackVisibleWidthRatio = barEmptyMetric?.hasVisibleBounds
+            ? barEmptyMetric.visibleWidthRatio
+            : (barFullMetric?.hasVisibleBounds ? barFullMetric.visibleWidthRatio : 1);
+        const trackVisualLeft = horizontalInset + (trackWidth * trackVisibleLeftRatio);
+        const trackVisualRight = horizontalInset + (trackWidth * (trackVisibleLeftRatio + trackVisibleWidthRatio));
+        const nibVisibleWidthPixels = nibMetric && nibMetric.hasVisibleBounds
+            ? Math.max(1, nibMetric.canvasWidth * nibMetric.visibleWidthRatio)
+            : Math.max(1, nibMetric?.canvasWidth || 1);
+        const nibVisibleHeightPixels = nibMetric && nibMetric.hasVisibleBounds
+            ? Math.max(1, nibMetric.canvasHeight * nibMetric.visibleHeightRatio)
+            : Math.max(1, nibMetric?.canvasHeight || 1);
+        const nibVisibleAspectRatio = nibVisibleWidthPixels / Math.max(1, nibVisibleHeightPixels);
+        const nibAnchorRatio = nibMetric && nibMetric.hasVisibleBounds
+            ? Math.max(0, Math.min(1, nibMetric.visibleAnchorXRatio ?? 0.5))
+            : 0.5;
+        const nibScale = Math.max(0.01, (nibState.scale ?? 100) / 100);
+        const nibHeight = Math.max(1, Math.round(trackHeight * nibScale));
+        const nibWidth = Math.max(1, Math.round(nibHeight * nibVisibleAspectRatio));
+        const nibTravelMin = trackVisualLeft;
+        const nibTravelMax = trackVisualRight;
+        const nibTravelWidth = Math.max(0, nibTravelMax - nibTravelMin);
+        const nibCenterX = nibTravelMin + (nibTravelWidth * rangeSelectorValue);
+        const nibAnchorX = nibWidth * nibAnchorRatio;
+        const nibLeft = Math.round((nibCenterX - nibAnchorX) + (nibState.x ?? 0));
+        const nibTop = Math.round(trackTop + ((trackHeight - nibHeight) / 2) + (nibState.y ?? 0));
+        const fillWidth = Math.max(0, Math.min(trackWidth, nibCenterX - horizontalInset));
+        const nibBackgroundWidth = nibMetric && nibMetric.hasVisibleBounds
+            ? Math.max(1, nibWidth / Math.max(0.0001, nibMetric.visibleWidthRatio))
+            : nibWidth;
+        const nibBackgroundHeight = nibMetric && nibMetric.hasVisibleBounds
+            ? Math.max(1, nibHeight / Math.max(0.0001, nibMetric.visibleHeightRatio))
+            : nibHeight;
+        const nibBackgroundLeft = nibMetric && nibMetric.hasVisibleBounds
+            ? -nibMetric.visibleLeftRatio * nibBackgroundWidth
+            : 0;
+        const nibBackgroundTop = nibMetric && nibMetric.hasVisibleBounds
+            ? -nibMetric.visibleTopRatio * nibBackgroundHeight
+            : 0;
+        const barEmptyScale = Math.max(0.01, (barEmptyState.scale ?? 100) / 100);
+        const barFullScale = Math.max(0.01, (barFullState.scale ?? 100) / 100);
+        const barEmptyWidth = Math.max(1, Math.round(trackWidth * barEmptyScale));
+        const barEmptyHeight = Math.max(1, Math.round(trackHeight * barEmptyScale));
+        const barFullWidth = Math.max(1, Math.round(trackWidth * barFullScale));
+        const barFullHeight = Math.max(1, Math.round(trackHeight * barFullScale));
+        const barEmptyLeft = Math.round(horizontalInset + ((trackWidth - barEmptyWidth) / 2) + (barEmptyState.x ?? 0));
+        const barEmptyTop = Math.round(trackTop + ((trackHeight - barEmptyHeight) / 2) + (barEmptyState.y ?? 0));
+        const barFullLeft = Math.round(horizontalInset + ((trackWidth - barFullWidth) / 2) + (barFullState.x ?? 0));
+        const barFullTop = Math.round(trackTop + ((trackHeight - barFullHeight) / 2) + (barFullState.y ?? 0));
+
+        return {
+            element,
+            barEmptyElement,
+            barFullShellElement,
+            barFullElement,
+            nibElement,
+            barEmptyMetric,
+            barFullMetric,
+            nibMetric,
+            barEmptyLeft,
+            barEmptyTop,
+            barEmptyWidth,
+            barEmptyHeight,
+            barFullLeft,
+            barFullTop,
+            barFullWidth,
+            barFullHeight,
+            horizontalInset,
+            trackWidth,
+            trackHeight,
+            trackTop,
+            trackVisualLeft,
+            trackVisualRight,
+            nibAnchorRatio,
+            nibAnchorX,
+            nibWidth,
+            nibHeight,
+            nibBackgroundWidth,
+            nibBackgroundHeight,
+            nibBackgroundLeft,
+            nibBackgroundTop,
+            nibTravelMin,
+            nibTravelMax,
+            nibCenterX,
+            nibLeft,
+            nibTop,
+            fillWidth
+        };
+    }
+
+    function applyRangeSelectorAssetVisuals(projectedWidth = null, projectedHeight = null) {
+        const metrics = getRangeSelectorMetrics(projectedWidth, projectedHeight);
+
+        if (!metrics) {
+            return;
+        }
+
+        const hasBarEmpty = !!getEffectiveAssetImageOverride("range-selector", "bar-empty");
+        const hasBarFull = !!getEffectiveAssetImageOverride("range-selector", "bar-full");
+        const hasNib = !!getEffectiveAssetImageOverride("range-selector", "nib");
+        const canInteract = !layoutEditorEnabled && !metrics.element.hidden && currentVisibleSceneKey === "focus-setup";
+
+        metrics.element.style.pointerEvents = layoutEditorEnabled ? "auto" : "none";
+        metrics.element.style.border = "none";
+        metrics.element.style.background = "transparent";
+        metrics.element.style.cursor = layoutEditorEnabled ? "move" : "default";
+
+        metrics.barEmptyElement.style.left = `${metrics.barEmptyLeft}px`;
+        metrics.barEmptyElement.style.top = `${metrics.barEmptyTop}px`;
+        metrics.barEmptyElement.style.width = `${metrics.barEmptyWidth}px`;
+        metrics.barEmptyElement.style.height = `${metrics.barEmptyHeight}px`;
+        metrics.barEmptyElement.style.opacity = hasBarEmpty ? "1" : "0";
+
+        metrics.barFullShellElement.style.left = `${metrics.barFullLeft}px`;
+        metrics.barFullShellElement.style.top = `${metrics.barFullTop}px`;
+        metrics.barFullShellElement.style.width = `${metrics.fillWidth}px`;
+        metrics.barFullShellElement.style.height = `${metrics.barFullHeight}px`;
+        metrics.barFullShellElement.style.opacity = hasBarFull ? "1" : "0";
+
+        metrics.barFullElement.style.width = `${metrics.barFullWidth}px`;
+        metrics.barFullElement.style.height = `${metrics.barFullHeight}px`;
+
+        metrics.nibElement.style.left = `${metrics.nibLeft}px`;
+        metrics.nibElement.style.top = `${metrics.nibTop}px`;
+        metrics.nibElement.style.width = `${metrics.nibWidth}px`;
+        metrics.nibElement.style.height = `${metrics.nibHeight}px`;
+        metrics.nibElement.style.backgroundSize = `${metrics.nibBackgroundWidth}px ${metrics.nibBackgroundHeight}px`;
+        metrics.nibElement.style.backgroundPosition = `${metrics.nibBackgroundLeft}px ${metrics.nibBackgroundTop}px`;
+        metrics.nibElement.style.opacity = hasNib ? "1" : "0";
+        metrics.nibElement.style.pointerEvents = canInteract ? "auto" : "none";
+        metrics.nibElement.style.cursor = canInteract ? "ew-resize" : (layoutEditorEnabled ? "move" : "default");
+    }
+
+    function updateRangeSelectorValueFromClientX(clientX) {
+        const metrics = getRangeSelectorMetrics();
+
+        if (!metrics) {
+            return;
+        }
+
+        const elementRect = metrics.element.getBoundingClientRect();
+        const localX = clientX - elementRect.left;
+        const clampedCenter = Math.max(metrics.nibTravelMin, Math.min(metrics.nibTravelMax, localX));
+        const ratio = (metrics.nibTravelMax - metrics.nibTravelMin) <= 0
+            ? 0
+            : (clampedCenter - metrics.nibTravelMin) / (metrics.nibTravelMax - metrics.nibTravelMin);
+
+        writeRangeSelectorPreference(ratio);
+        syncDurationSliderToRangeSelectorValue();
+        applyRangeSelectorAssetVisuals();
+        updateDurationReadout();
     }
 
     function applyAssetLayout(assetKey) {
@@ -4843,6 +6378,10 @@
         element.style.width = `${projected.width}px`;
         element.style.height = `${projected.height}px`;
         element.style.transform = "scale(1)";
+
+        if (assetKey === "range-selector") {
+            applyRangeSelectorAssetVisuals(projected.width, projected.height);
+        }
 
         if (assetKey === "focus-manage-list") {
             requestAnimationFrame(updateFocusManageScrollbarVisual);
@@ -5222,6 +6761,7 @@
         return [
             layoutEditorModeSelect,
             layoutSceneSelect,
+            layoutOverlaySelect,
             layoutStateSelect,
             layoutAssetSelect,
             layoutComponentSelect,
@@ -5315,6 +6855,7 @@
 
         layoutEditorEnabled = !!nextEnabled;
         dragState = null;
+        rangeSelectorDragState = null;
         setFocusTypePickerDisabledState(focusTypeInput.disabled);
         refreshLayoutUi();
     }
@@ -5422,7 +6963,7 @@
         ensureLayoutVariableControls();
         ensureLayoutEditorExtensions();
         ensureLayoutTextControls();
-        updateLayoutSceneHeader(layoutSceneSelect.value || "home");
+        updateLayoutSceneHeader(layoutSceneSelect.value || "home", getSelectedLayoutOverlayKey());
         updateLayoutEditorControlState();
         updateLayoutEditorModeStatus();
         updateLayoutWorkspaceModeUi();
@@ -5489,6 +7030,22 @@
         if (layoutColorHint) {
             layoutColorHint.textContent = getVariableAssetDefinition(layoutColorAssetKey).hint;
         }
+        const timerGapControls = document.getElementById("pl-layout-timer-gap-controls");
+        if (timerGapControls) {
+            timerGapControls.hidden = true;
+        }
+        const alternateTextField = document.getElementById("pl-layout-text-alternate-field");
+        if (alternateTextField) {
+            alternateTextField.hidden = true;
+        }
+        const pressedYOffsetField = document.getElementById("pl-layout-text-pressed-y-field");
+        if (pressedYOffsetField) {
+            pressedYOffsetField.hidden = true;
+        }
+        const modeTextControls = document.getElementById("pl-layout-mode-text-controls");
+        if (modeTextControls) {
+            modeTextControls.hidden = true;
+        }
         const layoutColorLabel = document.getElementById("pl-layout-edge-color-label");
         if (layoutColorLabel) {
             layoutColorLabel.textContent = getVariableAssetDefinition(layoutColorAssetKey).fieldLabel;
@@ -5500,22 +7057,69 @@
         applyGeometryModeForSelection(assetKey, componentKey);
 
         const textComponentSelected = isTextComponent(assetKey, componentKey);
+        const textContentField = layoutTextContent?.closest(".pl-field");
         setLayoutTextControlsHidden(!textComponentSelected);
 
         if (textComponentSelected) {
             const textState = getEffectiveTextState(assetKey);
             const assetState = getEffectiveLayoutState(assetKey);
+            const timerTextSelected = assetKey === timerTextAssetKey;
+            const modeTextSelected = assetKey === countdownModeTextAssetKey;
+            const pressedTextSelected = assetSupportsPressedArt(assetKey);
+            const alternateLabelSelected = assetKey === "pause" || assetKey === "exit";
+
+            if (textContentField) {
+                textContentField.hidden = timerTextSelected || modeTextSelected;
+            }
+            if (alternateTextField) {
+                alternateTextField.hidden = !alternateLabelSelected;
+            }
 
             layoutTextContent.value = textState.content;
+            if (layoutTextAlternateContent) {
+                layoutTextAlternateContent.value = textState.alternateContent ?? textState.content;
+            }
             layoutTextFontFamily.value = textState.fontFamily;
             layoutTextFontSize.value = String(Math.round(textState.fontSize));
             syncLayoutTextColorInputs(textState.color);
             layoutTextBold.checked = !!textState.bold;
             layoutTextItalic.checked = !!textState.italic;
             layoutTextBoldThickness.value = String(Number(textState.boldThickness ?? defaultTextBoldThickness));
+            if (layoutTextPressedYOffset) {
+                layoutTextPressedYOffset.value = String(Number(textState.pressedYOffset ?? 0));
+            }
+            if (layoutTimerHoursGap) {
+                layoutTimerHoursGap.value = String(Number(textState.hoursGap ?? 0.8));
+            }
+            if (layoutTimerMinutesGap) {
+                layoutTimerMinutesGap.value = String(Number(textState.minutesGap ?? 0.8));
+            }
+            if (timerGapControls) {
+                timerGapControls.hidden = !timerTextSelected;
+            }
+            if (modeTextControls) {
+                modeTextControls.hidden = !modeTextSelected;
+            }
+            if (pressedYOffsetField) {
+                pressedYOffsetField.hidden = !pressedTextSelected;
+            }
+            if (layoutModeCountdownContent) {
+                layoutModeCountdownContent.value = textState.countdownContent ?? textState.content;
+            }
+            if (layoutModeCountupContent) {
+                layoutModeCountupContent.value = textState.countupContent ?? textState.content;
+            }
 
             if (isSelfLabeledTextAsset(assetKey) && assetState) {
-                layoutTextStyleStatus.textContent = "X/Y move this text box. Width and height control the bounds that its text wraps inside.";
+                layoutTextStyleStatus.textContent = assetKey === timerTextAssetKey
+                    ? "The timer content is generated automatically. Font controls style it, and the timer gap inputs adjust the spacing between the hour, minute, and second groups."
+                    : (assetKey === countdownModeTextAssetKey
+                        ? "The visible text swaps automatically with the selected timer mode. Use the Count Down and Count Up fields below to edit the two labels."
+                        : (alternateLabelSelected
+                            ? "This button uses the main Text field for its default label and the Alternate text field for its other running-state label."
+                            : (pressedTextSelected
+                                ? "X/Y move this text box. Width and height control the bounds that its text wraps inside, and Pressed text Y offset moves the label when the button is visually pressed."
+                                : "X/Y move this text box. Width and height control the bounds that its text wraps inside.")));
                 layoutX.value = String(Math.round(assetState.x));
                 layoutY.value = String(Math.round(assetState.y));
                 layoutWidth.value = String(Math.round(assetState.width));
@@ -5531,7 +7135,15 @@
                 layoutHeightHint.textContent = "These values define the size of the box the text can flow inside.";
             }
             else {
-                layoutTextStyleStatus.textContent = "Position comes from X/Y. Font controls below affect only this text component.";
+                layoutTextStyleStatus.textContent = assetKey === timerTextAssetKey
+                    ? "Position comes from X/Y. The timer content is generated automatically, while the font and timer gap inputs control its appearance."
+                    : (assetKey === countdownModeTextAssetKey
+                        ? "Position comes from X/Y. This asset swaps between the Count Down and Count Up labels you set below."
+                        : (alternateLabelSelected
+                            ? "Position comes from X/Y. This button swaps between its Text and Alternate text labels based on the current running state."
+                            : (pressedTextSelected
+                                ? "Position comes from X/Y. Font controls below affect only this text component, and Pressed text Y offset applies whenever the button is visually down."
+                                : "Position comes from X/Y. Font controls below affect only this text component.")));
                 layoutX.value = String(Math.round(textState.x));
                 layoutY.value = String(Math.round(textState.y));
                 layoutWidth.value = "0";
@@ -5550,6 +7162,18 @@
             syncNumberPairs();
         }
         else if (isRootComponent(componentKey)) {
+            if (textContentField) {
+                textContentField.hidden = false;
+            }
+            if (timerGapControls) {
+                timerGapControls.hidden = true;
+            }
+            if (pressedYOffsetField) {
+                pressedYOffsetField.hidden = true;
+            }
+            if (modeTextControls) {
+                modeTextControls.hidden = true;
+            }
             const state = getEffectiveLayoutState(assetKey);
             const resolvedHeight = getResolvedHeight(assetKey, state);
             const canLockAspectRatio = assetCanLockAspectRatio(assetKey);
@@ -5756,9 +7380,21 @@
 
         const parsedFontSize = parseInt(layoutTextFontSize.value || String(base.fontSize), 10);
         const parsedBoldThickness = parseFloat(layoutTextBoldThickness.value || String(base.boldThickness ?? defaultTextBoldThickness));
+        const parsedPressedYOffset = parseFloat(layoutTextPressedYOffset?.value || String(base.pressedYOffset ?? 0));
+        const parsedHoursGap = parseFloat(layoutTimerHoursGap?.value || String(base.hoursGap ?? 0.8));
+        const parsedMinutesGap = parseFloat(layoutTimerMinutesGap?.value || String(base.minutesGap ?? 0.8));
+        const alternateContent = layoutTextAlternateContent?.value ?? base.alternateContent ?? base.content;
+        const countdownContent = layoutModeCountdownContent?.value ?? base.countdownContent ?? base.content;
+        const countupContent = layoutModeCountupContent?.value ?? base.countupContent ?? base.content;
+        const resolvedPrimaryContent = assetKey === countdownModeTextAssetKey
+            ? countdownContent
+            : (layoutTextContent.value ?? base.content);
 
         return {
-            content: layoutTextContent.value ?? base.content,
+            content: resolvedPrimaryContent,
+            alternateContent: alternateContent,
+            countdownContent: countdownContent,
+            countupContent: countupContent,
             fontFamily: layoutTextFontFamily.value || base.fontFamily,
             fontSize: Number.isFinite(parsedFontSize) && parsedFontSize > 0 ? parsedFontSize : base.fontSize,
             color: normalizeHexColor(layoutTextColorText.value || layoutTextColorPicker.value, base.color),
@@ -5766,7 +7402,10 @@
             italic: !!layoutTextItalic.checked,
             boldThickness: Number.isFinite(parsedBoldThickness) && parsedBoldThickness >= 0 ? parsedBoldThickness : (base.boldThickness ?? defaultTextBoldThickness),
             x: base.x,
-            y: base.y
+            y: base.y,
+            pressedYOffset: Number.isFinite(parsedPressedYOffset) ? parsedPressedYOffset : (base.pressedYOffset ?? 0),
+            hoursGap: Number.isFinite(parsedHoursGap) && parsedHoursGap >= 0 ? parsedHoursGap : (base.hoursGap ?? 0.8),
+            minutesGap: Number.isFinite(parsedMinutesGap) && parsedMinutesGap >= 0 ? parsedMinutesGap : (base.minutesGap ?? 0.8)
         };
     }
 
@@ -5878,8 +7517,16 @@
     //#region SEGMENT I - Layout Selection, Drag, And Slider Pointer Handling
     function handleLayoutSceneChange() {
         const nextSceneKey = layoutSceneSelect.value || "home";
+        const nextOverlayKey = getCompatibleOverlayKeys(nextSceneKey).includes(getSelectedLayoutOverlayKey())
+            ? getSelectedLayoutOverlayKey()
+            : "none";
+
+        if (layoutOverlaySelect && layoutOverlaySelect.value !== nextOverlayKey) {
+            layoutOverlaySelect.value = nextOverlayKey;
+        }
+
         const newAssetKey = setActiveLayoutScene(
-            nextSceneKey,
+            nextOverlayKey !== "none" ? nextOverlayKey : nextSceneKey,
             getSelectedAssetKey(),
             getSelectedComponentKey(),
             getSelectedSceneStateKey());
@@ -5903,7 +7550,47 @@
             discardCurrentImageDraft();
         }
 
-        if (currentVisibilityDraftSceneKey && currentVisibilityDraftSceneKey !== nextSceneKey) {
+        if (currentVisibilityDraftSceneKey && currentVisibilityDraftSceneKey !== getLayoutEditingSceneKey(nextSceneKey, nextOverlayKey)) {
+            discardCurrentVisibilityDraft();
+        }
+
+        if (currentBehaviorDraftAssetKey && currentBehaviorDraftAssetKey !== newAssetKey) {
+            discardCurrentBehaviorRoleDraft();
+        }
+
+        refreshLayoutUi();
+    }
+
+    function handleLayoutOverlayChange() {
+        const nextSceneKey = layoutSceneSelect.value || "home";
+        const nextOverlayKey = getSelectedLayoutOverlayKey();
+        const newAssetKey = setActiveLayoutScene(
+            nextOverlayKey !== "none" ? nextOverlayKey : nextSceneKey,
+            getSelectedAssetKey(),
+            getSelectedComponentKey(),
+            getSelectedSceneStateKey());
+        const nextVariableDefinition = isVariableAsset(newAssetKey)
+            ? getVariableAssetDefinition(newAssetKey)
+            : null;
+        const nextEditingSceneKey = getLayoutEditingSceneKey(nextSceneKey, nextOverlayKey);
+
+        if (currentDraftAssetKey && currentDraftAssetKey !== newAssetKey) {
+            discardCurrentDraft();
+        }
+
+        if (currentTextDraftAssetKey && currentTextDraftAssetKey !== newAssetKey) {
+            discardCurrentTextDraft();
+        }
+
+        if (currentVariableDraftKey && (!nextVariableDefinition || nextVariableDefinition.variableKey !== currentVariableDraftKey)) {
+            discardVariableDraft();
+        }
+
+        if (currentImageDraftAssetKey && currentImageDraftAssetKey !== newAssetKey) {
+            discardCurrentImageDraft();
+        }
+
+        if (currentVisibilityDraftSceneKey && currentVisibilityDraftSceneKey !== nextEditingSceneKey) {
             discardCurrentVisibilityDraft();
         }
 
@@ -6043,9 +7730,9 @@
         delete sharedLayoutVariables[imageVariableKey];
         applyLayoutVariables();
 
-        if (isRootComponent(componentKey)) {
-            await refreshArtMetricsForAsset(assetKey, readCssUrlVar(artImageVars[assetKey]));
-        }
+        await refreshArtMetricsForAsset(
+            getComponentArtMetricKey(assetKey, componentKey),
+            getEffectiveAssetImageOverride(assetKey, componentKey));
 
         applyAllAssetLayouts();
         refreshLayoutUi();
@@ -6239,6 +7926,7 @@
         const clamped = Math.max(min, Math.min(max, snapped));
 
         durationSlider.value = String(clamped);
+        syncRangeSelectorValueToDurationSlider();
         updateDurationReadout();
     }
 
@@ -6277,10 +7965,148 @@
         sliderDragState = null;
     }
 
+    function handleRangeSelectorPointerDown(event) {
+        if (layoutEditorEnabled || currentVisibleSceneKey !== "focus-setup") {
+            return;
+        }
+
+        const metrics = getRangeSelectorMetrics();
+        const nibRect = metrics?.nibElement?.getBoundingClientRect();
+
+        if (!metrics || !nibRect || !isPointInRect(event.clientX, event.clientY, nibRect)) {
+            return;
+        }
+
+        rangeSelectorDragState = {
+            pointerId: event.pointerId
+        };
+
+        try {
+            event.currentTarget?.setPointerCapture?.(event.pointerId);
+        }
+        catch {
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        updateRangeSelectorValueFromClientX(event.clientX);
+    }
+
+    function handleRangeSelectorPointerMove(event) {
+        if (!rangeSelectorDragState || event.pointerId !== rangeSelectorDragState.pointerId) {
+            return;
+        }
+
+        event.preventDefault();
+        updateRangeSelectorValueFromClientX(event.clientX);
+    }
+
+    function handleRangeSelectorPointerUp(event) {
+        if (!rangeSelectorDragState || event.pointerId !== rangeSelectorDragState.pointerId) {
+            return;
+        }
+
+        rangeSelectorDragState = null;
+    }
+
     initializeLayoutSceneControls();
     //#endregion SEGMENT I - Layout Selection, Drag, And Slider Pointer Handling
 
     //#region SEGMENT J1 - Screen State Previews And Visibility
+    function ensureOverlayLayer() {
+        if (!overlayBackdrop) {
+            overlayBackdrop = document.createElement("div");
+            overlayBackdrop.id = "pl-overlay-backdrop";
+            overlayBackdrop.className = "pl-runtime-overlay-backdrop";
+            overlayBackdrop.hidden = true;
+            homeRoot.appendChild(overlayBackdrop);
+        }
+
+        if (!overlayStageShell) {
+            overlayStageShell = document.createElement("div");
+            overlayStageShell.id = "pl-overlay-ui-stage-shell";
+            overlayStageShell.className = "pl-overlay-ui-stage-shell";
+            overlayStageShell.hidden = true;
+
+            overlayStage = document.createElement("div");
+            overlayStage.id = "pl-overlay-ui-stage";
+            overlayStage.className = "pl-overlay-ui-stage";
+            overlayStageShell.appendChild(overlayStage);
+            homeRoot.appendChild(overlayStageShell);
+
+            focusManageConfirmBackdrop = document.createElement("div");
+            focusManageConfirmBackdrop.id = "pl-focus-manage-confirm-backdrop";
+            focusManageConfirmBackdrop.className = "pl-focus-manage-confirm-backdrop";
+            focusManageConfirmBackdrop.hidden = true;
+            overlayStage.appendChild(focusManageConfirmBackdrop);
+
+            Array.from(overlayAssetKeys).forEach(function (assetKey) {
+                const assetElement = getAssetElement(assetKey);
+                if (assetElement) {
+                    overlayStage.appendChild(assetElement);
+                }
+            });
+        }
+
+        confirmDim.hidden = true;
+        confirmDim.style.display = "none";
+        rewardDim.hidden = true;
+        rewardDim.style.display = "none";
+        syncOverlayStageAssetParents();
+    }
+
+    function syncOverlayStageAssetParents() {
+        if (!overlayStage) {
+            return;
+        }
+
+        Object.keys(layoutAssets).forEach(function (assetKey) {
+            const assetElement = getAssetElement(assetKey);
+            if (!assetElement || isPersistentWorldAsset(assetKey) || isVariableAsset(assetKey)) {
+                return;
+            }
+
+            const shouldUseOverlayStage = Array.from(overlaySceneKeys).some(function (overlayKey) {
+                return getLayoutSceneAssetKeys(overlayKey).includes(assetKey);
+            });
+            const targetParent = shouldUseOverlayStage ? overlayStage : safeUiStage;
+
+            if (assetElement.parentNode !== targetParent) {
+                targetParent.appendChild(assetElement);
+            }
+        });
+    }
+
+    function setFocusManageConfirmBackdropVisible(isVisible) {
+        if (!focusManageConfirmBackdrop) {
+            return;
+        }
+
+        focusManageConfirmBackdrop.hidden = !isVisible;
+    }
+
+    function setVisibleScene(sceneKey, sceneStateKey = getRenderedSceneStateKey(sceneKey), overlayKey = "none") {
+        currentVisibleSceneKey = sceneKey;
+        currentVisibleSceneStateKey = sceneStateKey;
+        currentVisibleOverlayKey = overlayKey;
+    }
+
+    function setOverlayLayerVisible(isVisible) {
+        ensureOverlayLayer();
+        overlayBackdrop.hidden = !isVisible;
+        overlayStageShell.hidden = !isVisible;
+
+        if (!isVisible) {
+            setFocusManageConfirmBackdropVisible(false);
+        }
+    }
+
+    function setStatusToastSuppressed(isSuppressed) {
+        if (statusToast) {
+            statusToast.hidden = !!isSuppressed;
+        }
+    }
+
     function getRenderedSceneStateKey(sceneKey) {
         if (sceneKey === "focus-running") {
             return getRenderedFocusRunningStateKey();
@@ -6325,7 +8151,7 @@
         };
     }
 
-    function syncLayoutSceneToVisibleState(sceneKey) {
+    function syncLayoutSceneToVisibleState(sceneKey, overlayKey = currentVisibleOverlayKey) {
         if (!layoutModeEnabled || layoutEditorEnabled) {
             return;
         }
@@ -6334,7 +8160,7 @@
         const preservedComponentKey = getSelectedComponentKey();
         const previewStateKey = getRenderedSceneStateKey(sceneKey);
 
-        setActiveLayoutScene(sceneKey, preservedAssetKey, preservedComponentKey, previewStateKey);
+        setActiveLayoutScene(overlayKey !== "none" ? overlayKey : sceneKey, preservedAssetKey, preservedComponentKey, previewStateKey);
     }
 
     function setSetupChildrenVisible(isVisible) {
@@ -6345,6 +8171,7 @@
 
         focusTypeLabel.hidden = !isAssetVisible("focus-type-label");
         focusTypeField.hidden = !isAssetVisible("focus-type-field");
+        barAsset.hidden = !isAssetVisible("bar");
         durationText.hidden = !isAssetVisible("duration-text");
         sliderGroup.hidden = !isAssetVisible("slider");
         countdownModeButton.hidden = !isAssetVisible("countdown-mode");
@@ -6355,6 +8182,8 @@
         setupInteractiveElements.forEach(function (element) {
             element.classList.toggle("pl-setup-child-locked", isLocked);
         });
+
+        layoutAssets["range-selector"]?.element?.classList.toggle("pl-setup-child-locked", isLocked);
 
         focusTypeInput.disabled = isLocked;
         setFocusTypePickerDisabledState(isLocked);
@@ -6385,8 +8214,7 @@
     function isFocusManageConfirmPreviewRequested() {
         return layoutModeEnabled
             && layoutEditorEnabled
-            && currentVisibleSceneKey === "focus-manage"
-            && focusManageConfirmAssetKeys.has(getSelectedAssetKey());
+            && currentVisibleOverlayKey === "focus-manage-confirm";
     }
 
     function isFocusManageConfirmActive() {
@@ -6394,12 +8222,13 @@
     }
 
     function setFocusManageConfirmVisible(isVisible) {
-        focusManageConfirmPanel.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-panel", "focus-manage", "base"));
-        focusManageConfirmTitle.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-title", "focus-manage", "base"));
-        focusManageConfirmMessage.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-message", "focus-manage", "base"));
-        focusManageConfirmDeleteButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-delete", "focus-manage", "base"));
-        focusManageConfirmCancelButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-cancel", "focus-manage", "base"));
-        focusManageConfirmDismissField.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-dismiss", "focus-manage", "base"));
+        setFocusManageConfirmBackdropVisible(isVisible);
+        focusManageConfirmPanel.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-panel", "focus-manage-confirm", "base"));
+        focusManageConfirmTitle.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-title", "focus-manage-confirm", "base"));
+        focusManageConfirmMessage.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-message", "focus-manage-confirm", "base"));
+        focusManageConfirmDeleteButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-delete", "focus-manage-confirm", "base"));
+        focusManageConfirmCancelButton.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-cancel", "focus-manage-confirm", "base"));
+        focusManageConfirmDismissField.hidden = !(isVisible && getEffectiveSceneAssetVisibility("focus-manage-confirm-dismiss", "focus-manage-confirm", "base"));
     }
 
     function setFocusManageVisible(isVisible) {
@@ -6423,121 +8252,160 @@
     }
 
     function setConfirmVisible(isVisible) {
-        confirmDim.hidden = !isVisible;
         confirmPanel.hidden = !isVisible;
         confirmKeepGoingButton.hidden = !isVisible;
         confirmStopButton.hidden = !isVisible;
     }
 
+    function setCountupStopConfirmVisible(isVisible) {
+        countupStopConfirmPanel.hidden = !isVisible;
+        countupConfirmKeepGoingButton.hidden = !isVisible;
+        countupConfirmStopButton.hidden = !isVisible;
+        applyButtonArtStates();
+    }
+
     function setRewardVisible(isVisible) {
-        rewardDim.hidden = !isVisible;
         rewardPanel.hidden = !isVisible;
         rewardCloseButton.hidden = !isVisible;
+        applyButtonArtStates();
     }
 
     function showHomeState() {
-        currentVisibleSceneKey = "home";
-        currentVisibleSceneStateKey = "base";
+        setVisibleScene("home", "base", "none");
         setHomeButtonsVisible(true);
         setSetupVisible(false);
         setFocusManageVisible(false);
         setRunVisible(false);
         setConfirmVisible(false);
+        setCountupStopConfirmVisible(false);
         setRewardVisible(false);
+        setOverlayLayerVisible(false);
+        setStatusToastSuppressed(false);
         applyLayoutVariables();
         applySceneMembershipVisibility();
-        syncLayoutSceneToVisibleState("home");
+        syncLayoutSceneToVisibleState("home", "none");
     }
 
     function showSetupState() {
-        currentVisibleSceneKey = "focus-setup";
-        currentVisibleSceneStateKey = getRenderedFocusSetupStateKey();
+        setVisibleScene("focus-setup", getRenderedFocusSetupStateKey(), "none");
         setHomeButtonsVisible(false);
         setSetupVisible(true);
         setFocusManageVisible(false);
         setRunVisible(false);
         setConfirmVisible(false);
+        setCountupStopConfirmVisible(false);
         setRewardVisible(false);
+        setOverlayLayerVisible(false);
+        setStatusToastSuppressed(false);
         setupPanel.classList.remove("pl-setup-panel-locked");
         setSetupChildrenLocked(false);
+        setButtonsDisabled(false);
+        syncDurationSliderToRangeSelectorValue();
         updateDurationReadout();
         applyLayoutVariables();
         applySceneMembershipVisibility();
-        syncLayoutSceneToVisibleState("focus-setup");
+        applyAllAssetLayouts();
+        syncLayoutSceneToVisibleState("focus-setup", "none");
     }
 
-    function showFocusManageState(preserveDraft = false) {
-        currentVisibleSceneKey = "focus-manage";
-        currentVisibleSceneStateKey = "base";
+    function showFocusManageState(preserveDraft = false, showConfirm = false) {
+        const overlayKey = showConfirm ? "focus-manage-confirm" : "focus-manage";
+        setVisibleScene("focus-setup", getRenderedFocusSetupStateKey(), overlayKey);
         setHomeButtonsVisible(false);
-        setSetupVisible(false);
+        setSetupVisible(true);
         setFocusManageVisible(true);
         setRunVisible(false);
         setConfirmVisible(false);
+        setCountupStopConfirmVisible(false);
         setRewardVisible(false);
+        setOverlayLayerVisible(true);
+        setStatusToastSuppressed(false);
 
         if (!preserveDraft || (!draftFocusLabels.length && !focusManageSaveConfirmOpen)) {
             beginFocusManageDraft();
         }
         else {
-            setFocusManageConfirmVisible(isFocusManageConfirmActive());
+            setFocusManageConfirmVisible(showConfirm && isFocusManageConfirmActive());
             syncFocusManageButtons();
         }
 
         applyLayoutVariables();
         applySceneMembershipVisibility();
-        syncLayoutSceneToVisibleState("focus-manage");
+        syncLayoutSceneToVisibleState("focus-setup", overlayKey);
     }
 
     function showRunStatePreview() {
         const previewSeconds = isCountUpModeSelected() ? 4800 : 1500;
 
         showSetupState();
-        currentVisibleSceneKey = "focus-running";
-        currentVisibleSceneStateKey = getRenderedFocusRunningStateKey();
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "none");
         setupPanel.classList.add("pl-setup-panel-locked");
         setSetupChildrenLocked(true);
         setSetupChildrenVisible(true);
         setRunVisible(true);
         countdownModeButton.hidden = true;
         countUpModeButton.hidden = true;
+        setCountupStopConfirmVisible(false);
+        setOverlayLayerVisible(false);
         currentTimerTextSeconds = previewSeconds;
         refreshTimerTextAsset();
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Stop Focusing");
         applyLayoutVariables();
         applySceneMembershipVisibility();
-        syncLayoutSceneToVisibleState("focus-running");
+        syncLayoutSceneToVisibleState("focus-running", "none");
     }
 
     function showConfirmStatePreview() {
         showRunStatePreview();
-        currentVisibleSceneKey = "stop-confirm";
-        currentVisibleSceneStateKey = "base";
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "stop-confirm");
         setConfirmVisible(true);
+        setCountupStopConfirmVisible(false);
         activeConfirmContext = "stop";
         updateConfirmPanel(600);
+        setOverlayLayerVisible(true);
         applyLayoutVariables();
         applySceneMembershipVisibility();
-        syncLayoutSceneToVisibleState("stop-confirm");
+        syncLayoutSceneToVisibleState("focus-running", "stop-confirm");
+    }
+
+    function showCountupStopConfirmStatePreview() {
+        showRunStatePreview();
+        selectedTimerMode = "countup";
+        syncTimerModeUi("countup");
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "countup-stop-confirm");
+        setConfirmVisible(false);
+        setCountupStopConfirmVisible(true);
+        activeConfirmContext = "countup-stop";
+        countupStopConfirmCurrentXp.textContent = "75";
+        countupStopConfirmCurrentCoins.textContent = "1";
+        setOverlayLayerVisible(true);
+        applyLayoutVariables();
+        applySceneMembershipVisibility();
+        syncLayoutSceneToVisibleState("focus-running", "countup-stop-confirm");
     }
 
     function showRewardStatePreview() {
-        currentVisibleSceneKey = "reward";
-        currentVisibleSceneStateKey = "base";
+        showRunStatePreview();
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "reward");
         setHomeButtonsVisible(false);
-        setSetupVisible(false);
-        setRunVisible(false);
+        setSetupVisible(true);
+        setRunVisible(true);
         setConfirmVisible(false);
+        setCountupStopConfirmVisible(false);
         setRewardVisible(true);
+        setOverlayLayerVisible(true);
+        setStatusToastSuppressed(true);
         rewardStatusText.textContent = "Completed";
         rewardFocusType.textContent = "Focus";
         rewardDurationText.textContent = "00:25:00";
         rewardXp.textContent = "2500";
         rewardCoins.textContent = "25";
+        rewardCurrentXp.textContent = "2500";
+        rewardCurrentCoins.textContent = "25";
         applyLayoutVariables();
         applySceneMembershipVisibility();
-        syncLayoutSceneToVisibleState("reward");
+        syncLayoutSceneToVisibleState("focus-running", "reward");
     }
 
     function applySceneMembershipVisibility() {
@@ -6547,7 +8415,15 @@
                 return;
             }
 
-            const visibilityTarget = getSceneAssetVisibilityTarget(assetKey, currentVisibleSceneKey);
+            const activeOverlaySceneKey = getActiveOverlaySceneKeys(currentVisibleOverlayKey).find(function (overlaySceneKey) {
+                return getLayoutSceneAssetKeys(overlaySceneKey).includes(assetKey);
+            });
+            const visibilityTarget = activeOverlaySceneKey
+                ? {
+                    sceneKey: activeOverlaySceneKey,
+                    sceneStateKey: getRenderedSceneStateKey(activeOverlaySceneKey)
+                }
+                : getSceneAssetVisibilityTarget(assetKey, currentVisibleSceneKey);
             const isVisibleInScene = getLayoutSceneAssetKeys(visibilityTarget.sceneKey).includes(assetKey)
                 && getEffectiveSceneAssetVisibility(assetKey, visibilityTarget.sceneKey, visibilityTarget.sceneStateKey);
             const isBuiltInDefault = !!layoutSceneDefinitions[visibilityTarget.sceneKey]?.assets?.includes(assetKey);
@@ -6562,10 +8438,7 @@
                 return;
             }
 
-            if (isBuiltInDefault && !isVisibleInScene) {
-                config.element.hidden = true;
-                return;
-            }
+            config.element.hidden = !isVisibleInScene;
         });
 
         updateRuntimeMutedVisualState();
@@ -6587,11 +8460,17 @@
             case "focus-manage":
                 showFocusManageState(true);
                 break;
+            case "focus-manage-confirm":
+                showFocusManageState(true, true);
+                break;
             case "focus-running":
                 showRunStatePreview();
                 break;
             case "stop-confirm":
                 showConfirmStatePreview();
+                break;
+            case "countup-stop-confirm":
+                showCountupStopConfirmStatePreview();
                 break;
             case "reward":
                 showRewardStatePreview();
@@ -6637,6 +8516,9 @@
             case "confirm-panel":
             case "keep-going":
             case "stop":
+            case "countup-stop-confirm-panel":
+            case "countup-keep-going":
+            case "countup-stop":
             case "reward-panel":
             case "gotcha":
                 break;
@@ -6651,6 +8533,7 @@
     }
 
     function openFocusSetup() {
+        selectedTimerMode = "countdown";
         showSetupState();
     }
 
@@ -7047,9 +8930,13 @@
     }
 
     function getFocusManageTileCount() {
+        const activeCount = getActiveFocusLabelDrafts().length;
+        const roundedTileCount = Math.ceil(Math.max(activeCount, 1) / focusManageGridColumnCount) * focusManageGridColumnCount;
+        const tileCountWithTrailingEmptyRow = roundedTileCount + focusManageGridColumnCount;
+
         return Math.max(
             focusManageMinimumTileCount,
-            Math.ceil(Math.max(getActiveFocusLabelDrafts().length, focusManageMinimumTileCount) / focusManageGridColumnCount) * focusManageGridColumnCount);
+            tileCountWithTrailingEmptyRow);
     }
 
     function hasRemovedFocusLabelDrafts() {
@@ -7094,11 +8981,11 @@
     function syncFocusManagePrimaryActionUi() {
         const selectedDraft = getSelectedFocusLabelDraft();
         setButtonLabel(focusManageAddButton, selectedDraft ? "Rename" : "Add");
-        setButtonLabel(focusManageDeleteButton, "Remove");
-        setButtonLabel(focusManageOkButton, "Save");
-        setButtonLabel(focusManageBackButton, "Cancel");
-        setButtonLabel(focusManageConfirmDeleteButton, "Save");
-        setButtonLabel(focusManageConfirmCancelButton, "Cancel");
+        setButtonLabel(focusManageDeleteButton, getPreferredStaticButtonLabel("focus-manage-delete", "Remove"));
+        setButtonLabel(focusManageOkButton, getPreferredStaticButtonLabel("focus-manage-ok", "Save"));
+        setButtonLabel(focusManageBackButton, getPreferredStaticButtonLabel("focus-manage-back", "Cancel"));
+        setButtonLabel(focusManageConfirmDeleteButton, getPreferredStaticButtonLabel("focus-manage-confirm-delete", "Save"));
+        setButtonLabel(focusManageConfirmCancelButton, getPreferredStaticButtonLabel("focus-manage-confirm-cancel", "Cancel"));
 
         if (!selectedDraft && !document.activeElement?.isSameNode(focusManageInput)) {
             focusManageInput.value = "";
@@ -7214,16 +9101,6 @@
     function renderFocusManageList() {
         const activeDrafts = getActiveFocusLabelDrafts();
         focusManageList.innerHTML = "";
-
-        if (activeDrafts.length === 0 && !layoutEditorEnabled) {
-            const emptyState = document.createElement("div");
-            emptyState.className = "pl-focus-manage-list-empty";
-            emptyState.textContent = "No focus labels yet. Add one below to get started.";
-            focusManageList.appendChild(emptyState);
-            syncFocusManageButtons();
-            requestAnimationFrame(updateFocusManageScrollbarVisual);
-            return;
-        }
 
         const tileCount = getFocusManageTileCount();
 
@@ -7502,14 +9379,12 @@
         focusManageSaveConfirmOpen = true;
         focusManageConfirmDismissInput.checked = false;
         updateFocusManageConfirmMessage();
-        setFocusManageConfirmVisible(true);
-        syncFocusManageButtons();
+        showFocusManageState(true, true);
     }
 
     function closeFocusManageSaveConfirm() {
         focusManageSaveConfirmOpen = false;
-        setFocusManageConfirmVisible(false);
-        syncFocusManageButtons();
+        showFocusManageState(true, false);
     }
 
     async function persistFocusManageDraft() {
@@ -7606,6 +9481,7 @@
         setSetupChildrenVisible(!setupPanel.hidden);
         applyLayoutVariables();
         applySceneMembershipVisibility();
+        applyAllAssetLayouts();
         updateDurationReadout();
         refreshLayoutUi();
     }
@@ -7623,6 +9499,7 @@
         setSetupChildrenVisible(!setupPanel.hidden);
         applyLayoutVariables();
         applySceneMembershipVisibility();
+        applyAllAssetLayouts();
         updateDurationReadout();
         refreshLayoutUi();
     }
@@ -7654,9 +9531,9 @@
 
         setButtonLabel(pauseButton, "Pause");
         setButtonLabel(exitButton, "Cancel");
-        currentVisibleSceneKey = "focus-running";
-        currentVisibleSceneStateKey = getRenderedFocusRunningStateKey();
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "none");
         setSetupChildrenVisible(true);
+        setOverlayLayerVisible(false);
         applySceneMembershipVisibility();
 
         updateUi();
@@ -7691,7 +9568,12 @@
             return;
         }
 
-        openConfirmPanel("stop", elapsedSeconds);
+        if (isCountUpModeSelected() && elapsedSeconds >= 300) {
+            submitSave("break");
+            return;
+        }
+
+        openConfirmPanel(isCountUpModeSelected() ? "countup-stop" : "stop", elapsedSeconds);
     }
 
     function confirmKeepGoing() {
@@ -7699,20 +9581,23 @@
             return;
         }
 
+        const wasCountUpCheckpoint = activeConfirmContext === "countup-checkpoint";
         setConfirmVisible(false);
+        setCountupStopConfirmVisible(false);
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "none");
+        setOverlayLayerVisible(false);
 
-        if (activeConfirmContext === "countup-checkpoint" && isPaused && !isRunning) {
+        if (wasCountUpCheckpoint && isPaused && !isRunning) {
             nextCountUpCheckpointSeconds += 7200;
             startedAtMs = Date.now() - (pausedElapsedSeconds * 1000);
             isPaused = false;
             isRunning = true;
-            activeConfirmContext = "stop";
-            currentVisibleSceneKey = "focus-running";
-            currentVisibleSceneStateKey = getRenderedFocusRunningStateKey();
             setSetupChildrenVisible(true);
-            applySceneMembershipVisibility();
-            updateUi();
         }
+
+        activeConfirmContext = "stop";
+        applySceneMembershipVisibility();
+        updateUi();
     }
 
     function confirmStopSession() {
@@ -7724,7 +9609,76 @@
     }
 
     function closeRewardSummary() {
-        window.location.href = "/Index";
+        returnToHome();
+    }
+
+    function showRewardOverlayPreview(mode, elapsedSeconds) {
+        const isCompleted = mode === "complete" || mode === "break";
+        const rewardPreview = calculateRewardPreview(elapsedSeconds, isCompleted);
+
+        homeRoot.dataset.rewardCompleted = isCompleted ? "true" : "false";
+        homeRoot.dataset.rewardFocusType = (focusTypeInput.value || "Focus").trim() || "Focus";
+        homeRoot.dataset.rewardDuration = formatClock(elapsedSeconds);
+        homeRoot.dataset.rewardXp = String(rewardPreview.xp);
+        homeRoot.dataset.rewardCoins = String(rewardPreview.coins);
+
+        isSubmitting = false;
+        isRunning = false;
+        isPaused = false;
+        pausedElapsedSeconds = elapsedSeconds;
+        startedAtMs = 0;
+        completionTonePlayed = false;
+        activeConfirmContext = "stop";
+        setButtonsDisabled(false);
+
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "reward");
+        setHomeButtonsVisible(false);
+        setSetupVisible(true);
+        setRunVisible(true);
+        setConfirmVisible(false);
+        setCountupStopConfirmVisible(false);
+        setRewardVisible(true);
+        setOverlayLayerVisible(true);
+        setStatusToastSuppressed(true);
+        setSetupChildrenVisible(true);
+        hydrateRewardPanelFromDataset();
+        applyLayoutVariables();
+        applySceneMembershipVisibility();
+        applyAllAssetLayouts();
+        syncLayoutSceneToVisibleState("focus-running", "reward");
+    }
+
+    function showRewardOverlayFromSaveResult(result) {
+        homeRoot.dataset.rewardCompleted = result.rewardCompleted ? "true" : "false";
+        homeRoot.dataset.rewardFocusType = String(result.rewardFocusType || "Focus");
+        homeRoot.dataset.rewardDuration = formatClock(Number(result.rewardDurationSeconds || 0));
+        homeRoot.dataset.rewardXp = String(result.rewardXp || 0);
+        homeRoot.dataset.rewardCoins = String(result.rewardCoins || 0);
+
+        isSubmitting = false;
+        isRunning = false;
+        isPaused = false;
+        pausedElapsedSeconds = Number(result.rewardDurationSeconds || 0);
+        startedAtMs = 0;
+        completionTonePlayed = false;
+        activeConfirmContext = "stop";
+        setButtonsDisabled(false);
+
+        setVisibleScene("focus-running", getRenderedFocusRunningStateKey(), "reward");
+        setHomeButtonsVisible(false);
+        setSetupVisible(true);
+        setRunVisible(true);
+        setConfirmVisible(false);
+        setCountupStopConfirmVisible(false);
+        setRewardVisible(true);
+        setOverlayLayerVisible(true);
+        setStatusToastSuppressed(true);
+        setSetupChildrenVisible(true);
+        hydrateRewardPanelFromDataset();
+        applyLayoutVariables();
+        applySceneMembershipVisibility();
+        applyAllAssetLayouts();
+        syncLayoutSceneToVisibleState("focus-running", "reward");
     }
 
     function runAssetBehaviorRole(assetKey) {
@@ -7846,6 +9800,8 @@
         exitButton.disabled = isDisabled;
         confirmKeepGoingButton.disabled = isDisabled;
         confirmStopButton.disabled = isDisabled;
+        countupConfirmKeepGoingButton.disabled = isDisabled;
+        countupConfirmStopButton.disabled = isDisabled;
         rewardCloseButton.disabled = isDisabled;
         focusTypeInput.disabled = isDisabled || setupPanel.classList.contains("pl-setup-panel-locked");
         setFocusTypePickerDisabledState(isDisabled || setupPanel.classList.contains("pl-setup-panel-locked"));
@@ -7855,9 +9811,14 @@
 
     function openConfirmPanel(context, elapsedSeconds) {
         activeConfirmContext = context;
-        setConfirmVisible(true);
-        currentVisibleSceneKey = "stop-confirm";
-        currentVisibleSceneStateKey = "base";
+        const isCountupStopConfirm = context === "countup-stop";
+        setConfirmVisible(!isCountupStopConfirm);
+        setCountupStopConfirmVisible(isCountupStopConfirm);
+        setVisibleScene(
+            "focus-running",
+            getRenderedFocusRunningStateKey(),
+            isCountupStopConfirm ? "countup-stop-confirm" : "stop-confirm");
+        setOverlayLayerVisible(true);
         applySceneMembershipVisibility();
         updateConfirmPanel(elapsedSeconds);
     }
@@ -7895,8 +9856,16 @@
         confirmCompleteCoins.textContent = String(completePreview.coins);
         confirmCurrentXp.textContent = String(currentPreview.xp);
         confirmCurrentCoins.textContent = String(currentPreview.coins);
+        stopConfirmPotentialXp.textContent = String(completePreview.xp);
+        stopConfirmPotentialCoins.textContent = String(completePreview.coins);
+        stopConfirmCurrentXp.textContent = String(currentPreview.xp);
+        stopConfirmCurrentCoins.textContent = String(currentPreview.coins);
+        countupStopConfirmCurrentXp.textContent = String(calculateRewardPreview(elapsedSeconds, false).xp);
+        countupStopConfirmCurrentCoins.textContent = String(calculateRewardPreview(elapsedSeconds, false).coins);
         setButtonLabel(confirmKeepGoingButton, "Keep Going");
         setButtonLabel(confirmStopButton, countUpCheckpoint ? "Take a Break" : "Stop Focusing");
+        setButtonLabel(countupConfirmKeepGoingButton, "Keep Going");
+        setButtonLabel(countupConfirmStopButton, "Stop Focusing");
     }
 
     function hydrateRewardPanelFromDataset() {
@@ -7908,6 +9877,8 @@
         rewardDurationText.textContent = homeRoot.dataset.rewardDuration || "00:00:00";
         rewardXp.textContent = homeRoot.dataset.rewardXp || "0";
         rewardCoins.textContent = homeRoot.dataset.rewardCoins || "0";
+        rewardCurrentXp.textContent = homeRoot.dataset.rewardXp || "0";
+        rewardCurrentCoins.textContent = homeRoot.dataset.rewardCoins || "0";
     }
 
     function playCompletionTone() {
@@ -7944,7 +9915,7 @@
         }
     }
 
-    function submitSave(mode) {
+    async function submitSave(mode) {
         if (isSubmitting) {
             return;
         }
@@ -7956,6 +9927,11 @@
             return;
         }
 
+        if (layoutEditorEnabled) {
+            showRewardOverlayPreview(mode, elapsedSeconds);
+            return;
+        }
+
         isSubmitting = true;
         saveFocusType.value = (focusTypeInput.value || "Focus").trim() || "Focus";
         savePlannedSeconds.value = String(Math.max(plannedSeconds, elapsedSeconds));
@@ -7963,16 +9939,37 @@
         saveTimerMode.value = selectedTimerMode;
         saveMode.value = mode;
         setButtonsDisabled(true);
-        saveForm.submit();
+
+        try {
+            const response = await fetch(saveForm.action || window.location.href, {
+                method: "POST",
+                body: new FormData(saveForm),
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Accept": "application/json"
+                },
+                credentials: "same-origin"
+            });
+
+            if (!response.ok) {
+                throw new Error(`Save failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (!result || result.ok !== true) {
+                throw new Error("Save failed.");
+            }
+
+            showRewardOverlayFromSaveResult(result);
+        }
+        catch {
+            saveForm.submit();
+        }
     }
 
     function updateExitButton(elapsedSeconds) {
-        if (elapsedSeconds >= stopThresholdSeconds) {
-            setButtonLabel(exitButton, "Stop Focusing");
-        }
-        else {
-            setButtonLabel(exitButton, "Cancel");
-        }
+        applyAssetTextStyle("exit");
     }
 
     function updateUi() {
@@ -7991,12 +9988,7 @@
             updateConfirmPanel(elapsedSeconds);
         }
 
-        if (isPaused) {
-            setButtonLabel(pauseButton, "Keep Going?");
-        }
-        else {
-            setButtonLabel(pauseButton, "Pause");
-        }
+        applyAssetTextStyle("pause");
 
         updateRuntimeMutedVisualState();
 
@@ -8018,7 +10010,33 @@
     //#endregion SEGMENT J2 - Session Runtime And Rewards
 
     //#region SEGMENT K1 - Event Wiring
-    homeFocusButton.addEventListener("click", function () {
+    function wirePressableButton(assetKey, handler) {
+        const element = getAssetElement(assetKey);
+
+        if (!element || !assetUsesButtonInteractions(assetKey)) {
+            return;
+        }
+
+        element.__plPressableButtonHandler = handler;
+
+        element.addEventListener("pointerdown", function (event) {
+            if (beginButtonPress(assetKey, event)) {
+                event.preventDefault();
+            }
+        });
+
+        element.addEventListener("click", function (event) {
+            if (shouldIgnoreSuppressedButtonClick(element)) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
+            handler(event);
+        });
+    }
+
+    wirePressableButton("home-focus", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "home-focus") {
             return;
         }
@@ -8026,7 +10044,15 @@
         runAssetBehaviorRole("home-focus");
     });
 
-    openLayoutModeButton.addEventListener("click", function () {
+    wirePressableButton("home-sleep", function () {
+        if (layoutEditorEnabled && getSelectedAssetKey() === "home-sleep") {
+            return;
+        }
+
+        runAssetBehaviorRole("home-sleep");
+    });
+
+    wirePressableButton("open-layout-mode", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "open-layout-mode") {
             return;
         }
@@ -8034,7 +10060,7 @@
         runAssetBehaviorRole("open-layout-mode");
     });
 
-    closeFocusButton.addEventListener("click", function () {
+    wirePressableButton("back", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "back") {
             return;
         }
@@ -8042,7 +10068,7 @@
         runAssetBehaviorRole("back");
     });
 
-    manageButton.addEventListener("click", function () {
+    wirePressableButton("manage-button", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "manage-button") {
             return;
         }
@@ -8051,6 +10077,7 @@
     });
 
     durationSlider.addEventListener("input", function () {
+        syncRangeSelectorValueToDurationSlider();
         updateDurationReadout();
     });
 
@@ -8096,7 +10123,7 @@
         scrollFocusTypePickerToIndex(nextIndex, "smooth");
     });
 
-    countdownModeButton.addEventListener("click", function () {
+    wirePressableButton("countdown-mode", function () {
         if (isRunning || isPaused || isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "countdown-mode")) {
             return;
         }
@@ -8104,7 +10131,7 @@
         runAssetBehaviorRole("countdown-mode");
     });
 
-    countUpModeButton.addEventListener("click", function () {
+    wirePressableButton("countup-mode", function () {
         if (isRunning || isPaused || isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "countup-mode")) {
             return;
         }
@@ -8112,7 +10139,7 @@
         runAssetBehaviorRole("countup-mode");
     });
 
-    startFocusButton.addEventListener("click", function () {
+    wirePressableButton("start", function () {
         if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "start")) {
             return;
         }
@@ -8120,7 +10147,7 @@
         runAssetBehaviorRole("start");
     });
 
-    pauseButton.addEventListener("click", function () {
+    wirePressableButton("pause", function () {
         if ((!isRunning && !isPaused) || isSubmitting || !confirmPanel.hidden || (layoutEditorEnabled && getSelectedAssetKey() === "pause")) {
             return;
         }
@@ -8128,7 +10155,7 @@
         runAssetBehaviorRole("pause");
     });
 
-    exitButton.addEventListener("click", function () {
+    wirePressableButton("exit", function () {
         if (!isRunning || isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "exit")) {
             return;
         }
@@ -8136,7 +10163,7 @@
         runAssetBehaviorRole("exit");
     });
 
-    focusManageAddButton.addEventListener("click", function () {
+    wirePressableButton("focus-manage-add", function () {
         if (layoutEditorEnabled || isFocusManageSaving) {
             return;
         }
@@ -8144,7 +10171,7 @@
         handleFocusManagePrimaryAction();
     });
 
-    focusManageDeleteButton.addEventListener("click", function () {
+    wirePressableButton("focus-manage-delete", function () {
         if (layoutEditorEnabled || isFocusManageSaving) {
             return;
         }
@@ -8152,7 +10179,7 @@
         removeSelectedFocusLabel();
     });
 
-    focusManageBackButton.addEventListener("click", function () {
+    wirePressableButton("focus-manage-back", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "focus-manage-back") {
             return;
         }
@@ -8160,7 +10187,7 @@
         runAssetBehaviorRole("focus-manage-back");
     });
 
-    focusManageOkButton.addEventListener("click", function () {
+    wirePressableButton("focus-manage-ok", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "focus-manage-ok") {
             return;
         }
@@ -8168,7 +10195,7 @@
         runAssetBehaviorRole("focus-manage-ok");
     });
 
-    focusManageConfirmDeleteButton.addEventListener("click", function () {
+    wirePressableButton("focus-manage-confirm-delete", function () {
         if (layoutEditorEnabled || isFocusManageSaving) {
             return;
         }
@@ -8180,7 +10207,7 @@
         void commitFocusManageChanges();
     });
 
-    focusManageConfirmCancelButton.addEventListener("click", function () {
+    wirePressableButton("focus-manage-confirm-cancel", function () {
         if (layoutEditorEnabled || isFocusManageSaving) {
             return;
         }
@@ -8204,7 +10231,7 @@
 
     focusManageListScrollbarVisual.addEventListener("pointerdown", handleFocusManageScrollbarPointerDown);
 
-    confirmKeepGoingButton.addEventListener("click", function () {
+    wirePressableButton("keep-going", function () {
         if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "keep-going")) {
             return;
         }
@@ -8212,7 +10239,7 @@
         runAssetBehaviorRole("keep-going");
     });
 
-    confirmStopButton.addEventListener("click", function () {
+    wirePressableButton("stop", function () {
         if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "stop")) {
             return;
         }
@@ -8220,7 +10247,23 @@
         runAssetBehaviorRole("stop");
     });
 
-    rewardCloseButton.addEventListener("click", function () {
+    wirePressableButton("countup-keep-going", function () {
+        if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "countup-keep-going")) {
+            return;
+        }
+
+        runAssetBehaviorRole("countup-keep-going");
+    });
+
+    wirePressableButton("countup-stop", function () {
+        if (isSubmitting || (layoutEditorEnabled && getSelectedAssetKey() === "countup-stop")) {
+            return;
+        }
+
+        runAssetBehaviorRole("countup-stop");
+    });
+
+    wirePressableButton("gotcha", function () {
         if (layoutEditorEnabled && getSelectedAssetKey() === "gotcha") {
             return;
         }
@@ -8231,23 +10274,44 @@
     document.addEventListener("keydown", function (event) {
         if (event.key === "Escape" && !confirmPanel.hidden && !isSubmitting) {
             setConfirmVisible(false);
-            currentVisibleSceneKey = isRunning || isPaused ? "focus-running" : "focus-setup";
-            currentVisibleSceneStateKey = currentVisibleSceneKey === "focus-setup"
-                ? getRenderedFocusSetupStateKey()
-                : "base";
+            setVisibleScene(
+                isRunning || isPaused ? "focus-running" : "focus-setup",
+                isRunning || isPaused ? getRenderedFocusRunningStateKey() : getRenderedFocusSetupStateKey(),
+                "none");
+            setOverlayLayerVisible(false);
             applySceneMembershipVisibility();
         }
     });
 
     window.addEventListener("pointerdown", handleSliderPointerDown, true);
+    window.addEventListener("pointermove", updateActiveButtonPressState);
     window.addEventListener("pointermove", handleDragMove);
     window.addEventListener("pointermove", handleSliderPointerMove);
+    window.addEventListener("pointermove", handleRangeSelectorPointerMove);
     window.addEventListener("pointermove", handleFocusManageScrollbarPointerMove);
+    window.addEventListener("pointerup", function (event) {
+        if (!activeButtonPressState) {
+            return;
+        }
+
+        const element = activeButtonPressState.element;
+
+        if (endButtonPress(event, true)) {
+            if (element && !element.disabled && typeof element.__plPressableButtonHandler === "function") {
+                element.__plPressableButtonHandler(event);
+            }
+        }
+    });
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointerup", handleSliderPointerUp);
+    window.addEventListener("pointerup", handleRangeSelectorPointerUp);
     window.addEventListener("pointerup", handleFocusManageScrollbarPointerUp);
+    window.addEventListener("pointercancel", function (event) {
+        endButtonPress(event, false);
+    });
     window.addEventListener("pointercancel", endDrag);
     window.addEventListener("pointercancel", handleSliderPointerUp);
+    window.addEventListener("pointercancel", handleRangeSelectorPointerUp);
     window.addEventListener("pointercancel", handleFocusManageScrollbarPointerUp);
 
     window.addEventListener("resize", function () {
@@ -8281,6 +10345,7 @@
     });
 
     function wireLayoutInputs() {
+        ensureLayoutOverlayControls();
         layoutEditorModeSelect.addEventListener("change", handleLayoutEditorModeChange);
         layoutStateSelect.addEventListener("change", handleLayoutStateChange);
 
@@ -8427,6 +10492,7 @@
         getLayoutAspectRatioLock()?.addEventListener("change", pushLayoutControlValues);
         layoutEditorToggle.addEventListener("change", handleLayoutEditorToggleChange);
         layoutSceneSelect.addEventListener("change", handleLayoutSceneChange);
+        layoutOverlaySelect?.addEventListener("change", handleLayoutOverlayChange);
         layoutAssetSelect.addEventListener("change", handleLayoutAssetChange);
         layoutArtPickerButton.addEventListener("click", handleLayoutArtPickerButtonClick);
         layoutArtPickerRemoveButton?.addEventListener("click", function () {
@@ -8483,6 +10549,16 @@
                 };
 
                 image.src = url;
+            });
+        });
+
+        Object.entries(artComponentImageVars).forEach(function ([assetKey, componentVars]) {
+            Object.entries(componentVars).forEach(function ([componentKey, cssVar]) {
+                const url = readCssUrlVar(cssVar);
+
+                loadTasks.push(refreshArtMetricsForAsset(
+                    getComponentArtMetricKey(assetKey, componentKey),
+                    url));
             });
         });
 
@@ -8657,18 +10733,34 @@
 
     async function initializeAsync() {
         initializeLayoutPanelWorkspace();
+        registerRangeSelectorAssetElement();
         applyPanelArtStates();
         syncFocusTypeInputWithSavedLabels(focusTypeInput.value);
         setFocusTypePickerDisabledState(false);
         syncFocusManageButtons();
 
         await loadSharedLayoutState();
+
+        const focusSetupOverride = sharedSceneOverrides["focus-setup"];
+        const hasRangeSelectorSeed =
+            !!layoutAssets["range-selector"]
+            && (
+                focusSetupOverride?.assets?.includes("range-selector")
+                || focusSetupOverride?.removedAssets?.includes("range-selector")
+                || !!sharedLayoutState["range-selector"]
+            );
+
+        if (!hasRangeSelectorSeed) {
+            ensureSceneAssetInScene("focus-setup", "range-selector");
+        }
+
         await awaitFirstPaintArtMetrics();
 
         homeRoot.classList.toggle("pl-layout-mode", layoutModeEnabled);
         safeZoneOutline.hidden = !layoutModeEnabled;
 
         applyAllAssetLayouts();
+        syncDurationSliderToRangeSelectorValue();
         updateDurationReadout();
 
         if (layoutModeEnabled) {

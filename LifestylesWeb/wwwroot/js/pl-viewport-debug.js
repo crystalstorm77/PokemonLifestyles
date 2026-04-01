@@ -280,6 +280,27 @@
         return normalized.length > 96 ? `${normalized.slice(0, 96)}...` : normalized;
     }
 
+    function describeElement(element) {
+        if (!element) {
+            return "n/a";
+        }
+
+        const id = element.id ? `#${element.id}` : "";
+        const className = typeof element.className === "string" && element.className.trim()
+            ? `.${element.className.trim().replace(/\s+/g, ".")}`
+            : "";
+
+        return `${element.tagName.toLowerCase()}${id}${className}`;
+    }
+
+    function formatHitTest(label, x, y) {
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            return `${label}: n/a`;
+        }
+
+        return `${label}: x=${round(x)} y=${round(y)} -> ${describeElement(document.elementFromPoint(x, y))}`;
+    }
+
     function readSafeAreaInsets() {
         let probe = document.getElementById("pl-safe-area-probe");
 
@@ -382,16 +403,30 @@
             safeUiStageShell: document.getElementById("pl-safe-ui-stage-shell"),
             safeUiStage: document.getElementById("pl-safe-ui-stage"),
             safeZoneOutline: document.getElementById("pl-safe-zone-outline"),
+            overlayBackdrop: document.getElementById("pl-overlay-backdrop"),
+            overlayStageShell: document.getElementById("pl-overlay-ui-stage-shell"),
+            overlayStage: document.getElementById("pl-overlay-ui-stage"),
             homeFocusButton: document.getElementById("pl-home-focus-button"),
             homeSleepButton: document.getElementById("pl-home-sleep-button"),
             setupPanel: document.getElementById("pl-setup-panel"),
             durationText: document.getElementById("pl-duration-text"),
             durationTextContent: document.getElementById("pl-duration-text"),
+            sliderGroup: document.getElementById("pl-slider-group"),
+            sliderTrackShell: document.getElementById("pl-slider-track-shell"),
+            sliderTrackEmptyArt: document.getElementById("pl-slider-track-empty-art"),
+            sliderFillShell: document.getElementById("pl-slider-fill-shell"),
+            sliderFillArt: document.getElementById("pl-slider-fill-art"),
+            sliderNibVisual: document.getElementById("pl-slider-nib-visual"),
+            durationSlider: document.getElementById("pl-duration-slider"),
             manageButton: document.getElementById("pl-manage-button"),
             manageButtonLabel: document.querySelector("#pl-manage-button .pl-button-label"),
             countdownModeButton: document.getElementById("pl-countdown-mode-button"),
             countUpModeButton: document.getElementById("pl-countup-mode-button"),
-            focusManagePanel: document.getElementById("pl-focus-manage-panel")
+            focusManagePanel: document.getElementById("pl-focus-manage-panel"),
+            focusManageListShell: document.getElementById("pl-focus-manage-list-shell"),
+            focusManageListViewport: document.getElementById("pl-focus-manage-list-viewport"),
+            focusManageList: document.getElementById("pl-focus-manage-list"),
+            focusManageScrollbarVisual: document.getElementById("pl-focus-manage-list-scrollbar-visual")
         };
     }
 
@@ -503,6 +538,7 @@
         const safeArea = readSafeAreaInsets();
         const visualViewport = window.visualViewport;
         const layers = getLayerElements();
+        const sliderDebug = window.__plSliderDebugSnapshot || null;
 
         const appShellRect = layers.appShell ? layers.appShell.getBoundingClientRect() : null;
         const homeStageShellRect = layers.homeStageShell ? layers.homeStageShell.getBoundingClientRect() : null;
@@ -513,16 +549,30 @@
         const safeUiStageShellRect = layers.safeUiStageShell ? layers.safeUiStageShell.getBoundingClientRect() : null;
         const safeUiStageRect = layers.safeUiStage ? layers.safeUiStage.getBoundingClientRect() : null;
         const safeZoneOutlineRect = layers.safeZoneOutline ? layers.safeZoneOutline.getBoundingClientRect() : null;
+        const overlayBackdropRect = layers.overlayBackdrop ? layers.overlayBackdrop.getBoundingClientRect() : null;
+        const overlayStageShellRect = layers.overlayStageShell ? layers.overlayStageShell.getBoundingClientRect() : null;
+        const overlayStageRect = layers.overlayStage ? layers.overlayStage.getBoundingClientRect() : null;
         const homeFocusButtonRect = layers.homeFocusButton ? layers.homeFocusButton.getBoundingClientRect() : null;
         const homeSleepButtonRect = layers.homeSleepButton ? layers.homeSleepButton.getBoundingClientRect() : null;
         const setupPanelRect = layers.setupPanel ? layers.setupPanel.getBoundingClientRect() : null;
         const durationTextRect = layers.durationText ? layers.durationText.getBoundingClientRect() : null;
         const durationTextContentRect = measureNodeContentRect(layers.durationTextContent);
+        const sliderGroupRect = layers.sliderGroup ? layers.sliderGroup.getBoundingClientRect() : null;
+        const sliderTrackShellRect = layers.sliderTrackShell ? layers.sliderTrackShell.getBoundingClientRect() : null;
+        const sliderTrackEmptyArtRect = layers.sliderTrackEmptyArt ? layers.sliderTrackEmptyArt.getBoundingClientRect() : null;
+        const sliderFillShellRect = layers.sliderFillShell ? layers.sliderFillShell.getBoundingClientRect() : null;
+        const sliderFillArtRect = layers.sliderFillArt ? layers.sliderFillArt.getBoundingClientRect() : null;
+        const sliderNibVisualRect = layers.sliderNibVisual ? layers.sliderNibVisual.getBoundingClientRect() : null;
+        const durationSliderRect = layers.durationSlider ? layers.durationSlider.getBoundingClientRect() : null;
         const manageButtonRect = layers.manageButton ? layers.manageButton.getBoundingClientRect() : null;
         const manageButtonLabelRect = layers.manageButtonLabel ? layers.manageButtonLabel.getBoundingClientRect() : null;
         const countdownModeButtonRect = layers.countdownModeButton ? layers.countdownModeButton.getBoundingClientRect() : null;
         const countUpModeButtonRect = layers.countUpModeButton ? layers.countUpModeButton.getBoundingClientRect() : null;
         const focusManagePanelRect = layers.focusManagePanel ? layers.focusManagePanel.getBoundingClientRect() : null;
+        const focusManageListShellRect = layers.focusManageListShell ? layers.focusManageListShell.getBoundingClientRect() : null;
+        const focusManageListViewportRect = layers.focusManageListViewport ? layers.focusManageListViewport.getBoundingClientRect() : null;
+        const focusManageListRect = layers.focusManageList ? layers.focusManageList.getBoundingClientRect() : null;
+        const focusManageScrollbarVisualRect = layers.focusManageScrollbarVisual ? layers.focusManageScrollbarVisual.getBoundingClientRect() : null;
         const measuredStageScale =
             homeRootRect && layers.homeRoot && layers.homeRoot.offsetWidth > 0
                 ? homeRootRect.width / layers.homeRoot.offsetWidth
@@ -569,6 +619,55 @@
                 : NaN;
 
         const lines = [];
+        const formatSliderDebugRect = (label, rect) => {
+            if (!rect) {
+                lines.push(`${label}: n/a`);
+                return;
+            }
+
+            lines.push(
+                `${label}: left=${round(rect.left)} top=${round(rect.top)} width=${round(rect.width)} height=${round(rect.height)}`
+            );
+        };
+        const addSliderDebugStateLines = (label, state) => {
+            if (!state) {
+                lines.push(`${label}: n/a`);
+                return;
+            }
+
+            lines.push(
+                `${label}: x=${round(state.x)} y=${round(state.y)} width=${state.width == null ? "null" : round(state.width)} height=${state.height == null ? "null" : round(state.height)} scale=${round(state.scale)} hitScaleX=${round(state.hitScaleX)} hitScaleY=${round(state.hitScaleY)}`
+            );
+        };
+        const addSliderComputedStyleLines = (label, element) => {
+            if (!element) {
+                lines.push(`${label}.computed: n/a`);
+                return;
+            }
+
+            const computed = window.getComputedStyle(element);
+            lines.push(`${label}.computed.position: ${summarizeCssValue(computed.position)}`);
+            lines.push(`${label}.computed.display: ${summarizeCssValue(computed.display)}`);
+            lines.push(`${label}.computed.overflow: ${summarizeCssValue(computed.overflow)}`);
+            lines.push(`${label}.computed.backgroundImage: ${summarizeCssValue(computed.backgroundImage)}`);
+            lines.push(`${label}.computed.backgroundSize: ${summarizeCssValue(computed.backgroundSize)}`);
+            lines.push(`${label}.computed.left: ${summarizeCssValue(computed.left)}`);
+            lines.push(`${label}.computed.top: ${summarizeCssValue(computed.top)}`);
+            lines.push(`${label}.computed.width: ${summarizeCssValue(computed.width)}`);
+            lines.push(`${label}.computed.height: ${summarizeCssValue(computed.height)}`);
+        };
+        const addComputedStyleLines = (label, element, properties) => {
+            if (!element) {
+                lines.push(`${label}: n/a`);
+                return;
+            }
+
+            const computed = window.getComputedStyle(element);
+            properties.forEach(function (property) {
+                lines.push(`${label}.${property}: ${summarizeCssValue(computed[property])}`);
+            });
+        };
+
         lines.push(`displayMode: ${readDisplayMode()}`);
         lines.push(`navigator.standalone: ${window.navigator.standalone === true ? "true" : "false"}`);
         lines.push(`devicePixelRatio: ${round(window.devicePixelRatio)}`);
@@ -623,17 +722,32 @@
         lines.push(formatRect("safeUiStageShell.rect", safeUiStageShellRect));
         lines.push(formatRect("safeUiStage.rect", safeUiStageRect));
         lines.push(formatRect("safeZoneOutline.rect", safeZoneOutlineRect));
+        lines.push(formatRect("overlayBackdrop.rect", overlayBackdropRect));
+        lines.push(formatRect("overlayStageShell.rect", overlayStageShellRect));
+        lines.push(formatRect("overlayStage.rect", overlayStageRect));
         lines.push("");
         lines.push(formatRect("homeFocusButton.rect", homeFocusButtonRect));
         lines.push(formatRect("homeSleepButton.rect", homeSleepButtonRect));
         lines.push(formatRect("setupPanel.rect", setupPanelRect));
         lines.push(formatRect("durationText.rect", durationTextRect));
         lines.push(formatRect("durationTextContent.rect", durationTextContentRect));
+        lines.push(formatRect("sliderGroup.rect", sliderGroupRect));
+        lines.push(formatRect("sliderTrackShell.rect", sliderTrackShellRect));
+        lines.push(formatRect("sliderTrackEmptyArt.rect", sliderTrackEmptyArtRect));
+        lines.push(formatRect("sliderFillShell.rect", sliderFillShellRect));
+        lines.push(formatRect("sliderFillArt.rect", sliderFillArtRect));
+        lines.push(formatRect("sliderNibVisual.rect", sliderNibVisualRect));
+        lines.push(formatRect("durationSlider.rect", durationSliderRect));
         lines.push(formatRect("manageButton.rect", manageButtonRect));
         lines.push(formatRect("manageButtonLabel.rect", manageButtonLabelRect));
         lines.push(formatRect("countdownModeButton.rect", countdownModeButtonRect));
         lines.push(formatRect("countUpModeButton.rect", countUpModeButtonRect));
         lines.push(formatRect("focusManagePanel.rect", focusManagePanelRect));
+        lines.push(formatRect("focusManageListShell.rect", focusManageListShellRect));
+        lines.push(formatRect("focusManageListViewport.rect", focusManageListViewportRect));
+        lines.push(formatRect("focusManageList.rect", focusManageListRect));
+        lines.push(formatRect("focusManageScrollbarVisual.rect", focusManageScrollbarVisualRect));
+        lines.push(`slider.hiddenStates: group=${layers.sliderGroup ? layers.sliderGroup.hidden : "n/a"} track=${layers.sliderTrackShell ? layers.sliderTrackShell.hidden : "n/a"} input=${layers.durationSlider ? layers.durationSlider.hidden : "n/a"}`);
         lines.push("");
 
         const addRelativeRectLine = (label, rect, containerRect) => {
@@ -651,11 +765,21 @@
         addRelativeRectLine("setupPanel", setupPanelRect, safeUiStageRect);
         addRelativeRectLine("durationText", durationTextRect, safeUiStageRect);
         addRelativeRectLine("durationTextContent", durationTextContentRect, safeUiStageRect);
+        addRelativeRectLine("sliderGroup", sliderGroupRect, safeUiStageRect);
+        addRelativeRectLine("sliderTrackShell", sliderTrackShellRect, safeUiStageRect);
+        addRelativeRectLine("sliderTrackEmptyArt", sliderTrackEmptyArtRect, safeUiStageRect);
+        addRelativeRectLine("sliderFillShell", sliderFillShellRect, safeUiStageRect);
+        addRelativeRectLine("sliderFillArt", sliderFillArtRect, safeUiStageRect);
+        addRelativeRectLine("sliderNibVisual", sliderNibVisualRect, safeUiStageRect);
+        addRelativeRectLine("durationSlider", durationSliderRect, safeUiStageRect);
         addRelativeRectLine("manageButton", manageButtonRect, safeUiStageRect);
         addRelativeRectLine("manageButtonLabel", manageButtonLabelRect, safeUiStageRect);
         addRelativeRectLine("countdownModeButton", countdownModeButtonRect, safeUiStageRect);
         addRelativeRectLine("countUpModeButton", countUpModeButtonRect, safeUiStageRect);
         addRelativeRectLine("focusManagePanel", focusManagePanelRect, safeUiStageRect);
+        addRelativeRectLine("focusManageListShell", focusManageListShellRect, safeUiStageRect);
+        addRelativeRectLine("focusManageListViewport", focusManageListViewportRect, safeUiStageRect);
+        addRelativeRectLine("focusManageScrollbarVisual", focusManageScrollbarVisualRect, safeUiStageRect);
         lines.push("");
         lines.push(formatTextMetrics("durationText.metrics", layers.durationText));
         lines.push(formatTextMetrics("manageButtonLabel.metrics", layers.manageButtonLabel));
@@ -675,6 +799,8 @@
         addSizeLines("appShell", layers.appShell);
         addSizeLines("homeRoot", layers.homeRoot);
         addSizeLines("worldStageShell", layers.worldStageShell);
+        addSizeLines("overlayStageShell", layers.overlayStageShell);
+        addSizeLines("overlayStage", layers.overlayStage);
         lines.push("");
 
         const addBottomDeltaLines = (label, rect) => {
@@ -693,6 +819,90 @@
         addBottomDeltaLines("appShell", appShellRect);
         addBottomDeltaLines("homeRoot", homeRootRect);
         addBottomDeltaLines("worldStageShell", worldStageShellRect);
+        addBottomDeltaLines("overlayStageShell", overlayStageShellRect);
+        lines.push("");
+
+        lines.push("focusManageList.debug:");
+        lines.push(`focusManageListShell.parent: ${describeElement(layers.focusManageListShell?.parentElement)}`);
+        lines.push(`focusManageListViewport.parent: ${describeElement(layers.focusManageListViewport?.parentElement)}`);
+        lines.push(`focusManageList.parent: ${describeElement(layers.focusManageList?.parentElement)}`);
+        lines.push(`focusManageListShell.hidden: ${layers.focusManageListShell ? String(layers.focusManageListShell.hidden) : "n/a"}`);
+        lines.push(`focusManageListViewport.hidden: ${layers.focusManageListViewport ? String(layers.focusManageListViewport.hidden) : "n/a"}`);
+        lines.push(`focusManageList.childCount: ${layers.focusManageList ? String(layers.focusManageList.children.length) : "n/a"}`);
+        lines.push(`focusManageListViewport.scrollTop: ${layers.focusManageListViewport ? round(layers.focusManageListViewport.scrollTop) : "n/a"}`);
+        lines.push(`focusManageListViewport.scrollHeight: ${layers.focusManageListViewport ? round(layers.focusManageListViewport.scrollHeight) : "n/a"}`);
+        lines.push(`focusManageListViewport.clientHeight: ${layers.focusManageListViewport ? round(layers.focusManageListViewport.clientHeight) : "n/a"}`);
+        lines.push(`focusManageListViewport.clientWidth: ${layers.focusManageListViewport ? round(layers.focusManageListViewport.clientWidth) : "n/a"}`);
+        addComputedStyleLines("focusManageListShell.computed", layers.focusManageListShell, ["display", "position", "pointerEvents", "overflow", "zIndex", "touchAction"]);
+        addComputedStyleLines("focusManageListViewport.computed", layers.focusManageListViewport, ["display", "position", "pointerEvents", "overflowX", "overflowY", "touchAction", "zIndex"]);
+        addComputedStyleLines("focusManageList.computed", layers.focusManageList, ["display", "position", "pointerEvents"]);
+        addComputedStyleLines("overlayBackdrop.computed", layers.overlayBackdrop, ["display", "position", "pointerEvents", "zIndex"]);
+        addComputedStyleLines("overlayStageShell.computed", layers.overlayStageShell, ["display", "position", "pointerEvents", "overflow", "zIndex"]);
+        addComputedStyleLines("overlayStage.computed", layers.overlayStage, ["display", "position", "pointerEvents", "transform"]);
+
+        if (focusManageListViewportRect) {
+            const centerX = focusManageListViewportRect.left + (focusManageListViewportRect.width / 2);
+            const centerY = focusManageListViewportRect.top + (focusManageListViewportRect.height / 2);
+            const topInsetX = focusManageListViewportRect.left + Math.min(24, focusManageListViewportRect.width / 2);
+            const topInsetY = focusManageListViewportRect.top + Math.min(24, focusManageListViewportRect.height / 2);
+            const bottomInsetY = focusManageListViewportRect.bottom - Math.min(24, focusManageListViewportRect.height / 2);
+            lines.push(formatHitTest("focusManageListViewport.hit.center", centerX, centerY));
+            lines.push(formatHitTest("focusManageListViewport.hit.topLeftInset", topInsetX, topInsetY));
+            lines.push(formatHitTest("focusManageListViewport.hit.bottomLeftInset", topInsetX, bottomInsetY));
+        }
+        else {
+            lines.push("focusManageListViewport.hit.center: n/a");
+        }
+
+        const firstTile = layers.focusManageList?.querySelector(".pl-focus-manage-list-item");
+        if (firstTile) {
+            const firstTileRect = firstTile.getBoundingClientRect();
+            lines.push(formatRect("focusManageList.firstTile.rect", firstTileRect));
+            lines.push(`focusManageList.firstTile: ${describeElement(firstTile)}`);
+            lines.push(`focusManageList.firstTile.disabled: ${"disabled" in firstTile ? String(firstTile.disabled) : "n/a"}`);
+            lines.push(formatHitTest(
+                "focusManageList.firstTile.hit.center",
+                firstTileRect.left + (firstTileRect.width / 2),
+                firstTileRect.top + (firstTileRect.height / 2)
+            ));
+        }
+        else {
+            lines.push("focusManageList.firstTile: n/a");
+        }
+        lines.push("");
+
+        lines.push(`sliderDebug.snapshot: ${sliderDebug ? "present" : "missing"}`);
+        if (sliderDebug) {
+            lines.push(`sliderDebug.timestamp: ${sliderDebug.timestamp || "n/a"}`);
+            lines.push(`sliderDebug.value: min=${sliderDebug.sliderValue?.min ?? "n/a"} max=${sliderDebug.sliderValue?.max ?? "n/a"} step=${sliderDebug.sliderValue?.step ?? "n/a"} value=${sliderDebug.sliderValue?.value ?? "n/a"}`);
+            addSliderDebugStateLines("sliderDebug.rootState", sliderDebug.rootState);
+            addSliderDebugStateLines("sliderDebug.savedRootState", sliderDebug.savedRootState);
+            addSliderDebugStateLines("sliderDebug.state.empty", sliderDebug.componentStates?.empty);
+            addSliderDebugStateLines("sliderDebug.state.fill", sliderDebug.componentStates?.fill);
+            addSliderDebugStateLines("sliderDebug.state.nib", sliderDebug.componentStates?.nib);
+            addSliderDebugStateLines("sliderDebug.state.nib-hit", sliderDebug.componentStates?.["nib-hit"]);
+            addSliderDebugStateLines("sliderDebug.saved.empty", sliderDebug.savedComponentStates?.empty);
+            addSliderDebugStateLines("sliderDebug.saved.fill", sliderDebug.savedComponentStates?.fill);
+            addSliderDebugStateLines("sliderDebug.saved.nib", sliderDebug.savedComponentStates?.nib);
+            addSliderDebugStateLines("sliderDebug.saved.nib-hit", sliderDebug.savedComponentStates?.["nib-hit"]);
+            formatSliderDebugRect("sliderDebug.metrics.projected", sliderDebug.metrics?.projected);
+            lines.push(`sliderDebug.metrics.scales: localScaleX=${round(sliderDebug.metrics?.localScaleX)} localScaleY=${round(sliderDebug.metrics?.localScaleY)} resolvedHeight=${round(sliderDebug.metrics?.resolvedHeight)}`);
+            lines.push(`sliderDebug.metrics.track: progressRatio=${round(sliderDebug.metrics?.progressRatio)} trackLeft=${round(sliderDebug.metrics?.trackLeft)} trackWidth=${round(sliderDebug.metrics?.trackWidth)} targetCenter=${round(sliderDebug.metrics?.targetCenter)}`);
+            formatSliderDebugRect("sliderDebug.metrics.nibRect", sliderDebug.metrics?.nibRect);
+            lines.push(`sliderDebug.art.slider: canvas=${sliderDebug.artMetrics?.slider?.canvasWidth ?? "n/a"}x${sliderDebug.artMetrics?.slider?.canvasHeight ?? "n/a"} visibleLeft=${round(sliderDebug.artMetrics?.slider?.visibleLeftRatio)} visibleTop=${round(sliderDebug.artMetrics?.slider?.visibleTopRatio)} visibleWidth=${round(sliderDebug.artMetrics?.slider?.visibleWidthRatio)} visibleHeight=${round(sliderDebug.artMetrics?.slider?.visibleHeightRatio)} hasBounds=${sliderDebug.artMetrics?.slider?.hasVisibleBounds === true ? "true" : "false"}`);
+            lines.push(`sliderDebug.art.nib: canvas=${sliderDebug.artMetrics?.nib?.canvasWidth ?? "n/a"}x${sliderDebug.artMetrics?.nib?.canvasHeight ?? "n/a"} visibleLeft=${round(sliderDebug.artMetrics?.nib?.visibleLeftRatio)} visibleTop=${round(sliderDebug.artMetrics?.nib?.visibleTopRatio)} visibleWidth=${round(sliderDebug.artMetrics?.nib?.visibleWidthRatio)} visibleHeight=${round(sliderDebug.artMetrics?.nib?.visibleHeightRatio)} hasBounds=${sliderDebug.artMetrics?.nib?.hasVisibleBounds === true ? "true" : "false"}`);
+            formatSliderDebugRect("sliderDebug.runtime.empty", sliderDebug.runtimeRects?.empty);
+            formatSliderDebugRect("sliderDebug.runtime.fill-shell", sliderDebug.runtimeRects?.["fill-shell"]);
+            formatSliderDebugRect("sliderDebug.runtime.fill-full", sliderDebug.runtimeRects?.["fill-full"]);
+            formatSliderDebugRect("sliderDebug.runtime.nib", sliderDebug.runtimeRects?.nib);
+            formatSliderDebugRect("sliderDebug.runtime.nib-hit", sliderDebug.runtimeRects?.["nib-hit"]);
+        }
+        lines.push("");
+        addSliderComputedStyleLines("sliderGroup", layers.sliderGroup);
+        addSliderComputedStyleLines("sliderTrackShell", layers.sliderTrackShell);
+        addSliderComputedStyleLines("sliderFillShell", layers.sliderFillShell);
+        addSliderComputedStyleLines("sliderNibVisual", layers.sliderNibVisual);
+        addSliderComputedStyleLines("durationSlider", layers.durationSlider);
         lines.push("");
 
         if (layers.appShell) {

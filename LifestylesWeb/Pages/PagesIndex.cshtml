@@ -145,6 +145,8 @@
                                aria-label="Countdown length" />
                     </div>
 
+                    <div class="pl-canvas-item pl-bar-asset" id="pl-bar" hidden aria-hidden="true"></div>
+
                     <button type="button"
                             class="pl-canvas-item pl-canvas-button pl-canvas-button-start"
                             id="pl-start-focus-button"
@@ -267,54 +269,59 @@
                     <div class="pl-panel-dim pl-canvas-item" id="pl-confirm-dim" hidden></div>
 
                     <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-confirm" id="pl-confirm-panel" hidden>
-                        <p class="pl-eyebrow" id="pl-confirm-eyebrow">Stop Focusing</p>
-                        <h2 class="pl-section-title" id="pl-confirm-title">Are you sure?</h2>
-                        <p class="pl-subtitle" id="pl-confirm-subtitle">
+                        <p class="pl-eyebrow" id="pl-confirm-eyebrow" hidden aria-hidden="true">Stop Focusing</p>
+                        <h2 class="pl-section-title" id="pl-confirm-title" hidden aria-hidden="true">Are you sure?</h2>
+                        <p class="pl-subtitle" id="pl-confirm-subtitle" hidden aria-hidden="true">
                             Session will be marked <strong>incomplete</strong>.
                         </p>
 
-                        <div class="pl-grid-two">
-                            <div class="pl-info-box">
-                                <span class="pl-info-label">Current elapsed</span>
-                                <strong class="pl-info-value" id="pl-confirm-current-time">00:00:00</strong>
+                        <div class="pl-grid-two" hidden aria-hidden="true">
+                            <div class="pl-info-box" hidden aria-hidden="true">
+                                <span class="pl-info-label" hidden aria-hidden="true">Current elapsed</span>
+                                <strong class="pl-info-value" id="pl-confirm-current-time" hidden aria-hidden="true">00:00:00</strong>
                             </div>
 
-                            <div class="pl-info-box">
-                                <span class="pl-info-label">Timer status</span>
-                                <strong class="pl-info-value" id="pl-confirm-timer-status">Still counting down</strong>
+                            <div class="pl-info-box" hidden aria-hidden="true">
+                                <span class="pl-info-label" hidden aria-hidden="true">Timer status</span>
+                                <strong class="pl-info-value" id="pl-confirm-timer-status" hidden aria-hidden="true">Still counting down</strong>
                             </div>
                         </div>
 
-                        <div class="pl-grid-two">
-                            <div class="pl-info-box">
-                                <span class="pl-info-label" id="pl-confirm-complete-label">If complete</span>
+                        <div class="pl-grid-two" hidden aria-hidden="true">
+                            <div class="pl-info-box" hidden aria-hidden="true">
+                                <span class="pl-info-label" id="pl-confirm-complete-label" hidden aria-hidden="true">If complete</span>
 
-                                <div class="pl-reward-row">
-                                    <span>XP</span>
-                                    <strong id="pl-confirm-complete-xp">0</strong>
+                                <div class="pl-reward-row" hidden aria-hidden="true">
+                                    <span hidden aria-hidden="true">XP</span>
+                                    <strong id="pl-confirm-complete-xp" hidden aria-hidden="true">0</strong>
                                 </div>
 
-                                <div class="pl-reward-row">
-                                    <span>Coins</span>
-                                    <strong id="pl-confirm-complete-coins">0</strong>
+                                <div class="pl-reward-row" hidden aria-hidden="true">
+                                    <span hidden aria-hidden="true">Coins</span>
+                                    <strong id="pl-confirm-complete-coins" hidden aria-hidden="true">0</strong>
                                 </div>
                             </div>
 
-                            <div class="pl-info-box">
-                                <span class="pl-info-label" id="pl-confirm-current-label">Current</span>
+                            <div class="pl-info-box" hidden aria-hidden="true">
+                                <span class="pl-info-label" id="pl-confirm-current-label" hidden aria-hidden="true">Current</span>
 
-                                <div class="pl-reward-row">
-                                    <span>XP</span>
-                                    <strong id="pl-confirm-current-xp">0</strong>
+                                <div class="pl-reward-row" hidden aria-hidden="true">
+                                    <span hidden aria-hidden="true">XP</span>
+                                    <strong id="pl-confirm-current-xp" hidden aria-hidden="true">0</strong>
                                 </div>
 
-                                <div class="pl-reward-row">
-                                    <span>Coins</span>
-                                    <strong id="pl-confirm-current-coins">0</strong>
+                                <div class="pl-reward-row" hidden aria-hidden="true">
+                                    <span hidden aria-hidden="true">Coins</span>
+                                    <strong id="pl-confirm-current-coins" hidden aria-hidden="true">0</strong>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-stop-confirm-current-xp" hidden>0</p>
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-stop-confirm-current-coins" hidden>0</p>
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-stop-confirm-potential-xp" hidden>0</p>
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-stop-confirm-potential-coins" hidden>0</p>
 
                     <button type="button"
                             class="pl-canvas-item pl-canvas-button pl-canvas-button-keep-going"
@@ -330,30 +337,52 @@
                         <span class="pl-button-label">Stop Focusing</span>
                     </button>
 
+                    <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-countup-stop-confirm" id="pl-countup-stop-confirm-panel" hidden></div>
+
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-countup-stop-confirm-current-xp" hidden>0</p>
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-countup-stop-confirm-current-coins" hidden>0</p>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-countup-keep-going"
+                            id="pl-countup-confirm-keep-going"
+                            hidden>
+                        <span class="pl-button-label">Keep Going</span>
+                    </button>
+
+                    <button type="button"
+                            class="pl-canvas-item pl-canvas-button pl-canvas-button-countup-stop"
+                            id="pl-countup-confirm-stop"
+                            hidden>
+                        <span class="pl-button-label">Stop Focusing</span>
+                    </button>
+
                     <div class="pl-panel-dim pl-canvas-item" id="pl-reward-dim" hidden></div>
 
                     <div class="pl-canvas-item pl-canvas-panel pl-canvas-panel-reward" id="pl-reward-panel" hidden>
-                        <p class="pl-eyebrow">Rewards</p>
-                        <h2 class="pl-section-title">Rewards</h2>
-                        <p class="pl-subtitle">
-                            <span id="pl-reward-status-text">Completed</span>
-                            <strong id="pl-reward-focus-type">Focus</strong>
+                        <p class="pl-eyebrow" hidden aria-hidden="true">Rewards</p>
+                        <h2 class="pl-section-title" hidden aria-hidden="true">Rewards</h2>
+                        <p class="pl-subtitle" hidden aria-hidden="true">
+                            <span id="pl-reward-status-text" hidden aria-hidden="true">Completed</span>
+                            <strong id="pl-reward-focus-type" hidden aria-hidden="true">Focus</strong>
                             session for
-                            <strong id="pl-reward-duration-text">00:00:00</strong>.
+                            <strong id="pl-reward-duration-text" hidden aria-hidden="true">00:00:00</strong>.
                         </p>
 
-                        <div class="pl-grid-two">
-                            <div class="pl-info-box">
-                                <span class="pl-info-label">XP</span>
-                                <strong class="pl-reward-value-large" id="pl-reward-xp">0</strong>
+                        <div class="pl-grid-two" hidden aria-hidden="true">
+                            <div class="pl-info-box" hidden aria-hidden="true">
+                                <span class="pl-info-label" hidden aria-hidden="true">XP</span>
+                                <strong class="pl-reward-value-large" id="pl-reward-xp" hidden aria-hidden="true">0</strong>
                             </div>
 
-                            <div class="pl-info-box">
-                                <span class="pl-info-label">Coins</span>
-                                <strong class="pl-reward-value-large" id="pl-reward-coins">0</strong>
+                            <div class="pl-info-box" hidden aria-hidden="true">
+                                <span class="pl-info-label" hidden aria-hidden="true">Coins</span>
+                                <strong class="pl-reward-value-large" id="pl-reward-coins" hidden aria-hidden="true">0</strong>
                             </div>
                         </div>
                     </div>
+
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-reward-current-xp" hidden>0</p>
+                    <p class="pl-canvas-item pl-overlay-value-asset" id="pl-reward-current-coins" hidden>0</p>
 
                     <button type="button"
                             class="pl-canvas-item pl-canvas-button pl-canvas-button-gotcha"
@@ -406,6 +435,7 @@
             <option value="focus-manage">Focus manage</option>
             <option value="focus-running">Focus running</option>
             <option value="stop-confirm">Stop confirm</option>
+            <option value="countup-stop-confirm">Count up stop confirm</option>
             <option value="reward">Reward</option>
             <option value="app-shell">App shell</option>
         </select>

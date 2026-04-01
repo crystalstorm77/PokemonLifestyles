@@ -34,6 +34,8 @@
         --pl-focus-type-picker-selection-line-color: #93c5fd;
         --pl-focus-type-picker-selection-fill-opacity: 1;
         --pl-focus-type-picker-selection-line-opacity: 1;
+        --pl-bar-image: none;
+        --pl-bar-fallback: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(16, 185, 129, 0.22));
         --pl-slider-track-empty-image: url('/assets/ui/buttons/slider-empty.png');
         --pl-slider-track-empty-fallback: none;
         --pl-slider-track-fill-image: url('/assets/ui/buttons/slider-full.png');
@@ -83,6 +85,11 @@
         --pl-layout-focus-type-field-width: 348px;
         --pl-layout-focus-type-field-height: 74px;
         --pl-layout-focus-type-field-scale: 100;
+        --pl-layout-bar-x: 40px;
+        --pl-layout-bar-y: 548px;
+        --pl-layout-bar-width: 348px;
+        --pl-layout-bar-height: 52px;
+        --pl-layout-bar-scale: 100;
         --pl-layout-duration-text-x: 40px;
         --pl-layout-duration-text-y: 500px;
         --pl-layout-duration-text-width: 348px;

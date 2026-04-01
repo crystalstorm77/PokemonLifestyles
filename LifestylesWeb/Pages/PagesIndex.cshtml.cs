@@ -104,6 +104,11 @@ public class PagesIndexModel : PageModel
 
         if (string.IsNullOrWhiteSpace(focusType))
         {
+            if (WantsJsonResponse())
+            {
+                return BadRequest(new { ok = false });
+            }
+
             return RedirectToPage();
         }
 
@@ -128,6 +133,11 @@ public class PagesIndexModel : PageModel
 
         if (elapsedSeconds <= 0)
         {
+            if (WantsJsonResponse())
+            {
+                return BadRequest(new { ok = false });
+            }
+
             return RedirectToPage();
         }
 
@@ -154,6 +164,19 @@ public class PagesIndexModel : PageModel
         };
 
         await _focusRepo.AddAsync(session);
+
+        if (WantsJsonResponse())
+        {
+            return new JsonResult(new
+            {
+                ok = true,
+                rewardFocusType = session.FocusType,
+                rewardDurationSeconds = session.DurationSeconds,
+                rewardCompleted = session.Completed,
+                rewardXp = xp,
+                rewardCoins = coins
+            });
+        }
 
         return RedirectToPage(new
         {
@@ -206,6 +229,15 @@ public class PagesIndexModel : PageModel
             settings.SleepRewardMinimumMinutes);
 
         return Math.Max(1.0, summary.Multiplier);
+    }
+
+    private bool WantsJsonResponse()
+    {
+        string requestedWith = Request.Headers["X-Requested-With"].ToString();
+        string accept = Request.Headers["Accept"].ToString();
+
+        return string.Equals(requestedWith, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase)
+            || accept.Contains("application/json", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsWithinRewardWindow(DateOnly logDate, DateTimeOffset loggedAtLocal)
