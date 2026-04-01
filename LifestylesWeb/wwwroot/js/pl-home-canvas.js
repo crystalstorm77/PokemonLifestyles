@@ -297,6 +297,9 @@
     const layoutColorAssetKey = "app-edge-color";
     const layoutColorAssetLabel = "home-scene.png";
     const layoutEdgeColorVariableName = "--pl-art-app-edge-color";
+    const globalDimmingBackdropAssetKey = "global-dimming-backdrop";
+    const globalDimmingBackdropColorVariableName = "--pl-global-dimming-backdrop-color";
+    const globalDimmingBackdropOpacityVariableName = "--pl-global-dimming-backdrop-opacity";
     const focusTypeHighlightFillAssetKey = "focus-type-highlight-fill-color";
     const focusTypeHighlightLineAssetKey = "focus-type-highlight-line-color";
     const retiredDurationTextAssetKey = "duration-text";
@@ -312,6 +315,15 @@
             variableKey: "appEdgeColor",
             fieldLabel: "Shell background",
             hint: "Colors the outer shell/background around the authored canvas."
+        },
+        [globalDimmingBackdropAssetKey]: {
+            label: "Global Dimming Backdrop",
+            variableKey: "globalDimmingBackdropColor",
+            secondaryVariableKey: "globalDimmingBackdropOpacity",
+            fieldLabel: "Backdrop color",
+            secondaryFieldLabel: "Backdrop opacity (%)",
+            hint: "Colors the shared dimming backdrop behind focus setup, focus running, and runtime overlays.",
+            secondaryHint: "Controls how strong the shared dimming backdrop appears across all supported scenes and overlays."
         },
         [focusTypeHighlightFillAssetKey]: {
             label: "Focus Type Highlight Fill",
@@ -870,6 +882,8 @@
     let currentDraftState = null;
     let currentVariableDraftKey = null;
     let currentVariableDraftValue = null;
+    let currentSecondaryVariableDraftKey = null;
+    let currentSecondaryVariableDraftValue = null;
     let currentTextDraftAssetKey = null;
     let currentTextDraftState = null;
     let currentImageDraftAssetKey = null;
@@ -956,6 +970,20 @@
     let layoutColorPicker = null;
     let layoutColorText = null;
     let layoutColorHint = null;
+    let layoutOpacityField = null;
+    let layoutOpacityLabel = null;
+    let layoutOpacityRange = null;
+    let layoutOpacityNumber = null;
+    let layoutOpacityHint = null;
+    let layoutGlobalBackdropField = null;
+    let layoutGlobalBackdropColorPicker = null;
+    let layoutGlobalBackdropColorText = null;
+    let layoutGlobalBackdropOpacityRange = null;
+    let layoutGlobalBackdropOpacityNumber = null;
+    let layoutGlobalBackdropStatus = null;
+    let layoutGlobalBackdropSave = null;
+    let layoutGlobalBackdropRevert = null;
+    let layoutGlobalBackdropReset = null;
 
     let layoutTextControls = null;
     let layoutTextContent = null;
@@ -983,10 +1011,14 @@
     let overlayStage = null;
     let overlayBackdrop = null;
     let focusManageConfirmBackdrop = null;
+    let globalDimmingBackdrop = null;
 
     const defaultLayoutEdgeColor = normalizeHexColor(
         getComputedStyle(document.documentElement).getPropertyValue(layoutEdgeColorVariableName),
         "#01ff75");
+    const defaultGlobalDimmingBackdropColor = normalizeHexColor(
+        getComputedStyle(homeRoot).getPropertyValue(globalDimmingBackdropColorVariableName),
+        "#0f172a");
     //#endregion SEGMENT A - Element References And Runtime State
 
     //#region SEGMENT B - CSS Readers And Asset Helpers
@@ -1303,6 +1335,18 @@
 
         if (!result.appEdgeColor) {
             result.appEdgeColor = normalizeHexColor(fallbackColor, getRenderedShellThemeColor());
+        }
+
+        if (!result.globalDimmingBackdropColor) {
+            result.globalDimmingBackdropColor = normalizeHexColor(
+                getComputedStyle(homeRoot).getPropertyValue(globalDimmingBackdropColorVariableName),
+                defaultGlobalDimmingBackdropColor);
+        }
+
+        if (!result.globalDimmingBackdropOpacity) {
+            result.globalDimmingBackdropOpacity = normalizeOpacityValue(
+                getComputedStyle(homeRoot).getPropertyValue(globalDimmingBackdropOpacityVariableName),
+                "0.46");
         }
 
         if (!result.focusTypeHighlightFillColor) {
@@ -1746,6 +1790,8 @@
             sharedLayoutVariables.appEdgeColor);
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
+        currentSecondaryVariableDraftKey = null;
+        currentSecondaryVariableDraftValue = null;
         rebuildDynamicSceneAssets();
         applyLayoutVariables();
     }
@@ -2570,17 +2616,28 @@
             && assetSupportsBehaviorRole(assetKey);
 
         if (isVariableAsset(assetKey)) {
-            const variableKey = getVariableAssetDefinition(assetKey).variableKey;
+            const variableDefinition = getVariableAssetDefinition(assetKey);
+            const variableDraftEntries = [
+                [currentVariableDraftKey, currentVariableDraftValue],
+                [currentSecondaryVariableDraftKey, currentSecondaryVariableDraftValue]
+            ].filter(function ([draftKey, draftValue]) {
+                return !!draftKey
+                    && !!draftValue
+                    && (
+                        draftKey === variableDefinition.variableKey
+                        || draftKey === variableDefinition.secondaryVariableKey
+                    );
+            });
 
-            if ((currentVariableDraftKey !== variableKey || !currentVariableDraftValue) && !visibilityDraftActive) {
+            if (!variableDraftEntries.length && !visibilityDraftActive) {
                 return;
             }
 
-            if (currentVariableDraftKey === variableKey && currentVariableDraftValue) {
-                sharedLayoutVariables[variableKey] = currentVariableDraftValue;
-                currentVariableDraftKey = null;
-                currentVariableDraftValue = null;
-            }
+            variableDraftEntries.forEach(function ([draftKey, draftValue]) {
+                sharedLayoutVariables[draftKey] = draftValue;
+            });
+
+            discardVariableDraft();
 
             if (visibilityDraftActive) {
                 const existing = sharedLayoutState[assetKey] || { components: {}, text: {}, states: {} };
@@ -2801,6 +2858,9 @@
         if (isVariableAsset(assetKey)) {
             const variableDefinition = getVariableAssetDefinition(assetKey);
             beginVariableDraft(variableDefinition.variableKey, getCssLayoutVariableDefaults()[variableDefinition.variableKey]);
+            if (variableDefinition.secondaryVariableKey) {
+                beginVariableDraft(variableDefinition.secondaryVariableKey, getCssLayoutVariableDefaults()[variableDefinition.secondaryVariableKey]);
+            }
             if (sceneStateKey !== "base") {
                 beginVisibilityDraft(
                     assetKey,
@@ -2808,7 +2868,8 @@
                     sceneStateKey,
                     getDefaultSceneAssetVisibility(sceneKey, sceneStateKey, assetKey));
             }
-            syncLayoutColorInputs(currentVariableDraftValue);
+            syncLayoutColorInputs(getEffectiveLayoutVariable(variableDefinition.variableKey));
+            syncLayoutOpacityInputs(getEffectiveLayoutVariable(variableDefinition.secondaryVariableKey));
             updateLayoutCodePreview(assetKey, "root");
             updateLayoutStatusDisplay(assetKey, "root");
             refreshLayoutUi();
@@ -2865,6 +2926,8 @@
         currentDraftState = null;
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
+        currentSecondaryVariableDraftKey = null;
+        currentSecondaryVariableDraftValue = null;
         currentTextDraftAssetKey = null;
         currentTextDraftState = null;
         clearCurrentImageDraftState();
@@ -2889,6 +2952,10 @@
 
         if (currentVariableDraftKey && currentVariableDraftValue) {
             snapshotVariables[currentVariableDraftKey] = currentVariableDraftValue;
+        }
+
+        if (currentSecondaryVariableDraftKey && currentSecondaryVariableDraftValue) {
+            snapshotVariables[currentSecondaryVariableDraftKey] = currentSecondaryVariableDraftValue;
         }
 
         if (currentDraftAssetKey && currentDraftState) {
@@ -3463,6 +3530,78 @@
         return { xp, coins };
     }
 
+    function formatGameLogDate(localDateTime) {
+        const adjusted = new Date(localDateTime.getTime());
+        adjusted.setHours(adjusted.getHours() - 3);
+
+        const year = adjusted.getFullYear();
+        const month = String(adjusted.getMonth() + 1).padStart(2, "0");
+        const day = String(adjusted.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    }
+
+    function resolveFocusSaveState(mode, elapsedSeconds) {
+        const normalizedMode = String(mode || "").trim().toLowerCase();
+        const focusType = (focusTypeInput.value || "Focus").trim() || "Focus";
+        const timerMode = isCountUpModeSelected() ? "countup" : "countdown";
+        const plannedDurationSeconds = timerMode === "countup"
+            ? Math.max(7200, Math.max(plannedSeconds, elapsedSeconds))
+            : Math.max(300, Math.max(plannedSeconds, elapsedSeconds));
+        let completed = normalizedMode === "complete" && elapsedSeconds >= plannedDurationSeconds;
+
+        if (timerMode === "countup" && (normalizedMode === "stop" || normalizedMode === "break")) {
+            completed = elapsedSeconds >= 300;
+        }
+
+        const rewardPreview = calculateRewardPreview(elapsedSeconds, completed);
+        const loggedAt = new Date();
+
+        return {
+            focusType,
+            timerMode,
+            plannedDurationSeconds,
+            elapsedSeconds,
+            completed,
+            rewardXp: rewardPreview.xp,
+            rewardCoins: rewardPreview.coins,
+            loggedAtIso: loggedAt.toISOString(),
+            logDate: formatGameLogDate(loggedAt)
+        };
+    }
+
+    async function queueOfflineFocusSession(mode, elapsedSeconds) {
+        const offlineStore = await awaitOfflineStoreReady();
+
+        if (!offlineStore) {
+            return null;
+        }
+
+        const resolvedSave = resolveFocusSaveState(mode, elapsedSeconds);
+
+        await offlineStore.queueFocusSession({
+            loggedAt: resolvedSave.loggedAtIso,
+            logDate: resolvedSave.logDate,
+            focusType: resolvedSave.focusType,
+            durationSeconds: resolvedSave.elapsedSeconds,
+            completed: resolvedSave.completed,
+            timerMode: resolvedSave.timerMode,
+            plannedDurationSeconds: resolvedSave.plannedDurationSeconds,
+            rewardXp: resolvedSave.rewardXp,
+            rewardCoins: resolvedSave.rewardCoins
+        });
+
+        return {
+            ok: true,
+            rewardFocusType: resolvedSave.focusType,
+            rewardDurationSeconds: resolvedSave.elapsedSeconds,
+            rewardCompleted: resolvedSave.completed,
+            rewardXp: resolvedSave.rewardXp,
+            rewardCoins: resolvedSave.rewardCoins,
+            storageMode: "offline"
+        };
+    }
+
     function syncTimerModeUi(forcedStateKey = null) {
         const countUpSelected = (forcedStateKey || getRenderedFocusSetupStateKey()) === "countup";
 
@@ -3620,6 +3759,50 @@
         return clampRgbChannel(value).toString(16).padStart(2, "0");
     }
 
+    function formatOpacityRatio(value) {
+        if (!Number.isFinite(value)) {
+            return "0";
+        }
+
+        const rounded = Math.round(value * 100) / 100;
+        return rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    function normalizeOpacityValue(rawValue, fallbackValue = "0.46") {
+        const parseCandidate = function (value) {
+            const raw = String(value ?? "").trim();
+
+            if (!raw) {
+                return NaN;
+            }
+
+            const percentMatch = raw.match(/^(-?\d+(?:\.\d+)?)\s*%$/);
+
+            if (percentMatch) {
+                return parseFloat(percentMatch[1]) / 100;
+            }
+
+            const parsed = parseFloat(raw);
+            return Number.isFinite(parsed) ? parsed : NaN;
+        };
+
+        const parsed = parseCandidate(rawValue);
+        const fallbackParsed = parseCandidate(fallbackValue);
+        const normalized = Number.isFinite(parsed)
+            ? parsed
+            : (Number.isFinite(fallbackParsed) ? fallbackParsed : 0.46);
+
+        return formatOpacityRatio(Math.max(0, Math.min(1, normalized)));
+    }
+
+    function normalizeLayoutVariableValue(key, rawValue, fallbackValue = "") {
+        if (key === "globalDimmingBackdropOpacity") {
+            return normalizeOpacityValue(rawValue, fallbackValue);
+        }
+
+        return normalizeHexColor(rawValue, fallbackValue || defaultLayoutEdgeColor);
+    }
+
     function tryNormalizeHexColor(rawValue) {
         const simpleHex = normalizeSimpleHexColor(rawValue);
 
@@ -3652,8 +3835,12 @@
         const result = {};
         const colorVariableDefinitions = {
             appEdgeColor: ["appEdgeColor", "AppEdgeColor", "app-edge-color"],
+            globalDimmingBackdropColor: ["globalDimmingBackdropColor", "GlobalDimmingBackdropColor", "global-dimming-backdrop-color"],
             focusTypeHighlightFillColor: ["focusTypeHighlightFillColor", "FocusTypeHighlightFillColor", "focus-type-highlight-fill-color"],
             focusTypeHighlightLineColor: ["focusTypeHighlightLineColor", "FocusTypeHighlightLineColor", "focus-type-highlight-line-color"]
+        };
+        const opacityVariableDefinitions = {
+            globalDimmingBackdropOpacity: ["globalDimmingBackdropOpacity", "GlobalDimmingBackdropOpacity", "global-dimming-backdrop-opacity"]
         };
 
         Object.entries(colorVariableDefinitions).forEach(function ([normalizedKey, aliases]) {
@@ -3668,6 +3855,21 @@
 
             if (normalizedColor) {
                 result[normalizedKey] = normalizedColor;
+            }
+        });
+
+        Object.entries(opacityVariableDefinitions).forEach(function ([normalizedKey, aliases]) {
+            const rawValue = aliases
+                .map(function (alias) {
+                    return variables[alias];
+                })
+                .find(function (value) {
+                    return value != null;
+                });
+            const normalizedOpacity = normalizeOpacityValue(rawValue, "");
+
+            if (normalizedOpacity !== "") {
+                result[normalizedKey] = normalizedOpacity;
             }
         });
 
@@ -3689,6 +3891,12 @@
     function getCssLayoutVariableDefaults() {
         return {
             appEdgeColor: defaultLayoutEdgeColor,
+            globalDimmingBackdropColor: normalizeHexColor(
+                getComputedStyle(homeRoot).getPropertyValue(globalDimmingBackdropColorVariableName),
+                defaultGlobalDimmingBackdropColor),
+            globalDimmingBackdropOpacity: normalizeOpacityValue(
+                getComputedStyle(homeRoot).getPropertyValue(globalDimmingBackdropOpacityVariableName),
+                "0.46"),
             focusTypeHighlightFillColor: normalizeHexColor(
                 getComputedStyle(homeRoot).getPropertyValue("--pl-focus-type-picker-selection-fill-color"),
                 "#dbeafe"),
@@ -3705,6 +3913,10 @@
     function getEffectiveLayoutVariable(key) {
         if (currentVariableDraftKey === key && currentVariableDraftValue) {
             return currentVariableDraftValue;
+        }
+
+        if (currentSecondaryVariableDraftKey === key && currentSecondaryVariableDraftValue) {
+            return currentSecondaryVariableDraftValue;
         }
 
         return getSavedLayoutVariable(key);
@@ -3788,6 +4000,15 @@
         return getEffectiveSceneAssetVisibility(assetKey, currentVisibleSceneKey, currentVisibleSceneStateKey);
     }
 
+    function definitionOwnsVariableDraftKey(variableDefinition, draftKey) {
+        return !!variableDefinition
+            && !!draftKey
+            && (
+                variableDefinition.variableKey === draftKey
+                || variableDefinition.secondaryVariableKey === draftKey
+            );
+    }
+
     function applyAssetImageVariable(assetKey, rawUrl, componentKey = "root") {
         const cssVariableName = getArtImageCssVariableName(assetKey, componentKey);
 
@@ -3809,6 +4030,14 @@
 
     function applyLayoutVariables() {
         applyEdgeColorVariable(getEffectiveLayoutVariable("appEdgeColor"));
+        applyColorCssVariable(
+            globalDimmingBackdropColorVariableName,
+            getEffectiveLayoutVariable("globalDimmingBackdropColor"),
+            getCssLayoutVariableDefaults().globalDimmingBackdropColor);
+        applyRawCssVariable(
+            globalDimmingBackdropOpacityVariableName,
+            getEffectiveLayoutVariable("globalDimmingBackdropOpacity")
+            || getCssLayoutVariableDefaults().globalDimmingBackdropOpacity);
         applyColorCssVariable(
             "--pl-focus-type-picker-selection-fill-color",
             getEffectiveLayoutVariable("focusTypeHighlightFillColor"),
@@ -3847,10 +4076,12 @@
     }
 
     function discardVariableDraft() {
-        const hadDraft = !!currentVariableDraftKey;
+        const hadDraft = !!currentVariableDraftKey || !!currentSecondaryVariableDraftKey;
 
         currentVariableDraftKey = null;
         currentVariableDraftValue = null;
+        currentSecondaryVariableDraftKey = null;
+        currentSecondaryVariableDraftValue = null;
 
         if (hadDraft) {
             applyLayoutVariables();
@@ -3858,8 +4089,17 @@
     }
 
     function beginVariableDraft(key, value) {
-        currentVariableDraftKey = key;
-        currentVariableDraftValue = normalizeHexColor(value, getSavedLayoutVariable(key));
+        const normalizedValue = normalizeLayoutVariableValue(key, value, getSavedLayoutVariable(key));
+
+        if (!currentVariableDraftKey || currentVariableDraftKey === key) {
+            currentVariableDraftKey = key;
+            currentVariableDraftValue = normalizedValue;
+        }
+        else {
+            currentSecondaryVariableDraftKey = key;
+            currentSecondaryVariableDraftValue = normalizedValue;
+        }
+
         applyLayoutVariables();
     }
 
@@ -4764,6 +5004,98 @@
         handleLayoutAssetChange();
     }
 
+    function globalDimmingBackdropDraftIsActive() {
+        const definition = getVariableAssetDefinition(globalDimmingBackdropAssetKey);
+        return definitionOwnsVariableDraftKey(definition, currentVariableDraftKey)
+            || definitionOwnsVariableDraftKey(definition, currentSecondaryVariableDraftKey);
+    }
+
+    function syncGlobalDimmingBackdropEditorStatus() {
+        if (!layoutGlobalBackdropStatus) {
+            return;
+        }
+
+        layoutGlobalBackdropStatus.textContent = globalDimmingBackdropDraftIsActive()
+            ? "Previewing unsaved backdrop changes. Press Save to keep them."
+            : "Shared across focus setup, focus running, and the overlay dimming layers.";
+    }
+
+    function syncGlobalDimmingBackdropEditorInputs() {
+        if (!layoutGlobalBackdropColorPicker || !layoutGlobalBackdropColorText || !layoutGlobalBackdropOpacityRange || !layoutGlobalBackdropOpacityNumber) {
+            return;
+        }
+
+        const colorValue = getEffectiveLayoutVariable("globalDimmingBackdropColor");
+        const opacityValue = getEffectiveLayoutVariable("globalDimmingBackdropOpacity");
+        const opacityPercent = Math.round(parseFloat(normalizeOpacityValue(opacityValue, "0.46")) * 100);
+
+        layoutGlobalBackdropColorPicker.value = normalizeHexColor(colorValue, defaultGlobalDimmingBackdropColor);
+        layoutGlobalBackdropColorText.value = normalizeHexColor(colorValue, defaultGlobalDimmingBackdropColor).toUpperCase();
+        layoutGlobalBackdropOpacityRange.value = String(opacityPercent);
+        layoutGlobalBackdropOpacityNumber.value = String(opacityPercent);
+        syncGlobalDimmingBackdropEditorStatus();
+    }
+
+    function beginGlobalDimmingBackdropDraft(colorValue, opacityValue) {
+        if (currentVariableDraftKey && !globalDimmingBackdropDraftIsActive()) {
+            discardVariableDraft();
+        }
+
+        beginVariableDraft("globalDimmingBackdropColor", colorValue);
+        beginVariableDraft("globalDimmingBackdropOpacity", opacityValue);
+        syncGlobalDimmingBackdropEditorInputs();
+    }
+
+    function updateGlobalDimmingBackdropColorDraft(rawValue) {
+        const normalized = normalizeHexColor(
+            rawValue,
+            getEffectiveLayoutVariable("globalDimmingBackdropColor") || defaultGlobalDimmingBackdropColor);
+        beginGlobalDimmingBackdropDraft(
+            normalized,
+            getEffectiveLayoutVariable("globalDimmingBackdropOpacity") || getCssLayoutVariableDefaults().globalDimmingBackdropOpacity);
+    }
+
+    function updateGlobalDimmingBackdropOpacityDraft(rawValue) {
+        const parsed = parseFloat(String(rawValue || "").trim());
+        const fallbackPercent = Math.round(parseFloat(getEffectiveLayoutVariable("globalDimmingBackdropOpacity") || getCssLayoutVariableDefaults().globalDimmingBackdropOpacity || "0.46") * 100);
+        const nextPercent = Number.isFinite(parsed)
+            ? Math.max(0, Math.min(100, Math.round(parsed)))
+            : fallbackPercent;
+        beginGlobalDimmingBackdropDraft(
+            getEffectiveLayoutVariable("globalDimmingBackdropColor") || defaultGlobalDimmingBackdropColor,
+            String(nextPercent / 100));
+    }
+
+    async function saveGlobalDimmingBackdropDraft() {
+        if (!globalDimmingBackdropDraftIsActive()) {
+            return;
+        }
+
+        const colorValue = getEffectiveLayoutVariable("globalDimmingBackdropColor");
+        const opacityValue = getEffectiveLayoutVariable("globalDimmingBackdropOpacity");
+
+        sharedLayoutVariables.globalDimmingBackdropColor = colorValue;
+        sharedLayoutVariables.globalDimmingBackdropOpacity = opacityValue;
+        discardVariableDraft();
+        await saveSharedLayoutState();
+        applyAllAssetLayouts();
+        refreshLayoutUi();
+    }
+
+    function revertGlobalDimmingBackdropDraft() {
+        if (globalDimmingBackdropDraftIsActive()) {
+            discardVariableDraft();
+        }
+
+        syncGlobalDimmingBackdropEditorInputs();
+    }
+
+    function resetGlobalDimmingBackdropDraft() {
+        beginGlobalDimmingBackdropDraft(
+            getCssLayoutVariableDefaults().globalDimmingBackdropColor,
+            getCssLayoutVariableDefaults().globalDimmingBackdropOpacity);
+    }
+
     function updateLayoutColorDraft(rawValue) {
         const selectedAssetKey = getSelectedAssetKey();
         const variableAssetKey = isVariableAsset(selectedAssetKey)
@@ -4773,7 +5105,7 @@
         const fallbackValue = getEffectiveLayoutVariable(variableDefinition.variableKey)
             || getCssLayoutVariableDefaults()[variableDefinition.variableKey]
             || defaultLayoutEdgeColor;
-        const normalized = normalizeHexColor(rawValue, layoutColorPicker?.value || fallbackValue);
+        const normalized = normalizeLayoutVariableValue(variableDefinition.variableKey, rawValue, layoutColorPicker?.value || fallbackValue);
 
         if (!isVariableAsset(selectedAssetKey)) {
             ensureLayoutColorAssetSelected();
@@ -4781,6 +5113,45 @@
 
         syncLayoutColorInputs(normalized);
         beginVariableDraft(variableDefinition.variableKey, normalized);
+        updateLayoutCodePreview(variableAssetKey, "root");
+        updateLayoutStatusDisplay(variableAssetKey, "root");
+    }
+
+    function syncLayoutOpacityInputs(opacityValue) {
+        if (!layoutOpacityRange || !layoutOpacityNumber || !opacityValue) {
+            return;
+        }
+
+        const percent = Math.round(parseFloat(normalizeOpacityValue(opacityValue, "0.46")) * 100);
+        layoutOpacityRange.value = String(percent);
+        layoutOpacityNumber.value = String(percent);
+    }
+
+    function updateLayoutOpacityDraft(rawValue) {
+        const selectedAssetKey = getSelectedAssetKey();
+        const variableAssetKey = isVariableAsset(selectedAssetKey)
+            ? selectedAssetKey
+            : globalDimmingBackdropAssetKey;
+        const variableDefinition = getVariableAssetDefinition(variableAssetKey);
+        const secondaryKey = variableDefinition.secondaryVariableKey;
+
+        if (!secondaryKey) {
+            return;
+        }
+
+        if (!isVariableAsset(selectedAssetKey)) {
+            ensureLayoutColorAssetSelected();
+        }
+
+        const parsed = parseFloat(String(rawValue || "").trim());
+        const fallbackPercent = Math.round(parseFloat(getEffectiveLayoutVariable(secondaryKey) || getCssLayoutVariableDefaults()[secondaryKey] || "0.46") * 100);
+        const normalizedPercent = Number.isFinite(parsed)
+            ? Math.max(0, Math.min(100, Math.round(parsed)))
+            : fallbackPercent;
+        const normalizedOpacity = normalizeOpacityValue(String(normalizedPercent / 100), getEffectiveLayoutVariable(secondaryKey));
+
+        syncLayoutOpacityInputs(normalizedOpacity);
+        beginVariableDraft(secondaryKey, normalizedOpacity);
         updateLayoutCodePreview(variableAssetKey, "root");
         updateLayoutStatusDisplay(variableAssetKey, "root");
     }
@@ -4800,6 +5171,14 @@
         <input class="pl-input pl-layout-number-input" id="pl-layout-edge-color-text" type="text" value="${defaultLayoutEdgeColor.toUpperCase()}" spellcheck="false" autocomplete="off" />
       </div>
       <span class="pl-field-hint" id="pl-layout-edge-color-hint">Colors the outer shell/background around the authored canvas.</span>
+      <div class="pl-field" id="pl-layout-opacity-field" hidden style="margin-top:0.9rem;">
+        <span class="pl-field-label" id="pl-layout-opacity-label">Backdrop opacity (%)</span>
+        <div class="pl-layout-range-with-number">
+          <input class="pl-input" id="pl-layout-opacity-range" type="range" min="0" max="100" step="1" value="46" />
+          <input class="pl-input pl-layout-number-input" id="pl-layout-opacity-number" type="number" min="0" max="100" step="1" value="46" />
+        </div>
+        <span class="pl-field-hint" id="pl-layout-opacity-hint">Controls how strong the shared dimming backdrop appears.</span>
+      </div>
     `;
 
         if (layoutAssetField && layoutAssetField.parentNode) {
@@ -4812,6 +5191,11 @@
         layoutColorPicker = layoutColorField.querySelector("#pl-layout-edge-color-picker");
         layoutColorText = layoutColorField.querySelector("#pl-layout-edge-color-text");
         layoutColorHint = layoutColorField.querySelector("#pl-layout-edge-color-hint");
+        layoutOpacityField = layoutColorField.querySelector("#pl-layout-opacity-field");
+        layoutOpacityLabel = layoutColorField.querySelector("#pl-layout-opacity-label");
+        layoutOpacityRange = layoutColorField.querySelector("#pl-layout-opacity-range");
+        layoutOpacityNumber = layoutColorField.querySelector("#pl-layout-opacity-number");
+        layoutOpacityHint = layoutColorField.querySelector("#pl-layout-opacity-hint");
 
         layoutColorPicker.addEventListener("input", function () {
             updateLayoutColorDraft(layoutColorPicker.value);
@@ -4829,6 +5213,113 @@
                 commitTextColorDraft();
             }
         });
+
+        layoutOpacityRange?.addEventListener("input", function () {
+            updateLayoutOpacityDraft(layoutOpacityRange.value);
+        });
+
+        const commitOpacityDraft = function () {
+            updateLayoutOpacityDraft(layoutOpacityNumber.value);
+        };
+
+        layoutOpacityNumber?.addEventListener("change", commitOpacityDraft);
+        layoutOpacityNumber?.addEventListener("blur", commitOpacityDraft);
+        layoutOpacityNumber?.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                commitOpacityDraft();
+            }
+        });
+    }
+
+    function ensureGlobalDimmingBackdropControls() {
+        if (layoutGlobalBackdropField) {
+            return;
+        }
+
+        layoutGlobalBackdropField = document.createElement("section");
+        layoutGlobalBackdropField.className = "pl-field pl-layout-global-backdrop-field";
+        layoutGlobalBackdropField.innerHTML = `
+            <span class="pl-field-label">Global Dimming Backdrop</span>
+            <span class="pl-field-hint">Shared across focus setup, focus running, and the runtime dimming overlays.</span>
+            <div class="pl-field">
+                <span class="pl-field-label">Backdrop color</span>
+                <div class="pl-layout-range-with-number">
+                    <input class="pl-input" id="pl-layout-global-backdrop-color-picker" type="color" value="${defaultGlobalDimmingBackdropColor}" />
+                    <input class="pl-input pl-layout-number-input" id="pl-layout-global-backdrop-color-text" type="text" value="${defaultGlobalDimmingBackdropColor.toUpperCase()}" spellcheck="false" autocomplete="off" />
+                </div>
+            </div>
+            <div class="pl-field">
+                <span class="pl-field-label">Backdrop opacity (%)</span>
+                <div class="pl-layout-range-with-number">
+                    <input class="pl-input" id="pl-layout-global-backdrop-opacity-range" type="range" min="0" max="100" step="1" value="46" />
+                    <input class="pl-input pl-layout-number-input" id="pl-layout-global-backdrop-opacity-number" type="number" min="0" max="100" step="1" value="46" />
+                </div>
+            </div>
+            <div class="pl-layout-global-backdrop-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem;">
+                <button type="button" class="pl-layout-header-button" id="pl-layout-global-backdrop-save">Save Backdrop</button>
+                <button type="button" class="pl-layout-header-button" id="pl-layout-global-backdrop-revert">Revert Backdrop</button>
+                <button type="button" class="pl-layout-header-button" id="pl-layout-global-backdrop-reset">Reset Backdrop</button>
+            </div>
+            <span class="pl-field-hint" id="pl-layout-global-backdrop-status">Shared across focus setup, focus running, and the overlay dimming layers.</span>
+        `;
+
+        const layoutCodeField = layoutCode.closest(".pl-field");
+        if (layoutCodeField && layoutCodeField.parentNode) {
+            layoutCodeField.insertAdjacentElement("afterend", layoutGlobalBackdropField);
+        }
+        else {
+            layoutPanel.appendChild(layoutGlobalBackdropField);
+        }
+
+        layoutGlobalBackdropColorPicker = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-color-picker");
+        layoutGlobalBackdropColorText = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-color-text");
+        layoutGlobalBackdropOpacityRange = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-opacity-range");
+        layoutGlobalBackdropOpacityNumber = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-opacity-number");
+        layoutGlobalBackdropStatus = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-status");
+        layoutGlobalBackdropSave = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-save");
+        layoutGlobalBackdropRevert = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-revert");
+        layoutGlobalBackdropReset = layoutGlobalBackdropField.querySelector("#pl-layout-global-backdrop-reset");
+
+        layoutGlobalBackdropColorPicker.addEventListener("input", function () {
+            updateGlobalDimmingBackdropColorDraft(layoutGlobalBackdropColorPicker.value);
+        });
+
+        const commitGlobalBackdropColor = function () {
+            updateGlobalDimmingBackdropColorDraft(layoutGlobalBackdropColorText.value);
+        };
+
+        layoutGlobalBackdropColorText.addEventListener("change", commitGlobalBackdropColor);
+        layoutGlobalBackdropColorText.addEventListener("blur", commitGlobalBackdropColor);
+        layoutGlobalBackdropColorText.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                commitGlobalBackdropColor();
+            }
+        });
+
+        layoutGlobalBackdropOpacityRange.addEventListener("input", function () {
+            updateGlobalDimmingBackdropOpacityDraft(layoutGlobalBackdropOpacityRange.value);
+        });
+
+        const commitGlobalBackdropOpacity = function () {
+            updateGlobalDimmingBackdropOpacityDraft(layoutGlobalBackdropOpacityNumber.value);
+        };
+
+        layoutGlobalBackdropOpacityNumber.addEventListener("change", commitGlobalBackdropOpacity);
+        layoutGlobalBackdropOpacityNumber.addEventListener("blur", commitGlobalBackdropOpacity);
+        layoutGlobalBackdropOpacityNumber.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                commitGlobalBackdropOpacity();
+            }
+        });
+
+        layoutGlobalBackdropSave.addEventListener("click", saveGlobalDimmingBackdropDraft);
+        layoutGlobalBackdropRevert.addEventListener("click", revertGlobalDimmingBackdropDraft);
+        layoutGlobalBackdropReset.addEventListener("click", resetGlobalDimmingBackdropDraft);
+
+        syncGlobalDimmingBackdropEditorInputs();
     }
 
     function ensureLayoutTextControls() {
@@ -6460,6 +6951,10 @@
             return layoutEdgeColorVariableName;
         }
 
+        if (assetKey === globalDimmingBackdropAssetKey) {
+            return globalDimmingBackdropColorVariableName;
+        }
+
         if (assetKey === focusTypeHighlightFillAssetKey) {
             return "--pl-focus-type-picker-selection-fill-color";
         }
@@ -6477,6 +6972,14 @@
                 stageStatus: "Shell background · colors the edge fill outside the authored canvas.",
                 safeZoneStatus: "Used for desktop chrome and the iPhone edge / bottom-bar tint fallback.",
                 saveHint: "Press Save Selected to keep this shell background color. It is saved through LayoutSync and mirrored into the theme-color meta."
+            };
+        }
+
+        if (assetKey === globalDimmingBackdropAssetKey) {
+            return {
+                stageStatus: "Global dimming backdrop · shared focus and overlay dimmer.",
+                safeZoneStatus: "Used behind focus setup, focus running, and the overlay backdrops so one color/opacity setting drives the whole app.",
+                saveHint: "Press Save Selected to keep this shared backdrop color and opacity."
             };
         }
 
@@ -6557,6 +7060,12 @@
         if (isVariableAsset(assetKey)) {
             const definition = getVariableAssetDefinition(assetKey);
             const cssVariableName = getVariableAssetCssVariableName(assetKey);
+
+            if (definition.secondaryVariableKey && assetKey === globalDimmingBackdropAssetKey) {
+                layoutCode.value =
+                    `:root {\n  ${globalDimmingBackdropColorVariableName}: ${getEffectiveLayoutVariable(definition.variableKey)};\n  ${globalDimmingBackdropOpacityVariableName}: ${getEffectiveLayoutVariable(definition.secondaryVariableKey)};\n}`;
+                return;
+            }
 
             layoutCode.value = cssVariableName
                 ? `:root {\n  ${cssVariableName}: ${getEffectiveLayoutVariable(definition.variableKey)};\n}`
@@ -6656,10 +7165,16 @@
         if (isVariableAsset(assetKey)) {
             const definition = getVariableAssetDefinition(assetKey);
             const statusDefinition = getVariableAssetStatusDefinition(assetKey);
+            const primaryValue = getEffectiveLayoutVariable(definition.variableKey);
+            const secondaryValue = definition.secondaryVariableKey
+                ? getEffectiveLayoutVariable(definition.secondaryVariableKey)
+                : "";
 
             layoutStageStatus.textContent = statusDefinition.stageStatus;
             layoutSafeZoneStatus.textContent = statusDefinition.safeZoneStatus;
-            layoutScaleValue.textContent = getEffectiveLayoutVariable(definition.variableKey).toUpperCase();
+            layoutScaleValue.textContent = definition.secondaryVariableKey
+                ? `${String(primaryValue || "").toUpperCase()} · ${Math.round(parseFloat(secondaryValue || "0") * 100)}% opacity`
+                : String(primaryValue || "").toUpperCase();
             layoutXValue.textContent = "Not position-based";
             layoutYValue.textContent = "Not position-based";
 
@@ -6798,6 +7313,15 @@
             layoutCode,
             layoutColorPicker,
             layoutColorText,
+            layoutOpacityRange,
+            layoutOpacityNumber,
+            layoutGlobalBackdropColorPicker,
+            layoutGlobalBackdropColorText,
+            layoutGlobalBackdropOpacityRange,
+            layoutGlobalBackdropOpacityNumber,
+            layoutGlobalBackdropSave,
+            layoutGlobalBackdropRevert,
+            layoutGlobalBackdropReset,
             layoutTextContent,
             layoutTextFontFamily,
             layoutTextFontSize,
@@ -6961,6 +7485,7 @@
     //#region SEGMENT H2 - Layout UI Refresh
     function refreshLayoutUi() {
         ensureLayoutVariableControls();
+        ensureGlobalDimmingBackdropControls();
         ensureLayoutEditorExtensions();
         ensureLayoutTextControls();
         updateLayoutSceneHeader(layoutSceneSelect.value || "home", getSelectedLayoutOverlayKey());
@@ -6971,6 +7496,7 @@
         syncFocusManageButtons();
 
         const assetKey = getSelectedAssetKey();
+        syncGlobalDimmingBackdropEditorInputs();
         if (!assetKey) {
             setLayoutColorFieldHidden(true);
             setLayoutTextControlsHidden(true);
@@ -7006,6 +7532,7 @@
         if (isVariableAsset(assetKey)) {
             const variableDefinition = getVariableAssetDefinition(assetKey);
             const layoutColorLabel = document.getElementById("pl-layout-edge-color-label");
+            const showsOpacity = !!variableDefinition.secondaryVariableKey;
 
             setLayoutColorFieldHidden(false);
             setLayoutTextControlsHidden(true);
@@ -7018,7 +7545,17 @@
             if (layoutColorHint) {
                 layoutColorHint.textContent = variableDefinition.hint;
             }
+            if (layoutOpacityField) {
+                layoutOpacityField.hidden = !showsOpacity;
+            }
+            if (layoutOpacityLabel) {
+                layoutOpacityLabel.textContent = variableDefinition.secondaryFieldLabel || "Opacity (%)";
+            }
+            if (layoutOpacityHint) {
+                layoutOpacityHint.textContent = variableDefinition.secondaryHint || "";
+            }
             syncLayoutColorInputs(getEffectiveLayoutVariable(variableDefinition.variableKey));
+            syncLayoutOpacityInputs(getEffectiveLayoutVariable(variableDefinition.secondaryVariableKey));
             updateLayoutCodePreview(assetKey, componentKey);
             updateLayoutStatusDisplay(assetKey, componentKey);
             refreshLayoutSelection();
@@ -7029,6 +7566,9 @@
         setLayoutColorFieldHidden(true);
         if (layoutColorHint) {
             layoutColorHint.textContent = getVariableAssetDefinition(layoutColorAssetKey).hint;
+        }
+        if (layoutOpacityField) {
+            layoutOpacityField.hidden = true;
         }
         const timerGapControls = document.getElementById("pl-layout-timer-gap-controls");
         if (timerGapControls) {
@@ -7542,7 +8082,13 @@
             discardCurrentTextDraft();
         }
 
-        if (currentVariableDraftKey && (!nextVariableDefinition || nextVariableDefinition.variableKey !== currentVariableDraftKey)) {
+        if ((currentVariableDraftKey || currentSecondaryVariableDraftKey)
+            && !globalDimmingBackdropDraftIsActive()
+            && (
+                !nextVariableDefinition
+                || !definitionOwnsVariableDraftKey(nextVariableDefinition, currentVariableDraftKey)
+                || (currentSecondaryVariableDraftKey && !definitionOwnsVariableDraftKey(nextVariableDefinition, currentSecondaryVariableDraftKey))
+            )) {
             discardVariableDraft();
         }
 
@@ -7582,7 +8128,13 @@
             discardCurrentTextDraft();
         }
 
-        if (currentVariableDraftKey && (!nextVariableDefinition || nextVariableDefinition.variableKey !== currentVariableDraftKey)) {
+        if ((currentVariableDraftKey || currentSecondaryVariableDraftKey)
+            && !globalDimmingBackdropDraftIsActive()
+            && (
+                !nextVariableDefinition
+                || !definitionOwnsVariableDraftKey(nextVariableDefinition, currentVariableDraftKey)
+                || (currentSecondaryVariableDraftKey && !definitionOwnsVariableDraftKey(nextVariableDefinition, currentSecondaryVariableDraftKey))
+            )) {
             discardVariableDraft();
         }
 
@@ -7633,7 +8185,13 @@
             discardCurrentTextDraft();
         }
 
-        if (currentVariableDraftKey && (!nextVariableDefinition || nextVariableDefinition.variableKey !== currentVariableDraftKey)) {
+        if ((currentVariableDraftKey || currentSecondaryVariableDraftKey)
+            && !globalDimmingBackdropDraftIsActive()
+            && (
+                !nextVariableDefinition
+                || !definitionOwnsVariableDraftKey(nextVariableDefinition, currentVariableDraftKey)
+                || (currentSecondaryVariableDraftKey && !definitionOwnsVariableDraftKey(nextVariableDefinition, currentSecondaryVariableDraftKey))
+            )) {
             discardVariableDraft();
         }
 
@@ -8014,6 +8572,8 @@
 
     //#region SEGMENT J1 - Screen State Previews And Visibility
     function ensureOverlayLayer() {
+        ensureGlobalDimmingBackdrop();
+
         if (!overlayBackdrop) {
             overlayBackdrop = document.createElement("div");
             overlayBackdrop.id = "pl-overlay-backdrop";
@@ -8038,7 +8598,7 @@
             focusManageConfirmBackdrop.id = "pl-focus-manage-confirm-backdrop";
             focusManageConfirmBackdrop.className = "pl-focus-manage-confirm-backdrop";
             focusManageConfirmBackdrop.hidden = true;
-            overlayStage.appendChild(focusManageConfirmBackdrop);
+            overlayStageShell.appendChild(focusManageConfirmBackdrop);
 
             Array.from(overlayAssetKeys).forEach(function (assetKey) {
                 const assetElement = getAssetElement(assetKey);
@@ -8053,6 +8613,24 @@
         rewardDim.hidden = true;
         rewardDim.style.display = "none";
         syncOverlayStageAssetParents();
+    }
+
+    function ensureGlobalDimmingBackdrop() {
+        if (globalDimmingBackdrop) {
+            return;
+        }
+
+        globalDimmingBackdrop = document.createElement("div");
+        globalDimmingBackdrop.id = "pl-global-dimming-backdrop";
+        globalDimmingBackdrop.className = "pl-global-dimming-backdrop";
+        globalDimmingBackdrop.hidden = true;
+
+        if (safeUiStageShell && safeUiStageShell.parentNode === homeRoot) {
+            homeRoot.insertBefore(globalDimmingBackdrop, safeUiStageShell);
+            return;
+        }
+
+        homeRoot.appendChild(globalDimmingBackdrop);
     }
 
     function syncOverlayStageAssetParents() {
@@ -8083,6 +8661,15 @@
         }
 
         focusManageConfirmBackdrop.hidden = !isVisible;
+    }
+
+    function shouldShowGlobalDimmingBackdrop() {
+        return currentVisibleSceneKey === "focus-setup" || currentVisibleSceneKey === "focus-running";
+    }
+
+    function syncGlobalDimmingBackdropVisibility() {
+        ensureGlobalDimmingBackdrop();
+        globalDimmingBackdrop.hidden = !shouldShowGlobalDimmingBackdrop();
     }
 
     function setVisibleScene(sceneKey, sceneStateKey = getRenderedSceneStateKey(sceneKey), overlayKey = "none") {
@@ -8409,6 +8996,8 @@
     }
 
     function applySceneMembershipVisibility() {
+        syncGlobalDimmingBackdropVisibility();
+
         Object.entries(layoutAssets).forEach(function ([assetKey, config]) {
             if (isPersistentWorldAsset(assetKey)) {
                 config.element.hidden = false;
@@ -9239,6 +9828,225 @@
         });
     }
 
+    function normalizeFocusLabelList(labels) {
+        const seen = new Set();
+
+        return (Array.isArray(labels) ? labels : [])
+            .map(function (label) {
+                return normalizeFocusLabelName(label);
+            })
+            .filter(function (label) {
+                if (!label) {
+                    return false;
+                }
+
+                const normalizedKey = label.toLowerCase();
+                if (seen.has(normalizedKey)) {
+                    return false;
+                }
+
+                seen.add(normalizedKey);
+                return true;
+            });
+    }
+
+    function getOfflineStoreApi() {
+        return window.__plOfflineStore && typeof window.__plOfflineStore === "object"
+            ? window.__plOfflineStore
+            : null;
+    }
+
+    async function awaitOfflineStoreReady() {
+        const offlineStore = getOfflineStoreApi();
+
+        if (!offlineStore) {
+            return null;
+        }
+
+        try {
+            await (window.__plOfflineStoreReady || Promise.resolve());
+            return offlineStore;
+        }
+        catch {
+            return null;
+        }
+    }
+
+    function shouldFallbackToOfflineStorage(error) {
+        const message = error instanceof Error
+            ? error.message
+            : String(error || "");
+
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+            return true;
+        }
+
+        return error instanceof TypeError || /failed to fetch|networkerror|network request failed/i.test(message);
+    }
+
+    async function persistOfflineFocusLabelSnapshot(labels) {
+        const offlineStore = await awaitOfflineStoreReady();
+        const normalizedLabels = normalizeFocusLabelList(labels);
+
+        if (!offlineStore || typeof offlineStore.setFocusLabelSnapshot !== "function") {
+            return normalizedLabels;
+        }
+
+        try {
+            await offlineStore.setFocusLabelSnapshot(normalizedLabels);
+        }
+        catch {
+        }
+
+        return normalizedLabels;
+    }
+
+    async function readOfflineFocusLabelSnapshot() {
+        const offlineStore = await awaitOfflineStoreReady();
+
+        if (!offlineStore || typeof offlineStore.getFocusLabelSnapshot !== "function") {
+            return [];
+        }
+
+        try {
+            return normalizeFocusLabelList(await offlineStore.getFocusLabelSnapshot());
+        }
+        catch {
+            return [];
+        }
+    }
+
+    async function hydrateFocusLabelsFromOfflineStore() {
+        const offlineLabels = await readOfflineFocusLabelSnapshot();
+
+        if (offlineLabels.length > 0) {
+            savedFocusLabels = offlineLabels;
+            return offlineLabels;
+        }
+
+        await persistOfflineFocusLabelSnapshot(savedFocusLabels);
+        return savedFocusLabels;
+    }
+
+    function applyFocusLabelMutationToList(labels, action, name = "", nextName = "") {
+        const nextLabels = normalizeFocusLabelList(labels);
+        const normalizedName = normalizeFocusLabelName(name);
+        const normalizedNextName = normalizeFocusLabelName(nextName);
+        const currentIndex = findFocusLabelIndex(nextLabels, normalizedName);
+
+        switch (action) {
+            case "add":
+                if (!normalizedName || currentIndex >= 0) {
+                    return nextLabels;
+                }
+
+                nextLabels.push(normalizedName);
+                return nextLabels;
+            case "delete":
+                if (currentIndex < 0) {
+                    return nextLabels;
+                }
+
+                nextLabels.splice(currentIndex, 1);
+                return nextLabels;
+            case "rename":
+                if (!normalizedName || !normalizedNextName || currentIndex < 0) {
+                    return nextLabels;
+                }
+
+                if (findFocusLabelIndex(nextLabels, normalizedNextName) >= 0) {
+                    return nextLabels;
+                }
+
+                nextLabels[currentIndex] = normalizedNextName;
+                return nextLabels;
+            case "move-up":
+                if (currentIndex <= 0) {
+                    return nextLabels;
+                }
+
+                [nextLabels[currentIndex - 1], nextLabels[currentIndex]] = [nextLabels[currentIndex], nextLabels[currentIndex - 1]];
+                return nextLabels;
+            case "move-down":
+                if (currentIndex < 0 || currentIndex >= nextLabels.length - 1) {
+                    return nextLabels;
+                }
+
+                [nextLabels[currentIndex], nextLabels[currentIndex + 1]] = [nextLabels[currentIndex + 1], nextLabels[currentIndex]];
+                return nextLabels;
+            default:
+                return nextLabels;
+        }
+    }
+
+    function buildFocusManageMutations() {
+        const finalLabels = getActiveFocusLabelDrafts().map(function (item) {
+            return item.name;
+        });
+        const removedDrafts = draftFocusLabels.filter(function (item) {
+            return !item.isNew && item.isDeleted;
+        });
+        const renamedDrafts = draftFocusLabels.filter(function (item) {
+            return !item.isNew && !item.isDeleted && !focusLabelNamesMatch(item.originalName, item.name);
+        });
+        const addedDrafts = draftFocusLabels.filter(function (item) {
+            return item.isNew && !item.isDeleted;
+        });
+        const mutations = [];
+        let serverLabels = savedFocusLabels.slice();
+
+        removedDrafts.forEach(function (draft) {
+            mutations.push({
+                action: "delete",
+                name: draft.originalName,
+                nextName: ""
+            });
+
+            serverLabels = applyFocusLabelMutationToList(serverLabels, "delete", draft.originalName);
+        });
+
+        renamedDrafts.forEach(function (draft) {
+            mutations.push({
+                action: "rename",
+                name: draft.originalName,
+                nextName: draft.name
+            });
+
+            serverLabels = applyFocusLabelMutationToList(serverLabels, "rename", draft.originalName, draft.name);
+        });
+
+        addedDrafts.forEach(function (draft) {
+            mutations.push({
+                action: "add",
+                name: draft.name,
+                nextName: ""
+            });
+
+            serverLabels = applyFocusLabelMutationToList(serverLabels, "add", draft.name);
+        });
+
+        for (let targetIndex = 0; targetIndex < finalLabels.length; targetIndex += 1) {
+            const targetLabel = finalLabels[targetIndex];
+            let currentIndex = findFocusLabelIndex(serverLabels, targetLabel);
+
+            while (currentIndex > targetIndex) {
+                mutations.push({
+                    action: "move-up",
+                    name: targetLabel,
+                    nextName: ""
+                });
+
+                serverLabels = applyFocusLabelMutationToList(serverLabels, "move-up", targetLabel);
+                currentIndex = findFocusLabelIndex(serverLabels, targetLabel);
+            }
+        }
+
+        return {
+            finalLabels: normalizeFocusLabelList(finalLabels),
+            mutations
+        };
+    }
+
     function syncFocusTypeInputWithSavedLabels(preferredLabel = "") {
         const normalizedPreferred = normalizeFocusLabelName(preferredLabel);
         const matchingPreferred = savedFocusLabels.find(function (label) {
@@ -9254,22 +10062,32 @@
     }
 
     async function fetchFocusLabels() {
-        const response = await fetch(focusLabelsHandlerUrl, { cache: "no-store" });
+        try {
+            const response = await fetch(focusLabelsHandlerUrl, { cache: "no-store" });
 
-        if (!response.ok) {
-            throw new Error("Unable to load focus labels.");
+            if (!response.ok) {
+                throw new Error("Unable to load focus labels.");
+            }
+
+            const payload = await response.json();
+            if (!Array.isArray(payload)) {
+                throw new Error("Unexpected focus labels payload.");
+            }
+
+            return await persistOfflineFocusLabelSnapshot(payload);
         }
+        catch (error) {
+            if (!shouldFallbackToOfflineStorage(error)) {
+                throw error;
+            }
 
-        const payload = await response.json();
-        if (!Array.isArray(payload)) {
-            throw new Error("Unexpected focus labels payload.");
+            const offlineLabels = await readOfflineFocusLabelSnapshot();
+            if (offlineLabels.length > 0) {
+                return offlineLabels;
+            }
+
+            throw error;
         }
-
-        return payload
-            .map(function (item) {
-                return normalizeFocusLabelName(item);
-            })
-            .filter(Boolean);
     }
 
     async function postFocusLabelMutation(action, name = "", nextName = "") {
@@ -9301,11 +10119,7 @@
             throw new Error(`Focus label ${action} failed.`);
         }
 
-        return payload.labels
-            .map(function (item) {
-                return normalizeFocusLabelName(item);
-            })
-            .filter(Boolean);
+        return persistOfflineFocusLabelSnapshot(payload.labels);
     }
 
     function handleFocusManagePrimaryAction() {
@@ -9387,45 +10201,63 @@
         showFocusManageState(true, false);
     }
 
-    async function persistFocusManageDraft() {
-        const finalLabels = getActiveFocusLabelDrafts().map(function (item) {
-            return item.name;
-        });
-        const removedDrafts = draftFocusLabels.filter(function (item) {
-            return !item.isNew && item.isDeleted;
-        });
-        const renamedDrafts = draftFocusLabels.filter(function (item) {
-            return !item.isNew && !item.isDeleted && !focusLabelNamesMatch(item.originalName, item.name);
-        });
-        const addedDrafts = draftFocusLabels.filter(function (item) {
-            return item.isNew && !item.isDeleted;
-        });
-
+    async function persistFocusManageDraftOnline() {
+        const { finalLabels, mutations } = buildFocusManageMutations();
         let serverLabels = savedFocusLabels.slice();
 
-        for (const draft of removedDrafts) {
-            serverLabels = await postFocusLabelMutation("delete", draft.originalName);
+        for (const mutation of mutations) {
+            serverLabels = await postFocusLabelMutation(
+                mutation.action,
+                mutation.name,
+                mutation.nextName);
         }
 
-        for (const draft of renamedDrafts) {
-            serverLabels = await postFocusLabelMutation("rename", draft.originalName, draft.name);
+        return {
+            labels: await fetchFocusLabels(),
+            storageMode: "online",
+            finalLabels
+        };
+    }
+
+    async function persistFocusManageDraftOffline() {
+        const offlineStore = await awaitOfflineStoreReady();
+
+        if (!offlineStore) {
+            throw new Error("Offline focus label storage is unavailable.");
         }
 
-        for (const draft of addedDrafts) {
-            serverLabels = await postFocusLabelMutation("add", draft.name);
+        const { finalLabels, mutations } = buildFocusManageMutations();
+        const loggedAt = new Date().toISOString();
+
+        for (const mutation of mutations) {
+            await offlineStore.queueFocusLabelChange({
+                action: mutation.action,
+                name: mutation.name,
+                nextName: mutation.nextName,
+                loggedAt
+            });
         }
 
-        for (let targetIndex = 0; targetIndex < finalLabels.length; targetIndex += 1) {
-            const targetLabel = finalLabels[targetIndex];
-            let currentIndex = findFocusLabelIndex(serverLabels, targetLabel);
+        await persistOfflineFocusLabelSnapshot(finalLabels);
 
-            while (currentIndex > targetIndex) {
-                serverLabels = await postFocusLabelMutation("move-up", targetLabel);
-                currentIndex = findFocusLabelIndex(serverLabels, targetLabel);
+        return {
+            labels: finalLabels,
+            storageMode: "offline",
+            finalLabels
+        };
+    }
+
+    async function persistFocusManageDraft() {
+        try {
+            return await persistFocusManageDraftOnline();
+        }
+        catch (error) {
+            if (!shouldFallbackToOfflineStorage(error)) {
+                throw error;
             }
-        }
 
-        return fetchFocusLabels();
+            return persistFocusManageDraftOffline();
+        }
     }
 
     async function commitFocusManageChanges() {
@@ -9440,10 +10272,15 @@
         syncFocusManageButtons();
 
         try {
-            savedFocusLabels = await persistFocusManageDraft();
+            const saveResult = await persistFocusManageDraft();
+            savedFocusLabels = saveResult.labels;
             syncFocusTypeInputWithSavedLabels(preferredLabel);
             closeFocusManageDraft();
-            setFocusManageStatus("Focus labels saved.", "success");
+            setFocusManageStatus(
+                saveResult.storageMode === "offline"
+                    ? "Focus labels saved locally on this phone."
+                    : "Focus labels saved.",
+                "success");
             returnToFocusSetup();
         }
         catch {
@@ -9963,7 +10800,20 @@
 
             showRewardOverlayFromSaveResult(result);
         }
-        catch {
+        catch (error) {
+            if (shouldFallbackToOfflineStorage(error)) {
+                try {
+                    const offlineResult = await queueOfflineFocusSession(mode, elapsedSeconds);
+
+                    if (offlineResult) {
+                        showRewardOverlayFromSaveResult(offlineResult);
+                        return;
+                    }
+                }
+                catch {
+                }
+            }
+
             saveForm.submit();
         }
     }
@@ -10525,31 +11375,66 @@
     //#endregion SEGMENT K1 - Event Wiring
 
     //#region SEGMENT K2 - Async Boot And Layout Workspace
+    function preloadImageUrl(url, onLoad, onError) {
+        return new Promise(function (resolve) {
+            if (!url) {
+                if (typeof onError === "function") {
+                    onError();
+                }
+
+                resolve();
+                return;
+            }
+
+            const image = new Image();
+            image.decoding = "async";
+
+            image.onload = function () {
+                if (typeof onLoad === "function") {
+                    onLoad(image);
+                }
+
+                resolve();
+            };
+
+            image.onerror = function () {
+                if (typeof onError === "function") {
+                    onError();
+                }
+
+                resolve();
+            };
+
+            image.src = url;
+        });
+    }
+
     async function awaitFirstPaintArtMetrics() {
         const loadTasks = Object.entries(artImageVars).map(function ([assetKey, cssVar]) {
             const url = readCssUrlVar(cssVar);
 
-            if (!url) {
-                delete artMetrics[assetKey];
-                return Promise.resolve();
+            return preloadImageUrl(
+                url,
+                function (image) {
+                    artMetrics[assetKey] = analyzeImageMetrics(image);
+                },
+                function () {
+                    delete artMetrics[assetKey];
+                });
+        });
+
+        Object.keys(artImageVars).forEach(function (assetKey) {
+            if (!assetSupportsPressedArt(assetKey)) {
+                return;
             }
 
-            return new Promise(function (resolve) {
-                const image = new Image();
-                image.decoding = "async";
+            const pressedImageUrl = readCssUrlVar(getArtImageCssVariableName(assetKey, "pressed"));
 
-                image.onload = function () {
-                    artMetrics[assetKey] = analyzeImageMetrics(image);
-                    resolve();
-                };
+            if (!pressedImageUrl) {
+                return;
+            }
 
-                image.onerror = function () {
-                    delete artMetrics[assetKey];
-                    resolve();
-                };
-
-                image.src = url;
-            });
+            loadTasks.push(preloadImageUrl(pressedImageUrl));
         });
 
         Object.entries(artComponentImageVars).forEach(function ([assetKey, componentVars]) {
@@ -10735,6 +11620,7 @@
         initializeLayoutPanelWorkspace();
         registerRangeSelectorAssetElement();
         applyPanelArtStates();
+        await hydrateFocusLabelsFromOfflineStore();
         syncFocusTypeInputWithSavedLabels(focusTypeInput.value);
         setFocusTypePickerDisabledState(false);
         syncFocusManageButtons();

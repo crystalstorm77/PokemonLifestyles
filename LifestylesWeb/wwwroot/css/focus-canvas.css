@@ -9,6 +9,8 @@
         --pl-safe-ui-author-height: 866px;
         --pl-safe-ui-visible-height: 832px;
         --pl-ui-font-family: "Caveat", sans-serif;
+        --pl-global-dimming-backdrop-color: #0f172a;
+        --pl-global-dimming-backdrop-opacity: 0.46;
     }
 
     html,
@@ -145,20 +147,32 @@
         pointer-events: auto;
     }
 
+    .pl-global-dimming-backdrop,
     .pl-runtime-overlay-backdrop {
         position: absolute;
         inset: 0;
-        z-index: 20;
-        background: rgba(15, 23, 42, 0.46);
+        background-color: var(--pl-global-dimming-backdrop-color);
+        opacity: var(--pl-global-dimming-backdrop-opacity);
         backdrop-filter: blur(2px);
+    }
+
+    .pl-global-dimming-backdrop {
+        z-index: 11;
+        pointer-events: none;
+    }
+
+    .pl-runtime-overlay-backdrop {
+        z-index: 20;
     }
 
     .pl-focus-manage-confirm-backdrop {
         position: absolute;
         inset: 0;
         z-index: 15;
-        background: rgba(15, 23, 42, 0.3);
+        background-color: var(--pl-global-dimming-backdrop-color);
+        opacity: var(--pl-global-dimming-backdrop-opacity);
         backdrop-filter: blur(1px);
+        pointer-events: none;
     }
 
     .pl-world-stage {
@@ -466,7 +480,8 @@
         position: absolute;
         inset: 0;
         z-index: 18;
-        background: rgba(15, 23, 42, 0.34);
+        background-color: var(--pl-global-dimming-backdrop-color);
+        opacity: var(--pl-global-dimming-backdrop-opacity);
         backdrop-filter: blur(2px);
     }
 

@@ -2,7 +2,7 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-#region SEGMENT A — Service Configuration
+#region SEGMENT A â€” Service Configuration
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AddPageRoute("/PagesIndex", "");
@@ -10,11 +10,11 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AddPageRoute("/Focus/FocusIndex", "/Focus");
     options.Conventions.AddPageRoute("/Focus/FocusIndex", "/Focus/Index");
 });
-#endregion // SEGMENT A — Service Configuration
+#endregion // SEGMENT A â€” Service Configuration
 
 var app = builder.Build();
 
-#region SEGMENT B — HTTP Pipeline
+#region SEGMENT B â€” HTTP Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -25,9 +25,9 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
 app.MapStaticAssets();
-#endregion // SEGMENT B — HTTP Pipeline
+#endregion // SEGMENT B â€” HTTP Pipeline
 
-#region SEGMENT C — Web App Manifest Endpoints
+#region SEGMENT C â€” Web App Manifest Endpoints
 static IResult BuildManifestResponse(
     string id,
     string name,
@@ -81,11 +81,65 @@ app.MapGet(
         shortName: "PL Probe",
         description: "Pokemon Lifestyles standalone viewport probe.",
         startUrl: "/standalone-probe?source=pwa-home"));
-#endregion // SEGMENT C — Web App Manifest Endpoints
+#endregion // SEGMENT C â€” Web App Manifest Endpoints
 
-#region SEGMENT D — Endpoint Mapping
+#region SEGMENT C2 â€” Offline Asset Manifest Endpoint
+static string ToRootRelativeWebPath(string webRootPath, string filePath)
+{
+    string relativePath = Path.GetRelativePath(webRootPath, filePath)
+        .Replace('\\', '/');
+
+    return relativePath.StartsWith("/")
+        ? relativePath
+        : "/" + relativePath;
+}
+
+static IResult BuildOfflineAssetManifestResponse(string webRootPath)
+{
+    string[] fixedAssetPaths =
+    {
+        "/",
+        "/manifest.json",
+        "/favicon.ico",
+        "/css/site.css",
+        "/css/art-skin.css",
+        "/css/focus-canvas.css",
+        "/js/pl-pwa-boot.js",
+        "/js/pl-home-stage.js",
+        "/js/pl-viewport-debug.js",
+        "/js/pl-home-canvas.js",
+        "/js/pl-offline-store.js",
+        "/lib/bootstrap/dist/css/bootstrap.min.css",
+        "/lib/bootstrap/dist/js/bootstrap.bundle.min.js"
+    };
+
+    string assetsRoot = Path.Combine(webRootPath, "assets");
+    IEnumerable<string> discoveredAssetPaths = Directory.Exists(assetsRoot)
+        ? Directory.EnumerateFiles(assetsRoot, "*", SearchOption.AllDirectories)
+            .Select(filePath => ToRootRelativeWebPath(webRootPath, filePath))
+        : Enumerable.Empty<string>();
+
+    string[] allAssetPaths = fixedAssetPaths
+        .Concat(discoveredAssetPaths)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    return Results.Json(new
+    {
+        version = "v2",
+        assets = allAssetPaths
+    });
+}
+
+app.MapGet(
+    "/offline-asset-manifest.json",
+    () => BuildOfflineAssetManifestResponse(app.Environment.WebRootPath));
+#endregion // SEGMENT C2 â€” Offline Asset Manifest Endpoint
+
+#region SEGMENT D â€” Endpoint Mapping
 app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
-#endregion // SEGMENT D — Endpoint Mapping
+#endregion // SEGMENT D â€” Endpoint Mapping

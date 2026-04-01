@@ -43,8 +43,49 @@
     }
     //#endregion SEGMENT B - PWA Environment Application
 
-    //#region SEGMENT C - Boot And Event Wiring
+    //#region SEGMENT C - Service Worker Registration
+    async function registerServiceWorker() {
+        const isSecureLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+        const isSecureContext = window.location.protocol === "https:" || isSecureLocalHost;
+
+        if (!("serviceWorker" in navigator) || !isSecureContext) {
+            return null;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.register("/pl-service-worker.js", {
+                scope: "/"
+            });
+
+            window.__plServiceWorkerRegistration = registration;
+
+            window.dispatchEvent(
+                new CustomEvent("pl-service-worker-ready", {
+                    detail: {
+                        ok: true,
+                        scope: registration.scope
+                    }
+                }));
+
+            return registration;
+        }
+        catch (error) {
+            window.dispatchEvent(
+                new CustomEvent("pl-service-worker-ready", {
+                    detail: {
+                        ok: false,
+                        error: error instanceof Error ? error.message : String(error || "Unknown error")
+                    }
+                }));
+
+            return null;
+        }
+    }
+    //#endregion SEGMENT C - Service Worker Registration
+
+    //#region SEGMENT D - Boot And Event Wiring
     applyPwaEnvironment();
+    registerServiceWorker();
 
     const standaloneMedia =
         typeof window.matchMedia === "function"
@@ -60,5 +101,5 @@
             standaloneMedia.addListener(applyPwaEnvironment);
         }
     }
-    //#endregion SEGMENT C - Boot And Event Wiring
+    //#endregion SEGMENT D - Boot And Event Wiring
 })();

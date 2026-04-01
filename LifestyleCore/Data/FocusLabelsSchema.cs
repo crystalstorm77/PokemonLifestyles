@@ -57,6 +57,8 @@ VALUES ('Draw', 1, 0, @NowUtc), ('Music', 1, 1, @NowUtc);", new { NowUtc = nowUt
 
                 // Import any existing labels already used in FocusSessions
                 // so older data shows up in the dropdown immediately.
+                // Intentionally do not reactivate soft-deleted labels here:
+                // a user may have archived an old focus type on purpose.
                 var existing = conn.Query<string>(@"SELECT DISTINCT FocusType FROM FocusSessions;").ToList();
 
                 foreach (var raw in existing)
@@ -71,12 +73,6 @@ FROM FocusLabels;");
                     conn.Execute(@"
 INSERT OR IGNORE INTO FocusLabels (Name, IsActive, DisplayOrder, CreatedAtUtc)
 VALUES (@Name, 1, @DisplayOrder, @NowUtc);", new { Name = name, DisplayOrder = nextDisplayOrder, NowUtc = nowUtc });
-
-                    // If it existed but was deleted, reactivate it.
-                    conn.Execute(@"
-UPDATE FocusLabels
-SET IsActive = 1, DeletedAtUtc = NULL
-WHERE Name = @Name COLLATE NOCASE;", new { Name = name });
                 }
 
                 _ensured = true;
