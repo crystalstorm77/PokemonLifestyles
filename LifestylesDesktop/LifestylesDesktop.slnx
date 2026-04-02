@@ -1,5 +1,8 @@
 <Solution>
   <Project Path="../LifestyleCore/LifestyleCore.csproj" />
+  <Project Path="../LifestylesMaui/LifestylesMaui.csproj" Id="7a51aa86-fb49-4e2b-8c36-a3a9e50a8b77">
+    <Deploy Solution="Debug|*" />
+  </Project>
   <Project Path="../LifestylesWeb/LifestylesWeb.csproj" Id="299308eb-4291-4588-95aa-c844c348fc0c" />
   <Project Path="LifestylesDesktop.csproj" />
 </Solution>

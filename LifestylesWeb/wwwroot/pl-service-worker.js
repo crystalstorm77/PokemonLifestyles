@@ -1,6 +1,6 @@
 //#region SEGMENT A - Cache Names And Core Assets
-const APP_SHELL_CACHE = "pl-app-shell-v2";
-const RUNTIME_CACHE = "pl-runtime-v2";
+const APP_SHELL_CACHE = "pl-app-shell-v3";
+const RUNTIME_CACHE = "pl-runtime-v3";
 const OFFLINE_ASSET_MANIFEST_URL = "/offline-asset-manifest.json";
 const CORE_APP_ASSET_PATHS = [
     "/",
@@ -22,7 +22,8 @@ const CORE_APP_ASSET_PATHS = [
 
 //#region SEGMENT B - Request Helpers
 function toNormalizedCacheKey(input) {
-    const url = new URL(typeof input === "string" ? input : input.url);
+    const rawUrl = typeof input === "string" ? input : input.url;
+    const url = new URL(rawUrl, self.location.origin);
 
     if (url.origin !== self.location.origin) {
         return url.href;
@@ -48,6 +49,22 @@ function isStaticAssetRequest(request) {
     return /\.(?:css|js|png|jpg|jpeg|gif|svg|webp|ico|woff2?)$/i.test(url.pathname);
 }
 
+async function broadcastStatus(status, extra = {}) {
+    const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true
+    });
+
+    for (const client of clients) {
+        client.postMessage({
+            type: "pl-service-worker-status",
+            status,
+            at: new Date().toISOString(),
+            ...extra
+        });
+    }
+}
+
 async function cacheCoreShell() {
     const cache = await caches.open(APP_SHELL_CACHE);
 
@@ -61,10 +78,18 @@ async function cacheCoreShell() {
         catch {
         }
     }
+}
+
+async function warmDiscoveredAssets() {
+    const cache = await caches.open(RUNTIME_CACHE);
+    await broadcastStatus("warm-assets-started");
 
     try {
         const manifestResponse = await fetch(OFFLINE_ASSET_MANIFEST_URL, { cache: "no-store" });
         if (!manifestResponse.ok) {
+            await broadcastStatus("warm-assets-manifest-failed", {
+                httpStatus: manifestResponse.status
+            });
             return;
         }
 
@@ -74,6 +99,10 @@ async function cacheCoreShell() {
             : [];
 
         for (const assetPath of manifestAssets) {
+            if (CORE_APP_ASSET_PATHS.includes(assetPath)) {
+                continue;
+            }
+
             try {
                 const response = await fetch(assetPath, { cache: "no-store" });
                 if (response.ok) {
@@ -83,8 +112,13 @@ async function cacheCoreShell() {
             catch {
             }
         }
+
+        await broadcastStatus("warm-assets-complete", {
+            assetCount: manifestAssets.length
+        });
     }
     catch {
+        await broadcastStatus("warm-assets-error");
     }
 }
 
@@ -123,7 +157,54 @@ async function handleNavigationRequest(request) {
     }
     catch {
         const cachedResponse = await caches.match(toNormalizedCacheKey("/"));
-        return cachedResponse || Response.error();
+        if (cachedResponse) {
+            await broadcastStatus("navigation-served-from-cache");
+            return cachedResponse;
+        }
+
+        await broadcastStatus("navigation-cache-miss");
+        return new Response(`<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Pokemon Lifestyles Offline Diagnostic</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        article {
+            max-width: 42rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <article>
+        <h1>Offline shell not available</h1>
+        <p>The service worker handled an offline navigation, but the cached app shell for "/" was missing.</p>
+        <p>Status: navigation-cache-miss</p>
+    </article>
+</body>
+</html>`, {
+            headers: {
+                "Content-Type": "text/html; charset=utf-8"
+            }
+        });
     }
 }
 
@@ -158,14 +239,26 @@ async function handleSameOriginRequest(request) {
 
 //#region SEGMENT D - Lifecycle And Event Wiring
 self.addEventListener("install", (event) => {
+    event.waitUntil(broadcastStatus("install-started"));
     event.waitUntil(cacheCoreShell());
     self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
     event.waitUntil(
-        clearOldCaches().then(() => self.clients.claim())
+        clearOldCaches()
+            .then(() => broadcastStatus("activate-started"))
+            .then(() => self.clients.claim())
+            .then(() => broadcastStatus("activate-complete"))
     );
+});
+
+self.addEventListener("message", (event) => {
+    if (event.data?.type !== "pl-warm-offline-assets") {
+        return;
+    }
+
+    event.waitUntil(warmDiscoveredAssets());
 });
 
 self.addEventListener("fetch", (event) => {

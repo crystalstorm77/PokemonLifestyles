@@ -16,7 +16,9 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:7222;https://0.0.0.0:7222;http://localhost:5002;http://0.0.0.0:5002",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_Kestrel__Certificates__Default__Path": "Certificates\\pokemon-lifestyles-lan-server.pfx",
+        "ASPNETCORE_Kestrel__Certificates__Default__Password": "pokemon-lifestyles-lan-server"
       }
     }
   }

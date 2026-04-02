@@ -120,6 +120,9 @@
     const layoutEditorModeHint = document.getElementById("pl-layout-editor-mode-hint");
     const layoutEditorToggle = document.getElementById("pl-layout-editor-enabled");
     const layoutEditorModeStatus = document.getElementById("pl-layout-editor-mode-status");
+    const layoutPwaDiagnosticsField = document.getElementById("pl-layout-pwa-diagnostics-field");
+    const layoutPwaDiagnosticsSummary = document.getElementById("pl-layout-pwa-diagnostics-summary");
+    const layoutPwaDiagnosticsBody = document.getElementById("pl-layout-pwa-diagnostics-body");
     const layoutAssetSelect = document.getElementById("pl-layout-asset-select");
     const layoutSceneSelect = document.getElementById("pl-layout-scene-select");
     const layoutStateSelect = document.getElementById("pl-layout-state-select");
@@ -200,7 +203,8 @@
         !rewardCoins || !rewardCurrentXp || !rewardCurrentCoins || !saveForm || !saveFocusType || !savePlannedSeconds ||
         !saveElapsedSeconds || !saveTimerMode || !saveMode || !layoutPanel || !layoutEditorToggle ||
         !layoutEditorModeSelect || !layoutEditorModeHint ||
-        !layoutEditorModeStatus || !layoutAssetSelect || !layoutSceneSelect ||
+        !layoutEditorModeStatus || !layoutPwaDiagnosticsField || !layoutPwaDiagnosticsSummary || !layoutPwaDiagnosticsBody ||
+        !layoutAssetSelect || !layoutSceneSelect ||
         !layoutStateSelect || !layoutStateStatus ||
         !layoutSceneName || !layoutStageStatus || !layoutSafeZoneStatus ||
         !layoutArtPickerField || !layoutArtPickerButton || !layoutArtPickerInput || !layoutArtPickerStatus ||
@@ -7483,11 +7487,43 @@
     //#endregion SEGMENT H1 - Layout Bounds And Status Controls
 
     //#region SEGMENT H2 - Layout UI Refresh
+    function refreshPwaDiagnosticsUi() {
+        const bootDiagnostics = window.__plBootDiagnostics || {};
+        const pwaEnv = window.__plPwaEnv || {};
+        const cacheDetails = bootDiagnostics.cacheProbeDetails || {};
+        const lines = [
+            `Standalone mode: ${pwaEnv.isStandalone === true ? "yes" : "no"}`,
+            `Launch source: ${pwaEnv.launchSource || "none"}`,
+            `Secure context: ${window.isSecureContext ? "yes" : "no"}`,
+            `Online: ${typeof navigator.onLine === "boolean" ? (navigator.onLine ? "yes" : "no") : "unknown"}`,
+            `SW supported: ${bootDiagnostics.serviceWorkerSupported === true ? "yes" : "no"}`,
+            `SW registered: ${bootDiagnostics.serviceWorkerRegistered === true ? "yes" : "no"}`,
+            `SW controlling page: ${bootDiagnostics.serviceWorkerControllingPage === true ? "yes" : "no"}`,
+            `Controller changes: ${bootDiagnostics.serviceWorkerControllerChangeCount ?? 0}`,
+            `Last SW status: ${bootDiagnostics.lastServiceWorkerStatus || "none"}`,
+            `Cache summary: ${bootDiagnostics.cacheProbeSummary || "none"}`,
+            `Cache '/' : ${cacheDetails.root || "none"}`,
+            `Cache home JS : ${cacheDetails.homeCanvas || "none"}`,
+            `Cache focus CSS : ${cacheDetails.focusCss || "none"}`,
+            `First paint ready: ${bootDiagnostics.firstPaintReady === true ? "yes" : "no"}`,
+            `First paint time: ${bootDiagnostics.firstPaintAt || "none"}`,
+            `SW register error: ${bootDiagnostics.serviceWorkerRegistrationError || "none"}`,
+            `Window error: ${bootDiagnostics.lastWindowError || "none"}`,
+            `Unhandled rejection: ${bootDiagnostics.lastUnhandledRejection || "none"}`
+        ];
+
+        layoutPwaDiagnosticsSummary.textContent = bootDiagnostics.firstPaintReady
+            ? "Use this block to confirm whether the installed app is secure, standalone, and service-worker controlled."
+            : "Waiting for first paint or other startup diagnostics.";
+        layoutPwaDiagnosticsBody.textContent = lines.join("\n");
+    }
+
     function refreshLayoutUi() {
         ensureLayoutVariableControls();
         ensureGlobalDimmingBackdropControls();
         ensureLayoutEditorExtensions();
         ensureLayoutTextControls();
+        refreshPwaDiagnosticsUi();
         updateLayoutSceneHeader(layoutSceneSelect.value || "home", getSelectedLayoutOverlayKey());
         updateLayoutEditorControlState();
         updateLayoutEditorModeStatus();
@@ -11179,6 +11215,30 @@
         applyFocusTypePickerPosition();
         refreshFocusTypePickerSelectionStyles();
 
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    window.addEventListener("pl-pwa-env-changed", function () {
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    window.addEventListener("pl-service-worker-ready", function () {
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    window.addEventListener("pl-boot-diagnostics-updated", function () {
+        if (layoutModeEnabled) {
+            refreshLayoutUi();
+        }
+    });
+
+    window.addEventListener("pl-home-first-paint-ready", function () {
         if (layoutModeEnabled) {
             refreshLayoutUi();
         }

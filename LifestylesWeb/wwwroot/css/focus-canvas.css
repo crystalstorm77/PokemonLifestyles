@@ -554,6 +554,23 @@
         color: #64748b;
     }
 
+    .pl-layout-diagnostics-field {
+        padding: 0.85rem 0.95rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 1rem;
+        background: #f8fafc;
+    }
+
+    .pl-layout-diagnostics-code {
+        margin: 0.55rem 0 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: #1e293b;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
     .pl-input {
         width: 100%;
         box-sizing: border-box;
