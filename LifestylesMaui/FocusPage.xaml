@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- SEGMENT A START - Focus Scene -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="LifestylesMaui.FocusPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#045F36">
+
+    <Grid>
+        <AbsoluteLayout InputTransparent="True">
+            <Image Source="focus_panel.png"
+                   Aspect="AspectFit"
+                   WidthRequest="320"
+                   HeightRequest="332"
+                   AbsoluteLayout.LayoutBounds="0.5,0.44,320,332"
+                   AbsoluteLayout.LayoutFlags="PositionProportional" />
+
+            <Grid x:Name="DurationDisplayGrid"
+                  ColumnSpacing="4"
+                  RowSpacing="0"
+                  WidthRequest="312"
+                  HeightRequest="32"
+                  AbsoluteLayout.LayoutBounds="0.5,0.32,312,32"
+                  AbsoluteLayout.LayoutFlags="PositionProportional">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="54" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="78" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="100" />
+                </Grid.ColumnDefinitions>
+
+                <Label x:Name="HoursValueLabel"
+                       Grid.Column="0"
+                       Text="0"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="#4E1920"
+                       HorizontalTextAlignment="End"
+                       VerticalTextAlignment="Center"
+                       LineBreakMode="NoWrap" />
+
+                <Label x:Name="HoursUnitLabel"
+                       Grid.Column="1"
+                       Text="hours"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="#4E1920"
+                       HorizontalTextAlignment="Start"
+                       VerticalTextAlignment="Center"
+                       LineBreakMode="NoWrap" />
+
+                <Label x:Name="MinutesValueLabel"
+                       Grid.Column="2"
+                       Text="5"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="#4E1920"
+                       HorizontalTextAlignment="End"
+                       VerticalTextAlignment="Center"
+                       LineBreakMode="NoWrap" />
+
+                <Label x:Name="MinutesUnitLabel"
+                       Grid.Column="3"
+                       Text="minutes"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="#4E1920"
+                       HorizontalTextAlignment="Start"
+                       VerticalTextAlignment="Center"
+                       LineBreakMode="NoWrap" />
+
+                <Label x:Name="SecondsValueLabel"
+                       Grid.Column="4"
+                       Text="0"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="#4E1920"
+                       HorizontalTextAlignment="End"
+                       VerticalTextAlignment="Center"
+                       LineBreakMode="NoWrap" />
+
+                <Label x:Name="SecondsUnitLabel"
+                       Grid.Column="5"
+                       Text="seconds"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="#4E1920"
+                       HorizontalTextAlignment="Start"
+                       VerticalTextAlignment="Center"
+                       LineBreakMode="NoWrap" />
+            </Grid>
+
+            <Grid x:Name="DurationSliderShell"
+                  WidthRequest="240"
+                  HeightRequest="42"
+                  SizeChanged="OnDurationSliderShellSizeChanged"
+                  AbsoluteLayout.LayoutBounds="0.5,0.47,240,42"
+                  AbsoluteLayout.LayoutFlags="PositionProportional">
+                <Image x:Name="SliderTrackEmptyImage"
+                       Source="slider_empty.png"
+                       Aspect="Fill" />
+
+                <Grid x:Name="SliderFillClipShell"
+                      HorizontalOptions="Start"
+                      VerticalOptions="Fill"
+                      IsClippedToBounds="True"
+                      WidthRequest="0">
+                    <Image x:Name="SliderTrackFullImage"
+                           Source="slider_full.png"
+                           Aspect="Fill"
+                           HorizontalOptions="Start"
+                           VerticalOptions="Fill" />
+                </Grid>
+
+                <Image x:Name="SliderNibImage"
+                       Source="slider_nib.png"
+                       Aspect="AspectFit"
+                       HorizontalOptions="Start"
+                       VerticalOptions="Fill"
+                       SemanticProperties.Description="Drag to change the focus duration" />
+            </Grid>
+
+            <Image x:Name="CountDownButtonImage"
+                   Source="count_down_pressed.png"
+                   Aspect="AspectFit"
+                   WidthRequest="74"
+                   HeightRequest="57"
+                   SemanticProperties.Description="Switch to count down mode"
+                   AbsoluteLayout.LayoutBounds="0.33,0.6,74,57"
+                   AbsoluteLayout.LayoutFlags="PositionProportional" />
+
+            <Image x:Name="CountUpButtonImage"
+                   Source="count_up_unpressed.png"
+                   Aspect="AspectFit"
+                   WidthRequest="74"
+                   HeightRequest="57"
+                   SemanticProperties.Description="Switch to count up mode"
+                   AbsoluteLayout.LayoutBounds="0.67,0.6,74,57"
+                   AbsoluteLayout.LayoutFlags="PositionProportional" />
+
+            <Label x:Name="FocusTypeTitleLabel"
+                   Text="Focus Type"
+                   FontSize="16"
+                   FontAttributes="Bold"
+                   TextColor="#4E1920"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center"
+                   AbsoluteLayout.LayoutBounds="0.44,0.67,140,24"
+                   AbsoluteLayout.LayoutFlags="PositionProportional" />
+
+            <Border x:Name="FocusTypePickerShell"
+                    Stroke="#6B3A27"
+                    StrokeThickness="3"
+                    BackgroundColor="#F6ECDA"
+                    StrokeShape="RoundRectangle 18"
+                    WidthRequest="152"
+                    HeightRequest="98"
+                    SizeChanged="OnFocusTypePickerShellSizeChanged"
+                    AbsoluteLayout.LayoutBounds="0.42,0.76,152,98"
+                    AbsoluteLayout.LayoutFlags="PositionProportional">
+                <Grid x:Name="FocusTypePickerViewport"
+                      IsClippedToBounds="True">
+                    <BoxView x:Name="FocusTypePickerSelectionBand"
+                             Color="#E2D26A"
+                             Opacity="0.9"
+                             HeightRequest="24"
+                             VerticalOptions="Center"
+                             Margin="6,0" />
+
+                    <VerticalStackLayout x:Name="FocusTypePickerList"
+                                         Spacing="0"
+                                         VerticalOptions="Start" />
+
+                    <BoxView VerticalOptions="Start"
+                             HeightRequest="16"
+                             Margin="3,3,3,0">
+                        <BoxView.Background>
+                            <LinearGradientBrush StartPoint="0,0"
+                                                 EndPoint="0,1">
+                                <GradientStop Color="#F6ECDA" Offset="0" />
+                                <GradientStop Color="#F6ECDA00" Offset="1" />
+                            </LinearGradientBrush>
+                        </BoxView.Background>
+                    </BoxView>
+
+                    <BoxView VerticalOptions="End"
+                             HeightRequest="16"
+                             Margin="3,0,3,3">
+                        <BoxView.Background>
+                            <LinearGradientBrush StartPoint="0,1"
+                                                 EndPoint="0,0">
+                                <GradientStop Color="#F6ECDA" Offset="0" />
+                                <GradientStop Color="#F6ECDA00" Offset="1" />
+                            </LinearGradientBrush>
+                        </BoxView.Background>
+                    </BoxView>
+                </Grid>
+            </Border>
+
+            <Grid WidthRequest="104"
+                  HeightRequest="58"
+                  AbsoluteLayout.LayoutBounds="0.75,0.74,104,58"
+                  AbsoluteLayout.LayoutFlags="PositionProportional">
+                <Image x:Name="ManageButtonImage"
+                       Source="cancel_unpressed.png"
+                       Aspect="AspectFit"
+                       SemanticProperties.Description="Open focus label management" />
+
+                <Label x:Name="ManageButtonLabel"
+                       Text="Manage"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="#4E1920"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"
+                       Margin="0,2,0,0" />
+            </Grid>
+
+            <Image x:Name="StartButtonImage"
+                   Source="focus_ui.png"
+                   Aspect="AspectFit"
+                   WidthRequest="144"
+                   HeightRequest="99"
+                   SemanticProperties.Description="Start a focus session"
+                   AbsoluteLayout.LayoutBounds="0.35,0.87,144,99"
+                   AbsoluteLayout.LayoutFlags="PositionProportional" />
+
+            <Image x:Name="BackButtonImage"
+                   Source="cancel_unpressed.png"
+                   Aspect="AspectFit"
+                   WidthRequest="144"
+                   HeightRequest="82"
+                   SemanticProperties.Description="Return to the home screen"
+                   AbsoluteLayout.LayoutBounds="0.68,0.86,144,82"
+                   AbsoluteLayout.LayoutFlags="PositionProportional" />
+        </AbsoluteLayout>
+
+        <GraphicsView x:Name="InteractionSurface"
+                      BackgroundColor="Transparent"
+                      StartInteraction="OnInteractionStarted"
+                      DragInteraction="OnInteractionDragged"
+                      EndInteraction="OnInteractionEnded" />
+    </Grid>
+
+</ContentPage>
+<!-- SEGMENT A END - Focus Scene -->
